@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BLITZ COMBAT | COMPLETE REGISTRY 12.8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { background: #050508; color: #e0e0e0; font-family: 'JetBrains Mono', monospace; min-height: 100vh; transition: transform 0.1s; touch-action: manipulation; }
+        .neon-border { border: 1px solid rgba(0, 243, 255, 0.3); box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        .neon-text { color: #00f3ff; text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); font-family: 'Orbitron', sans-serif; }
+        .glass { background: rgba(10, 10, 20, 0.8); backdrop-filter: blur(10px); }
+        .player-active-row { border-left: 4px solid #00f3ff; background: rgba(0, 243, 255, 0.15); font-weight: bold; }
+        .mic-active { animation: pulse 1.5s infinite; color: #ff00ea; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        .shake { animation: shakeAnim 0.2s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shakeAnim { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } }
+        .snap-flash { animation: snapEffect 0.4s ease-out; }
+        @keyframes snapEffect { 50% { background: rgba(0, 243, 255, 0.2); } }
+        
+        /* Mobile-Specific Scrollbars */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+        
+        .rank-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(0, 243, 255, 0.1); transition: all 0.3s; }
+        .music-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #888; transition: all 0.2s; }
+        .music-btn.active { border-color: #00f3ff; color: #00f3ff; background: rgba(0, 243, 255, 0.1); }
+    </style>
+</head>
+<body id="main-body" class="flex flex-col items-center justify-start p-2 sm:p-4 pb-10">
+
+    <div class="w-full max-w-7xl flex justify-between items-center mb-3">
+        <div class="text-[10px] font-bold text-cyan-700 tracking-tighter">KRITZAAR </div>
+        <button onclick="toggleSettings()" class="glass border border-white/10 px-4 py-2 rounded-full text-[10px] font-black hover:border-cyan-500 transition-all">⚙ AUDIO_SYSTEM</button>
+    </div>
+
+    <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-3 lg:gap-4">
+        
+        <div class="lg:col-span-1 flex flex-row lg:flex-col gap-3">
+            <div class="glass neon-border p-3 lg:p-4 rounded-2xl text-center relative overflow-hidden flex-1 lg:flex-none">
+                <p id="current-agent-tag" class="text-[8px] lg:text-[10px] text-cyan-500 font-bold mb-1 uppercase">STAND_BY(TIME LEFT)</p>
+                <div id="timer" class="text-4xl lg:text-7xl font-black neon-text leading-none">40</div>
+                <div id="flash-notice" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-all font-black text-xl lg:text-2xl"></div>
+            </div>
+            <div class="glass neon-border p-3 lg:p-4 rounded-2xl flex-1 overflow-y-auto max-h-[120px] lg:max-h-[450px]">
+                <p class="text-[8px] text-gray-500 font-bold mb-2 uppercase italic">NAME</p>
+                <div id="squad-matrix" class="space-y-1 lg:space-y-2"></div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3 lg:space-y-4">
+            <div id="main-display" class="glass neon-border p-4 lg:p-6 rounded-[1.5rem] text-center h-[180px] lg:h-[320px] flex flex-col justify-center relative">
+                <div id="category-box" class="text-[9px] lg:text-[11px] font-black tracking-[0.2em] lg:tracking-[0.4em] text-cyan-400/60 mb-2 lg:mb-6 uppercase">TO START GAME CHOOSE</div>
+                <div id="display-box" class="text-4xl lg:text-6xl font-black neon-text break-words uppercase tracking-tighter leading-tight">MODE</div>
+                <div id="mic-indicator" class="absolute bottom-2 right-3 text-[8px] font-bold hidden flex items-center gap-1 text-pink-500">
+                    <span class="mic-active text-md">●</span> VOICE_LIVE
+                </div>
+            </div>
+
+            <div class="glass neon-border p-4 lg:p-6 rounded-[1.5rem] bg-black/40">
+                <input type="text" id="game-input" placeholder="CHOOSE MODE..." disabled
+                       class="w-full bg-transparent border-b-2 border-cyan-900/50 p-2 lg:p-3 text-2xl lg:text-4xl outline-none uppercase text-center font-black text-cyan-400 focus:border-cyan-400">
+                
+                <div id="mode-selector" class="grid grid-cols-2 gap-2 lg:gap-3 mt-4 lg:mt-6">
+                    <button onclick="boot('SCRAMBLE')" class="bg-cyan-950/40 border border-cyan-500/50 text-cyan-400 py-3 lg:py-4 rounded-xl font-black uppercase text-xs">Scramble</button>
+                    <button onclick="boot('CHAIN')" class="bg-purple-950/40 border border-purple-500/50 text-purple-400 py-3 lg:py-4 rounded-xl font-black uppercase text-xs">Chain</button>
+                </div>
+
+                <div id="game-controls" class="hidden grid grid-cols-2 lg:grid-cols-4 gap-2 mt-4 lg:mt-6">
+                    <button onclick="submitAnswer()" class="bg-cyan-500 text-black font-black py-3 rounded uppercase text-[10px]">Verify</button>
+                    <button onclick="useHint()" id="hint-btn" class="bg-yellow-600/20 text-yellow-500 border border-yellow-500/40 font-black py-3 rounded uppercase text-[10px] opacity-30">Hint</button>
+                    <button onclick="skipTask()" class="bg-red-900/20 text-red-500 border border-red-500/30 font-black py-3 rounded uppercase text-[10px]">Skip</button>
+                    <button id="voice-toggle" onclick="toggleVoice()" class="bg-blue-500/20 text-blue-400 border border-blue-500/40 font-black py-3 rounded uppercase text-[10px]">Voice</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-1 glass neon-border p-3 lg:p-4 rounded-2xl h-[200px] lg:h-[520px] flex flex-col">
+            <p class="text-[9px] text-cyan-500 font-bold mb-1 uppercase"> Activity Log</p>
+            <div id="log-feed" class="text-[8px] lg:text-[9px] space-y-1 overflow-y-auto flex-1 font-mono text-gray-400"></div>
+        </div>
+    </div>
+
+    <div id="setup-overlay" class="fixed inset-0 z-50 glass flex items-center justify-center p-4">
+        <div class="max-w-md w-full glass neon-border p-6 lg:p-8 rounded-3xl text-center">
+            <h1 class="neon-text text-2xl lg:text-3xl mb-2">BLITZ__COMBAT</h1>
+            <p class="text-[8px] text-cyan-400 mb-6 uppercase tracking-widest">GUESS THE WORD AND SCRAMBLE</p>
+            <div id="mode-select" class="space-y-3">
+                <button onclick="setPlayerMode('SOLO')" class="w-full bg-cyan-900/30 border border-cyan-500/50 py-4 rounded-xl hover:bg-cyan-500 transition font-bold uppercase">Solo PLAY</button>
+                <button onclick="showSquadSetup()" class="w-full bg-purple-900/30 border border-purple-500/50 py-4 rounded-xl hover:bg-purple-500 transition font-bold uppercase">PLAY WITH FRIENDS</button>
+            </div>
+            <div id="squad-setup" class="hidden space-y-4">
+                <input type="text" id="name-input" placeholder="ADD NAME" class="w-full bg-transparent border-b border-cyan-500 p-2 outline-none uppercase font-bold text-cyan-400 text-center">
+                <div class="flex gap-2">
+                    <button onclick="addAgent()" class="flex-1 bg-cyan-500 text-black py-2 rounded font-black uppercase text-xs">ADD MORE NAME</button>
+                    <button onclick="setPlayerMode('SQUAD')" class="flex-1 bg-green-600 text-white py-2 rounded font-black uppercase text-xs">Start</button>
+                </div>
+                <div id="agent-list-preview" class="text-left text-[10px] space-y-1 italic text-cyan-400 mt-4 max-h-24 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-overlay" class="fixed inset-0 z-[100] glass hidden flex items-center justify-center p-4">
+        <div class="max-w-sm w-full glass neon-border p-6 rounded-3xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="neon-text text-lg italic">NEURAL_AUDIO</h2>
+                <button onclick="toggleSettings()" class="text-gray-500">✕</button>
+            </div>
+            <div class="space-y-2">
+                <button onclick="playTrack(0, this)" class="music-btn w-full p-4 rounded-lg text-left text-xs uppercase font-bold">01. Deep Space Drift</button>
+                <button onclick="playTrack(1, this)" class="music-btn w-full p-4 rounded-lg text-left text-xs uppercase font-bold">02. Midnight Rain</button>
+                <button onclick="playTrack(2, this)" class="music-btn w-full p-4 rounded-lg text-left text-xs uppercase font-bold">03. Cyber-Zen</button>
+                <button onclick="playTrack(-1, this)" class="w-full mt-4 p-4 rounded-lg text-xs uppercase font-bold bg-red-950/20 text-red-500 border border-red-900/50">Mute Audio</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loss-overlay" class="fixed inset-0 z-[60] glass hidden flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-black/95 border-2 border-red-500/50 p-8 rounded-3xl text-center">
+            <h2 class="text-red-500 font-black text-xl mb-2 uppercase">Connection Lost</h2>
+            <div class="mb-6">
+                <div id="reveal-word" class="text-white text-4xl font-black uppercase">???</div>
+            </div>
+            <button onclick="acknowledgeLoss()" class="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase">Continue</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-overlay" class="fixed inset-0 z-[70] glass hidden flex items-center justify-center p-4">
+        <div class="max-w-2xl w-full glass neon-border p-6 rounded-3xl text-center">
+            <h1 class="neon-text text-3xl mb-2">MISSION_DEBRIEF</h1>
+            <div class="mb-6 p-4 bg-cyan-500/10 rounded-2xl">
+                <h2 id="winner-name" class="text-4xl font-black neon-text uppercase tracking-tighter">---</h2>
+            </div>
+            <div id="ranking-list" class="space-y-2 mb-6 max-h-[250px] overflow-y-auto px-1"></div>
+            <button onclick="location.reload()" class="w-full bg-cyan-500 text-black py-4 rounded-xl font-black uppercase">Restart System</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CORE DATA & LOGIC (UNTOUCHED) ---
+        const DATA_VAULT = {
+            "SPORTS": ["ABA GURESI", "ABSEILING", "ACRO YOGA", "ACROSKI", "ACROBATIC GYMNASTICS", "ACROBATICS", "ADAPTED SPORTS", "ADVENTURE GOLF", "ADVENTURE RACING", "AERIALS", "AEROBATICS", "AEROBIC GYMNASTICS", "AEROMODELING", "AERONAUTICAL PENTATHLON", "AFL WHEELCHAIR", "AFLX", "AGGRESSIVE INLINE SKATING", "AGILITY DOG TRIALS", "AIKIDO", "AIKI-JŪJUTSU", "AIR BADMINTON", "AIR HOCKEY", "AIR RACING", "AIR PISTOL SHOOTING", "AIRSOFT", "AIROLO-CHASSO", "AKROTERI PUNCHING", "ALPINE CLIMBING", "ALPINE RUNNING", "ALPINE SKI MOUNTAINEERING", "ALPINE SKIING", "ALPINISM", "AMATEUR WRESTLING", "AMERICAN FLAG RUGBY", "AMERICAN FOOTBALL", "AMERICAN HANDBALL", "AMPUTEE FOOTBALL", "ANDARTZA", "ANGLING", "AQUABIKE", "AQUAJOGGING", "AQUATHLON", "ARCHERY", "ARENA FOOTBALL", "ARENA POLO", "ARENA RUGBY", "ARENA SOCCER", "ARM WRESTLING", "ARMORED COMBAT", "ARNIS", "ARTISTIC BILLIARDS", "ARTISTIC CYCLING", "ARTISTIC GYMNASTICS", "POOL", "ARTISTIC ROLLER SKATING", "ARTISTIC SWIMMING", "ASSOCIATION CROQUET", "ASSOCIATION FOOTBALL", "SOCCER", "ATHLETICS", "ATV RACING", "AUSTRALIAN FOOTBALL", "AUSTRALIAN HANDBALL", "AUTO POLO", "AUTO RACING", "AUTOCROSS", "AUTOGRASS", "AUTOSPEEDWAY", "AXE THROWING", "BACKSTROKE", "BADMINTON", "BAGATELLE", "BALANCE BEAM", "BALKLINE", "BALLOONING", "BANDY", "BANGER RACING", "BANZAI SKYDIVING", "BAREFOOT SKIING", "BARREL RACING", "BASEBALL", "SOFTBALL", "BRÄNNBOLL", "ROUNDERS", "BASE JUMPING", "BASKETBALL", "BASQUE PELOTA", "BATON TWIRLING", "BEACH BASKETBALL", "BEACH CRICKET", "BEACH FLAGS", "BEACH GOLF", "BEACH HANDBALL", "BEACH NETBALL", "BEACH POLO", "BEACH RUGBY", "BEACH SOCCER", "BEACH TENNIS", "BEACH ULTIMATE", "BEACH VOLLEYBALL", "BEACH WRESTLING", "BENCHPRESS", "BIATHLE", "BIATHLON", "BICYCLE POLO", "BMX", "BILLIARDS", "BOATING", "BOBSLEIGH", "BOCCE", "BOCCIA", "BOULES", "BODYBOARDING", "BODYBUILDING", "BOSSABALL", "BOULDERING", "BOWLING", "BOWLS", "BOXING", "BOX LACROSSE", "BRAZILIAN JIU-JITSU", "BRIDGE", "BROOMBALL", "BULL RIDING", "BULLFIGHTING", "BUNGEE JUMPING", "BUTTERFLY STROKE", "BUZKASHI", "BA GAME", "BANDO", "CABER TOSS", "CAGE FIGHTING", "MMA", "CAID", "CALCIO FIORENTINO", "CALISTHENICS", "CAMEL RACING", "CAMMAG", "CAMOGIE", "CAMPDRAFTING", "CANADIAN FOOTBALL", "CANDLEPIN BOWLING", "CANOEING", "CANOE POLO", "CAPOEIRA", "CAROM BILLIARDS", "CHARRERÍA", "CHEERLEADING", "CHESS", "CHINLONE", "CHOVGAN", "CLIMBING", "CRICKET", "CROQUET", "CROSSFIT", "CROSSMINTON", "CURLING", "CYCLE BALL", "CYCLING", "CUJU", "DANCESPORT", "DARTS", "DECATHLON", "DISC GOLF", "DIVING", "DODGEBALL", "DRAGON BOAT RACING", "EQUESTRIAN", "DRESSAGE", "JUMPING", "EVENTING", "EXTREME SPORTS", "FENCING", "FIELD HOCKEY", "FIGURE SKATING", "FISHING", "FISTBALL", "FLOORBALL", "FORMULA 1", "FUTSAL", "GAELIC FOOTBALL", "GLIDING", "GOLF", "GYMNASTICS", "GOALBALL", "HANDBALL", "HANG GLIDING", "HORSE RACING", "HORSEBALL", "HURLING", "ICE HOCKEY", "ICE SKATING", "INLINE SKATING", "INLINE HOCKEY", "JAI ALAI", "JUDO", "JIU-JITSU", "KABADDI", "KARATE", "KENDO", "KICKBOXING", "KHO-KHO", "KORFBALL", "LACROSSE", "LAWN TENNIS", "LUGE", "MARATHON", "RUNNING", "MARTIAL ARTS", "MODERN PENTATHLON", "MOTOCROSS", "MOTORCYCLE RACING", "MOUNTAIN BIKING", "MOUNTAIN CLIMBING", "MUAY THAI", "NETBALL", "NORDIC SKIING", "ORIENTEERING", "PAINTBALL", "PARKOUR", "FREERUNNING", "PELOTA", "PICKLEBALL", "POLO", "POWERLIFTING", "QUIDDITCH", "RACQUETBALL", "RODEO", "ROWING", "RUGBY", "SAILING", "YACHTING", "SEPAK TAKRAW", "SHOOTING", "SKATEBOARDING", "SKI JUMPING", "SNOOKER", "SNOWBOARDING", "SOFTBALL", "SQUASH", "SUMO", "SURFING", "SWIMMING", "SYNCHRONIZED SWIMMING", "TABLE TENNIS", "TAEKWONDO", "TENNIS", "TRIATHLON", "ULTIMATE", "FRISBEE", "UNDERWATER HOCKEY", "UNDERWATER RUGBY", "VOLLEYBALL", "WATER POLO", "WEIGHTLIFTING", "WRESTLING", "WUSHU", "ANEJODI", "ANGLEBALL", "AQUAKART", "AUTOBALL", "BETE-OMBRO", "BIRIBOL", "BUBBLE FOOTBALL", "CAMEL POLO", "CHAZA", "CHESS-BOXING", "CIRCLE RULES FOOTBALL", "CORNISH HURLING", "CYCLEBALL", "ELEPHANT POLO", "FOOTVOLLEY", "HARDCOURT BIKE POLO", "HOOVERBALL", "JORKYBALL", "KI-O-RAHI", "KILIKITI", "KIN-BALL", "MARN GROOK", "MOTOBALL", "PATO", "PETECA", "RINGBALL", "ROSSALL HOCKEY", "SEGWAY POLO", "SLAMBALL", "SPEEDBALL", "TCHOUKBALL", "TEQBALL", "THROWBALL", "UNICYCLE HOCKEY", "UNICYCLE POLO", "VIGORO", "YUBI LAKPI"],
+            "COUNTRIES": ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "ANTIGUA AND BARBUDA", "ARGENTINA", "ARMENIA", "AUSTRALIA", "AUSTRIA", "AZERBAIJAN", "BAHAMAS", "BAHRAIN", "BANGLADESH", "BARBADOS", "BELARUS", "BELGIUM", "BELIZE", "BENIN", "BHUTAN", "BOLIVIA", "BOSNIA AND HERZEGOVINA", "BOTSWANA", "BRAZIL", "BRUNEI", "BULGARIA", "BURKINA FASO", "BURUNDI", "CABO VERDE", "CAPE VERDE", "CAMBODIA", "CAMEROON", "CANADA", "CENTRAL AFRICAN REPUBLIC", "CHAD", "CHILE", "CHINA", "COLOMBIA", "COMOROS", "CONGO", "COSTA RICA", "CROATIA", "CUBA", "CYPRUS", "CZECHIA", "CZECH REPUBLIC", "DENMARK", "DJIBOUTI", "DOMINICA", "DOMINICAN REPUBLIC", "ECUADOR", "EGYPT", "EL SALVADOR", "EQUATORIAL GUINEA", "ERITREA", "ESTONIA", "ESWATINI", "SWAZILAND", "ETHIOPIA", "FIJI", "FINLAND", "FRANCE", "GABON", "GAMBIA", "GEORGIA", "GERMANY", "GHANA", "GREECE", "GRENADA", "GUATEMALA", "GUINEA", "GUINEA-BISSAU", "GUYANA", "HAITI", "HONDURAS", "HUNGARY", "ICELAND", "INDIA", "INDONESIA", "IRAN", "IRAQ", "IRELAND", "ISRAEL", "ITALY", "JAMAICA", "JAPAN", "JORDAN", "KAZAKHSTAN", "KENYA", "KIRIBATI", "KOSOVO", "KUWAIT", "KYRGYZSTAN", "LAOS", "LATVIA", "LEBANON", "LESOTHO", "LIBERIA", "LIBYA", "LIECHTENSTEIN", "LITHUANIA", "LUXEMBOURG", "MADAGASCAR", "MALAWI", "MALAYSIA", "MALDIVES", "MALI", "MALTA", "MARSHALL ISLANDS", "MAURITANIA", "MAURITIUS", "MEXICO", "MICRONESIA", "MOLDOVA", "MONACO", "MONGOLIA", "MONTENEGRO", "MOROCCO", "MOZAMBIQUE", "NAMIBIA", "NAURU", "NEPAL", "NETHERLANDS", "NEW ZEALAND", "NICARAGUA", "NIGER", "NIGERIA", "NORTH KOREA", "NORTH MACEDONIA", "NORWAY", "OMAN", "PAKISTAN", "PALAU", "PALESTINE", "PANAMA", "PAPUA NEW GUINEA", "PARAGUAY", "PERU", "PHILIPPINES", "POLAND", "PORTUGAL", "QATAR", "ROMANIA", "RUSSIA", "RWANDA", "SAINT KITTS AND NEVIS", "SAINT LUCIA", "SAINT VINCENT", "SAMOA", "SAN MARINO", "SAO TOME AND PRINCIPE", "SAUDI ARABIA", "SENEGAL", "SERBIA", "SEYCHELLES", "SIERRA LEONE", "SINGAPORE", "SLOVAKIA", "SLOVENIA", "SOLOMON ISLANDS", "SOMALIA", "SOUTH AFRICA", "SOUTH KOREA", "SOUTH SUDAN", "SPAIN", "SRI LANKA", "SUDAN", "SURINAME", "SWEDEN", "SWITZERLAND", "SYRIA", "TAIWAN", "TAJIKISTAN", "TANZANIA", "THAILAND", "TIMOR-LESTE", "TOGO", "TONGA", "TRINIDAD AND TOBAGO", "TUNISIA", "TÜRKIYE", "TURKEY", "TURKMENISTAN", "TUVALU", "UGANDA", "UKRAINE", "UNITED ARAB EMIRATES", "UNITED KINGDOM", "USA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VATICAN CITY", "VENEZUELA", "VIETNAM", "YEMEN", "ZAMBIA", "ZIMBABWE"],
+            "CITIES": ["ABU DHABI", "ACCRA", "ADDIS ABABA", "AHMEDABAD", "ALEXANDRIA", "ALGIERS", "AMMAN", "AMSTERDAM", "ANKARA", "ANTWERP", "ATHENS", "ATLANTA", "AUCKLAND", "BAGHDAD", "BAKU", "BALTIMORE", "BANGKOK", "BARCELONA", "BEIJING", "BEIRUT", "BELFAST", "BELGRADE", "BERLIN", "BERN", "BILBAO", "BIRMINGHAM", "BOGOTÁ", "BOSTON", "BRASILIA", "BRATISLAVA", "BRISBANE", "BRUSSELS", "BUCHAREST", "BUDAPEST", "BUENOS AIRES", "BUSAN", "CAIRO", "CALGARY", "CANBERRA", "CAPE TOWN", "CARACAS", "CASABLANCA", "CHENNAI", "CHICAGO", "CHONGQING", "COLOMBO", "COPENHAGEN", "DAKAR", "DALLAS", "DAMASCUS", "DELHI", "DENVER", "DHAKA", "DOHA", "DUBAI", "DUBLIN", "DURBAN", "DÜSSELDORF", "EDINBURGH", "EDMONTON", "EINDHOVEN", "FLORENCE", "FRANKFURT", "GENEVA", "GLASGOW", "GUANGZHOU", "GUATEMALA CITY", "HAMBURG", "HANOI", "HARARE", "HAVANA", "HELSINKI", "HO CHI MINH CITY", "HONG KONG", "HOUSTON", "HYDERABAD", "IBADAN", "ISLAMABAD", "ISTANBUL", "JAKARTA", "JEDDAH", "JERUSALEM", "JOHANNESBURG", "KABUL", "KAMPALA", "KARACHI", "KATHMANDU", "KHARTOUM", "KIEV", "KYIV", "KINSHASA", "KOLKATA", "KUALA LUMPUR", "KUWAIT CITY", "LAGOS", "LAHORE", "LAS VEGAS", "LIMA", "LISBON", "LIVERPOOL", "LONDON", "LOS ANGELES", "LUANDA", "LYON", "MADRID", "MANCHESTER", "MANILA", "MARSEILLE", "MELBOURNE", "MEXICO CITY", "MIAMI", "MILAN", "MONTREAL", "MOSCOW", "MUMBAI", "MUNICH", "NAIROBI", "NEW DELHI", "NEW YORK", "OSAKA", "OSLO", "PARIS", "PERTH", "PHILADELPHIA", "PHNOM PENH", "PRAGUE", "QUITO", "RABAT", "RIO DE JANEIRO", "RIYADH", "ROME", "ROTTERDAM", "SAN FRANCISCO", "SANTIAGO", "SÃO PAULO", "SEATTLE", "SEOUL", "SHANGHAI", "SINGAPORE", "ST. PETERSBURG", "STOCKHOLM", "SYDNEY", "TAIPEI", "TASHKENT", "TEHRAN", "TOKYO", "TORONTO", "TUNIS", "VANCOUVER", "VIENNA", "VIENTIANE", "WARSAW", "WASHINGTON D.C.", "WELLINGTON", "YANGON", "YOKOHAMA", "ZAGREB", "ZURICH"],
+            "INDIAN_STATES": ["ANDHRA PRADESH", "ARUNACHAL PRADESH", "ASSAM", "BIHAR", "CHHATTISGARH", "GOA", "GUJARAT", "HARYANA", "HIMACHAL PRADESH", "JHARKHAND", "KARNATAKA", "KERALA", "MADHYA PRADESH", "MAHARASHTRA", "MANIPUR", "MEGHALAYA", "MIZORAM", "NAGALAND", "ODISHA", "PUNJAB", "RAJASTHAN", "SIKKIM", "TAMIL NADU", "TELANGANA", "TRIPURA", "UTTAR PRADESH", "UTTARAKHAND", "WEST BENGAL", "ANDAMAN AND NICOBAR", "CHANDIGARH", "DADRA AND NAGAR HAVELI", "DAMAN AND DIU", "DELHI", "JAMMU AND KASHMIR", "LADAKH", "LAKSHADWEEP", "PUDUCHERRY"],
+            "CAR_BRANDS": ["ABARTH", "ACURA", "AIWAYS", "AIXAM", "ALFA ROMEO", "ALPINA", "ALPINE", "AMC", "APOLLO", "ARASH", "ASTON MARTIN", "AUDI", "AUTOBIANCHI", "BENTLEY", "BMW", "BUGATTI", "BUICK", "BYD", "CADILLAC", "CATERHAM", "CHEVROLET", "CHRYSLER", "CITROËN", "CORVETTE", "CUPRA", "DACIA", "DAIHATSU", "DODGE", "DS", "EXAGON", "EAGLE", "FERRARI", "FIAT", "FORD", "GENESIS", "GMC", "GREAT WALL MOTORS", "HONDA", "HUMMER", "HYUNDAI", "INFINITI", "ISUZU", "JAGUAR", "JEEP", "JMC", "KIA", "KOENIGSEGG", "LAMBORGHINI", "LAND ROVER", "LEXUS", "LOTUS", "LUCID", "LYNK & CO", "MAHINDRA", "MASERATI", "MAZDA", "MCLAREN", "MERCEDES-BENZ", "MG", "MINI", "MITSUBISHI", "NISSAN", "OPEL", "PAGANI", "PEUGEOT", "PORSCHE", "RAM", "RENAULT", "RIVIAN", "ROLLS-ROYCE", "ROVER", "SAAB", "SEAT", "SKODA", "SMART", "SUBARU", "SUZUKI", "TATA", "TESLA", "TOYOTA", "VOLKSWAGEN", "VOLVO", "RIMAC", "POLESTAR", "VINFAST"],
+            "TECH_COMPANIES": ["ADOBE", "AKAMAI", "ALIBABA", "AMD", "AMAZON", "APPLE", "ASML", "BROADCOM", "BYTEDANCE", "CISCO", "CLOUDFLARE", "DELL", "DROPBOX", "FOXCONN", "GOOGLE", "ALPHABET", "HP", "HUAWEI", "IBM", "INTEL", "META", "FACEBOOK", "MICROSOFT", "MICRON", "NETFLIX", "NVIDIA", "ORACLE", "QUALCOMM", "SALESFORCE", "SAMSUNG", "SAP", "TSMC", "TENCENT", "UBER", "ACCENTURE", "AUTODESK", "BAIDU", "PALANTIR", "SERVICENOW", "ZOOM"],
+            "CURRENCIES": ["AFGHANI", "DINAR", "KWANZA", "PESO", "DRAM", "FLORIN", "DOLLAR", "MANAT", "TAKA", "RUBLE", "NGULTRUM", "BOLIVIANO", "REAL", "POUND STERLING", "LEV", "FRANC", "RIEL", "ESCUDO", "YUAN", "COLÓN", "KUNA", "KORUNA", "KRONE", "BIRR", "EURO", "DALASI", "LARI", "CEDI", "QUETZAL", "GOURDE", "LEMPIRA", "FORINT", "KRÓNA", "RUPEE", "RUPIAH", "RIAL", "SHEKEL", "YEN", "TENGE", "SHILLING", "SOM", "KIP", "LOTI", "PATACA", "DENAR", "ARIARY", "KWACHA", "RINGGIT", "RUFIYAA", "OUGUIYA", "LEU", "TUGRIK", "DIRHAM", "METICAL", "KYAT", "GUARANI", "SOL", "ZŁOTY", "RIYAL", "TALA", "LEONE", "RAND", "WON", "KRONA", "BAHT", "LIRA", "HRYVNIA", "BOLÍVAR", "DONG", "VATU"],
+            "SOCIAL_MEDIA": ["BEREAL", "BLUESKY", "DISCORD", "FACEBOOK", "FLICKR", "INSTAGRAM", "LINKEDIN", "MESSENGER", "PINTEREST", "REDDIT", "SNAPCHAT", "TELEGRAM", "THREADS", "TIKTOK", "TUMBLR", "TWITCH", "TWITTER", "X", "WECHAT", "WHATSAPP", "YOUTUBE", "MASTODON", "CLUBHOUSE"],
+            "PROGRAMMING": ["ADA", "ALGOL", "APL", "ASSEMBLY", "BASIC", "C", "C#", "C++", "COBOL", "CSS", "DART", "ELIXIR", "ERLANG", "FORTRAN", "GO", "GOLANG", "GROOVY", "HASKELL", "HTML", "JAVA", "JAVASCRIPT", "JULIA", "KOTLIN", "LISP", "LUA", "MATLAB", "NIM", "OBJECTIVE-C", "OCAML", "PERL", "PHP", "PYTHON", "PROLOG", "R", "RUBY", "RUST", "SCALA", "SHELL", "SQL", "SWIFT", "TYPESCRIPT", "VISUAL BASIC", "SOLIDITY", "WEBASSEMBLY"],
+            "VIDEO_GAMES": ["ALAN WAKE", "AMONG US", "ANIMAL CROSSING", "ANGRY BIRDS", "ANNO", "APEX LEGENDS", "ARK", "ASSASSIN'S CREED", "ASTRO BOT", "BALDUR'S GATE", "BANJO-KAZOOIE", "BATMAN ARKHAM", "BATTLEFIELD", "BAYONETTA", "BEAT SABER", "BIOSHOCK", "BLACK MYTH WUKONG", "BLOODBORNE", "BORDERLANDS", "BRAID", "CALL OF DUTY", "CANDY CRUSH", "CELESTE", "CHESS", "CIVILIZATION", "COUNTER-STRIKE", "CRASH BANDICOOT", "CYBERPUNK 2077", "DARK SOULS", "DAYS GONE", "DEAD BY DAYLIGHT", "DEATH STRANDING", "DIABLO", "DISCO ELYSIUM", "DONKEY KONG", "DOOM", "DRAGON AGE", "DRAGON QUEST", "DOTA 2", "ELDEN RING", "ELDER SCROLLS", "SKYRIM", "EURO TRUCK", "FALL GUYS", "FALLOUT", "FIFA", "FINAL FANTASY", "FORTNITE", "FORZA HORIZON", "GENSHIN IMPACT", "GOD OF WAR", "GTA V", "GRAN TURISMO", "HADES", "HALF-LIFE", "HALO", "HOLLOW KNIGHT", "HORIZON", "INSIDE", "IT TAKES TWO", "JOURNEY", "KINGDOM HEARTS", "KIRBY", "LEAGUE OF LEGENDS", "LEFT 4 DEAD", "LEGEND OF ZELDA", "LIMBO", "MARIO KART", "MARIO PARTY", "MASS EFFECT", "MEGA MAN", "METAL GEAR SOLID", "METROID PRIME", "MINECRAFT", "MONSTER HUNTER", "MORTAL KOMBAT", "NBA 2K", "NIER AUTOMATA", "OVERWATCH", "PAC-MAN", "PERSONA", "POKÉMON", "PORTAL", "PUBG", "QUAKE", "RAINBOW SIX", "RED DEAD REDEMPTION", "RESIDENT EVIL", "ROBLOX", "ROCKET LEAGUE", "SEKIRO", "SILENT HILL", "SIMS", "SONIC", "SPLATOON", "STARDEW VALLEY", "STREET FIGHTER", "SUBNAUTICA", "SUPER MARIO", "TETRIS", "LAST OF US", "WITCHER", "TOMB RAIDER", "UNCHARTED", "UNDERTALE", "VALHEIM", "VALORANT", "WARFRAME", "WII SPORTS", "WORLD OF WARCRAFT", "YAKUZA"],
+            "ANIMALS": ["AARDVARK", "ALBATROSS", "ALLIGATOR", "ALPACA", "ANACONDA", "ANTEATER", "ANTELOPE", "ARCTIC FOX", "ARMADILLO", "AXOLOTL", "BABOON", "BADGER", "BALD EAGLE", "BARRACUDA", "BAT", "BEAR", "BEAVER", "BEE", "BISON", "BOA CONSTRICTOR", "BUFFALO", "BUTTERFLY", "CAMEL", "CANARY", "CAPUCHIN MONKEY", "CARACAL", "CAT", "CATERPILLAR", "CHAMELEON", "CHEETAH", "CHICKEN", "CHIMPANZEE", "COBRA", "COW", "COYOTE", "CRAB", "CROCODILE", "DEER", "DOLPHIN", "DONKEY", "DRAGONFLY", "DUCK", "EAGLE", "EARTHWORM", "ECHIDNA", "ELEPHANT", "ELK", "EMU", "FALCON", "FERRET", "FINCH", "FLAMINGO", "FOX", "FROG", "GAZELLE", "GECKO", "GERBIL", "GIANT PANDA", "GIRAFFE", "GOAT", "GOOSE", "GORILLA", "GRASSHOPPER", "GRIZZLY BEAR", "GUINEA PIG", "HAMSTER", "HARE", "HAWK", "HEDGEHOG", "HERON", "HIPPOPOTAMUS", "HORSE", "HUMMINGBIRD", "HYENA", "IBIS", "IGUANA", "IMPALA", "JACKAL", "JAGUAR", "JELLYFISH", "KANGAROO", "KINGFISHER", "KOALA", "KOMODO DRAGON", "KUDU", "LEMUR", "LEOPARD", "LION", "LIZARD", "LLAMA", "LOBSTER", "LYNX", "MACAW", "MAGPIE", "MANATEE", "MEERKAT", "MOLE", "MONKEY", "MOOSE", "MOSQUITO", "MOTH", "MOUSE", "NARWHAL", "NEWT", "NIGHTINGALE", "OCTOPUS", "OKAPI", "OPOSSUM", "ORANGUTAN", "OSTRICH", "OTTER", "OWL", "OX", "PANDA", "PANTHER", "PARROT", "PEACOCK", "PELICAN", "PENGUIN", "PIG", "PIGEON", "PLATYPUS", "POLAR BEAR", "PORCUPINE", "PUMA", "QUAIL", "QUOKKA", "QUOLL", "RABBIT", "RACCOON", "RATTLESNAKE", "REINDEER", "RHINOCEROS", "ROBIN", "SALAMANDER", "SALMON", "SCORPION", "SEAHORSE", "SEAL", "SHARK", "SHEEP", "SLOTH", "SNAKE", "SPARROW", "SPIDER", "SQUID", "SQUIRREL", "STARFISH", "STINGRAY", "TARANTULA", "TASMANIAN DEVIL", "TIGER", "TOAD", "TORTOISE", "TOUCAN", "TURKEY", "TURTLE", "UAKARI", "URCHIN", "VULTURE", "WALRUS", "WARTHOG", "WASP", "WHALE", "WOLF", "WOLVERINE", "WOMBAT", "XERUS", "YAK", "ZEBRA", "ZORILLA"],
+            "PRODUCE": ["APPLE", "APRICOT", "ARTICHOKE", "ARUGULA", "ASPARAGUS", "AVOCADO", "BANANA", "BEETROOT", "BLACKBERRY", "BLUEBERRY", "BOK CHOY", "BROCCOLI", "BRUSSELS SPROUTS", "CABBAGE", "CANTALOUPE", "CARROT", "CAULIFLOWER", "CELERY", "CHERRY", "CHILLI", "COCONUT", "CORN", "CUCUMBER", "DATE", "DRAGON FRUIT", "EGGPLANT", "ENDIVE", "FIG", "GARLIC", "GINGER", "GRAPE", "GRAPEFRUIT", "GUAVA", "HONEYDEW MELON", "JACKFRUIT", "KIWI", "KALE", "LEMON", "LETTUCE", "LIME", "LYCHEE", "MANGO", "MELON", "MUSHROOM", "MUSTARD GREENS", "NECTARINE", "OKRA", "OLIVE", "ONION", "ORANGE", "PAPAYA", "PASSION FRUIT", "PEACH", "PEAR", "PEAS", "PINEAPPLE", "PLUM", "POMEGRANATE", "POTATO", "PUMPKIN", "RADISH", "RASPBERRY", "RHUBARB", "SPINACH", "STRAWBERRY", "SWEET POTATO", "TOMATO", "WATERMELON"],
+            "ELEMENTS": ["ACTINIUM", "ALUMINIUM", "ALUMINUM", "AMERICIUM", "ANTIMONY", "ARGON", "ARSENIC", "ASTATINE", "BARIUM", "BERKELIUM", "BERYLLIUM", "BISMUTH", "BOHRIUM", "BORON", "BROMINE", "CADMIUM", "CAESIUM", "CALCIUM", "CALIFORNIUM", "CARBON", "CERIUM", "CHLORINE", "CHROMIUM", "COBALT", "COPERNICIUM", "COPPER", "CURIUM", "DARMSTADTIUM", "DUBNIUM", "DYSPROSIUM", "EINSTEINIUM", "ERBIUM", "EUROPIUM", "FERMIUM", "FLEROVIUM", "FLUORINE", "FRANCIUM", "GADOLINIUM", "GALLIUM", "GERMANIUM", "GOLD", "HAFNIUM", "HASSIUM", "HELIUM", "HOLMIUM", "HYDROGEN", "INDIUM", "IODINE", "IRIDIUM", "IRON", "KRYPTON", "LANTHANUM", "LAWRENCIUM", "LEAD", "LITHIUM", "LIVERMORIUM", "LUTETIUM", "MAGNESIUM", "MANGANESE", "MEITNERIUM", "MENDELEVIUM", "MERCURY", "MOLYBDENUM", "MOSCOVIUM", "NEODYMIUM", "NEON", "NEPTUNIUM", "NICKEL", "NIHONIUM", "NIOBIUM", "NITROGEN", "NOBELIUM", "OGANESSON", "OSMIUM", "OXYGEN", "PALLADIUM", "PHOSPHORUS", "PLATINUM", "PLUTONIUM", "POLONIUM", "POTASSIUM", "PRASEODYMIUM", "PROMETHIUM", "PROTACTINIUM", "RADIUM", "RADON", "RHENIUM", "RHODIUM", "ROENTGENIUM", "RUBIDIUM", "RUTHENIUM", "RUTHERFORDIUM", "SAMARIUM", "SCANDIUM", "SEABORGIUM", "SELENIUM", "SILICON", "SILVER", "SODIUM", "STRONTIUM", "SULFUR", "TANTALUM", "TECHNETIUM", "TELLURIUM", "TENNESSINE", "TERBIUM", "THALLIUM", "THORIUM", "THULIUM", "TIN", "TITANIUM", "TUNGSTEN", "URANIUM", "VANADIUM", "XENON", "YTTERBIUM", "YTTRIUM", "ZINC", "ZIRCONIUM"],
+            "BODY_PARTS": ["ABDOMEN", "ANKLE", "APPENDIX", "ARTERY", "BLADDER", "BLOOD", "BONE", "BRAIN", "BREAST", "BUTTOCKS", "CALVES", "CARTILAGE", "CHEEK", "CHEST", "CHIN", "CLAVICLE", "COCCYX", "COLON", "DIAPHRAGM", "ELBOW", "ESOPHAGUS", "EYELID", "FEMUR", "FINGER", "FOREARM", "FOREHEAD", "GALLBLADDER", "GUMS", "HEART", "HEEL", "INTESTINE", "IRIS", "KIDNEY", "KNUCKLE", "LIVER", "LUNG", "MUSCLE", "NAVEL", "NERVE", "OVARY", "PANCREAS", "PATELLA", "PELVIS", "PHARYNX", "PROSTATE", "RECTUM", "SCAPULA", "SKELETON", "SKULL", "STOMACH", "THIGH", "THORAX", "THROAT", "THUMB", "THYROID", "TONGUE", "TONSIL", "TRACHEA", "UTERUS", "VEIN", "VAGINA", "WRIST"],
+            "ASTRONOMY": ["EARTH", "JUPITER", "MARS", "MERCURY", "NEPTUNE", "SATURN", "URANUS", "VENUS", "CERES", "ERIS", "HAUMEA", "MAKEMAKE", "PLUTO", "CHARON", "EUROPA", "GANYMEDE", "TITAN", "TRITON", "BETELGEUSE", "POLARIS", "RIGEL", "SIRIUS", "SUN", "VEGA", "ANDROMEDA", "MILKY WAY", "ASTEROID", "BLACK HOLE", "COMET", "NEBULA", "PULSAR", "QUASAR"],
+            "KITCHEN": ["AIR FRYER", "APPLE CORER", "APRON", "AVOCADO SLICER", "BAKING SHEET", "BLENDER", "BOTTLE OPENER", "BOWL", "BREAD BIN", "BUTTER DISH", "CAN OPENER", "CASSEROLE", "CLEAVER", "COFFEE MAKER", "COLANDER", "COOKIE CUTTER", "CORKSCREW", "CROCKPOT", "CUP", "DEEP FRYER", "DUTCH OVEN", "EGG SLICER", "KETTLE", "ESPRESSO", "FORK", "FOOD PROCESSOR", "FRYING PAN", "GARLIC PRESS", "GRATER", "GRIDDLE", "HAND MIXER", "ICE CREAM SCOOP", "INSTANT POT", "JUICER", "KNIFE", "LADLE", "LUNCH BOX", "MICROWAVE", "MIXER", "MORTAR AND PESTLE", "MUG", "NAPKIN", "NUTCRACKER", "OVEN", "OVEN MITTS", "PAN", "PASTA MAKER", "PEELER", "PEPPER GRINDER", "PIZZA CUTTER", "PLATE", "PRESSURE COOKER", "RICE COOKER", "ROLLING PIN", "SAUCEPAN", "SAUCER", "SIEVE", "SINK", "SLOW COOKER", "SPATULA", "SPICE RACK", "SPOON", "STEAMER", "STOCKPOT", "STRAINER", "THERMOS", "TOASTER", "TONGS", "TRAY", "TRIVET", "TUMBLER", "WHISK", "WOK", "ZESTER", "CHOPSTICKS", "DISHWASHER", "REFRIGERATOR"]
+        };
+
+        let state = {
+            gameActive: false, mode: "", players: [], currentPlayerIndex: 0,
+            currentAnswer: "", timer: null, voiceEnabled: false, musicEnabled: false,
+            hintIndex: 0, taskStartTime: 0, sessionVault: new Set()
+        };
+
+        function getSimilarity(s1, s2) {
+            let longer = s1.length > s2.length ? s1 : s2, shorter = s1.length > s2.length ? s2 : s1;
+            if (longer.length === 0) return 1.0;
+            const editDist = (a, b) => {
+                let dp = Array.from({length: a.length+1}, (_,i) => [i]);
+                for(let j=1; j<=b.length; j++) dp[0][j] = j;
+                for(let i=1; i<=a.length; i++)
+                    for(let j=1; j<=b.length; j++)
+                        dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : Math.min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]) + 1;
+                return dp[a.length][b.length];
+            };
+            return (longer.length - editDist(longer, shorter)) / parseFloat(longer.length);
+        }
+
+        function enhancedAutoCorrect(val, targetPool) {
+            let bestMatch = null; let highestSim = 0;
+            const input = val.toUpperCase();
+            for(let word of targetPool) {
+                if (state.sessionVault.has(word)) continue;
+                let sim = getSimilarity(input, word);
+                if(sim > highestSim && sim >= 0.70) { highestSim = sim; bestMatch = word; }
+            }
+            if(bestMatch && bestMatch !== input) {
+                document.getElementById('game-input').classList.add('snap-flash');
+                setTimeout(() => document.getElementById('game-input').classList.remove('snap-flash'), 400);
+                return bestMatch;
+            }
+            return input;
+        }
+
+        function setPlayerMode(type) {
+            if(type === 'SOLO') state.players = [{ name: "AGENT_ALPHA", score: 0, time: 40, active: true }];
+            document.getElementById('setup-overlay').style.display = 'none';
+            updateScoreMatrix();
+        }
+
+        function addAgent() {
+            const name = document.getElementById('name-input').value.trim().toUpperCase();
+            if(name) {
+                state.players.push({ name: name, score: 0, time: 40, active: true });
+                document.getElementById('agent-list-preview').innerHTML += `<div>> ${name} LINKED</div>`;
+                document.getElementById('name-input').value = "";
+            }
+        }
+
+        function boot(mode) {
+            state.gameActive = true; state.mode = mode;
+            document.getElementById('mode-selector').classList.add('hidden');
+            document.getElementById('game-controls').classList.remove('hidden');
+            nextTurn();
+            state.timer = setInterval(() => {
+                if(!document.getElementById('loss-overlay').classList.contains('hidden')) return;
+                if(!state.gameActive) return;
+                let p = state.players[state.currentPlayerIndex];
+                p.time--;
+                document.getElementById('timer').innerText = p.time;
+                const elapsed = Math.floor((Date.now() - state.taskStartTime) / 1000);
+                const hb = document.getElementById('hint-btn');
+                if(elapsed >= 10) hb.style.opacity = "1"; else hb.style.opacity = "0.3";
+                if(p.time <= 0) eliminate();
+                updateScoreMatrix();
+            }, 1000);
+        }
+
+        function nextTask() {
+            const cats = Object.keys(DATA_VAULT);
+            const cat = cats[Math.floor(Math.random() * cats.length)];
+            const pool = DATA_VAULT[cat].filter(w => !state.sessionVault.has(w));
+            if (!pool.length) { state.sessionVault.clear(); nextTask(); return; }
+            state.cat = cat; state.currentAnswer = pool[Math.floor(Math.random() * pool.length)];
+            state.hintIndex = 0; state.taskStartTime = Date.now();
+            document.getElementById('category-box').innerText = `DOMAIN: ${cat}`;
+            if(state.mode === 'SCRAMBLE') {
+                document.getElementById('display-box').innerText = state.currentAnswer.split('').sort(() => Math.random() - 0.5).join('');
+            } else {
+                document.getElementById('display-box').innerText = state.currentAnswer[0] + " _ _ _";
+            }
+            const inp = document.getElementById('game-input');
+            inp.disabled = false; inp.value = ""; inp.focus();
+        }
+
+        function submitAnswer() {
+            let val = document.getElementById('game-input').value.trim().toUpperCase();
+            if(!val || !state.gameActive) return;
+            if (state.sessionVault.has(val)) { 
+                triggerEffect('shake'); logEntry("WARN", "REPETITION"); 
+                triggerFlash("ALREADY USED", "text-yellow-500"); return; 
+            }
+            let pool = (state.mode === 'SCRAMBLE') ? [state.currentAnswer] : DATA_VAULT[state.cat];
+            if(state.mode === 'CHAIN') pool = pool.filter(w => w[0] === val[0]);
+            const corrected = enhancedAutoCorrect(val, pool);
+            if(corrected !== val) { val = corrected; document.getElementById('game-input').value = val; }
+            let p = state.players[state.currentPlayerIndex];
+            let isCorrect = (state.mode === 'SCRAMBLE') ? (val === state.currentAnswer) : (val[0] === state.currentAnswer[0] && DATA_VAULT[state.cat].includes(val));
+            if(isCorrect) {
+                state.sessionVault.add(val); p.score++; p.time = 40;
+                logEntry("COMPLETED", val); triggerFlash("CORRECT", "text-green-500"); rotate();
+            } else { triggerEffect('shake'); logEntry("ERR", "SYNC_FAIL"); }
+        }
+
+        function useHint() {
+           if(Math.floor((Date.now() - state.taskStartTime) / 1000) < 10) return;
+            state.hintIndex++;
+            state.players[state.currentPlayerIndex].time -= 5;
+            let revealed = state.currentAnswer.substring(0, state.hintIndex);
+            if(state.mode === 'SCRAMBLE') {
+                let remainingLetters = state.currentAnswer.substring(state.hintIndex).split('');
+                let scrambledRemaining = remainingLetters.sort(() => Math.random() - 0.5).join('');
+                document.getElementById('display-box').innerHTML = `<span class="text-yellow-400">${revealed}</span>${scrambledRemaining}`;
+            } else {
+                document.getElementById('display-box').innerText = revealed + "...";
+            }
+        }
+
+        function rotate() {
+            let activePlayers = state.players.filter(p => p.active);
+            if(activePlayers.length === 0) return;
+            do { state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length; 
+            } while (!state.players[state.currentPlayerIndex].active);
+            nextTurn();
+        }
+
+        function nextTurn() {
+            let p = state.players[state.currentPlayerIndex];
+            document.getElementById('current-agent-tag').innerText = `ACTIVE: ${p.name}`;
+            nextTask();
+        }
+
+        function eliminate() {
+            state.players[state.currentPlayerIndex].active = false;
+            document.getElementById('reveal-word').innerText = state.currentAnswer;
+            document.getElementById('loss-overlay').classList.remove('hidden');
+        }
+
+        function acknowledgeLoss() {
+            document.getElementById('loss-overlay').classList.add('hidden');
+            const alive = state.players.filter(p => p.active);
+            if(alive.length === 0) showLeaderboard(); else rotate();
+        }
+
+        function showLeaderboard() {
+            state.gameActive = false; clearInterval(state.timer);
+            const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+            document.getElementById('winner-name').innerText = sortedPlayers[0].name;
+            document.getElementById('ranking-list').innerHTML = sortedPlayers.map((p, i) => `
+                <div class="rank-card p-3 rounded-xl flex justify-between items-center text-[10px]">
+                    <div>#${i + 1} <span class="font-bold uppercase ml-2">${p.name}</span></div>
+                    <span class="neon-text font-black">${p.score} PT</span>
+                </div>`).join('');
+            document.getElementById('leaderboard-overlay').classList.remove('hidden');
+        }
+
+        function triggerEffect(e) { document.getElementById('main-body').classList.add(e); setTimeout(() => document.getElementById('main-body').classList.remove(e), 200); }
+
+        function logEntry(type, msg) {
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-cyan-500">[${type}]</span> <span>${msg}</span>`;
+            document.getElementById('log-feed').prepend(div);
+        }
+
+        function triggerFlash(txt, cls) {
+            const el = document.getElementById('flash-notice');
+            el.innerText = txt; el.className = `absolute inset-0 flex items-center justify-center pointer-events-none font-black text-2xl transition-all ${cls}`;
+            el.style.opacity = "1"; setTimeout(() => el.style.opacity = "0", 800);
+        }
+
+        function skipTask() {
+            let p = state.players[state.currentPlayerIndex];
+            if(p.score >= 2) { p.score -= 2; rotate(); }
+        }
+
+        function updateScoreMatrix() {
+            document.getElementById('squad-matrix').innerHTML = state.players.map((p, i) => `
+                <div class="p-2 border-b border-white/5 flex justify-between items-center text-[9px] lg:text-[11px] ${i === state.currentPlayerIndex && p.active ? 'player-active-row' : ''} ${!p.active ? 'opacity-20 line-through' : ''}">
+                    <span>${p.name}</span><span class="neon-text font-black">${p.score} PT</span>
+                </div>`).join('');
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.onresult = (e) => {
+                const trans = e.results[e.results.length - 1][0].transcript.trim().toUpperCase();
+                document.getElementById('game-input').value = trans.split(' ').pop();
+                submitAnswer();
+            };
+        }
+
+        function toggleVoice() {
+            state.voiceEnabled = !state.voiceEnabled;
+            document.getElementById('mic-indicator').classList.toggle('hidden');
+            if(state.voiceEnabled) try { recognition.start(); } catch(e) {} else recognition.stop();
+        }
+
+        function showSquadSetup() {
+            document.getElementById('mode-select').classList.add('hidden');
+            document.getElementById('squad-setup').classList.remove('hidden');
+        }
+
+        function toggleSettings() {
+            document.getElementById('settings-overlay').classList.toggle('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => { if(e.key === 'Enter') submitAnswer(); });
+
+        /* --- NEURAL AUDIO ENGINE --- */
+        const audioTracks = [
+            "https://pixabay.com/music/video-games-fun-indie-game-type-jazz-music-483446/",
+            "https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a73abc.mp3",
+            "https://cdn.pixabay.com/audio/2022/01/21/audio_31743c589f.mp3"
+        ];
+        let currentAudio = new Audio();
+        currentAudio.loop = true;
+
+        function playTrack(index, btn) {
+            document.querySelectorAll('.music-btn').forEach(b => b.classList.remove('active'));
+            if (index === -1) { currentAudio.pause(); return; }
+            if(btn) btn.classList.add('active');
+            currentAudio.src = audioTracks[index];
+            currentAudio.play().catch(e => console.log("Interaction needed"));
+            logEntry("AUDIO", `STREAMING TRACK 0${index+1}`);
+        }
+    </script>
+</body>
+</html>
