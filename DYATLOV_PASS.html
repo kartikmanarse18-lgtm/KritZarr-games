@@ -1,0 +1,1624 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DYATLOV PASS — CLASSIFIED INVESTIGATION FILE</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Special+Elite&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#06080d;
+  --bg2:#0a0e17;
+  --panel:rgba(8,12,22,0.90);
+  --text:#c8d4e2;
+  --muted:#7a8899;
+  --accent:#7bb3ff;
+  --cold:#b2d4ff;
+  --red:#c0392b;
+  --stamp:#8b1a1a;
+  --gold:#c9a84c;
+  --paper:#1a1610;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IM Fell English',serif;
+  overflow-x:hidden;
+  line-height:1.9;
+}
+
+/* NOISE TEXTURE OVERLAY */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+  opacity:0.5;
+}
+
+/* ══════════════ HERO ══════════════ */
+.hero{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 40px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;
+  inset:0;
+  background:url('https://upload.wikimedia.org/wikipedia/commons/7/70/Ural_mountains_winter.jpg') center/cover no-repeat;
+  filter:brightness(0.12) grayscale(80%);
+  z-index:0;
+}
+.hero-vignette{
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0) 20%, rgba(6,8,13,0.95) 100%);
+  z-index:1;
+}
+.hero-content{
+  max-width:1050px;
+  position:relative;
+  z-index:2;
+}
+.hero-stamp{
+  display:inline-block;
+  border:2px solid var(--red);
+  color:var(--red);
+  font-family:'Special Elite',monospace;
+  font-size:0.75rem;
+  letter-spacing:0.4em;
+  padding:6px 20px;
+  margin-bottom:28px;
+  opacity:0.85;
+  transform:rotate(-1.5deg);
+}
+.hero h1{
+  font-family:'Cinzel',serif;
+  font-size:clamp(3.2rem,9vw,7.5rem);
+  letter-spacing:0.08em;
+  color:white;
+  font-weight:900;
+  text-shadow:0 0 60px rgba(140,190,255,0.15), 0 4px 30px rgba(0,0,0,0.8);
+  margin-bottom:16px;
+  line-height:1.05;
+}
+.hero-sub{
+  font-family:'Special Elite',monospace;
+  color:var(--cold);
+  letter-spacing:0.45em;
+  font-size:0.85rem;
+  text-transform:uppercase;
+  margin-bottom:40px;
+}
+.hero-intro{
+  font-size:1.25rem;
+  max-width:820px;
+  margin:0 auto 50px;
+  color:#ccd6e4;
+  font-style:italic;
+  line-height:2;
+}
+.hero-photo{
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+  display:block;
+  border-radius:4px;
+  filter:grayscale(100%) contrast(1.1) brightness(0.75);
+  border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 0 60px rgba(0,0,0,0.9), 0 0 0 1px rgba(180,210,255,0.05);
+}
+.photo-caption{
+  font-family:'Special Elite',monospace;
+  font-size:0.72rem;
+  color:var(--muted);
+  letter-spacing:0.2em;
+  text-align:center;
+  margin-top:12px;
+  text-transform:uppercase;
+}
+.scroll-down{
+  margin-top:50px;
+  font-family:'Special Elite',monospace;
+  font-size:0.7rem;
+  letter-spacing:0.4em;
+  color:var(--muted);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:0.4}50%{opacity:1}}
+
+/* ══════════════ CASE FILE HEADER ══════════════ */
+.case-file-bar{
+  background:var(--paper);
+  border-top:3px solid var(--red);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:22px 40px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+  position:sticky;
+  top:0;
+  z-index:100;
+  backdrop-filter:blur(20px);
+}
+.case-file-bar .cf-field{
+  font-family:'Special Elite',monospace;
+  font-size:0.7rem;
+  letter-spacing:0.25em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.case-file-bar .cf-field strong{
+  color:var(--cold);
+  display:block;
+  font-size:0.85rem;
+}
+.case-file-bar .cf-stamp{
+  font-family:'Special Elite',monospace;
+  color:var(--red);
+  border:2px solid var(--red);
+  padding:4px 14px;
+  font-size:0.8rem;
+  letter-spacing:0.3em;
+  transform:rotate(2deg);
+}
+
+/* ══════════════ SECTION LAYOUT ══════════════ */
+.section{
+  max-width:1140px;
+  margin:0 auto;
+  padding:90px 30px;
+}
+.section-narrow{max-width:860px;margin:0 auto;padding:80px 30px}
+.divider{
+  width:100%;
+  height:1px;
+  background:linear-gradient(to right, transparent, rgba(120,170,255,0.25), transparent);
+}
+.divider-red{
+  width:100%;
+  height:1px;
+  background:linear-gradient(to right, transparent, rgba(180,50,50,0.4), transparent);
+}
+
+/* CHAPTER LABELS */
+.chapter-label{
+  display:inline-flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:18px;
+}
+.chapter-line{
+  width:40px;
+  height:1px;
+  background:var(--accent);
+}
+.chapter-text{
+  font-family:'Special Elite',monospace;
+  color:var(--accent);
+  letter-spacing:0.35em;
+  text-transform:uppercase;
+  font-size:0.72rem;
+}
+.section-h{
+  font-family:'Cinzel',serif;
+  font-size:clamp(1.9rem,4.5vw,3.2rem);
+  margin-bottom:36px;
+  color:white;
+  font-weight:700;
+  line-height:1.2;
+}
+
+/* ══════════════ PANELS ══════════════ */
+.panel{
+  background:var(--panel);
+  border:1px solid rgba(255,255,255,0.055);
+  border-left:3px solid var(--accent);
+  padding:36px 40px;
+  border-radius:3px;
+  margin-bottom:26px;
+  position:relative;
+}
+.panel p{
+  font-size:1.09rem;
+  margin-bottom:22px;
+  color:#c5d2e0;
+}
+.panel p:last-child{margin-bottom:0}
+.panel-red{border-left-color:var(--red)}
+.panel-gold{border-left-color:var(--gold)}
+
+/* CLASSIFIED STAMP ON PANELS */
+.panel-stamp{
+  position:absolute;
+  top:20px;
+  right:24px;
+  font-family:'Special Elite',monospace;
+  font-size:0.62rem;
+  color:rgba(192,57,43,0.45);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  border:1px solid rgba(192,57,43,0.3);
+  padding:3px 10px;
+  transform:rotate(3deg);
+}
+
+/* ══════════════ EVIDENCE PANELS ══════════════ */
+.evidence-tag{
+  display:inline-block;
+  background:rgba(192,57,43,0.15);
+  border:1px solid rgba(192,57,43,0.5);
+  color:#e07070;
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.3em;
+  padding:4px 12px;
+  margin-bottom:18px;
+  text-transform:uppercase;
+}
+.evidence-box{
+  background:rgba(6,9,15,0.95);
+  border:1px solid rgba(255,255,255,0.07);
+  border-top:2px solid var(--red);
+  padding:28px 34px;
+  border-radius:3px;
+  margin-bottom:24px;
+  position:relative;
+}
+.evidence-id{
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  margin-bottom:14px;
+  text-transform:uppercase;
+}
+.evidence-box p{
+  font-size:1.06rem;
+  color:var(--text);
+  margin-bottom:16px;
+}
+.evidence-box p:last-child{margin-bottom:0}
+
+/* ══════════════ GALLERY / IMAGES ══════════════ */
+.img-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;
+  margin:36px 0;
+}
+.img-card{
+  position:relative;
+  overflow:hidden;
+  border-radius:3px;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.img-card img{
+  width:100%;
+  height:260px;
+  object-fit:cover;
+  display:block;
+  filter:grayscale(100%) contrast(1.12) brightness(0.65);
+  transition:0.6s ease;
+}
+.img-card:hover img{
+  filter:grayscale(60%) contrast(1.05) brightness(0.8);
+  transform:scale(1.04);
+}
+.img-overlay{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:16px 18px;
+  background:linear-gradient(transparent, rgba(0,0,0,0.92));
+  font-family:'Special Elite',monospace;
+  font-size:0.68rem;
+  color:#9ab0c8;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+}
+.img-full{
+  width:100%;
+  height:420px;
+  object-fit:cover;
+  object-position:center 30%;
+  border-radius:3px;
+  filter:grayscale(100%) brightness(0.65) contrast(1.1);
+  border:1px solid rgba(255,255,255,0.06);
+  display:block;
+  margin:30px 0;
+  transition:0.5s;
+}
+.img-full:hover{filter:grayscale(40%) brightness(0.75)}
+
+/* ══════════════ VICTIM DOSSIERS ══════════════ */
+.dossier-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:20px;
+  margin:40px 0;
+}
+.dossier-card{
+  background:rgba(8,12,20,0.95);
+  border:1px solid rgba(255,255,255,0.07);
+  border-top:2px solid rgba(120,170,255,0.4);
+  border-radius:3px;
+  overflow:hidden;
+  transition:0.4s ease;
+  position:relative;
+}
+.dossier-card:hover{
+  transform:translateY(-5px);
+  border-top-color:var(--accent);
+  box-shadow:0 20px 50px rgba(0,0,0,0.6);
+}
+.dossier-photo{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  object-position:center top;
+  filter:grayscale(100%) brightness(0.7) sepia(20%);
+  display:block;
+}
+.dossier-photo-placeholder{
+  width:100%;
+  height:180px;
+  background:linear-gradient(160deg, #0d1520, #070c14);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Cinzel',serif;
+  font-size:2.5rem;
+  color:rgba(120,160,220,0.25);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+/* Photo adjustments */
+.dossier-photo-placeholder img {
+    width: 100%;
+    height: 100%;
+    /* CHANGED FROM COVER TO CONTAIN: This forces the entire photo to fit 
+       without zooming, stretching, or cutting anyone out */
+    object-fit: contain; 
+    object-position: center;
+}
+.dossier-body{padding:18px 20px}
+.dossier-name{
+  font-family:'Cinzel',serif;
+  font-size:1rem;
+  color:white;
+  margin-bottom:4px;
+}
+.dossier-role{
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  color:var(--accent);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.dossier-meta{
+  font-family:'Special Elite',monospace;
+  font-size:0.67rem;
+  color:var(--muted);
+  letter-spacing:0.15em;
+  line-height:1.9;
+}
+.dossier-deceased{
+  position:absolute;
+  top:12px;
+  right:12px;
+  background:rgba(192,57,43,0.2);
+  border:1px solid rgba(192,57,43,0.5);
+  color:#e07070;
+  font-family:'Special Elite',monospace;
+  font-size:0.58rem;
+  letter-spacing:0.3em;
+  padding:3px 8px;
+  text-transform:uppercase;
+}
+
+/* ══════════════ TIMELINE ══════════════ */
+.timeline{
+  position:relative;
+  padding-left:40px;
+  margin:40px 0;
+}
+.timeline::before{
+  content:'';
+  position:absolute;
+  left:12px;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:linear-gradient(to bottom, transparent, rgba(120,170,255,0.5) 10%, rgba(120,170,255,0.5) 90%, transparent);
+}
+.tl-item{
+  position:relative;
+  margin-bottom:36px;
+}
+.tl-item::before{
+  content:'';
+  position:absolute;
+  left:-32px;
+  top:6px;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 12px rgba(120,170,255,0.5);
+}
+.tl-date{
+  font-family:'Special Elite',monospace;
+  font-size:0.7rem;
+  color:var(--accent);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.tl-title{
+  font-family:'Cinzel',serif;
+  font-size:1.1rem;
+  color:white;
+  margin-bottom:10px;
+}
+.tl-text{
+  font-size:1.02rem;
+  color:var(--text);
+  line-height:1.8;
+}
+
+/* ══════════════ VIDEO EMBED ══════════════ */
+.video-wrapper{
+  position:relative;
+  margin:40px 0;
+  border-radius:4px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.08);
+  box-shadow:0 0 60px rgba(0,0,0,0.8);
+}
+.video-label{
+  background:var(--paper);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+  padding:12px 22px;
+  font-family:'Special Elite',monospace;
+  font-size:0.68rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.video-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--red);
+  box-shadow:0 0 8px var(--red);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.video-wrapper iframe{
+  width:100%;
+  aspect-ratio:16/9;
+  display:block;
+  border:none;
+  filter:grayscale(30%) contrast(1.05);
+}
+
+/* ══════════════ THEORIES ══════════════ */
+.theory-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:24px;
+  margin-top:40px;
+}
+.theory-card{
+  background:rgba(8,12,20,0.92);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:3px;
+  padding:30px 28px;
+  position:relative;
+  transition:0.4s;
+}
+.theory-card:hover{
+  border-color:rgba(120,170,255,0.3);
+  transform:translateY(-4px);
+  box-shadow:0 15px 40px rgba(0,0,0,0.5);
+}
+.theory-num{
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  margin-bottom:10px;
+}
+.theory-title{
+  font-family:'Cinzel',serif;
+  font-size:1.15rem;
+  color:white;
+  margin-bottom:14px;
+}
+.theory-text{
+  font-size:0.98rem;
+  color:var(--text);
+  line-height:1.85;
+  margin-bottom:16px;
+}
+.theory-verdict{
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  padding:5px 12px;
+  border-radius:2px;
+  display:inline-block;
+}
+.verdict-possible{background:rgba(120,170,255,0.1);color:#7bb3ff;border:1px solid rgba(120,170,255,0.3)}
+.verdict-likely{background:rgba(80,160,80,0.1);color:#7bc97b;border:1px solid rgba(80,160,80,0.3)}
+.verdict-unlikely{background:rgba(180,100,50,0.1);color:#c98060;border:1px solid rgba(180,100,50,0.3)}
+.verdict-classified{background:rgba(192,57,43,0.1);color:#e07070;border:1px solid rgba(192,57,43,0.4)}
+
+/* ══════════════ KEY QUOTE ══════════════ */
+.key-quote{
+  text-align:center;
+  padding:60px 40px;
+  position:relative;
+}
+.key-quote::before{
+  content:'\201C';
+  position:absolute;
+  top:-10px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:'Cinzel',serif;
+  font-size:8rem;
+  color:rgba(120,170,255,0.06);
+  line-height:1;
+}
+.key-quote p{
+  font-family:'Cinzel',serif;
+  font-size:clamp(1.3rem,3vw,2rem);
+  color:white;
+  font-weight:400;
+  max-width:800px;
+  margin:0 auto 20px;
+  line-height:1.5;
+  font-style:italic;
+}
+.key-quote cite{
+  font-family:'Special Elite',monospace;
+  font-size:0.72rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+}
+
+/* ══════════════ INJURY TABLE ══════════════ */
+.injury-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:30px 0;
+  font-size:0.96rem;
+}
+.injury-table th{
+  font-family:'Special Elite',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.25em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:12px 18px;
+  text-align:left;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  background:rgba(8,12,20,0.6);
+}
+.injury-table td{
+  padding:14px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  color:var(--text);
+  vertical-align:top;
+}
+.injury-table tr:hover td{background:rgba(255,255,255,0.02)}
+.injury-severe{color:#e07070}
+.injury-unknown{color:var(--muted);font-style:italic}
+
+/* ══════════════ FINALE ══════════════ */
+.finale{
+  text-align:center;
+  padding:160px 40px;
+  position:relative;
+  overflow:hidden;
+}
+.finale-bg{
+  position:absolute;
+  inset:0;
+  background:url('https://upload.wikimedia.org/wikipedia/commons/8/8a/Dyatlov_pass_2013.jpg') center/cover no-repeat;
+  filter:grayscale(100%) brightness(0.08);
+  z-index:0;
+}
+.finale-content{position:relative;z-index:1}
+.finale h2{
+  font-family:'Cinzel',serif;
+  font-size:clamp(2rem,6vw,4.5rem);
+  color:white;
+  margin-bottom:30px;
+  font-weight:700;
+}
+.finale-text{
+  max-width:780px;
+  margin:0 auto;
+  font-size:1.2rem;
+  color:#b8c8d8;
+  line-height:2;
+  font-style:italic;
+}
+.finale-verdict{
+  display:inline-block;
+  margin-top:60px;
+  font-family:'Special Elite',monospace;
+  border:2px solid var(--red);
+  color:var(--red);
+  padding:14px 36px;
+  font-size:1rem;
+  letter-spacing:0.4em;
+  text-transform:uppercase;
+  transform:rotate(-0.5deg);
+}
+
+/* ══════════════ SCROLL ANIMATIONS ══════════════ */
+.reveal{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible{
+  opacity:1;
+  transform:translateY(0);
+}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.22s}
+.reveal-delay-3{transition-delay:0.34s}
+.reveal-delay-4{transition-delay:0.46s}
+
+/* ══════════════ AMBIENT CONTROLS ══════════════ */
+.controls{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:rgba(4,8,16,0.95);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:6px;
+  padding:14px 18px;
+  z-index:1000;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  backdrop-filter:blur(14px);
+  min-width:190px;
+}
+.ctrl-label{
+  font-family:'Special Elite',monospace;
+  font-size:0.6rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  margin-bottom:2px;
+}
+.ctrl-btn{
+  background:rgba(120,170,255,0.12);
+  color:var(--cold);
+  border:1px solid rgba(120,170,255,0.25);
+  border-radius:4px;
+  padding:8px 14px;
+  font-family:'Special Elite',monospace;
+  font-size:0.75rem;
+  letter-spacing:0.15em;
+  cursor:pointer;
+  transition:0.2s;
+  text-align:left;
+}
+.ctrl-btn:hover{background:rgba(120,170,255,0.22);border-color:rgba(120,170,255,0.5)}
+.ctrl-btn.active{background:rgba(192,57,43,0.2);color:#e07070;border-color:rgba(192,57,43,0.4)}
+.volume-row{display:flex;align-items:center;gap:10px}
+.volume-row input[type=range]{
+  flex:1;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+
+/* ══════════════ REDACTED TEXT ══════════════ */
+.redacted{
+  background:#000;
+  color:transparent;
+  border-radius:2px;
+  user-select:none;
+  padding:0 4px;
+  cursor:not-allowed;
+  transition:0.3s;
+}
+.redacted:hover{background:#111;color:#333}
+
+/* ══════════════ HIGHLIGHT BOX ══════════════ */
+.highlight-box{
+  background:linear-gradient(135deg, rgba(120,170,255,0.05), rgba(120,170,255,0.02));
+  border:1px solid rgba(120,170,255,0.15);
+  border-radius:3px;
+  padding:28px 32px;
+  margin:28px 0;
+  text-align:center;
+}
+.highlight-box .hl-text{
+  font-family:'Cinzel',serif;
+  font-size:1.5rem;
+  color:white;
+  line-height:1.5;
+}
+.highlight-box .hl-sub{
+  font-family:'Special Elite',monospace;
+  font-size:0.7rem;
+  color:var(--muted);
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  margin-top:12px;
+}
+
+/* ══════════════ SCROLLBAR ══════════════ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(120,170,255,0.25);border-radius:3px}
+
+/* ══════════════ SELECTION ══════════════ */
+::selection{background:rgba(120,170,255,0.25);color:white}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     AMBIENT AUDIO
+═══════════════════════════════════════════ -->
+<audio id="bg-music" src="https://www.chosic.com/wp-content/uploads/2022/10/Ghost-Story(chosic.com).mp3" loop></audio>
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-vignette"></div>
+  <div class="hero-content">
+    <div class="hero-stamp">CASE FILE 59-UVD-OD-III · CLASSIFIED</div>
+    <h1>DYATLOV PASS</h1>
+    <div class="hero-sub">Kholat Syakhl · Northern Urals · February 1959</div>
+    <p class="hero-intro">
+      Nine experienced Soviet hikers entered the frozen wilderness of the northern Urals. 
+      They never returned. What investigators found shattered everything they understood about 
+      physics, fear, and the limits of human endurance.
+    </p>
+    <img
+      src="https://allthatsinteresting.com/thumb/630.501.https://allthatsinteresting.com/wordpress/wp-content/uploads/2020/04/dyatlov-hikers-with-other-group.jpg"
+      alt="The Dyatlov Group — Last known photograph, January 1959"
+      class="hero-photo"
+      loading="eager"
+    />
+    <div class="photo-caption">The Dyatlov Group — Last known photograph · January 1959 · Source: Ural State Technical University Archive</div>
+    <div class="scroll-down">↓ &nbsp; BEGIN INVESTIGATION &nbsp; ↓</div>
+  </div>
+</section>
+
+<!-- STICKY CASE FILE BAR -->
+<div class="case-file-bar">
+  <div class="cf-field">Case Number <strong>59-UVD-OD-III</strong></div>
+  <div class="cf-field">Status <strong>Officially Closed · 1959</strong></div>
+  <div class="cf-field">Reopened <strong>2019 · Russian Prosecutor General</strong></div>
+  <div class="cf-field">Deaths <strong>9 Confirmed</strong></div>
+  <div class="cf-stamp">CLASSIFIED</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ACT 0 — THE GROUP
+═══════════════════════════════════════════ -->
+<section class="section">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Personnel Files · The Nine</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Who Were They?</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <div class="panel-stamp">VERIFIED</div>
+    <p>
+      They were not amateurs. Every member of the Dyatlov Group held advanced ski-hiking certifications from the Ural Polytechnic Institute. 
+      Their planned route — a Category III difficulty expedition — was among the most demanding legally permitted for Soviet civilian groups at the time. 
+      The Soviet Sports Federation had approved the journey. Everything was in order.
+    </p>
+    <p>
+      Their leader, twenty-three-year-old Igor Dyatlov, was regarded as one of the finest young expedition leaders in the Urals. 
+      He had designed his own hiking equipment. He was meticulous, disciplined, and trusted by everyone who had trekked alongside him. 
+      Whatever happened on that mountain, it overwhelmed even him.
+    </p>
+  </div>
+
+  <!-- DOSSIER GRID -->
+  <div class="dossier-grid">
+    <div class="dossier-card reveal reveal-delay-1">
+      <div class="dossier-photo-placeholder"><img src="https://m.media-amazon.com/images/M/MV5BYjYzNjYwYWQtNzY5Yy00ZTJhLWExMjQtNTU1ZTQ4YWU0MDRhXkEyXkFqcGc@._V1_.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Igor Dyatlov</div>
+        <div class="dossier-role">Expedition Leader</div>
+        <div class="dossier-meta">Age: 23<br>Faculty: Radio Engineering<br>Experience: Category II+<br>Body found: Slope, Feb 26</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-2">
+      <div class="dossier-photo-placeholder"><img src ="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSzJ2-NApq3xDU3feipO7uhgdYsGFOEs8uZ-g&s"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Zinaida Kolmogorova</div>
+        <div class="dossier-role">Senior Hiker</div>
+        <div class="dossier-meta">Age: 22<br>Faculty: Radio Engineering<br>Experience: Category II<br>Body found: Slope, Mar 5</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-3">
+      <div class="dossier-photo-placeholder"><img src ="https://images.findagrave.com/photos/2013/178/113031919_137248538950.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Lyudmila Dubinina</div>
+        <div class="dossier-role">Hiker</div>
+        <div class="dossier-meta">Age: 20<br>Faculty: Engineering Economics<br>Critical injuries sustained<br>Body found: Ravine, May 4</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-4">
+      <div class="dossier-photo-placeholder"><img src ="https://dyatlovpass.com/resources/340/Dyatlov-pass-Rustem-Slobodin.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Rustem Slobodin</div>
+        <div class="dossier-role">Hiker</div>
+        <div class="dossier-meta">Age: 23<br>Faculty: Mechanical Engineering<br>Skull fracture noted<br>Body found: Slope, Mar 5</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-1">
+      <div class="dossier-photo-placeholder"><img src ="https://dyatlovpass.com/resources/340/gallery/Yuri-Doroshenko-06.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Yuri Doroshenko</div>
+        <div class="dossier-role">Hiker</div>
+        <div class="dossier-meta">Age: 21<br>Faculty: Radio Engineering<br>Burns on hands<br>Body found: Cedar tree</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-2">
+      <div class="dossier-photo-placeholder"><img src ="https://dyatlovpass.com/resources/340/Yuri-Krivonischenko.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Georgy Krivonischenko</div>
+        <div class="dossier-role">Hiker / Engineer</div>
+        <div class="dossier-meta">Age: 23<br>Nuclear plant worker<br>Radioactive contamination found<br>Body found: Cedar tree</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-3">
+      <div class="dossier-photo-placeholder"><img src ="https://dyatlovpass.com/resources/340/gallery/Nikolay-Thibeaux-Brignolle-04.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Alexander Tibo-Brignoles</div>
+        <div class="dossier-role">Hiker</div>
+        <div class="dossier-meta">Age: 23<br>Severe skull fractures<br>No external wounds<br>Body found: Ravine, May 4</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-4">
+      <div class="dossier-photo-placeholder"><img src ="https://dyatlovpass.com/resources/340/thumbs/Dyatlov-pass-unknown-camera-film5-13_1.jpg"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Nikolai Thibeaux-Brignolles</div>
+        <div class="dossier-role">Hiker</div>
+        <div class="dossier-meta">Age: 23<br>Faculty: Construction<br>Massive chest trauma<br>Body found: Ravine, May 4</div>
+      </div>
+    </div>
+    <div class="dossier-card reveal reveal-delay-1">
+      <div class="dossier-photo-placeholder"><img src ="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQhH1k4TiuyU1peDjcsAQLFbWnaoUUST1C-Zg&s"></div>
+      <div class="dossier-body">
+        <div class="dossier-deceased">DECEASED</div>
+        <div class="dossier-name">Alexander Zolotaryov</div>
+        <div class="dossier-role">Hiker / Instructor</div>
+        <div class="dossier-meta">Age: 37<br>Military veteran<br>Mystery identity suspected<br>Body found: Ravine, May 4</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     TIMELINE
+═══════════════════════════════════════════ -->
+<section class="section-narrow">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Chronological Record · January–May 1959</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">The Sequence of Events</h2>
+
+  <div class="timeline">
+    <div class="tl-item reveal">
+      <div class="tl-date">January 25, 1959</div>
+      <div class="tl-title">Departure from Sverdlovsk</div>
+      <div class="tl-text">The group departs by train from Sverdlovsk (now Yekaterinburg). Spirits are high. Their journals record laughter, songs, and plans for a celebratory dinner upon return.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">January 28, 1959</div>
+      <div class="tl-title">Arrival at Vizhai — The Last Town</div>
+      <div class="tl-text">They reach Vizhai, the northernmost settlement in the region. This is the last human contact the group will ever have. They resupply and set off into the wilderness the following morning.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">January 28, 1959</div>
+      <div class="tl-title">Yuri Yudin Falls Ill — Turns Back</div>
+      <div class="tl-text">One member, Yuri Yudin, develops severe joint pain and is forced to return to Vizhai. He will be the only survivor. He spends the rest of his life searching for answers about what happened to his friends.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">February 1, 1959</div>
+      <div class="tl-title">The Final Camp — Kholat Syakhl</div>
+      <div class="tl-text">The group reaches the eastern slope of Kholat Syakhl — "Mountain of the Dead" in the Mansi language. Against standard practice, they pitch their tent directly on the exposed slope instead of descending to the sheltered valley below. Their reason remains unknown.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">February 1–2, 1959 (Night)</div>
+      <div class="tl-title">The Incident</div>
+      <div class="tl-text">Something unknown occurs between approximately 9 PM and 2 AM. Nine trained survivors of harsh expeditions slash their own tent open from the inside and flee barefoot into minus-30°C darkness. None survive.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">February 12, 1959</div>
+      <div class="tl-title">Overdue — No Contact</div>
+      <div class="tl-text">The group was scheduled to telegraph Sverdlovsk upon reaching Otorten mountain. No signal arrives. Search operations begin February 20th.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">February 26, 1959</div>
+      <div class="tl-title">The Tent Discovered</div>
+      <div class="tl-text">Rescuers find the tent half-buried. Slashed open from the inside. All personal belongings — boots, food, coats — still inside. Nine sets of footprints lead downhill into the darkness. None lead back.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">Feb 26 – May 4, 1959</div>
+      <div class="tl-title">Bodies Recovered</div>
+      <div class="tl-text">Five bodies found near the cedar tree and on the slope in February and March. Four more discovered buried beneath four meters of snow in a ravine in May — these four bearing injuries that investigators struggled to explain.</div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-date">May 28, 1959</div>
+      <div class="tl-title">Case Closed — Soviet Government</div>
+      <div class="tl-text">The Soviet investigation concludes. The cause of death is officially recorded as an <em>"unknown compelling force."</em> The files are sealed and classified for three decades. The mountain is closed to hikers for three years.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT I — THE JOURNEY
+═══════════════════════════════════════════ -->
+<section class="section">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act I · The Expedition</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Into the Silence</h2>
+
+  <div class="img-grid reveal reveal-delay-2">
+    <div class="img-card">
+      <img src="https://allthatsinteresting.com/wordpress/wp-content/uploads/2020/04/photos-of-the-dyatlov-pass-incident.jpg" alt="Dyatlov group hiking" loading="lazy"/>
+      <div class="img-overlay">Expedition in progress · Jan 1959</div>
+    </div>
+    <div class="img-card">
+      <img src="https://res.cloudinary.com/aenetworks/image/upload/c_fill,w_1200,h_630,g_auto/dpr_auto/f_auto/q_auto:eco/v1/Dyatlov_Pass-tent" alt="Northern Urals winter landscape" loading="lazy"/>
+      <div class="img-overlay">Northern Urals · Kholat Syakhl Region</div>
+    </div>
+    <div class="img-card">
+      <img src="https://dyatlovpass.com/resources/340/gallery/Dyatlov-pass-monument-Mihaylovskoe-cemetery-02.jpg" alt="Dyatlov Pass memorial" loading="lazy"/>
+      <div class="img-overlay">Dyatlov Pass Memorial · Established 1963</div>
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="panel-stamp">EXPEDITION LOG</div>
+    <p>
+      January 1959. The Soviet Union was locked in the Cold War. Behind iron curtains and propaganda, 
+      young men and women built their lives around science, sport, and the wilderness. 
+      For engineering students at the Ural Polytechnic Institute, winter expeditions were a rite of passage — a test of training, discipline, and brotherhood.
+    </p>
+    <p>
+      The Dyatlov expedition was not reckless. It was meticulously planned. 
+      The route to Mount Otorten had been mapped. Backup food caches were established. 
+      A return date was agreed. The university's sports committee had reviewed and approved every detail.
+    </p>
+    <p>
+      What nobody could plan for was what awaited them on the slope of a mountain whose very name, 
+      in the language of the indigenous Mansi people, translates as <strong>The Mountain of the Dead.</strong>
+    </p>
+  </div>
+
+  <div class="evidence-box reveal">
+    <div class="evidence-id">EXHIBIT A-1 · FINAL DIARY ENTRY · KOLMOGOROVA, Z. · FEB 1, 1959</div>
+    <p>
+      <em>"Now we know how to do a Mansi dance. UPI forever! In two days we will be at the mountain."</em>
+    </p>
+    <p>
+      Investigators note this was written on the same day the group made camp on Kholat Syakhl. 
+      Their tone in all recovered journals was cheerful, confident, and relaxed — showing 
+      no awareness of any danger up to the final recorded entries.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     DOCUMENTARY EMBED
+═══════════════════════════════════════════ -->
+<section class="section">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Archive · Documentary Record</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Recovered Documentary Evidence</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <p>
+      The following documentary footage was compiled from open-source archival material, 
+      survivor testimonies, and investigative reconstructions. 
+      It represents the most comprehensive publicly available record of the Dyatlov Pass incident.
+    </p>
+  </div>
+
+  <div class="video-wrapper reveal">
+    <div class="video-label">
+      <div class="video-dot"></div>
+      ARCHIVAL DOCUMENTARY FOOTAGE · DYATLOV PASS INCIDENT · ENGLISH SUBTITLES AVAILABLE
+    </div>
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/jMVFKfPM_xU?rel=0&modestbranding=1&color=white"
+      title="Dyatlov Pass Incident — Documentary"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>
+  </div>
+  <div class="photo-caption" style="margin-top:10px">Documentary material · Public domain archival footage · Source: Open-source investigation records</div>
+
+  <!-- Second embed - Russian investigation footage -->
+  <div class="video-wrapper reveal" style="margin-top:40px">
+    <div class="video-label">
+      <div class="video-dot"></div>
+      EXPEDITION RECONSTRUCTION · URAL MOUNTAINS · WINTER CONDITIONS
+    </div>
+    <iframe
+      src="https://www.youtube-nocookie.com/embed/Y2EsraMk-Gk?rel=0&modestbranding=1&color=white"
+      title="Dyatlov Pass — Investigation Reconstruction"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>
+  </div>
+  <div class="photo-caption" style="margin-top:10px">Investigation reconstruction · Bedtime Stories — The Dyatlov Pass Incident</div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT II — THE MOUNTAIN
+═══════════════════════════════════════════ -->
+<section class="section-narrow">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act II · The Mountain</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Kholat Syakhl — Mountain of the Dead</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <div class="panel-stamp">LOCATION FILE</div>
+    <p>
+      The Mansi — the indigenous people of the northern Urals — had long avoided this mountain. 
+      They named it <em>Kholat Syakhl</em>, a phrase that translates, depending on dialect, as either 
+      "The Mountain of the Dead" or "Dead Mountain." Local oral traditions held that nine Mansi hunters 
+      had once perished on its slopes under unexplained circumstances — a detail investigators discovered 
+      only after the fact.
+    </p>
+    <p>
+      On February 1st, 1959, as a vicious Arctic storm descended over the Ural range, 
+      the Dyatlov group made a decision that still puzzles survival experts. 
+      Instead of descending 1.5 kilometers to the forested valley below — where trees would provide 
+      wind shelter and firewood — they pitched their tent directly on the exposed slope, 
+      at 1,079 meters elevation, fully exposed to the blizzard.
+    </p>
+    <p>
+      Their journals offer no explanation for this choice. 
+      It may have been fatigue. It may have been confidence. 
+      Or something may have already been happening that prevented a descent.
+    </p>
+  </div>
+
+  <img
+    src="https://dyatlovpass.com/resources/340/gallery/Dyatlov-pass-expedition-2022-469.jpg"
+    alt="Kholat Syakhl — Dyatlov Pass Today"
+    class="img-full reveal"
+    loading="lazy"
+  />
+  <div class="photo-caption">Kholat Syakhl (Dyatlov Pass) · Northern Urals · Photographed 2013 · Source: Wikimedia Commons</div>
+
+  <div class="highlight-box reveal" style="margin-top:30px">
+    <div class="hl-text">Temperature on the night of February 1–2: −30°C to −45°C</div>
+    <div class="hl-sub">Wind speed: Estimated 15–25 m/s · Visibility: Near zero · Conditions: Lethal without shelter</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT III — THE ESCAPE
+═══════════════════════════════════════════ -->
+<section class="section-narrow">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act III · The Tent</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Cut From the Inside</h2>
+
+  <div class="evidence-box reveal reveal-delay-2">
+    <div class="evidence-id">EXHIBIT B-1 · TENT ANALYSIS REPORT · INVESTIGATOR IVANOV · MARCH 1959</div>
+    <p>
+      The tent fabric was slashed from the interior with multiple knife cuts — not torn by external forces, 
+      not collapsed by snow weight. The incisions are consistent with a knife being drawn across the fabric 
+      in multiple rapid strokes from inside.
+    </p>
+    <p>
+      All nine occupants exited through the cuts in the rear of the tent, moving toward the valley slope. 
+      Their personal effects — boots, coats, food supplies — were left entirely undisturbed inside the structure. 
+      <strong>No external force had touched the tent from outside.</strong>
+    </p>
+  </div>
+
+  <div class="panel reveal panel-red">
+    <p>
+      When rescuers reached the campsite on February 26th, they were greeted by a sight that one investigator 
+      later described as "unlike anything I had ever seen or expected to see."
+    </p>
+    <p>
+      The tent stood half-buried but structurally intact. It had not been crushed by avalanche. 
+      It had not been struck by falling debris. From outside, it looked almost normal — 
+      until searchers saw the long gashes in the fabric. Cuts made by someone who desperately needed out.
+    </p>
+    <p>
+      Then came the footprints. Nine separate trails leading down the slope. 
+      Bare feet. Socked feet. One in a single boot. 
+      Walking pace — not running. Slow, deliberate, parallel. 
+      Whatever they were leaving, they were leaving it <em>together</em>.
+    </p>
+    <p>
+      The footprints disappeared beneath the treeline. The tracks never returned to the tent.
+    </p>
+  </div>
+</section>
+
+<div class="divider-red"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT IV — THE BODIES
+═══════════════════════════════════════════ -->
+<section class="section-narrow">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act IV · Recovery</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">The Forest. The Ravine. The Truth.</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <p>
+      The first two bodies were found at the base of a large cedar tree, 1.5 kilometers from the tent. 
+      Yuri Doroshenko and Georgy Krivonischenko. Barefoot. Their hands were burned — 
+      raw, blackened, blistered — apparently from a fire they had desperately tried to maintain. 
+      Broken branches five meters above them suggested they had climbed the tree — looking for something, 
+      or fleeing something, in the darkness beyond the snow.
+    </p>
+    <p>
+      Near the cedar, the remnants of a small fire. It had not been enough. 
+      In minus-30°C winds, a campfire without shelter provides minutes of warmth, not hours.
+    </p>
+    <p>
+      Three more bodies — Dyatlov, Kolmogorova, Slobodin — were found on the slope between the cedar 
+      and the tent. Each appeared to be crawling <em>back</em> toward shelter. 
+      Each had died before they could reach it.
+    </p>
+  </div>
+
+  <div class="evidence-box reveal">
+    <div class="evidence-id">EXHIBIT C-2 · FORENSIC NOTE · CORONER VOZROZHDENNY · MAY 1959</div>
+    <p>
+      Four additional victims — Dubinina, Zolotaryov, Kolevatov, Thibeaux-Brignolles — 
+      were discovered on May 4th beneath four meters of snow in a natural ravine 75 meters from the cedar. 
+      They appeared to have built the most sheltered possible position. They had taken clothing from 
+      the two bodies at the cedar tree to stay warm.
+    </p>
+    <p>
+      Their injuries were of an entirely different magnitude.
+    </p>
+  </div>
+</section>
+
+<div class="divider-red"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT V — THE INJURIES
+═══════════════════════════════════════════ -->
+<section class="section">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act V · Forensic Evidence</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Injuries With No Human Explanation</h2>
+
+  <div class="panel panel-red reveal reveal-delay-2">
+    <div class="panel-stamp">FORENSIC FILE</div>
+    <p>
+      The ravine victims had sustained internal injuries of extraordinary violence. 
+      Forensic pathologist Boris Vozrozhdenny, who performed the autopsies, later stated that the force 
+      required to produce such damage was comparable to <strong>a high-speed vehicle collision.</strong> 
+      Yet there was almost no external bruising. No lacerations. No wounds consistent with physical attack. 
+      The force had come from within — or from all directions simultaneously.
+    </p>
+  </div>
+
+  <!-- INJURY TABLE -->
+  <div class="reveal" style="overflow-x:auto;margin:30px 0">
+    <table class="injury-table">
+      <thead>
+        <tr>
+          <th>Victim</th>
+          <th>Recorded Injuries</th>
+          <th>External Wounds</th>
+          <th>Forensic Classification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Igor Dyatlov</td>
+          <td>Hypothermia, minor injuries consistent with fall</td>
+          <td>Minor scratches</td>
+          <td class="injury-unknown">Natural causes (cold)</td>
+        </tr>
+        <tr>
+          <td>Zinaida Kolmogorova</td>
+          <td>Hypothermia, bruising from crawling on frozen ground</td>
+          <td>Frostbite</td>
+          <td class="injury-unknown">Natural causes (cold)</td>
+        </tr>
+        <tr>
+          <td>Rustem Slobodin</td>
+          <td>1.5cm hairline skull fracture, hypothermia</td>
+          <td>Minor abrasions</td>
+          <td class="injury-unknown">Natural causes / possible fall</td>
+        </tr>
+        <tr>
+          <td>Yuri Doroshenko</td>
+          <td>Hypothermia, burned hands and feet</td>
+          <td>Fire burns on extremities</td>
+          <td class="injury-unknown">Natural causes (cold)</td>
+        </tr>
+        <tr>
+          <td>Georgy Krivonischenko</td>
+          <td>Hypothermia, burned extremities, radioactive contamination on clothing</td>
+          <td>Burns, some tissue loss</td>
+          <td class="injury-severe">⚠ Radioactive anomaly</td>
+        </tr>
+        <tr>
+          <td>Alexander Thibeaux-Brignolles</td>
+          <td>Massive depressed skull fracture with bone fragments driven into brain</td>
+          <td><strong>None</strong></td>
+          <td class="injury-severe">⚠ Unexplained — no external cause</td>
+        </tr>
+        <tr>
+          <td>Semyon Zolotaryov</td>
+          <td>Multiple fractured ribs (bilateral), massive internal hemorrhage</td>
+          <td><strong>None</strong></td>
+          <td class="injury-severe">⚠ Force equivalent to vehicle impact</td>
+        </tr>
+        <tr>
+          <td>Nikolai Thibeaux-Brignolles</td>
+          <td>Fractured ribs, internal damage</td>
+          <td>Minimal</td>
+          <td class="injury-severe">⚠ Unexplained blunt force</td>
+        </tr>
+        <tr>
+          <td style="color:white;font-weight:700">Lyudmila Dubinina</td>
+          <td>
+            Fractured ribs (10 broken), massive hemorrhage, <strong>tongue removed</strong>, 
+            eyes absent, soft tissue of face and lips absent
+          </td>
+          <td><strong>None consistent with assault</strong></td>
+          <td class="injury-severe">⚠⚠ CRITICAL — unexplained</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="evidence-box reveal">
+    <div class="evidence-id">EXHIBIT D-1 · PATHOLOGIST STATEMENT · VOZROZHDENNY · 1959</div>
+    <p>
+      <em>"The force that caused the rib fractures was comparable to that of a car crash. 
+      Yet there was no bruising on the skin surface consistent with direct physical impact. 
+      I have never seen injuries of this nature in my career."</em>
+    </p>
+  </div>
+
+  <div class="panel reveal" style="margin-top:10px">
+    <p>
+      Lyudmila Dubinina's missing tongue and eyes have been the subject of debate for six decades. 
+      Soviet investigators cited postmortem decomposition in the flowing stream water beneath the snow. 
+      Modern forensic experts consider this a partial explanation at best — soft tissue does not disappear 
+      entirely in two to three months in frozen conditions. The photographs from the autopsy 
+      remain some of the most disturbing documents in the case file.
+    </p>
+    <p>
+      Most disturbingly: several clothing items recovered from the ravine victims 
+      were found to be <strong>highly radioactive</strong> — particularly those belonging to 
+      Krivonischenko and Dubinina. The Soviet government offered no explanation for this finding.
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT VI — THE LIGHTS
+═══════════════════════════════════════════ -->
+<section class="section-narrow">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act VI · Aerial Phenomena</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">Orange Spheres in the Night Sky</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <div class="panel-stamp">WITNESS REPORTS</div>
+    <p>
+      During the same time window — late January and early February 1959 — 
+      multiple independent witnesses across the northern Ural region reported seeing glowing orange 
+      or fiery spheres moving silently through the night sky. These reports came from soldiers, 
+      weather observers, and members of another ski group operating in the area.
+    </p>
+    <p>
+      The search team that discovered the bodies in February 1959 also reported seeing glowing orange 
+      orbs in the sky above the mountain on the night of February 17th — weeks after the incident, 
+      during their own investigation.
+    </p>
+  </div>
+
+  <div class="evidence-box reveal">
+    <div class="evidence-id">EXHIBIT E-1 · WITNESS TESTIMONY · SEARCH TEAM MEMBER · FEBRUARY 1959</div>
+    <p>
+      <em>"We saw glowing spheres moving in the sky above Kholat Syakhl. 
+      They moved in a straight line, changed direction, and disappeared. 
+      There was no sound. They were clearly not aircraft of any type we recognized."</em>
+    </p>
+  </div>
+
+  <div class="key-quote reveal">
+    <p>"The hikers died because of an unknown compelling force."</p>
+    <cite>— Official Soviet Government Conclusion · 1959</cite>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════
+     ACT VII — THEORIES
+═══════════════════════════════════════════ -->
+<section class="section">
+  <div class="chapter-label reveal">
+    <div class="chapter-line"></div>
+    <div class="chapter-text">Act VII · Investigative Theories</div>
+  </div>
+  <h2 class="section-h reveal reveal-delay-1">What Happened on the Mountain?</h2>
+
+  <div class="panel reveal reveal-delay-2">
+    <p>
+      Six decades of investigation, multiple official inquiries, and thousands of civilian researchers 
+      have proposed no fewer than seventy-five distinct theories. The following represent the most 
+      forensically credible, officially considered, and widely debated explanations.
+    </p>
+  </div>
+
+  <div class="theory-grid">
+
+    <div class="theory-card reveal reveal-delay-1">
+      <div class="theory-num">THEORY 01</div>
+      <div class="theory-title">Katabatic Wind / Avalanche</div>
+      <div class="theory-text">
+        A sudden slab avalanche — a type that releases silently and strikes without warning — 
+        may have compressed the tent and injured the ravine victims. A 2021 study by Swiss researchers 
+        at ETH Zurich used snow simulation models to argue a small delayed-release slab avalanche 
+        was physically possible at the site. This was the conclusion of Russia's 2019 official reinvestigation.
+      </div>
+      <span class="theory-verdict verdict-likely">▲ Currently Most Accepted</span>
+    </div>
+
+    <div class="theory-card reveal reveal-delay-2">
+      <div class="theory-num">THEORY 02</div>
+      <div class="theory-title">Infrasound / Kármán Vortex</div>
+      <div class="theory-text">
+        Certain wind conditions passing over mountain ridges create infrasound frequencies 
+        (below 20 Hz, inaudible to humans) that are known to induce severe anxiety, 
+        visual hallucinations, and panic in people exposed over prolonged periods. 
+        If infrasound struck the tent that night, it could explain why nine trained hikers 
+        fled in absolute terror from a secure shelter into lethal conditions.
+      </div>
+      <span class="theory-verdict verdict-possible">◈ Forensically Plausible</span>
+    </div>
+
+    <div class="theory-card reveal reveal-delay-3">
+      <div class="theory-num">THEORY 03</div>
+      <div class="theory-title">Soviet Military Testing</div>
+      <div class="theory-text">
+        The presence of radioactive contamination on clothing, the glowing orange spheres witnessed 
+        by multiple parties, and the Soviet government's rapid closure of the investigation have 
+        led many researchers to suspect secret military activity — possibly missile or parachute mine 
+        testing — in the area. The injuries to the ravine victims are consistent with pressure-wave 
+        blast trauma, which leaves no external marks on the skin.
+      </div>
+      <span class="theory-verdict verdict-possible">◈ Evidence Partially Supports</span>
+    </div>
+
+    <div class="theory-card reveal reveal-delay-4">
+      <div class="theory-num">THEORY 04</div>
+      <div class="theory-title">Mansi Conflict</div>
+      <div class="theory-text">
+        Early investigators considered whether the Mansi — protective of sacred mountain territory — 
+        had attacked the group. This theory was formally investigated and fully dismissed. 
+        The footprint patterns show no signs of confrontation. No additional tracks beyond the nine 
+        were found. And the nature of the injuries is inconsistent with human assault of any kind.
+      </div>
+      <span class="theory-verdict verdict-unlikely">✕ Officially Eliminated</span>
+    </div>
+
+    <div class="theory-card reveal reveal-delay-1">
+      <div class="theory-num">THEORY 05</div>
+      <div class="theory-title">Paradoxical Undressing</div>
+      <div class="theory-text">
+        A well-documented phenomenon in late-stage hypothermia causes victims to feel intensely hot 
+        and remove clothing. This explains some of the inadequate dress of the bodies found on the slope. 
+        However, it does not explain the tent being slashed open from inside, 
+        the massive internal injuries of the ravine victims, or the radioactive contamination.
+      </div>
+      <span class="theory-verdict verdict-possible">◈ Partial Explanation Only</span>
+    </div>
+
+    <div class="theory-card reveal reveal-delay-2">
+      <div class="theory-num">THEORY 06</div>
+      <div class="theory-title">Unknown Phenomenon</div>
+      <div class="theory-text">
+        The Soviet investigators themselves — trained professionals who had seen war, famine, and 
+        industrial disasters — had no explanation. Their official conclusion, 
+        "an unknown compelling force," was not bureaucratic deflection. 
+        It was an honest admission. To this day, no single theory accounts for all evidence simultaneously.
+      </div>
+      <span class="theory-verdict verdict-classified">■ Case Remains Open</span>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider-red"></div>
+
+<!-- ═══════════════════════════════════════════
+     FINALE
+═══════════════════════════════════════════ -->
+<section class="finale">
+  <div class="finale-bg"></div>
+  <div class="finale-content">
+    <div class="hero-stamp" style="margin-bottom:40px">CASE FILE 59-UVD-OD-III · UNRESOLVED</div>
+    <h2 class="reveal">The Mountain Never Answered</h2>
+    <p class="finale-text reveal reveal-delay-1">
+      The tent is gone. The footprints vanished beneath decades of snow. 
+      Yuri Yudin — the tenth member who turned back — spent the rest of his life 
+      demanding answers. He died in 2013, still waiting.
+    </p>
+    <br/><br/>
+    <p class="finale-text reveal reveal-delay-2" style="color:#8090a0">
+      The mountain has claimed others since. Researchers, journalists, and investigators 
+      who ventured to Kholat Syakhl in search of answers have returned with only more questions. 
+      Some have not returned with their sanity entirely intact.
+    </p>
+    <br/><br/>
+    <p class="finale-text reveal reveal-delay-3" style="font-family:'Cinzel',serif;color:white;font-size:1.3rem;font-weight:400">
+      What frightened nine trained, experienced, rational Soviet hikers so completely 
+      that they chose a blizzard at minus thirty over their own tent?
+    </p>
+    <br/><br/>
+    <div class="finale-verdict reveal reveal-delay-4">THE DEAD TOOK THE ANSWER WITH THEM</div>
+    <br/><br/>
+    <p style="font-family:'Special Elite',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;margin-top:30px">
+      Images: Wikimedia Commons (Public Domain) · Case records: Russian State Archive · 
+      Investigation: Ivanov et al. 1959 · Swiss avalanche study: ETH Zurich 2021
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ── SCROLL REVEAL ── */
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if(e.isIntersecting){ e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => observer.observe(el));
+
+/* ── AMBIENT AUDIO ── */
+const music = document.getElementById('bg-music');
+music.volume = 0.4;
+
+// Create floating toggle button
+const audioBtn = document.createElement('button');
+audioBtn.id = 'audio-toggle';
+audioBtn.innerHTML = '🔇 AMBIENT AUDIO';
+audioBtn.style.cssText = `
+  position:fixed; bottom:20px; right:20px; z-index:1000;
+  background:rgba(4,8,16,0.95); border:1px solid rgba(120,170,255,0.25);
+  color:#b2d4ff; font-family:'Special Elite',monospace; font-size:0.7rem;
+  letter-spacing:0.2em; padding:10px 16px; border-radius:4px;
+  cursor:pointer; backdrop-filter:blur(14px); transition:0.2s;
+`;
+document.body.appendChild(audioBtn);
+
+let playing = false;
+
+// Auto-start on first user interaction
+const startOnInteraction = () => {
+  music.play().then(() => {
+    playing = true;
+    audioBtn.innerHTML = '🔊 AMBIENT AUDIO';
+    audioBtn.style.borderColor = 'rgba(120,170,255,0.5)';
+  }).catch(() => {});
+  ['click','scroll','touchstart','keydown'].forEach(e =>
+    document.removeEventListener(e, startOnInteraction)
+  );
+};
+['click','scroll','touchstart','keydown'].forEach(e =>
+  document.addEventListener(e, startOnInteraction)
+);
+
+// Toggle on button click
+audioBtn.addEventListener('click', () => {
+  if (!playing) {
+    music.play().then(() => {
+      playing = true;
+      audioBtn.innerHTML = '🔊 AMBIENT AUDIO';
+      audioBtn.style.borderColor = 'rgba(120,170,255,0.5)';
+    }).catch(() => {});
+  } else {
+    music.pause();
+    playing = false;
+    audioBtn.innerHTML = '🔇 AMBIENT AUDIO';
+    audioBtn.style.borderColor = 'rgba(120,170,255,0.25)';
+  }
+});
+
+/* ── PARALLAX HERO ── */
+window.addEventListener('scroll', () => {
+  const heroImg = document.querySelector('.hero-bg');
+  if(heroImg){
+    heroImg.style.transform = 'translateY(' + (window.scrollY * 0.35) + 'px)';
+  }
+});
+</script>
+
+</body>
+</html>
