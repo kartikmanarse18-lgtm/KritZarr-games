@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hinterkaifeck Murders: The Attic Guest</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Special+Elite&family=IBM+Plex+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+    --bg-primary:#020407;
+    --bg-secondary:#05080c;
+    --bg-surface:#0b121a;
+    --bg-surface-2:#121c28;
+    --text-primary:#e3dac9;
+    --text-secondary:#bfb6a4;
+    --text-muted:#7e8792;
+    --accent-active:#00f0ff;
+    --accent-warning:#b6402c;
+    --accent-soft:#163844;
+    --border-subtle:rgba(255,255,255,0.08);
+    --shadow-heavy:0 0 40px rgba(0,0,0,0.6);
+    --shadow-glow:0 0 25px rgba(0,240,255,0.18);
+    --timeline-line:rgba(255,255,255,0.08);
+    --section-spacing:140px;
+    --transition-slow:1.2s cubic-bezier(.16,1,.3,1);
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    background:
+    radial-gradient(circle at top, rgba(0,240,255,0.08), transparent 35%),
+    linear-gradient(180deg, var(--bg-primary), var(--bg-secondary));
+    color:var(--text-primary);
+    font-family:'IBM Plex Mono', monospace;
+    overflow-x:hidden;
+    position:relative;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+    repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.03),
+        rgba(255,255,255,0.03) 1px,
+        transparent 1px,
+        transparent 4px
+    );
+    mix-blend-mode:soft-light;
+    opacity:0.28;
+    z-index:9999;
+}
+
+body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    background:
+    radial-gradient(circle at center, transparent 45%, rgba(0,0,0,0.68) 100%);
+    z-index:9998;
+}
+
+img{
+    max-width:100%;
+    display:block;
+}
+
+a{
+    color:var(--accent-active);
+}
+
+section{
+    position:relative;
+    padding:var(--section-spacing) 8vw;
+    border-top:1px solid rgba(255,255,255,0.04);
+}
+
+.section-inner{
+    max-width:1400px;
+    margin:0 auto;
+}
+
+.chapter-tag{
+    display:inline-block;
+    color:var(--accent-active);
+    letter-spacing:4px;
+    font-size:0.82rem;
+    margin-bottom:20px;
+    text-transform:uppercase;
+    border:1px solid rgba(0,240,255,0.2);
+    padding:8px 14px;
+    background:rgba(0,240,255,0.04);
+}
+
+.section-title{
+    font-family:'Cinzel', serif;
+    font-size:clamp(2rem,5vw,4rem);
+    line-height:1.1;
+    margin-bottom:30px;
+    letter-spacing:1px;
+}
+
+.section-description{
+    max-width:900px;
+    color:var(--text-secondary);
+    line-height:1.9;
+    font-size:1rem;
+}
+
+.reveal{
+    opacity:0;
+    transform:translateY(40px);
+    transition:
+    opacity var(--transition-slow),
+    transform var(--transition-slow);
+}
+
+.reveal.visible{
+    opacity:1;
+    transform:translateY(0px);
+}
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    padding:0;
+}
+
+.hero video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    filter:grayscale(100%) brightness(0.25) contrast(1.2);
+}
+
+.hero-overlay{
+    position:absolute;
+    inset:0;
+    background:
+    radial-gradient(circle at center, rgba(0,0,0,0.2), rgba(0,0,0,0.85)),
+    linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.92));
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    max-width:1100px;
+    padding:40px;
+}
+
+.hero-sub{
+    letter-spacing:8px;
+    color:var(--accent-active);
+    margin-bottom:24px;
+    font-size:0.9rem;
+    text-transform:uppercase;
+}
+
+.hero h1{
+    font-family:'Cinzel', serif;
+    font-size:clamp(3rem,8vw,7rem);
+    line-height:0.95;
+    margin-bottom:28px;
+    text-shadow:0 0 20px rgba(0,0,0,0.8);
+}
+
+.hero-summary{
+    max-width:900px;
+    margin:0 auto;
+    color:var(--text-secondary);
+    line-height:2;
+    font-size:1.05rem;
+}
+
+.hero-meta{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+}
+
+.meta-box{
+    background:rgba(5,10,15,0.78);
+    border:1px solid rgba(255,255,255,0.08);
+    padding:20px;
+    backdrop-filter:blur(8px);
+    text-align:left;
+}
+
+.meta-label{
+    color:var(--text-muted);
+    font-size:0.72rem;
+    margin-bottom:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.meta-value{
+    font-size:1rem;
+    line-height:1.6;
+}
+
+.scroll-indicator{
+    position:absolute;
+    bottom:40px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:4;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:12px;
+    color:var(--text-muted);
+    font-size:0.7rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+}
+
+.scroll-line{
+    width:1px;
+    height:70px;
+    background:linear-gradient(to bottom, rgba(0,240,255,0), rgba(0,240,255,1));
+    animation:scrollPulse 2s infinite;
+}
+
+@keyframes scrollPulse{
+    0%{
+        opacity:0.2;
+        transform:translateY(0);
+    }
+    50%{
+        opacity:1;
+        transform:translateY(12px);
+    }
+    100%{
+        opacity:0.2;
+        transform:translateY(0);
+    }
+}
+
+.archive-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:22px;
+    margin-top:60px;
+}
+
+.archive-card{
+    background:linear-gradient(180deg,var(--bg-surface),var(--bg-surface-2));
+    border:1px solid var(--border-subtle);
+    padding:28px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:var(--shadow-heavy);
+}
+
+.archive-card::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    width:4px;
+    height:100%;
+    background:var(--accent-active);
+}
+
+.archive-card h3{
+    font-family:'Cinzel', serif;
+    margin-bottom:18px;
+    font-size:1.2rem;
+}
+
+.archive-card ul{
+    list-style:none;
+}
+
+.archive-card li{
+    margin-bottom:12px;
+    color:var(--text-secondary);
+    line-height:1.7;
+}
+
+.log-block{
+    margin-top:60px;
+    background:rgba(6,10,14,0.92);
+    border-left:4px solid var(--accent-warning);
+    padding:40px;
+    position:relative;
+}
+
+.log-block::before{
+    content:"EXTRACTED WITNESS ACCOUNT";
+    position:absolute;
+    top:-12px;
+    left:24px;
+    background:var(--bg-primary);
+    color:var(--accent-warning);
+    padding:4px 10px;
+    letter-spacing:3px;
+    font-size:0.7rem;
+}
+
+.log-block p{
+    font-family:'Special Elite', cursive;
+    line-height:2.1;
+    font-size:1.05rem;
+    color:#d4cab9;
+    text-indent:32px;
+}
+
+.dropcap::first-letter{
+    float:left;
+    font-size:4rem;
+    line-height:0.8;
+    padding-right:10px;
+    color:var(--accent-warning);
+    font-family:'Cinzel', serif;
+}
+
+.map-layout{
+    margin-top:70px;
+    display:grid;
+    grid-template-columns:1.2fr 1fr;
+    gap:40px;
+    align-items:start;
+}
+
+.map-frame{
+    border:1px solid rgba(255,255,255,0.08);
+    background:var(--bg-surface);
+    overflow:hidden;
+    position:relative;
+}
+
+.map-frame img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    filter:grayscale(100%) contrast(1.2);
+}
+
+.map-data{
+    display:grid;
+    gap:22px;
+}
+
+.data-box{
+    background:var(--bg-surface);
+    border:1px solid var(--border-subtle);
+    padding:24px;
+}
+
+.data-box h4{
+    margin-bottom:14px;
+    color:var(--accent-active);
+    letter-spacing:2px;
+    font-size:0.9rem;
+}
+
+.data-box p{
+    line-height:1.9;
+    color:var(--text-secondary);
+}
+
+.media-frame{
+    margin-top:70px;
+    position:relative;
+    background:var(--bg-surface);
+    padding:24px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:var(--shadow-glow);
+}
+
+.media-frame::before{
+    content:"";
+    position:absolute;
+    inset:10px;
+    border:1px solid rgba(0,240,255,0.18);
+    pointer-events:none;
+}
+
+.media-frame img{
+    width:100%;
+    aspect-ratio:16/9;
+    object-fit:cover;
+    filter:grayscale(100%) contrast(1.15);
+}
+
+.media-caption{
+    margin-top:24px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:20px;
+}
+
+.caption-box{
+    background:rgba(255,255,255,0.03);
+    padding:20px;
+    border:1px solid rgba(255,255,255,0.05);
+}
+
+.caption-box span{
+    display:block;
+    color:var(--accent-active);
+    margin-bottom:10px;
+    font-size:0.8rem;
+    letter-spacing:2px;
+}
+
+.dual-gallery{
+    margin-top:70px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:28px;
+}
+
+.gallery-card{
+    background:var(--bg-surface);
+    border:1px solid var(--border-subtle);
+    overflow:hidden;
+}
+
+.gallery-card img{
+    width:100%;
+    aspect-ratio:4/3;
+    object-fit:cover;
+    filter:grayscale(100%) sepia(20%) contrast(1.1);
+}
+
+.gallery-card-content{
+    padding:24px;
+}
+
+.gallery-card h4{
+    margin-bottom:18px;
+    font-family:'Cinzel', serif;
+}
+
+.gallery-card p{
+    line-height:1.8;
+    color:var(--text-secondary);
+}
+
+.video-grid{
+    margin-top:70px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
+    gap:28px;
+}
+
+.video-card{
+    background:var(--bg-surface);
+    border:1px solid var(--border-subtle);
+    overflow:hidden;
+}
+
+.video-wrapper{
+    aspect-ratio:16/9;
+    width:100%;
+}
+
+.video-wrapper iframe{
+    width:100%;
+    height:100%;
+    border:none;
+}
+
+.video-content{
+    padding:20px;
+}
+
+.video-content h4{
+    margin-bottom:12px;
+    font-family:'Cinzel', serif;
+}
+
+.video-content p{
+    line-height:1.8;
+    color:var(--text-secondary);
+}
+
+.analysis-layout{
+    margin-top:70px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:34px;
+}
+
+.analysis-panel{
+    padding:36px;
+    background:var(--bg-surface);
+    border:1px solid var(--border-subtle);
+    position:relative;
+}
+
+.analysis-panel.active{
+    border-top:4px solid var(--accent-active);
+}
+
+.analysis-panel.warning{
+    border-top:4px solid var(--accent-warning);
+}
+
+.analysis-panel h3{
+    margin-bottom:22px;
+    font-family:'Cinzel', serif;
+}
+
+.analysis-panel ul{
+    list-style:none;
+}
+
+.analysis-panel li{
+    margin-bottom:18px;
+    line-height:1.9;
+    color:var(--text-secondary);
+}
+
+.timeline{
+    margin-top:90px;
+    position:relative;
+    padding-left:70px;
+}
+
+.timeline::before{
+    content:"";
+    position:absolute;
+    left:24px;
+    top:0;
+    width:2px;
+    height:100%;
+    background:var(--timeline-line);
+}
+
+.timeline-item{
+    position:relative;
+    margin-bottom:60px;
+    padding:28px;
+    background:var(--bg-surface);
+    border:1px solid rgba(255,255,255,0.05);
+}
+
+.timeline-item::before{
+    content:"";
+    position:absolute;
+    left:-58px;
+    top:32px;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--accent-active);
+    box-shadow:0 0 12px rgba(0,240,255,0.8);
+}
+
+.timeline-date{
+    color:var(--accent-active);
+    margin-bottom:14px;
+    letter-spacing:3px;
+    font-size:0.82rem;
+}
+
+.timeline-item h4{
+    font-family:'Cinzel', serif;
+    margin-bottom:16px;
+}
+
+.timeline-item p{
+    line-height:1.9;
+    color:var(--text-secondary);
+}
+
+.footer-report{
+    margin-top:70px;
+    background:var(--bg-surface);
+    border:1px solid rgba(255,255,255,0.06);
+    padding:40px;
+}
+
+.footer-report p{
+    line-height:2;
+    color:var(--text-secondary);
+    margin-bottom:22px;
+}
+
+.registry{
+    margin-top:40px;
+    padding-top:24px;
+    border-top:1px dashed rgba(255,255,255,0.12);
+    color:var(--text-muted);
+    font-size:0.82rem;
+    line-height:2;
+}
+
+@media(max-width:1000px){
+
+    .map-layout{
+        grid-template-columns:1fr;
+    }
+
+    .analysis-layout{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:700px){
+
+    section{
+        padding:100px 24px;
+    }
+
+    .hero-content{
+        padding:24px;
+    }
+
+    .hero h1{
+        font-size:3.2rem;
+    }
+
+    .timeline{
+        padding-left:40px;
+    }
+
+    .timeline::before{
+        left:12px;
+    }
+
+    .timeline-item::before{
+        left:-37px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<section class="hero">
+
+    <video autoplay muted loop playsinline>
+        <source src="https://cdn.coverr.co/videos/coverr-dark-forest-at-night-1563456752446?download=1080p" type="video/mp4">
+    </video>
+
+    <div class="hero-overlay"></div>
+
+    <div class="hero-content reveal">
+
+        <div class="hero-sub">
+            UNSOLVED RURAL HOMICIDE ARCHIVE // BAVARIA // 1922
+        </div>
+
+        <h1>
+            THE HINTERKAIFECK MURDERS
+            <br>
+            <span style="color:var(--accent-active)">THE ATTIC GUEST</span>
+        </h1>
+
+        <p class="hero-summary">
+            In the isolated Bavarian farmstead of Hinterkaifeck, six residents were brutally murdered between the evening hours of March 31 and the early morning of April 1, 1922. What transformed the case into one of Europe’s most enduring mysteries were the strange warnings reported before the massacre: unexplained footsteps in snow leading from the forest but never returning, missing keys, sounds in the attic, unfamiliar newspapers appearing inside the farmhouse, and evidence that someone may have been secretly living within the property itself. The killer was never identified. The farm was demolished. The silence remained.
+        </p>
+
+        <div class="hero-meta">
+
+            <div class="meta-box">
+                <div class="meta-label">Case Designation</div>
+                <div class="meta-value">HK-1922-ATTIC / Classified Rural Homicide File</div>
+            </div>
+
+            <div class="meta-box">
+                <div class="meta-label">Location</div>
+                <div class="meta-value">Hinterkaifeck Farmstead near Waidhofen, Bavaria, Germany</div>
+            </div>
+
+            <div class="meta-box">
+                <div class="meta-label">Victims</div>
+                <div class="meta-value">Andreas Gruber, Cäzilia Gruber, Viktoria Gabriel, Cäzilia Gabriel, Josef Gabriel, Maria Baumgartner</div>
+            </div>
+
+            <div class="meta-box">
+                <div class="meta-label">Primary Anomaly</div>
+                <div class="meta-value">Unidentified attic presence before murders</div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="scroll-indicator">
+        <span>Scroll Investigation</span>
+        <div class="scroll-line"></div>
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER II</div>
+
+        <h2 class="section-title">
+            CORE ARCHIVAL CLASSIFICATION MATRIX
+        </h2>
+
+        <p class="section-description">
+            Official Bavarian police reports and subsequent criminal analyses established the Hinterkaifeck property as an isolated agricultural compound positioned roughly one kilometer from neighboring structures. The remoteness of the farm, combined with evidence of prolonged unauthorized presence, generated investigative theories ranging from targeted revenge killings to covert habitation by an unknown intruder hidden within the attic spaces above the residence and livestock barn.
+        </p>
+
+        <div class="archive-grid">
+
+            <article class="archive-card">
+                <h3>PROPERTY STRUCTURE</h3>
+                <ul>
+                    <li>Primary farmhouse linked directly to barn complex</li>
+                    <li>Elevated attic crawlspace accessible through internal ladder routes</li>
+                    <li>Wood-beam roof chamber with limited external visibility</li>
+                    <li>Livestock holding connected through enclosed corridors</li>
+                    <li>Minimal external illumination infrastructure</li>
+                </ul>
+            </article>
+
+            <article class="archive-card">
+                <h3>PRE-MURDER ANOMALIES</h3>
+                <ul>
+                    <li>Footprints emerging from nearby forest</li>
+                    <li>No corresponding return tracks observed</li>
+                    <li>Missing house keys reported by residents</li>
+                    <li>Voices and movements heard overhead</li>
+                    <li>Unknown newspaper discovered inside home</li>
+                </ul>
+            </article>
+
+            <article class="archive-card">
+                <h3>FORENSIC CONDITIONS</h3>
+                <ul>
+                    <li>Victims likely killed individually and sequentially</li>
+                    <li>Primary murder weapon believed to be mattock</li>
+                    <li>Animals reportedly fed after killings</li>
+                    <li>Smoke observed from chimney after estimated deaths</li>
+                    <li>Signs of continued occupancy post-incident</li>
+                </ul>
+            </article>
+
+            <article class="archive-card">
+                <h3>INVESTIGATIVE FAILURES</h3>
+                <ul>
+                    <li>Crime scene contamination by visitors and neighbors</li>
+                    <li>Delayed perimeter control by local authorities</li>
+                    <li>Demolition of property in later years</li>
+                    <li>No verified suspect conviction achieved</li>
+                    <li>Witness statements conflicted over timeline details</li>
+                </ul>
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER III</div>
+
+        <h2 class="section-title">
+            THE PRECIPITATING TRAGEDY
+        </h2>
+
+        <p class="section-description">
+            The psychological atmosphere surrounding Hinterkaifeck deteriorated in the days preceding the massacre. Andreas Gruber reportedly expressed concern that someone was observing the property. Family members heard movement in the attic above their bedrooms during nighttime hours. Yet no intruder was ever discovered. On the evening of March 31, 1922, the entire household vanished into silence.
+        </p>
+
+        <div class="log-block">
+
+            <p class="dropcap">
+                Several days before the murders, Andreas Gruber reportedly discovered a single set of footprints leading from the forest edge toward the farmhouse. No tracks led away. Shortly afterward, keys disappeared from inside the residence. A maid working at the property had resigned months earlier, claiming the house was haunted by strange sounds from above the ceiling beams. On the final evening, newly arrived maid Maria Baumgartner entered the property unaware that she would become the sixth victim. Investigators later theorized that members of the family may have been lured individually into the barn before being killed one after another in darkness.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER IV</div>
+
+        <h2 class="section-title">
+            TRANSITIONAL EVENT & RITUALIZED MOVEMENT MAPS
+        </h2>
+
+        <p class="section-description">
+            Subsequent reconstruction studies attempted to chart the movement patterns within the farmhouse during the estimated murder window. Analysts observed that the killer likely possessed intimate knowledge of the property's internal pathways, storage areas, and livestock maintenance routines. Theories surrounding attic habitation intensified due to evidence suggesting extended concealment above the living quarters.
+        </p>
+
+        <div class="map-layout">
+
+            <div class="map-frame">
+                <img src="https://media.licdn.com/dms/image/v2/D4D22AQG9JGl0TGKyxA/feedshare-shrink_800/feedshare-shrink_800/0/1691008252302?e=2147483647&v=beta&t=ffgskzD_vyqIKq3eqFp3FMcHtOTgEwrRwHjH3ZwphXY" alt="Hinterkaifeck Layout">
+            </div>
+
+            <div class="map-data">
+
+                <div class="data-box">
+                    <h4>FIELD MOVEMENT ANALYSIS</h4>
+                    <p>
+                        Footprint evidence indicated direct travel from nearby woodland terrain toward the farm perimeter. Snow conditions suggested recent arrival shortly before the murders. The absence of outbound tracks remains one of the most cited anomalies in the case.
+                    </p>
+                </div>
+
+                <div class="data-box">
+                    <h4>ATTIC ACCESS ROUTE</h4>
+                    <p>
+                        The attic space connected to overhead structural beams spanning both the residence and barn areas. Investigators believed an intruder could move silently through sections above occupied rooms without immediate detection.
+                    </p>
+                </div>
+
+                <div class="data-box">
+                    <h4>POST-INCIDENT ACTIVITY</h4>
+                    <p>
+                        Multiple witnesses later stated smoke continued to rise from the chimney after the estimated murders. Livestock had also been tended. These observations imply the perpetrator remained at the farm for an extended duration.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER V</div>
+
+        <h2 class="section-title">
+            CORE EVIDENCE BREAKDOWN LAB
+        </h2>
+
+        <p class="section-description">
+            Historical imagery of the Hinterkaifeck farmstead became central to later documentary investigations. Although many original forensic materials were lost, reconstructed archives and surviving photographs provide chilling spatial context to the murders and the alleged hidden attic occupant.
+        </p>
+
+        <div class="media-frame">
+
+            <img src="https://res.cloudinary.com/jerrick/image/upload/d_642250b563292b35f27461a7.png,f_jpg,fl_progressive,q_auto,w_1024/647c12e3098d78001d94f45c.jpg" alt="Hinterkaifeck Farm">
+
+            <div class="media-caption">
+
+                <div class="caption-box">
+                    <span>PRIMARY STRUCTURE</span>
+                    Remote Bavarian agricultural property demolished after the murders due to local superstition and structural deterioration.
+                </div>
+
+                <div class="caption-box">
+                    <span>INVESTIGATIVE STATUS</span>
+                    Despite decades of reanalysis, no definitive perpetrator identification has been accepted by modern criminologists.
+                </div>
+
+                <div class="caption-box">
+                    <span>ATTIC THEORY</span>
+                    Food remnants and movement noises suggested prolonged unauthorized occupancy in concealed roof spaces.
+                </div>
+
+                <div class="caption-box">
+                    <span>PSYCHOLOGICAL PROFILE</span>
+                    Behavioral reconstruction implies offender familiarity with routines, property layout, and victim trust dynamics.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER VI</div>
+
+        <h2 class="section-title">
+            RESPONSIVE LANDSCAPE FRAMEWORK
+        </h2>
+
+        <p class="section-description">
+            Comparative visual analysis of surviving source materials reveals architectural isolation, poor visibility lines, and concealed movement corridors throughout the property. Historians frequently note how the farm’s configuration could psychologically amplify paranoia and facilitate covert observation.
+        </p>
+
+        <div class="dual-gallery">
+
+            <article class="gallery-card">
+                <img src="https://res.cloudinary.com/jerrick/image/upload/d_642250b563292b35f27461a7.png,f_jpg,fl_progressive,q_auto,w_1024/647c12e3098d78001d94f45c.jpg" alt="Barn Structure">
+                <div class="gallery-card-content">
+                    <h4>BARN ENTRY SEQUENCE</h4>
+                    <p>
+                        Investigators theorized victims may have been drawn individually into the barn structure before being attacked. The confined architecture would have muffled external screams and reduced visibility from neighboring terrain.
+                    </p>
+                </div>
+            </article>
+
+            <article class="gallery-card">
+                <img src="https://media.istockphoto.com/id/1447174953/photo/empty-attic-space.jpg?s=612x612&w=0&k=20&c=z5Q1Nkf_CPOSnSssID2GNcGoYmKnDsH_i6bayz5Bihg=" alt="Attic">
+                <div class="gallery-card-content">
+                    <h4>ATTIC CONCEALMENT THEORY</h4>
+                    <p>
+                        The attic became central to folklore surrounding the case. Sounds overhead, missing supplies, and evidence of movement contributed to theories that the killer secretly inhabited the upper structure before the murders.
+                    </p>
+                </div>
+            </article>
+
+            <article class="gallery-card">
+                <img src="https://res.cloudinary.com/jerrick/image/upload/d_642250b563292b35f27461a7.png,f_jpg,fl_progressive,q_auto,w_1024/647c12e3098d78001d94f45c.jpg" alt="Farmhouse">
+                <div class="gallery-card-content">
+                    <h4>ISOLATED FARMSTEAD GEOMETRY</h4>
+                    <p>
+                        The remote placement of Hinterkaifeck created delayed response conditions. During winter months, darkness and snow dramatically reduced observational range across the surrounding fields.
+                    </p>
+                </div>
+            </article>
+
+            <article class="gallery-card">
+                <img src="https://media.licdn.com/dms/image/v2/D5612AQH5G4gUA23GXg/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1707227733389?e=2147483647&v=beta&t=5kWHehKHnsWN3OAAY2rBCah6EhRZZ6T4fin5eWSqUIc" alt="Forest Path">
+                <div class="gallery-card-content">
+                    <h4>FOREST ACCESS CORRIDOR</h4>
+                    <p>
+                        The woodland approach route remains embedded within case mythology. Reports of isolated tracks entering the property without return evidence intensified suspicions of hidden surveillance and stalking behavior.
+                    </p>
+                </div>
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER VII</div>
+
+        <h2 class="section-title">
+            VERIFIED DOCUMENTARY VIDEO MICRO-GRID
+        </h2>
+
+        <p class="section-description">
+            Contemporary criminologists, paranormal researchers, and investigative historians continue to revisit the Hinterkaifeck murders through documentary reconstructions and archival analysis. The following media records provide varying interpretations of the events.
+        </p>
+
+        <div class="video-grid">
+
+            <article class="video-card">
+
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/cdBUNojB1Eo?si=NwnDmtLkLtIqI3CB" allowfullscreen></iframe>
+                </div>
+
+                <div class="video-content">
+                    <h4>CASE OVERVIEW & TIMELINE RECONSTRUCTION</h4>
+                    <p>
+                        Documentary examination detailing the sequence of events before and after the murders, including witness interviews and surviving police archive analysis.
+                    </p>
+                </div>
+
+            </article>
+
+            <article class="video-card">
+
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/boQoVV2EMsY" allowfullscreen></iframe>
+                </div>
+
+                <div class="video-content">
+                    <h4>THE ATTIC PRESENCE THEORY</h4>
+                    <p>
+                        Investigative exploration centered around the possibility that an unknown individual secretly occupied the attic prior to the killings.
+                    </p>
+                </div>
+
+            </article>
+
+            <article class="video-card">
+
+                <div class="video-wrapper">
+                    <iframe src="https://www.youtube.com/embed/8-F17U42zS0?si=TbJGbgFFId9gsPR-" allowfullscreen></iframe>
+                </div>
+
+                <div class="video-content">
+                    <h4>UNSOLVED MYSTERY ARCHIVE REPORT</h4>
+                    <p>
+                        A forensic-style breakdown examining suspect theories, property schematics, and disputed investigative conclusions from later decades.
+                    </p>
+                </div>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER VIII</div>
+
+        <h2 class="section-title">
+            SIDE-BY-SIDE DIALECTICAL ANALYSIS
+        </h2>
+
+        <p class="section-description">
+            The Hinterkaifeck murders exist at the intersection of criminology, folklore, and psychological terror. Competing analytical frameworks continue to divide researchers into rational investigative camps and supernatural interpretations.
+        </p>
+
+        <div class="analysis-layout">
+
+            <article class="analysis-panel active">
+
+                <h3>EMPIRICAL CRIMINAL ANALYSIS</h3>
+
+                <ul>
+                    <li>
+                        Evidence suggests the perpetrator possessed prior familiarity with the farm and victim routines.
+                    </li>
+
+                    <li>
+                        The sequential movement of victims toward the barn implies deliberate luring tactics rather than random attack behavior.
+                    </li>
+
+                    <li>
+                        Continued livestock maintenance after the murders indicates the killer remained calm, methodical, and operationally disciplined.
+                    </li>
+
+                    <li>
+                        The attic noises may represent covert habitation by a stalker hiding above the family for days or weeks.
+                    </li>
+
+                    <li>
+                        Failures in crime scene preservation severely compromised definitive forensic conclusions.
+                    </li>
+
+                </ul>
+
+            </article>
+
+            <article class="analysis-panel warning">
+
+                <h3>PARANORMAL & LEGENDARY INTERPRETATIONS</h3>
+
+                <ul>
+                    <li>
+                        Former servants claimed the property exhibited persistent unexplained sounds and oppressive psychological conditions.
+                    </li>
+
+                    <li>
+                        Folklore narratives describe the farmhouse as cursed long before the murders occurred.
+                    </li>
+
+                    <li>
+                        The unexplained footprints without return tracks became embedded within regional ghost legends.
+                    </li>
+
+                    <li>
+                        Some theories propose the family unknowingly coexisted with a hidden watcher living inside the structure.
+                    </li>
+
+                    <li>
+                        Demolition of the farm strengthened public mythology surrounding the location and its alleged haunting.
+                    </li>
+
+                </ul>
+
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER IX</div>
+
+        <h2 class="section-title">
+            FORENSIC CHRONOLOGY LINESTREAM
+        </h2>
+
+        <p class="section-description">
+            Reconstruction of the final known sequence surrounding the Hinterkaifeck murders remains incomplete. The following operational timeline synthesizes surviving witness testimony and investigative reporting.
+        </p>
+
+        <div class="timeline">
+
+            <article class="timeline-item">
+                <div class="timeline-date">MARCH 1922 // DAYS BEFORE INCIDENT</div>
+                <h4>FOOTPRINT DISCOVERY</h4>
+                <p>
+                    Andreas Gruber reportedly observes footprints leading from nearby woods toward the farmhouse. No corresponding outbound tracks are identified in snow conditions.
+                </p>
+            </article>
+
+            <article class="timeline-item">
+                <div class="timeline-date">MARCH 1922 // PRELIMINARY WARNINGS</div>
+                <h4>ATTIC SOUNDS & MISSING KEYS</h4>
+                <p>
+                    Family members report unexplained noises overhead. Keys vanish from inside the residence. An unfamiliar newspaper appears without explanation.
+                </p>
+            </article>
+
+            <article class="timeline-item">
+                <div class="timeline-date">31 MARCH 1922 // EVENING HOURS</div>
+                <h4>ESTIMATED MURDER WINDOW</h4>
+                <p>
+                    Investigators believe members of the household were killed sequentially, likely beginning inside the barn structure before attacks moved into the residence.
+                </p>
+            </article>
+
+            <article class="timeline-item">
+                <div class="timeline-date">1 APRIL 1922 // POST-INCIDENT</div>
+                <h4>CONTINUED OCCUPANCY SIGNS</h4>
+                <p>
+                    Witnesses later report smoke emerging from the chimney and livestock being fed, suggesting the perpetrator remained on-site after the murders.
+                </p>
+            </article>
+
+            <article class="timeline-item">
+                <div class="timeline-date">4 APRIL 1922 // DISCOVERY</div>
+                <h4>BODIES LOCATED</h4>
+                <p>
+                    Neighbors investigating prolonged silence discover the victims. The brutal nature of the killings shocks the surrounding Bavarian communities.
+                </p>
+            </article>
+
+            <article class="timeline-item">
+                <div class="timeline-date">LATER DECADES // CASE STATUS</div>
+                <h4>UNSOLVED CLASSIFICATION</h4>
+                <p>
+                    Despite multiple suspect theories and modern reviews, no definitive resolution emerges. Hinterkaifeck remains one of Germany’s most infamous unsolved murder cases.
+                </p>
+            </article>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="reveal">
+
+    <div class="section-inner">
+
+        <div class="chapter-tag">CHAPTER X</div>
+
+        <h2 class="section-title">
+            METRIC CLOSING ASSESSMENT & SOURCE MATRIX
+        </h2>
+
+        <p class="section-description">
+            More than a century later, the Hinterkaifeck murders persist as a uniquely disturbing convergence of isolation, psychological dread, and investigative uncertainty. Unlike many historical homicide cases, the terror of Hinterkaifeck extends beyond the killings themselves. The enduring horror lies within the implication that someone may have watched the family from inside their own home long before the attacks began.
+        </p>
+
+        <div class="footer-report">
+
+            <p>
+                Modern criminal profilers continue to debate whether the case reflects calculated familial targeting, opportunistic intrusion, or long-term covert habitation by a psychologically organized offender. The destruction of the original property erased physical evidence but amplified public mythology surrounding the incident. As archival documents deteriorated across decades, the line separating forensic fact from regional folklore became increasingly unstable.
+            </p>
+
+            <p>
+                The “Attic Guest” theory remains the most psychologically unsettling interpretation because it transforms the farmhouse into a predatory environment itself — a structure silently occupied by an unseen observer waiting above sleeping victims. Whether literal or symbolic, that image continues to define the legacy of Hinterkaifeck in global true-crime history.
+            </p>
+
+            <div class="registry">
+                </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<footer style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:0.8rem;">
+    HINTERKAIFECK ARCHIVE TERMINAL // 1922 CASE RECONSTRUCTION // STATIC INVESTIGATIVE DOCUMENT
+</footer>
+
+<script>
+
+const revealElements = document.querySelectorAll('.reveal');
+
+const observer = new IntersectionObserver((entries) => {
+
+    entries.forEach(entry => {
+
+        if(entry.isIntersecting){
+
+            entry.target.classList.add('visible');
+
+        }
+
+    });
+
+},{
+    threshold:0.12
+});
+
+revealElements.forEach(element => {
+
+    observer.observe(element);
+
+});
+
+</script>
+
+</body>
+</html>

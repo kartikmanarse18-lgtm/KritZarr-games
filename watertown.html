@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S.S. Watertown — Faces In The Wake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Special+Elite&family=Roboto+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+--bg:#030507;
+--panel:#081018;
+--paper:#d8ccb6;
+--cyan:#00f0ff;
+--rust:#a34825;
+--red:#ff4545;
+--muted:#7e766d;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html{
+scroll-behavior:smooth;
+}
+
+body{
+background:#020406;
+color:var(--paper);
+font-family:'Cinzel',serif;
+overflow-x:hidden;
+line-height:1.8;
+}
+
+body::before{
+content:'';
+position:fixed;
+inset:0;
+background:url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+opacity:.25;
+pointer-events:none;
+z-index:999;
+}
+
+.hero{
+height:100vh;
+position:relative;
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+text-align:center;
+padding:40px;
+}
+
+.hero video{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+object-fit:cover;
+filter:brightness(.25) contrast(1.2);
+}
+
+.hero-overlay{
+position:absolute;
+inset:0;
+background:radial-gradient(circle at center, rgba(0,0,0,.2), rgba(0,0,0,.92));
+}
+
+.hero-content{
+position:relative;
+z-index:2;
+max-width:1000px;
+}
+
+.hero h1{
+font-size:5rem;
+letter-spacing:5px;
+margin-bottom:20px;
+text-shadow:0 0 20px rgba(0,240,255,.3);
+}
+
+.hero p{
+font-family:'Roboto Mono',monospace;
+font-size:1rem;
+max-width:850px;
+margin:auto;
+color:#c7c7c7;
+}
+
+.scroll-indicator{
+margin-top:50px;
+font-family:'Roboto Mono',monospace;
+color:var(--cyan);
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+50%{opacity:.3;}
+}
+
+.section{
+max-width:1300px;
+margin:auto;
+padding:90px 40px;
+position:relative;
+}
+
+.section-title{
+font-size:3rem;
+margin-bottom:30px;
+color:var(--rust);
+}
+
+.document-panel{
+background:rgba(9,15,22,.92);
+border:1px solid rgba(0,240,255,.15);
+padding:50px;
+margin-top:40px;
+box-shadow:0 0 40px rgba(0,0,0,.7);
+position:relative;
+overflow:hidden;
+}
+
+.document-panel::before{
+content:'';
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:3px;
+background:linear-gradient(90deg,var(--rust),var(--cyan),var(--rust));
+}
+
+p{
+font-size:1.15rem;
+margin-bottom:25px;
+font-family:'Georgia',serif;
+color:#e0d7ca;
+}
+
+.quote{
+margin:40px 0;
+padding:30px;
+border-left:4px solid var(--rust);
+background:rgba(255,255,255,.03);
+font-family:'Special Elite',cursive;
+font-size:1.1rem;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:25px;
+margin-top:40px;
+}
+
+.card{
+background:#0b141d;
+padding:25px;
+border:1px solid rgba(255,255,255,.08);
+}
+
+.card h3{
+margin-bottom:15px;
+color:var(--cyan);
+}
+
+.media-frame{
+margin-top:35px;
+border:2px solid #172433;
+overflow:hidden;
+background:#000;
+}
+
+.media-frame img{
+width:100%;
+display:block;
+filter:grayscale(1) contrast(1.2);
+}
+
+.video-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(400px,1fr));
+gap:25px;
+margin-top:40px;
+}
+
+iframe{
+width:100%;
+aspect-ratio:16/9;
+border:none;
+background:#000;
+}
+
+.timeline{
+margin-top:50px;
+border-left:2px solid var(--cyan);
+padding-left:40px;
+}
+
+.timeline-item{
+margin-bottom:50px;
+position:relative;
+}
+
+.timeline-item::before{
+content:'';
+position:absolute;
+left:-49px;
+top:8px;
+width:15px;
+height:15px;
+background:var(--cyan);
+border-radius:50%;
+box-shadow:0 0 12px var(--cyan);
+}
+
+.timeline-item h4{
+font-size:1.4rem;
+margin-bottom:10px;
+color:var(--rust);
+}
+
+.dual-analysis{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:25px;
+margin-top:50px;
+}
+
+.analysis-box{
+padding:35px;
+background:#0b1117;
+}
+
+.analysis-box h3{
+margin-bottom:15px;
+font-size:1.6rem;
+}
+
+.believer h3{color:var(--cyan);}
+.skeptic h3{color:var(--rust);}
+
+footer{
+padding:100px 40px;
+text-align:center;
+font-family:'Roboto Mono',monospace;
+color:#8d8375;
+}
+
+@media(max-width:900px){
+.hero h1{font-size:3rem;}
+.dual-analysis{grid-template-columns:1fr;}
+.section{padding:70px 20px;}
+.document-panel{padding:30px;}
+.video-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<video autoplay muted loop playsinline>
+<source src="https://cdn.coverr.co/videos/coverr-dark-ocean-waves-1560082126202?download=1080p" type="video/mp4">
+</video>
+<div class="hero-overlay"></div>
+
+<div class="hero-content">
+<h1>FACES IN THE WAKE</h1>
+<p>
+An interactive maritime investigation into one of the most controversial paranormal photographs ever taken.
+A story involving industrial death, ocean burial rituals, mass psychological trauma, forensic photography,
+and a ghostly image that has haunted maritime folklore for over a century.
+</p>
+
+<div class="scroll-indicator">
+SCROLL TO ENTER THE ARCHIVE
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">I. THE SHIP</h2>
+
+<div class="document-panel">
+<p>
+In December of 1924, the steam tanker known as the S.S. Watertown crossed the Pacific Ocean carrying crude petroleum toward the Panama Canal. The vessel belonged to the Cities Service Company, a major industrial shipping operation during the rise of American petroleum expansion.
+</p>
+
+<p>
+Life aboard an oil tanker in the 1920s was brutally dangerous. Crew members worked in enclosed steel compartments surrounded by toxic gases, heat, flammable vapors, and primitive ventilation systems. One small error inside a confined compartment could become fatal within seconds.
+</p>
+
+<div class="grid">
+<div class="card">
+<h3>VESSEL TYPE</h3>
+<p>Steam-powered oil tanker.</p>
+</div>
+
+<div class="card">
+<h3>PRIMARY ROUTE</h3>
+<p>San Pedro → Pacific Coast → Panama Canal → Gulf Transit.</p>
+</div>
+
+<div class="card">
+<h3>KNOWN INCIDENT</h3>
+<p>Two crewmen reportedly died while cleaning a cargo area contaminated with toxic petroleum gas.</p>
+</div>
+</div>
+
+<div class="media-frame">
+<img src="https://i0.wp.com/the-avocado.org/wp-content/uploads/2022/03/watertown-ship.jpg?resize=690%2C429&quality=60&ssl=1&_jb=custom" alt="S.S. Watertown Ship Profile">
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">II. THE DEATHS INSIDE THE COFFERDAM</h2>
+
+<div class="document-panel">
+<p>
+The most chilling phase of the Watertown legend begins deep inside a narrow industrial compartment below deck.
+Crewmen James Courtney and Michael Meehan were reportedly assigned to clean the ship's cofferdam — a cramped steel cavity contaminated by petroleum residue and vapor.
+</p>
+
+<p>
+Historical retellings claim that a concentrated pocket of toxic fumes overwhelmed both men before they could climb back to safety.
+</p>
+
+<div class="quote">
+"When they were discovered, both men had collapsed inside the compartment before they could reach the ladder."
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>LIKELY CAUSE</h3>
+<p>Petroleum vapor inhalation combined with oxygen displacement in an enclosed space.</p>
+</div>
+
+<div class="card">
+<h3>1920s SAFETY CONDITIONS</h3>
+<p>No modern gas sensors, minimal ventilation systems, and almost nonexistent confined-space safety regulations.</p>
+</div>
+
+<div class="card">
+<h3>PSYCHOLOGICAL EFFECT</h3>
+<p>The deaths reportedly deeply traumatized the crew before the alleged sightings even began.</p>
+</div>
+</div>
+
+<div class="media-frame">
+<img src="https://bpldcassets.blob.core.windows.net/derivatives/images/commonwealth:rv0432904/image_thumbnail_300.jpg" alt="Charles River Historical Maritime Archive Reference">
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">III. BURIAL AT SEA</h2>
+
+<div class="document-panel">
+<p>
+Following maritime tradition, both men were reportedly sewn into weighted canvas shadows and committed to the Pacific Ocean.
+</p>
+
+<p>
+According to later accounts, the sea was calm during the burial ceremony. Crew members gathered silently while prayers were read over the stern.
+</p>
+
+<div class="quote">
+"Less than twenty-four hours later, some aboard the vessel claimed the dead had returned."
+</div>
+
+<div class="video-grid">
+<iframe src="https://www.youtube.com/embed/BICQRkq5q_g?si=2KYB-e50Sk5W4K9p" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/FW7OaBlZXso?si=ogmqbTrFwgdbpIZg" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">IV. THE FIRST SIGHTINGS</h2>
+
+<div class="document-panel">
+<p>
+As sunset fell across the Pacific Ocean, the Watertown's stern wake began glowing beneath fading orange light. According to later retellings from crew members, the sea behind the vessel appeared strangely uniform — as though sections of foam were holding shape longer than normal.
+</p>
+
+<p>
+At first, sailors dismissed the anomaly as exhaustion and stress following the deaths. But over the following evenings, more crew members reportedly gathered near the stern to observe the phenomenon.
+</p>
+
+<div class="quote">
+"Some swore the faces were rising upward through the foam itself. Others claimed the eyes appeared open whenever moonlight struck the wake."
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>ENVIRONMENTAL CONDITIONS</h3>
+<p>Calm Pacific waters combined with long wake trails may have amplified recurring wave formations.</p>
+</div>
+
+<div class="card">
+<h3>CREW CONDITION</h3>
+<p>Extreme fatigue, grief, oil vapor exposure, and isolation likely affected perception aboard the ship.</p>
+</div>
+
+<div class="card">
+<h3>REPORTED EFFECT</h3>
+<p>Witnesses claimed the shapes remained visible for several evenings before fading completely near port.</p>
+</div>
+</div>
+
+<div class="media-frame">
+<img src="https://bpldcassets.blob.core.windows.net/derivatives/images/commonwealth:rv0432947/image_thumbnail_300.jpg" alt="Historical Maritime Wave Documentation Snapshot">
+</div>
+
+<div class="video-grid">
+<iframe src="https://www.youtube.com/embed/eK_b-gt5NVM" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe src="https://www.youtube.com/embed/OM3ufvQb2A8?si=5sILx5RiCw8kZaOY" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<div class="document-panel">
+<p>
+Crew members reportedly began noticing unusual patterns forming inside the ship's wake. At first the shapes appeared to be random foam structures illuminated by sunset light.
+</p>
+
+<p>
+But according to witness stories repeated over decades, the shapes slowly became recognizable as human faces.
+</p>
+
+<div class="quote">
+"The faces were said to move with the wake itself, never falling behind the ship."
+</div>
+
+<div class="timeline">
+<div class="timeline-item">
+<h4>DAY 1</h4>
+<p>Burial at sea conducted.</p>
+</div>
+
+<div class="timeline-item">
+<h4>DAY 2</h4>
+<p>Initial wake anomalies reportedly observed by lookout crew.</p>
+</div>
+
+<div class="timeline-item">
+<h4>DAY 3</h4>
+<p>Rumors spread through the vessel. Some crew allegedly refused stern watch duty after dark.</p>
+</div>
+
+<div class="timeline-item">
+<h4>DAY 4</h4>
+<p>Captain Keith Tracy reportedly attempts photographic documentation.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">V. THE PHOTOGRAPH</h2>
+
+<div class="document-panel">
+<p>
+By the fourth evening, Captain Keith Tracy reportedly decided to document the anomaly. Using a small onboard camera, he allegedly photographed the wake while multiple crew members stood nearby.
+</p>
+
+<p>
+Most accounts claim several exposures failed completely before one final image captured what appeared to be two distorted human faces floating within the water.
+</p>
+
+<div class="quote">
+"The image would later become one of the most famous ghost photographs ever published."
+</div>
+
+<div class="media-frame">
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/79/SS_Watertown_ghosts.jpg" alt="SS Watertown Ghosts Original Frame">
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>IMAGE CHARACTERISTICS</h3>
+<p>Dark orbital cavities, distorted facial contours, and unusually symmetrical foam structures dominate the composition.</p>
+</div>
+
+<div class="card">
+<h3>PHOTOGRAPHIC LIMITATIONS</h3>
+<p>1920s maritime photography often suffered from blur, grain amplification, water reflection distortion, and exposure instability.</p>
+</div>
+
+<div class="card">
+<h3>PUBLIC REACTION</h3>
+<p>The image rapidly entered paranormal magazines, maritime folklore archives, and ghost-photography collections.</p>
+</div>
+</div>
+
+<div class="video-grid">
+<iframe src="https://www.youtube.com/embed/o9ufJvU51-g" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</div>
+
+<div class="grid" style="margin-top:40px;">
+<div class="media-frame">
+<img src="https://i0.wp.com/the-avocado.org/wp-content/uploads/2022/03/watertown.png?resize=710%2C618&quality=55&ssl=1&_jb=custom" alt="SS Watertown Archival Clipping Breakdown">
+</div>
+
+<div class="media-frame">
+<img src="https://i0.wp.com/the-avocado.org/wp-content/uploads/2022/03/ghosts-big.png?resize=880%2C453&quality=55&ssl=1&_jb=custom" alt="S.S. Watertown Ghost Faces Detail Close-up Study">
+</div>
+</div>
+
+<div class="document-panel">
+<p>
+The most famous element of the Watertown case is the photograph allegedly taken by Captain Keith Tracy.
+The image appears to show two distorted human faces emerging from ocean foam behind the vessel.
+</p>
+
+<div class="media-frame">
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/79/SS_Watertown_ghosts.jpg" alt="SS Watertown Ghosts Reprint">
+</div>
+
+<p>
+The image became one of the most reproduced paranormal photographs in modern folklore.
+Supporters argue the photograph captured an unexplained phenomenon.
+Skeptics argue the image demonstrates classic visual pareidolia.
+</p>
+
+<div class="grid">
+<div class="card">
+<h3>PARANORMAL CLAIM</h3>
+<p>The faces resemble the deceased crewmen with unnatural clarity.</p>
+</div>
+
+<div class="card">
+<h3>SKEPTICAL CLAIM</h3>
+<p>Random wave patterns combined with contrast enhancement created the illusion of faces.</p>
+</div>
+
+<div class="card">
+<h3>UNRESOLVED ISSUE</h3>
+<p>The original negative was reportedly lost decades later, preventing modern forensic analysis.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">VI. FORENSIC ANALYSIS LAB</h2>
+
+<div class="document-panel">
+<p>
+Modern analysts have attempted to digitally reconstruct the famous image.
+Some claim the uncropped version reveals repeating ocean patterns that weaken the supernatural interpretation.
+Others argue the facial structures remain unusually recognizable.
+</p>
+
+<div class="dual-analysis">
+<div class="analysis-box believer">
+<h3>PARANORMAL INTERPRETATION</h3>
+<p>
+Witness consistency, emotional reactions among crew members, and the unusual visibility of facial structures are frequently cited as evidence that something extraordinary occurred aboard the Watertown.
+</p>
+</div>
+
+<div class="analysis-box skeptic">
+<h3>FORENSIC SKEPTICISM</h3>
+<p>
+Photographic experts point to selective cropping, high-contrast development methods, and the human tendency to recognize faces in random visual information.
+</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">VII. THE BURNS DETECTIVE AGENCY</h2>
+
+<div class="document-panel">
+<p>
+As rumors surrounding the Watertown spread through maritime circles, company officials reportedly feared panic among commercial crews. Paranormal stories aboard industrial vessels threatened discipline, morale, and operational stability.
+</p>
+
+<p>
+According to later accounts, the Burns Detective Agency examined the photograph in an effort to determine whether the image had been manipulated.
+</p>
+
+<div class="quote">
+"Investigators reportedly searched for evidence of double exposure, retouching, or chemical tampering — but no definitive proof of forgery was ever publicly documented."
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>FORENSIC THEORY</h3>
+<p>Investigators allegedly examine the camera, negative development process, and supply chain for signs of manipulation.</p>
+</div>
+
+<div class="card">
+<h3>MEDIA ESCALATION</h3>
+<p>The case increasingly shifted from maritime tragedy into paranormal legend.</p>
+</div>
+
+<div class="card">
+<h3>ARCHIVE PROBLEM</h3>
+<p>Most original records associated with the case are either missing, incomplete, or impossible to verify today.</p>
+</div>
+</div>
+
+<div class="media-frame">
+<img src="https://bpldcassets.blob.core.windows.net/derivatives/images/commonwealth:rv043352x/image_thumbnail_300.jpg" alt="Historical Investigations Records Index">
+</div>
+
+<div class="document-panel">
+<p>
+According to popular retellings of the case, the Cities Service Company allegedly requested an investigation into the authenticity of the photograph.
+The Burns Detective Agency was reportedly involved in examining the image and negative.
+</p>
+
+<p>
+Some paranormal accounts claim investigators failed to identify signs of tampering.
+However, documentation surrounding the investigation remains incomplete and controversial.
+</p>
+
+<div class="quote">
+"The line between folklore and documented history becomes increasingly blurred as the story moves through decades of retelling."
+</div>
+
+<div class="media-frame">
+<img src="https://bpldcassets.blob.core.windows.net/derivatives/images/commonwealth:rv043298b/image_thumbnail_300.jpg" alt="Map of water privilege at Watertown Bridge Archive Piece">
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">VIII. MODERN PSYCHOLOGY</h2>
+
+<div class="document-panel">
+<p>
+Neuroscientists describe the phenomenon known as pareidolia as the brain's tendency to recognize meaningful patterns — especially human faces — within random visual noise.
+</p>
+
+<p>
+This effect becomes dramatically stronger during periods of emotional stress, fear, fatigue, grief, or environmental isolation.
+</p>
+
+<div class="grid">
+<div class="card">
+<h3>PAREIDOLIA</h3>
+<p>Humans instinctively search for faces in clouds, shadows, waves, and static.</p>
+</div>
+
+<div class="card">
+<h3>GROUP SUGGESTION</h3>
+<p>Once one person identifies a face, others may begin perceiving the same structure.</p>
+</div>
+
+<div class="card">
+<h3>MARITIME ISOLATION</h3>
+<p>Extended ocean voyages historically intensified superstition and psychological strain among crews.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">IX. THE LOST NEGATIVE</h2>
+
+<div class="document-panel">
+<p>
+One of the greatest mysteries surrounding the case is the disappearance of the alleged original photographic negative.
+</p>
+
+<p>
+Without the source material, modern investigators cannot perform complete high-resolution forensic scanning, chemical emulsion analysis, or modern spectral reconstruction.
+</p>
+
+<div class="quote">
+"Whether accidental, administrative, or deliberate, the disappearance of the original negative ensured the mystery would survive indefinitely."
+</div>
+</div>
+</section>
+
+<section class="section">
+<h2 class="section-title">X. FINAL ASSESSMENT</h2>
+
+<div class="document-panel">
+<p>
+The S.S. Watertown remains one of the most famous paranormal maritime legends ever recorded.
+</p>
+
+<p>
+To believers, the image represents direct evidence that the dead briefly returned to the surface of the Pacific Ocean.
+To skeptics, it demonstrates the extraordinary power of human perception, grief, suggestion, and visual interpretation.
+</p>
+
+<p>
+Nearly a century later, the question remains unresolved.
+</p>
+
+<div class="quote">
+Were the faces truly following the ship?
+
+Or did a traumatized crew see humanity reflected back at them from the sea itself?
+</div>
+</div>
+</section>
+
+<footer>
+INTERACTIVE INVESTIGATIVE ARCHIVE — S.S. WATERTOWN DOCUMENTARY EXPERIENCE
+</footer>
+
+<script>
+window.addEventListener('scroll',()=>{
+const reveals=document.querySelectorAll('.document-panel');
+reveals.forEach(panel=>{
+const top=panel.getBoundingClientRect().top;
+if(top<window.innerHeight-100){
+panel.style.transform='translateY(0px)';
+panel.style.opacity='1';
+panel.style.transition='all 1.2s ease';
+}else{
+panel.style.transform='translateY(60px)';
+panel.style.opacity='.1';
+}
+});
+});
+</script>
+
+</body>
+</html>

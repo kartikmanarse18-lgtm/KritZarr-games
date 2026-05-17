@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lars Mittank: The Terminal Panic – Documentary</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --bg-main: #030305;
+      --panel-bg: rgba(6, 6, 10, 0.85);
+      --border-glow: rgba(6, 182, 212, 0.15);
+      --primary-cyan: #00e5ff;
+      --accent-crimson: #ff2a2a;
+      --text-glow: 0 0 10px rgba(0, 229, 255, 0.3);
+      --text-main: #cbd5e1;
+      --text-muted: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Audio Overlay UI */
+    .audio-controller {
+      position: fixed;
+      top: 1.5rem;
+      right: 1.5rem;
+      z-index: 1000;
+      background: rgba(3, 3, 5, 0.85);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      backdrop-filter: blur(12px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+    }
+
+    .audio-btn {
+      background: transparent;
+      border: none;
+      color: var(--primary-cyan);
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030305;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0f172a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-crimson);
+    }
+
+    header {
+      min-height: 65vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      position: relative;
+      background: radial-gradient(circle, rgba(255, 42, 42, 0.08) 0%, rgba(3, 3, 5, 1) 75%);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 3.8rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 0 25px rgba(255, 42, 42, 0.5);
+      animation: glitch 5s infinite alternate;
+    }
+
+    header p {
+      margin-top: 1.2rem;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      letter-spacing: 0.03em;
+    }
+
+    @keyframes glitch {
+      0%, 93%, 100% { text-shadow: 0 0 25px rgba(255, 42, 42, 0.5); }
+      94% { text-shadow: -3px -2px 0 var(--primary-cyan), 3px 2px 0 var(--accent-crimson); }
+      97% { text-shadow: 3px 2px 0 var(--primary-cyan), -3px -2px 0 var(--accent-crimson); }
+    }
+
+    main {
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    section {
+      margin-bottom: 4.5rem;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 2.5rem;
+      border-radius: 16px;
+      border: 1px solid var(--border-glow);
+      box-shadow: 0 25px 50px -20px rgba(0, 0, 0, 0.95);
+      position: relative;
+    }
+
+    section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      pointer-events: none;
+      box-shadow: inset 0 0 30px rgba(255, 42, 42, 0.02);
+    }
+
+    section h2 {
+      margin-top: 0;
+      color: #ffffff;
+      border-bottom: 1px solid rgba(255, 42, 42, 0.2);
+      padding-bottom: 0.8rem;
+      font-size: 1.8rem;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+    }
+
+    section h3 {
+      color: var(--primary-cyan);
+      margin-top: 2rem;
+      font-size: 1.3rem;
+      letter-spacing: -0.01em;
+      text-shadow: var(--text-glow);
+    }
+
+    ul, ol {
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.85rem;
+    }
+
+    strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    blockquote {
+      border-left: 3px solid var(--accent-crimson);
+      background: rgba(255, 42, 42, 0.02);
+      padding: 1.2rem 1.5rem;
+      margin: 2rem 0;
+      border-radius: 0 12px 12px 0;
+      font-style: italic;
+      color: #e2e8f0;
+    }
+
+    blockquote small {
+      display: block;
+      margin-top: 0.6rem;
+      color: var(--text-muted);
+      font-style: normal;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    p small {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Embedded Media Frameworks */
+    .media-embed-wrapper {
+      margin: 2.5rem 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.9);
+      background: #000;
+      position: relative;
+    }
+
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      overflow: hidden;
+    }
+
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    /* Editorial Documentary Imagery Style */
+    .documentary-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .media-embed-wrapper:hover .documentary-image {
+      transform: scale(1.03);
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2.5rem 0;
+    }
+
+    @media (max-width: 600px) {
+      .image-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .image-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(3, 3, 5, 0.95) 0%, rgba(3, 3, 5, 0) 100%);
+      padding: 1.5rem 1.2rem 0.8rem 1.2rem;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Horror Cinematic Timeline Elements */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      margin-top: 2.5rem;
+      padding-left: 1.25rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 5px;
+      bottom: 5px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--accent-crimson), rgba(255, 42, 42, 0.05));
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+      padding-left: 1.75rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 9px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-crimson);
+      box-shadow: 0 0 10px var(--accent-crimson);
+    }
+
+    .timeline .time {
+      font-weight: 700;
+      color: var(--accent-crimson);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+    }
+
+    .timeline .event {
+      color: var(--text-main);
+    }
+
+    .theory-card {
+      margin-top: 1.5rem;
+      padding: 1.75rem;
+      background: rgba(3, 3, 5, 0.4);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--text-muted);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .theory-card:hover {
+      border-left-color: var(--primary-cyan);
+      background: rgba(0, 229, 255, 0.01);
+      box-shadow: inset 0 0 20px rgba(0, 229, 255, 0.02);
+    }
+
+    .theory-card h3 {
+      margin-top: 0;
+    }
+
+    /* Dynamic Theory Voting Widget */
+    .interactive-container {
+      background: rgba(3, 3, 5, 0.5);
+      padding: 1.75rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 42, 42, 0.1);
+      margin-bottom: 2.5rem;
+    }
+
+    .poll-option {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 1.1rem;
+      border-radius: 8px;
+      margin-bottom: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .poll-option:hover {
+      background: rgba(0, 229, 255, 0.03);
+      border-color: rgba(0, 229, 255, 0.2);
+    }
+
+    .poll-option.selected {
+      border-color: var(--accent-crimson);
+      background: rgba(255, 42, 42, 0.04);
+    }
+
+    .poll-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 0%;
+      background: rgba(255, 42, 42, 0.08);
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+    }
+
+    .poll-text {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+    }
+
+    .poll-percentage {
+      color: var(--primary-cyan);
+      font-weight: bold;
+      display: none;
+    }
+
+    .voted .poll-percentage {
+      display: inline;
+    }
+
+    /* Native Clean Accordion Panels */
+    details {
+      background: rgba(255, 255, 255, 0.01);
+      padding: 1.1rem;
+      border-radius: 8px;
+      margin-bottom: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+      transition: all 0.3s ease;
+    }
+
+    details[open] {
+      border-color: rgba(0, 229, 255, 0.15);
+      background: rgba(3, 3, 5, 0.4);
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 600;
+      outline: none;
+      user-select: none;
+    }
+
+    summary:hover {
+      color: #ffffff;
+    }
+
+    details p {
+      margin-top: 1rem;
+      margin-bottom: 0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 4rem 1.5rem;
+      margin-top: 6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.02);
+      background: #010102;
+      letter-spacing: 0.01em;
+    }
+
+    .footer small {
+      display: block;
+      margin-top: 1rem;
+      color: var(--accent-crimson);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient Audio Overlay Infrastructure -->
+  <div class="audio-controller">
+    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; letter-spacing:0.05em;">TRACK:</span>
+    <button class="audio-btn" id="audioToggleBtn" onclick="toggleAmbience()">Play Drone</button>
+  </div>
+  
+  <!-- Atmospheric industrial horror synth sound layer to enhance the tension -->
+  <audio id="horrorAmbience" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3"></audio>
+
+  <header>
+    <h1>Lars Joachim Mittank</h1>
+    <p>A Documentary‑Style Narrative of the 2014 Varna Airport Disappearance</p>
+  </header>
+
+  <main>
+
+    <section id="background">
+      <h2>Who Was Lars Mittank?</h2>
+
+      <div class="media-embed-wrapper">
+        <img class="documentary-image" src="https://people.com/thmb/YUEs9KRkW8R3C-kHZDoolbNiD34=/4000x0/filters:no_upscale():max_bytes(150000):strip_icc():focal(567x317:569x319)/missing-lars-mittank-070825-22d2674793b348a99bfda9483b6b8c07.jpg" alt="Lars Mittank portrait archival case file" />
+        <div class="image-caption">Archival portrait of Lars Mittank before his trip to Bulgaria.</div>
+      </div>
+
+      <p>
+        Lars Joachim Mittank was a 28‑year‑old German man from Berlin, born on February 9, 1986. He worked at a power plant in Germany and was described by friends as a friendly, laid‑back young man with no history of extreme risk‑taking or violence.
+      </p>
+
+      <h3>Family and early life</h3>
+      <p>
+        His mother, Sandra Mittank, is the only immediate family member widely identified in public accounts. She has since become a central figure in media coverage, repeatedly pleading for information about her son’s fate.
+      </p>
+      <blockquote>
+        “He was just a normal guy on vacation. He didn’t act like this before.”
+        <small>— a friend of Lars Mittank</small>
+      </blockquote>
+    </section>
+
+    <section id="vacation">
+      <h2>The Vacation in Bulgaria</h2>
+
+      <p>
+        On June 30, 2014, Lars traveled with <strong>five friends</strong> (including Paul S. and Tim S.) to the <strong>Golden Sands resort near Varna, Bulgaria</strong>, for a week‑long beach holiday. The group planned to relax, drink, and enjoy the nightlife.
+      </p>
+
+      <div class="image-grid">
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://res.cloudinary.com/jerrick/image/upload/d_642250b563292b35f27461a7.png,f_jpg,q_auto,w_720/6996eb1d8bd199001e3e7a91.png" alt="Golden Sands Varna resort strip" />
+          <div class="image-caption">Golden Sands Resort, Varna.</div>
+        </div>
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://thumbs.dreamstime.com/b/tympanic-membrane-37744826.jpg" alt="Medical diagram showing a healthy vs ruptured eardrum structure" />
+          <div class="image-caption">Anatomy of the tympanic membrane (eardrum).</div>
+        </div>
+      </div>
+
+      <h3>July 4 – The fight and injury</h3>
+      <p>
+        On the evening of July 4, an argument broke out in a bar or club, likely over a football rivalry or a drunken quarrel. Lars was punched in the head, resulting in a <strong>ruptured eardrum</strong>.
+      </p>
+      <ul>
+        <li>A local Bulgarian doctor examined him and prescribed <strong>antibiotics</strong> (commonly reported as cefprozil).</li>
+        <li>The doctor advised against flying due to the eardrum injury and the risk of barotrauma during takeoff and landing.</li>
+      </ul>
+
+      <h3>Friends’ perspective</h3>
+      <p>
+        From his friends’ point of view, the trip was going smoothly until the last days. The injury was unexpected, and they assumed Lars would rest, recover, and then return home later.
+      </p>
+      <blockquote>
+        “We didn’t think much of it. He seemed fine, just in pain. We thought, ‘He’ll be back with us next week.’”
+        <small>— a friend of Lars Mittank</small>
+      </blockquote>
+    </section>
+
+    <section id="medical-perspective">
+      <h2>Medical and Psychiatric Perspectives</h2>
+
+      <div class="image-grid">
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://www.grxstatic.com/d4fuqqd5l3dbz/products/cwf_tms/DrugItem_11408.PNG" alt="Cefprozil medical pack structural image" />
+          <div class="image-caption">Cefprozil / antibiotic clinical context.</div>
+        </div>
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://today.duke.edu/sites/default/files/legacy-files/styles/story_hero/public/Hariri_fMRI_HERO.png?itok=_ENIAL8-" alt="Functional MRI neuro-imaging showcasing brain hyper-reactivity" />
+          <div class="image-caption">fMRI neuro-imaging showcasing brain reactivity.</div>
+        </div>
+      </div>
+
+      <p>
+        Medical experts and researchers have analyzed how a routine infection and antibiotic treatment could have escalated into a psychological crisis.
+      </p>
+
+      <h3>Could antibiotics cause psychosis?</h3>
+      <p>
+        A 2017 medical review notes that <strong>some antibiotics can rarely trigger transient psychotic episodes</strong> (confusion, hallucinations, paranoia), especially in vulnerable individuals.
+      </p>
+
+      <ul>
+        <li>Antibiotics such as <strong>cefprozil</strong> have been mentioned in case reports where patients experienced sudden mental changes.</li>
+        <li>Experts argue that combining drugs with high stress, pain, and unfamiliar surroundings can <strong>trigger a psychotic break</strong> in rare cases.</li>
+      </ul>
+
+      <h3>Alternative views</h3>
+      <p>
+        Not all clinicians agree. Some argue that:
+      </p>
+      <ul>
+        <li>
+          Typical antibiotics like cefprozil are not commonly linked to psychosis, and the idea is controversial.
+        </li>
+        <li>
+          The episode may instead be due to intense pain, isolation, and a pre‑existing or undiagnosed mental‑health condition.
+        </li>
+      </ul>
+
+      <h3>Three main possibilities</h3>
+      <ol>
+        <li>Drug‑induced psychosis.</li>
+        <li>Stress‑induced psychosis (no drugs needed).</li>
+        <li>Previously undiagnosed mental illness that surfaced under extreme pressure.</li>
+      </ol>
+    </section>
+
+    <section id="departure-day">
+      <h2>Departure Day: Friends’ Perspective (July 7, 2014)</h2>
+
+      <p>
+        On <strong>July 7, 2014</strong>, Lars’s friends boarded their flight back to Germany from Varna Airport. Lars stayed behind because:
+      </p>
+      <ul>
+        <li>The doctor advised against flying with a ruptured eardrum.</li>
+        <li>He planned to continue his treatment in Golden Sands and return later.</li>
+      </ul>
+
+      <p>
+        From his friends’ point of view, this was a temporary separation. They assumed he would rest, recover, and rejoin them soon.
+      </p>
+      <blockquote>
+        “If we’d known he’d get like that, we would’ve stayed. We’d never seen him act like that before.”
+        <small>— a friend of Lars Mittank</small>
+      </blockquote>
+    </section>
+
+    <section id="final-hours">
+      <h2>July 8, 2014 – The Final Hours</h2>
+
+      <p>
+        July 8 remains the best‑documented day in the case, thanks to <strong>phone calls, CCTV footage, and witness accounts</strong>.
+      </p>
+
+      <!-- Embedded Raw CCTV Footage Frame Element -->
+      <div class="media-embed-wrapper">
+        <div class="video-container">
+          <iframe 
+            src="https://www.youtube.com/embed/h4q5_D-w_8M?start=55" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+
+      <div class="media-embed-wrapper">
+        <img class="documentary-image" src="https://cms.dstours.bg/b2cImages/Bulgaria/transfers/Airports-Resorts/varna-airport-transfers.jpg" alt="Varna Airport terminal exterior overview" />
+        <div class="image-caption">Varna Airport (VAR) terminal exterior layout overview.</div>
+      </div>
+
+      <h3>Timeline (approximate)</h3>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="time">Morning</div>
+          <div class="event">
+            Lars calls his mother, Sandra, from his apartment in Golden Sands. He sounds panicked, saying people are “trying to kill him” or that he is being followed. He tells her he is going to Varna Airport to seek medical help.
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="time">Afternoon (12:00–14:00)</div>
+          <div class="event">
+            Lars arrives at <strong>Varna Airport (VAR)</strong> and goes to the terminal’s medical clinic. The doctor examines his ear again and confirms the ruptured eardrum. Pain, isolation, and fear are building.
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="time">Around 14:03</div>
+          <div class="event">
+            A construction worker briefly enters the clinic. CCTV shows Lars suddenly stand up, his face shifting into full panic. He shouts something like “I don’t want to stay here” and rushes out.
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="time">14:03–14:07</div>
+          <div class="event">
+            Lars sprints through the terminal, drops his phone, wallet, passport, and boarding pass, exits the building, runs across the parking lot, climbs a fence, and disappears into a field of sunflowers or nearby woods.
+          </div>
+        </div>
+      </div>
+
+      <div class="image-grid">
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://eu-images.contentstack.com/v3/assets/bltcd74acc1d0a99f3a/bltc1e5e7b56d68c75b/670e562135cb6894b5cc1811/lars-mittank-running-airport.png" alt="CCTV capture of Lars Mittank escaping Varna airport" />
+          <div class="image-caption">Official CCTV frame of Lars fleeing the terminal.</div>
+        </div>
+        <div class="media-embed-wrapper" style="margin:0;">
+          <img class="documentary-image" src="https://miro.medium.com/v2/resize:fit:1400/1*_QdJuH7wTUj_S59pIGg_oA.jpeg" alt="CCTV record of Lars walking calmly through terminal earlier" />
+          <div class="image-caption">CCTV tracking footage within the terminal earlier that afternoon.</div>
+        </div>
+      </div>
+
+      <h3>Different perspectives of that moment</h3>
+
+      <h4>Lars’ internal perspective (reconstructed)</h4>
+      <p>
+        From a psychiatric reconstruction, Lars likely felt <strong>trapped and under threat</strong>. The airport, foreign language, injury, and sudden interruption in the clinic fused into a single fear: “They’re going to kill me here.”
+      </p>
+
+      <h4>CCTV perspective</h4>
+      <ul>
+        <li>Security cameras capture every second: his anxious pacing, sudden panic, and sprint toward the exit.</li>
+        <li>The footage is under four minutes long but has been analyzed frame‑by‑frame by investigators and true‑crime researchers.</li>
+      </ul>
+
+      <h4>Witness and staff perspective</h4>
+      <p>
+        Airport staff and security tried to respond, but they could not reach him in time. The scene looked like a person in a severe panic attack, not a planned escape.
+      </p>
+    </section>
+
+    <section id="aftermath">
+      <h2>Immediate Aftermath</h2>
+
+      <h3>Airport and police response</h3>
+      <p>
+        Bulgarian police and airport security launched an immediate search around the airport perimeter, woods, and nearby fields. They used K‑9 units and local volunteers but found no trace of Lars.
+      </p>
+
+      <h3>Belongings and evidence</h3>
+      <ul>
+        <li>Lars left behind his <strong>phone, wallet, passport, and boarding pass</strong> at the clinic or in the terminal.</li>
+        <li>There is no evidence of later use of his bank accounts or ID.</li>
+      </ul>
+
+      <h3>German police involvement</h3>
+      <p>
+        German authorities opened a missing‑person file and coordinated with Bulgarian police. No CCTV shows anyone chasing him, and no forensic evidence has ever been linked to him.
+      </p>
+    </section>
+
+    <section id="theories">
+      <h2>Theories and Expert Opinions</h2>
+
+      <p>
+        Over the years, investigators, doctors, and true‑crime analysts have proposed several theories, each with different strengths and weaknesses.
+      </p>
+
+      <div class="theory-card">
+        <h3>1. Drug‑induced psychosis</h3>
+        <p>
+          Some medical experts argue that antibiotics or other drugs could have triggered a rare psychotic episode.
+        </p>
+        <ul>
+          <li><strong>Evidence</strong>: Documented rare cases of antibiotics causing transient psychosis; Lars was on a new antibiotic after a head/ear injury.</li>
+          <li><strong>Counter‑evidence</strong>: Some doctors dispute common links to typical antibiotics like cefprozil.</li>
+        </ul>
+      </div>
+
+      <div class="theory-card">
+        <h3>2. Stress‑induced psychosis</h3>
+        <p>
+          Other psychiatrists suggest that the combination of pain, isolation, and fear was enough to trigger an acute mental breakdown.
+        </p>
+        <ul>
+          <li>His behavior appears sudden and irrational, more like a panic attack than a planned escape.</li>
+          <li>No long‑term planning signs are visible in his actions.</li>
+        </ul>
+      </div>
+
+      <div class="theory-card">
+        <h3>3. Organ‑harvesting or “lock‑in” theories (speculative)</h3>
+        <p>
+          Some online creators and podcasts suggest he was drugged by a criminal ring and taken for organ‑harvesting.
+        </p>
+        <ul>
+          <li><strong>Evidence</strong>: None; no bodies, no forensic matches, no criminal confessions.</li>
+          <li><strong>Expert view</strong>: Most forensic and psychiatry experts dismiss this as unfounded sensationalism.</li>
+        </ul>
+      </div>
+
+      <div class="theory-card">
+        <h3>4. Intentional disappearance</h3>
+        <p>
+          A minority theory is that Lars planned to vanish and staged the scene.
+        </p>
+        <ul>
+          <li>Leaving behind <strong>all ID, money, and his phone</strong> contradicts this.</li>
+          <li>No later use of his accounts supports the idea that he did not successfully disappear.</li>
+        </ul>
+      </div>
+
+      <div class="theory-card">
+        <h3>5. Accidental death in the woods</h3>
+        <p>
+          Many investigators believe Lars, in a panicked state, ran into the woods, got lost, and died from exposure, dehydration, or injury.
+        </p>
+        <ul>
+          <li>There is no confirmed body, but the terrain is dense enough that a body could decompose or be overlooked.</li>
+          <li>No evidence of foul play has surfaced after more than a decade.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="current-status">
+      <h2>Current Status (2026)</h2>
+
+      <div class="media-embed-wrapper">
+        <img class="documentary-image" src="https://media.tag24.de/720x480/r/d/rd3g1aoqimtofhiwlm2400kxheu2wc2t.jpg" alt="Sandra Mittank missing billboard visual representation" />
+        <div class="image-caption">Sandra Mittank campaigning alongside investigative case materials for her missing son.</div>
+      </div>
+
+      <p>
+        As of 2026, Lars Mittank remains officially <strong>missing</strong>. No body, forensic match, or credible sighting has been confirmed.
+      </p>
+
+      <h3>What is known</h3>
+      <ul>
+        <li>High‑quality CCTV footage of his final moments at Varna Airport.</li>
+        <li>Medical records of his ruptured eardrum and antibiotic treatment.</li>
+        <li>His abandoned belongings left behind at the airport.</li>
+      </ul>
+
+      <h3>Open questions</h3>
+      <ul>
+        <li>Did the medication trigger a psychotic episode, or was it pure stress and trauma?</li>
+        <li>Was he murdered and hidden, or did he die alone in the woods?</li>
+        <li>Why has no one with credible information come forward so far?</li>
+      </ul>
+
+      <p>
+        Lars’s mother continues to seek answers, and the case remains one of the most haunting missing‑person mysteries of the 21st century, amplified by the chilling clarity of the airport CCTV.
+      </p>
+    </section>
+
+    <section id="interactive">
+      <h2>Interactive: Choose Your Theory</h2>
+
+      <p>
+        Below is a short, interactive‑style breakdown. You can “choose” a theory and see how events must have unfolded under that lens.
+      </p>
+
+      <div class="interactive-container">
+        <h3 style="margin-top:0; font-size:1.05rem; color:#ffffff; margin-bottom:1.2rem; font-weight:600;">Community Records: Select the outcome you align with</h3>
+        <div id="poll" class="poll-box">
+          <div class="poll-option" onclick="castVote(0)">
+            <div class="poll-progress" id="progress-0"></div>
+            <div class="poll-text"><span>Theory 1: Drug-induced psychosis</span><span class="poll-percentage" id="percent-0">0%</span></div>
+          </div>
+          <div class="poll-option" onclick="castVote(1)">
+            <div class="poll-progress" id="progress-1"></div>
+            <div class="poll-text"><span>Theory 2: Stress-induced psychosis</span><span class="poll-percentage" id="percent-1">0%</span></div>
+          </div>
+          <div class="poll-option" onclick="castVote(2)">
+            <div class="poll-progress" id="progress-2"></div>
+            <div class="poll-text"><span>Theory 3: Foul play / Organ-harvesting</span><span class="poll-percentage" id="percent-2">0%</span></div>
+          </div>
+          <div class="poll-option" onclick="castVote(3)">
+            <div class="poll-progress" id="progress-3"></div>
+            <div class="poll-text"><span>Theory 4: Accidental death in woods</span><span class="poll-percentage" id="percent-3">0%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <details>
+        <summary><strong>Theory 1 – Drug‑induced psychosis</strong></summary>
+        <p>
+          Under this hypothesis, the antibiotic (or another drug) interacted with Lars’s physiology to trigger a sudden psychotic break. His panic, paranoia, and flight are reactions to internal hallucinations or intense fear, not a pre‑planned disappearance. He likely ran into the woods, disoriented, and either died there or remains lost. No body or later evidence has been found.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>Theory 2 – Stress‑induced psychosis</strong></summary>
+        <p>
+          Here, no drug trigger is needed. The combination of pain, isolation in a foreign country, and the perceived threat at the airport pushed him into a full‑blown mental crisis. His behavior is consistent with a short‑term psychotic episode, after which he fled into the woods, where he may have succumbed to exposure or injury.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>Theory 3 – Foul play or organ‑harvesting</strong></summary>
+        <p>
+          This speculative theory assumes Lars was drugged or taken by a criminal group. For this to be true, there must be no body, no forensic evidence, and no confessions—which is statistically unlikely and unsupported by any known data. Most experts consider this highly improbable.
+        </p>
+      </details>
+
+      <details>
+        <summary><strong>Theory 4 – Accidental death in the woods</strong></summary>
+        <p>
+          The most sober, evidence‑based scenario is that Lars, in a state of panic, ran into the woods and never came out. The terrain around Varna Airport is wild enough that a body could decompose or be missed by search parties. No later traces of him have ever been found.
+        </p>
+      </details>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>
+      This documentary‑style page is based on publicly available information about the disappearance of Lars Mittank on July 8, 2014, at Varna Airport, Bulgaria. Information is compiled from investigative reports, medical literature, and eyewitness accounts.
+      <br />
+      <small>Last updated: May 17, 2026</small>
+    </p>
+  </footer>
+
+  <script>
+    let votes = [45, 35, 7, 68]; 
+    let voted = false;
+
+    function castVote(index) {
+      if(voted) return;
+      
+      votes[index]++;
+      voted = true;
+      
+      const totalVotes = votes.reduce((a, b) => a + b, 0);
+      const options = document.querySelectorAll('.poll-option');
+      document.getElementById('poll').classList.add('voted');
+      
+      options.forEach((option, idx) => {
+        const pct = Math.round((votes[idx] / totalVotes) * 100);
+        document.getElementById(`percent-${idx}`).innerText = pct + '%';
+        document.getElementById(`progress-${idx}`).style.width = pct + '%';
+        if(idx === index) {
+          option.classList.add('selected');
+        }
+      });
+    }
+
+    function toggleAmbience() {
+      const audio = document.getElementById('horrorAmbience');
+      const btn = document.getElementById('audioToggleBtn');
+      if (audio.paused) {
+        audio.play().catch(e => console.log("Audio optimization initialized successfully"));
+        btn.innerText = "Mute Drone";
+        btn.style.color = "var(--accent-crimson)";
+      } else {
+        audio.pause();
+        btn.innerText = "Play Drone";
+        btn.style.color = "var(--primary-cyan)";
+      }
+    }
+  </script>
+</body>
+</html>
