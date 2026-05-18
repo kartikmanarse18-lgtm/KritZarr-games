@@ -1,0 +1,2056 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Hangman: Dark Executioner (Party Edition)</title>
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Orbitron for Sci-Fi typography, Inter for UI readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&family=Orbitron:wght=500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for high-quality utility icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tone.js for high-fidelity synthesized game audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 15px rgba(59, 130, 246, 0.4)',
+                        'neon-purple': '0 0 15px rgba(139, 92, 246, 0.4)',
+                        'neon-green': '0 0 15px rgba(16, 185, 129, 0.4)',
+                        'neon-red': '0 0 15px rgba(239, 68, 68, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-text-blue { text-shadow: 0 0 10px rgba(59, 130, 246, 0.6); }
+        .glow-text-red { text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
+        .glow-text-gold { text-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
+        
+        /* Smooth falling, spinning, and fading animation for laser severed limbs */
+        .severed {
+            animation: limb-fall 2s forwards cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: center;
+        }
+        @keyframes limb-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            15% {
+                transform: translateY(10px) rotate(15deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(300px) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Blood droplet animation logic */
+        .blood-particle {
+            position: absolute;
+            background-color: #ef4444;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            animation: blood-drip 1s forwards ease-out;
+        }
+        @keyframes blood-drip {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0.2);
+                opacity: 0;
+            }
+        }
+
+        /* Screen shake for error impact feedback */
+        .screen-shake {
+            animation: shake 0.4s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 2px); }
+            20%, 40%, 60%, 80% { transform: translate(4px, -2px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans h-screen max-h-screen flex flex-col selection:bg-rose-600 selection:text-white overflow-hidden relative">
+
+    <!-- Starry Backdrop Ambiance -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div class="absolute top-[12%] left-[18%] w-2 h-2 bg-white rounded-full opacity-30 animate-pulse"></div>
+        <div class="absolute top-[45%] left-[85%] w-3 h-3 bg-red-500 rounded-full opacity-20 animate-ping" style="animation-duration: 5s;"></div>
+        <div class="absolute top-[80%] left-[20%] w-1.5 h-1.5 bg-rose-400 rounded-full opacity-45 animate-pulse"></div>
+        <div class="absolute -top-[10%] -left-[10%] w-[50vw] h-[50vw] bg-red-950/10 rounded-full blur-[140px]"></div>
+        <div class="absolute -bottom-[10%] -right-[10%] w-[50vw] h-[50vw] bg-rose-950/10 rounded-full blur-[140px]"></div>
+    </div>
+
+    <!-- MODAL LOBBY SCREEN (Name Setup, Difficulty, Game Mode, Tournament Setup) -->
+    <div id="lobbyScreen" class="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative overflow-hidden flex flex-col gap-5 max-h-[95vh] overflow-y-auto">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-3xl"></div>
+            
+            <div class="text-center relative">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-neon-red mx-auto mb-3 animate-pulse">
+                    <i class="fa-solid fa-skull-crossbones text-white text-2xl"></i>
+                </div>
+                <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-wider bg-gradient-to-r from-red-400 via-rose-500 to-indigo-500 bg-clip-text text-transparent">
+                    COSMIC HANGMAN
+                </h1>
+                <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold font-orbitron mt-1">Dark Executioner Protocol</p>
+            </div>
+
+            <!-- Configuration Inputs Form -->
+            <div class="space-y-4">
+                <!-- Gameplay Mode Selector -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold font-orbitron tracking-wider">Mission Command Sector</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setLobbyMode(false)" id="modeBtn_solo" class="py-3 bg-red-950/40 border border-red-500/50 rounded-xl text-xs font-bold transition-all text-red-400 shadow-neon-red flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-user"></i>
+                            <span>Solo Expedition</span>
+                        </button>
+                        <button onclick="setLobbyMode(true)" id="modeBtn_duel" class="py-3 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-user-group"></i>
+                            <span>Party Tournament</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SOLO NAME INPUT -->
+                <div id="soloNameInputWrapper" class="flex flex-col gap-1.5">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold font-orbitron tracking-wider">Commander NAME</label>
+                    <input type="text" id="usernameInput" value="Recruit Explorer" class="w-full bg-slate-950 border border-slate-800 focus:border-red-500/80 rounded-xl px-4 py-2.5 text-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-red-500/50 transition-all">
+                </div>
+
+                <!-- PARTY TOURNAMENT PLAYERS INPUT -->
+                <div id="partyPlayersWrapper" class="space-y-3 hidden">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-[10px] text-slate-400 uppercase font-bold font-orbitron tracking-wider">Squad Size (2 to 5 Operators)</label>
+                        <div class="flex gap-2">
+                            <button onclick="setSquadSize(2)" id="squadBtn_2" class="flex-1 py-2 bg-red-950/40 border border-red-500/50 rounded-lg text-xs font-bold text-red-400 shadow-neon-red">2 Players</button>
+                            <button onclick="setSquadSize(3)" id="squadBtn_3" class="flex-1 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-slate-400">3 Players</button>
+                            <button onclick="setSquadSize(4)" id="squadBtn_4" class="flex-1 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-slate-400">4 Players</button>
+                            <button onclick="setSquadSize(5)" id="squadBtn_5" class="flex-1 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-slate-400">5 Players</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-[10px] text-slate-400 uppercase font-bold font-orbitron tracking-wider">Operator Callsigns (NAME)</label>
+                        <div id="playerInputsContainer" class="space-y-2">
+                            <!-- Dynamic input fields based on active count -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Difficulty Selectors -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold font-orbitron tracking-wider">Target Orbit Difficulty</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setLobbyDifficulty('easy')" id="diffBtn_easy" class="py-2.5 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white">
+                            EASY (8 Lives)
+                        </button>
+                        <button onclick="setLobbyDifficulty('medium')" id="diffBtn_medium" class="py-2.5 bg-red-950/40 border border-red-500/50 rounded-xl text-xs font-bold transition-all text-red-400 shadow-neon-red">
+                            MEDIUM (6 Lives)
+                        </button>
+                        <button onclick="setLobbyDifficulty('hard')" id="diffBtn_hard" class="py-2.5 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white">
+                            HARD (4 Lives)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Launch Button Action -->
+            <button onclick="startGameFromLobby()" class="w-full py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-orbitron font-black uppercase tracking-wider transition-all duration-150 shadow-neon-red active:scale-95">
+                START GAME
+            </button>
+        </div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="relative z-10 border-b border-slate-900 bg-slate-900/80 backdrop-blur-md sticky top-0 py-1.5 sm:py-2">
+        <div class="max-w-7xl mx-auto px-4 py-0.5 flex items-center justify-between gap-4">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-neon-red">
+                    <i class="fa-solid fa-skull-crossbones text-white text-sm sm:text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-orbitron text-xs sm:text-lg md:text-xl font-black tracking-wider bg-gradient-to-r from-red-400 via-rose-500 to-indigo-500 bg-clip-text text-transparent">
+                        COSMIC HANGMAN
+                    </h2>
+                    <p class="text-[7px] sm:text-[9px] text-slate-400 font-bold tracking-widest uppercase font-orbitron">Stabilize Execution Link</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-1.5 sm:space-x-2">
+                <!-- Change Config Profile -->
+                <button onclick="showLobbyScreen()" class="px-2 py-1 bg-slate-800/80 hover:bg-slate-700/80 rounded-lg text-[9px] sm:text-xs font-semibold text-slate-300 transition-all border border-slate-700">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Lobby
+                </button>
+                <button id="soundToggleBtn" onclick="toggleMute()" class="w-7 h-7 sm:w-9 sm:h-9 flex items-center justify-center bg-slate-800/80 hover:bg-slate-700/80 rounded-lg text-slate-300 transition-all border border-slate-700">
+                    <i id="soundIcon" class="fa-solid fa-volume-high text-red-500 animate-pulse text-xs sm:text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- DYNAMIC TURN HEADER BANNER (Displayed in Party Mode) -->
+    <div id="partyTurnBanner" class="bg-indigo-950/80 border-b border-indigo-800/60 text-indigo-300 text-center py-1 px-4 relative z-10 hidden font-orbitron text-[10px] sm:text-sm font-bold tracking-wider animate-pulse flex items-center justify-center space-x-2">
+        <i class="fa-solid fa-circle-right animate-bounce"></i>
+        <span>👉 ACTIVE OPERATOR: <span id="activePartyPlayerLabel" class="text-white uppercase font-black">PLAYER 1</span></span>
+    </div>
+
+    <!-- Main Game Board Container -->
+    <main id="gameContainer" class="relative z-10 flex-grow max-w-7xl w-full mx-auto p-1.5 sm:p-4 flex flex-col lg:grid lg:grid-cols-12 gap-1.5 sm:gap-6 items-stretch overflow-hidden">
+        
+        <!-- Left Side: Gallows visual board and local leaderboards -->
+        <section class="lg:col-span-5 flex flex-col gap-1.5 sm:gap-4 justify-between min-h-0">
+            <!-- Executioner Gallows Display Card -->
+            <div id="gallowsCard" class="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 sm:p-4 flex flex-row lg:flex-col items-center justify-between lg:justify-center shadow-2xl relative overflow-hidden h-[95px] sm:h-[130px] lg:h-auto min-h-0 lg:min-h-[420px] gap-2">
+                
+                <!-- Floating info / Left Side on Mobile -->
+                <div class="flex flex-col lg:absolute lg:top-4 lg:left-4 gap-0.5 z-10 w-1/2 lg:w-auto">
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[7px] text-slate-500 uppercase font-bold tracking-wider">Sector Mission</span>
+                        <span id="activeCategoryDisplay" class="px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded-full text-red-400 text-[8px] sm:text-xs font-bold font-orbitron shadow-neon-red text-center">
+                            Famous Video Games
+                        </span>
+                    </div>
+
+                    <!-- Mobile-only Lives display block -->
+                    <div class="flex flex-col gap-0.5 lg:hidden mt-0.5">
+                        <span id="difficultyLabelMobile" class="text-[8px] text-slate-500 font-bold font-orbitron">STABILITY:</span>
+                        <div id="livesContainerMobile" class="flex space-x-0.5 flex-wrap gap-y-0.5"></div>
+                    </div>
+                </div>
+
+                <!-- Floating lives visual / Absolute Top Right on Desktop -->
+                <div class="hidden lg:flex absolute top-4 right-4 items-center space-x-1.5 z-10">
+                    <span id="difficultyLabel" class="text-[10px] text-slate-400 font-bold font-orbitron">STABILITY:</span>
+                    <div id="livesContainer" class="flex space-x-1"></div>
+                </div>
+
+                <!-- Custom Blood Spray Area Over Gallows -->
+                <div id="bloodContainer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+                <!-- Interactive SVG Gallows Visualizer (Compact scaled for mobile side-by-side) -->
+                <div class="w-1/2 lg:w-full h-full lg:h-auto max-w-[100px] sm:max-w-[140px] lg:max-w-[280px] aspect-square flex items-center justify-center my-0 lg:my-6 relative">
+                    <div class="absolute bottom-1 left-1/2 -translate-x-1/2 w-[80%] h-2 lg:h-5 bg-red-500/5 rounded-full border border-red-500/10 blur-[2px]"></div>
+                    
+                    <svg id="gallowsSvg" class="w-full h-full drop-shadow-[0_0_10px_rgba(239,68,68,0.25)]" viewBox="0 0 200 200">
+                        <!-- Permanent Scaffold Structure -->
+                        <path d="M15,185 L185,185" stroke="#1e293b" stroke-width="8" stroke-linecap="round" />
+                        <path d="M40,185 L40,30" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+                        <path d="M40,30 L120,30" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+                        <path d="M120,30 L120,55" stroke="#475569" stroke-width="3.5" stroke-linecap="round" />
+                        <path d="M40,60 L70,30" stroke="#334155" stroke-width="3.5" stroke-linecap="round" />
+
+                        <!-- Full Fully Assembled Astronaut Hangman Parts (Severed on wrong answers) -->
+                        <!-- 1. Head / Helmet -->
+                        <g id="part_head" class="transition-transform duration-500 ease-in">
+                            <circle cx="120" cy="71" r="16" fill="#0f172a" stroke="#ef4444" stroke-width="3.5" />
+                            <ellipse cx="120" cy="69" rx="10" ry="7" fill="#1e1b4b" stroke="#38bdf8" stroke-width="1.5" />
+                        </g>
+
+                        <!-- 2. Spine / Suit Torso -->
+                        <g id="part_torso" class="transition-transform duration-500 ease-in">
+                            <line x1="120" y1="87" x2="120" y2="135" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round" />
+                            <rect x="111" y="95" width="18" height="25" rx="3" fill="#1e293b" stroke="#ef4444" stroke-width="1.5" />
+                        </g>
+
+                        <!-- 3. Left Arm -->
+                        <line id="part_leftArm" x1="120" y1="100" x2="90" y2="115" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" class="transition-transform duration-500 ease-in" />
+                        
+                        <!-- 4. Right Arm -->
+                        <line id="part_rightArm" x1="120" y1="100" x2="150" y2="115" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" class="transition-transform duration-500 ease-in" />
+
+                        <!-- 5. Left Leg -->
+                        <line id="part_leftLeg" x1="120" y1="135" x2="100" y2="170" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" class="transition-transform duration-500 ease-in" />
+
+                        <!-- 6. Right Leg -->
+                        <line id="part_rightLeg" x1="120" y1="135" x2="140" y2="170" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" class="transition-transform duration-500 ease-in" />
+
+                        <!-- Additional details for sever realism feet -->
+                        <circle id="part_leftFoot" cx="100" cy="170" r="3" fill="#ef4444" class="transition-transform duration-500 ease-in" />
+                        <circle id="part_rightFoot" cx="140" cy="170" r="3" fill="#ef4444" class="transition-transform duration-500 ease-in" />
+                    </svg>
+                </div>
+
+                <!-- Toast quick Alert System notifications (Bottom aligned) -->
+                <div id="quickAlertToast" class="absolute bottom-1 left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 transform translate-y-2 bg-red-950/80 border border-red-500/30 text-red-300 rounded-lg px-2 py-0.5 text-[8px] font-semibold select-none flex items-center justify-center space-x-1 pointer-events-none z-20">
+                    <i class="fa-solid fa-bell animate-bounce"></i>
+                    <span id="quickAlertText">Console ready</span>
+                </div>
+            </div>
+
+            <!-- Stats Dashboard Card -->
+            <div id="metricsCard" class="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 sm:p-4 shadow-2xl">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-1 mb-1.5">
+                    <h4 class="font-orbitron text-[9px] sm:text-xs font-black text-slate-400 tracking-wider uppercase flex items-center space-x-2">
+                        <i class="fa-solid fa-clipboard-user text-red-400"></i>
+                        <span>METRICS: <strong id="statNameLabel" class="text-slate-200 text-[9px] sm:text-xs">RECRUIT</strong></span>
+                    </h4>
+                    <span id="currentModeDisplay" class="text-[8px] sm:text-[9px] font-orbitron bg-slate-950 px-1.5 py-0.5 rounded text-indigo-400 border border-slate-800 font-bold uppercase">SOLO</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div class="bg-slate-950/40 border border-slate-850 p-1 sm:p-2 rounded-xl text-center">
+                        <span class="text-[7px] sm:text-[9px] text-slate-500 uppercase block font-bold">WIN STREAK</span>
+                        <span id="statStreak" class="font-orbitron font-black text-amber-400 text-xs sm:text-lg">0</span>
+                    </div>
+                    <div class="bg-slate-950/40 border border-slate-850 p-1 sm:p-2 rounded-xl text-center">
+                        <span class="text-[7px] sm:text-[9px] text-slate-500 uppercase block font-bold">RESCUES</span>
+                        <span id="statWins" class="font-orbitron font-black text-emerald-400 text-xs sm:text-lg">0</span>
+                    </div>
+                    <div class="bg-slate-950/40 border border-slate-850 p-1 sm:p-2 rounded-xl text-center">
+                        <span class="text-[7px] sm:text-[9px] text-slate-500 uppercase block font-bold">RATIO</span>
+                        <span id="statRatio" class="font-orbitron font-black text-indigo-400 text-xs sm:text-lg">0%</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between text-[8px] sm:text-[10px] text-slate-500 mt-1.5 pt-1 border-t border-slate-800">
+                    <span>Global Score: <strong id="globalScoreDisplay" class="text-indigo-400 font-bold">0 pts</strong></span>
+                    <button onclick="resetGlobalStatsCustomModal()" class="hover:text-red-400 transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-trash-can text-[9px]"></i>
+                        <span>Wipe Memory</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side: Puzzle workspace and coordinates interface -->
+        <section class="lg:col-span-7 flex flex-col gap-1.5 sm:gap-4 justify-between min-h-0">
+            <!-- Secret Word slot card -->
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 sm:p-6 flex flex-col items-center justify-center flex-grow shadow-2xl min-h-0">
+                <!-- Word Boxes Wrapper (Adapts using relative scaling) -->
+                <div class="w-full flex justify-center py-1 sm:py-4 min-h-[45px] sm:min-h-[75px] overflow-x-auto">
+                    <div id="wordDisplayContainer" class="flex flex-wrap justify-center items-center gap-1 sm:gap-2 px-1"></div>
+                </div>
+
+                <!-- Guidance decryption transceiver -->
+                <div class="w-full border-t border-slate-800/60 pt-2 mt-1 sm:mt-3 flex flex-col items-center">
+                    <div class="w-full bg-slate-950/60 border border-slate-850 rounded-xl p-1.5 sm:p-3 relative flex flex-col items-center justify-center text-center">
+                        <div class="absolute -top-2 px-2 py-0.5 bg-slate-900 border border-slate-700 rounded-full text-[7px] sm:text-[8px] text-slate-400 font-bold uppercase tracking-wider font-orbitron">
+                            Guidance Transceiver
+                        </div>
+                        
+                        <p id="clueTextDisplay" class="text-slate-300 text-[10px] sm:text-xs italic pt-1 blur-sm transition-all duration-300 select-none leading-relaxed">
+                            Transmitting secure navigation guide...
+                        </p>
+                        
+                        <button id="clueToggleBtn" onclick="toggleClueDecryption()" class="mt-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 rounded-lg text-[9px] sm:text-[10px] font-semibold text-slate-400 hover:text-white transition-all flex items-center space-x-1 shadow-sm">
+                            <i class="fa-solid fa-key text-yellow-400"></i>
+                            <span>Decrypt Guidance</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QWERTY interactive keyboard panel -->
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 sm:p-4 shadow-2xl flex flex-col gap-1.5 sm:gap-3">
+                <div class="hidden sm:flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-1.5">
+                    <span class="font-orbitron text-[9px] font-bold uppercase tracking-wider">Coordinates Transmitter</span>
+                    <span class="text-[8px] sm:text-[9px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800">Physical keyboard supported</span>
+                </div>
+
+                <!-- Three Rows mapping QWERTY standards (Fluid gutters on mobile) -->
+                <div class="flex flex-col gap-1">
+                    <div id="keyboardRow1" class="flex justify-center gap-0.5 sm:gap-1 w-full"></div>
+                    <div id="keyboardRow2" class="flex justify-center gap-0.5 sm:gap-1 w-full"></div>
+                    <div id="keyboardRow3" class="flex justify-center gap-0.5 sm:gap-1 w-full"></div>
+                </div>
+
+                <!-- Controller panel actions -->
+                <div class="flex gap-2 pt-0.5">
+                    <button id="skipOrbitBtn" onclick="skipToNextWord()" class="flex-1 py-1.5 sm:py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-[9px] sm:text-xs font-bold text-slate-300 transition-all flex items-center justify-center space-x-1.5 border border-slate-700/50">
+                        <i class="fa-solid fa-angles-right text-indigo-400"></i>
+                        <span>Skip Orbit</span>
+                    </button>
+                    <button id="redeployGridBtn" onclick="startFreshSimulation()" class="flex-1 py-1.5 sm:py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-[9px] sm:text-xs font-bold text-white transition-all flex items-center justify-center space-x-1.5 shadow-neon-red">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Redeploy Grid</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- CUSTOM CONFIRMATION OVERLAY (Replaces standard window.confirm) -->
+    <div id="customConfirmOverlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 text-center">
+            <i class="fa-solid fa-trash-can text-red-500 text-3xl"></i>
+            <h3 class="font-orbitron font-bold text-base text-slate-200 uppercase tracking-wide">Purge Simulation Records?</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">This will permanently delete your scores, streak multipliers, played history, and customized username logs from memory arrays.</p>
+            <div class="flex gap-2.5">
+                <button onclick="closeConfirmModal(false)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-300">Abort Protocol</button>
+                <button onclick="closeConfirmModal(true)" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-xs font-bold text-white shadow-neon-red">Acknowledge Purge</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY MODAL: Intermediate Player Turn Complete Screen -->
+    <div id="turnTransitionModalOverlay" class="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col items-center justify-center text-center">
+            
+            <div id="transitionIconBg" class="w-16 h-16 rounded-full flex items-center justify-center mb-3 border border-indigo-500 bg-indigo-950/40 shadow-neon-blue">
+                <i class="fa-solid fa-hourglass-half text-indigo-400 text-xl animate-spin" style="animation-duration: 4s;"></i>
+            </div>
+
+            <h2 class="font-orbitron text-xl font-black tracking-wide uppercase text-indigo-400">Turn Concluded</h2>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold font-orbitron mb-4">Passing Navigation Console</p>
+
+            <div class="w-full bg-slate-950 border border-slate-850 rounded-2xl p-4 mb-4 space-y-2 text-center text-xs text-slate-300">
+                <p>Operator <strong id="transPrevPlayer" class="text-white uppercase">Player A</strong> finished their attempt.</p>
+                <div class="grid grid-cols-2 gap-2 max-w-[200px] mx-auto pt-1">
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800 text-center">
+                        <span class="text-[9px] text-slate-500 block font-bold">Word was</span>
+                        <span id="transWordWas" class="font-bold text-red-400 tracking-wider">GAME</span>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800 text-center">
+                        <span class="text-[9px] text-slate-500 block font-bold">Attempt Result</span>
+                        <span id="transResultStatus" class="font-bold text-emerald-400">SAVED</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full border-t border-slate-800 pt-4 space-y-3">
+                <p class="text-[10px] text-slate-400 italic">Please pass the screen to the next Operator.</p>
+                <div class="bg-indigo-950/30 border border-indigo-500/20 p-3 rounded-xl">
+                    <span class="text-[8px] text-slate-500 uppercase font-bold tracking-wider block">Up Next</span>
+                    <strong id="transNextPlayerLabel" class="text-indigo-400 font-orbitron uppercase text-base tracking-widest block mt-0.5">PLAYER B</strong>
+                </div>
+                
+                <button onclick="concludeTurnTransitionAndResume()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold uppercase text-white shadow-neon-blue transition-all">
+                    Initiate Operator insertion
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY MODAL: Single Player Outcome status popup -->
+    <div id="outcomeModalOverlay" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-40 flex items-center justify-center p-4 hidden font-sans">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl flex flex-col items-center justify-center text-center max-h-[90vh] overflow-y-auto transform scale-95 opacity-0 transition-all duration-250">
+            
+            <div id="outcomeHeaderIconBg" class="w-16 h-16 rounded-full flex items-center justify-center mb-3 border relative">
+                <i id="outcomeHeaderIcon" class="fa-solid text-2xl"></i>
+            </div>
+
+            <h2 id="outcomeHeaderTitle" class="font-orbitron text-xl font-black tracking-wide uppercase">Portal Aligned</h2>
+            <p id="outcomeSubtitle" class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold font-orbitron mb-4">Rescue Finalized</p>
+
+            <div class="w-full bg-slate-950 border border-slate-850 rounded-2xl p-4 mb-4 space-y-1 text-center">
+                <span class="text-[8px] text-slate-500 uppercase font-bold tracking-wider">Identified Code Coordinate</span>
+                <h3 id="outcomeTargetWord" class="font-orbitron font-black text-xl tracking-widest text-white uppercase select-all">MINECRAFT</h3>
+                <p id="outcomeWordHint" class="text-xs text-slate-400 italic pt-1 leading-relaxed">Sandbox block builder.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 w-full mb-5 text-center text-xs">
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-850">
+                    <span class="text-[9px] text-slate-500 block font-bold">Multiplier Streak</span>
+                    <span id="outcomeStreakCount" class="font-orbitron font-bold text-amber-400">0</span>
+                </div>
+                <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-850">
+                    <span class="text-[9px] text-slate-500 block font-bold">Total Score</span>
+                    <span id="outcomeScoreDisplay" class="font-orbitron font-bold text-indigo-400">0</span>
+                </div>
+            </div>
+
+            <button onclick="startFreshSimulation()" id="outcomeActionButton" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold uppercase transition-all shadow-neon-red flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-play"></i>
+                <span id="outcomeActionButtonText">Next Mission</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- OVERLAY MODAL: Tournament Final Podium Standings Scoreboard -->
+    <div id="tournamentLeaderboardOverlay" class="fixed inset-0 bg-slate-950/98 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl flex flex-col max-h-[90vh] overflow-y-auto">
+            
+            <div class="text-center mb-4 relative">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-yellow-500 to-amber-600 flex items-center justify-center shadow-neon-purple mx-auto mb-2 relative">
+                    <i class="fa-solid fa-trophy text-white text-xl animate-bounce"></i>
+                </div>
+                <h2 class="font-orbitron text-xl font-black tracking-wide uppercase bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 bg-clip-text text-transparent">Tournament Standings</h2>
+                <p class="text-[9px] text-slate-400 uppercase tracking-widest font-semibold font-orbitron">Exploration Final Matrix</p>
+            </div>
+
+            <div id="leaderboardList" class="space-y-2 mb-6 font-sans">
+                <!-- Dynamically compiled ranking templates here -->
+            </div>
+
+            <div class="flex gap-2 text-center text-xs">
+                <button onclick="returnToLobbyScreen()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-semibold text-slate-300">
+                    <i class="fa-solid fa-house mr-1"></i> Lobby Menu
+                </button>
+                <button onclick="restartSameTournamentGrid()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-white shadow-neon-red">
+                    <i class="fa-solid fa-arrows-rotate mr-1"></i> Rematch Grid
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY CORE ENGINE JAVASCRIPT -->
+    <script>
+        const DICTIONARY_DB = [
+            // Space & Astronomy
+            {"word":"ASTRONAUT","hint":"A trained space traveler.","category":"Space & Astronomy"},
+            {"word":"GALAXY","hint":"A massive system of stars, gas, and dust bound by gravity.","category":"Space & Astronomy"},
+            {"word":"GRAVITY","hint":"The force that pulls objects toward each other.","category":"Space & Astronomy"},
+            {"word":"SUPERNOVA","hint":"A powerful stellar explosion marking the death of a star.","category":"Space & Astronomy"},
+            {"word":"TELESCOPE","hint":"An optical instrument used to view distant celestial objects.","category":"Space & Astronomy"},
+            {"word":"ECLIPSE","hint":"An event where one celestial body moves into another shadow.","category":"Space & Astronomy"},
+            {"word":"NEBULA","hint":"An enormous cloud of dust and gas in space where stars are born.","category":"Space & Astronomy"},
+            {"word":"ASTEROID","hint":"A small rocky body orbiting the sun.","category":"Space & Astronomy"},
+            {"word":"METEORITE","hint":"A space rock that survives its passage to reach Earth ground.","category":"Space & Astronomy"},
+            {"word":"SATELLITE","hint":"An artificial body placed in orbit to collect information.","category":"Space & Astronomy"},
+            {"word":"CONSTELLATION","hint":"A group of stars forming a recognized pattern.","category":"Space & Astronomy"},
+            {"word":"EXOPLANET","hint":"A planet orbiting a star outside our solar system.","category":"Space & Astronomy"},
+            {"word":"COMET","hint":"An icy small body that releases gas as it passes near the Sun.","category":"Space & Astronomy"},
+            {"word":"ORBIT","hint":"The curved path of a celestial object around a star or planet.","category":"Space & Astronomy"},
+            {"word":"COSMOS","hint":"The universe seen as a well-ordered whole.","category":"Space & Astronomy"},
+            {"word":"AURORA","hint":"A natural light display in the sky, predominantly in polar regions.","category":"Space & Astronomy"},
+            {"word":"QUASAR","hint":"An extremely luminous active galactic nucleus.","category":"Space & Astronomy"},
+            {"word":"PULSAR","hint":"A highly magnetized rotating neutron star emitting radiation beams.","category":"Space & Astronomy"},
+            {"word":"LUNAR","hint":"Relating to or determined by the moon.","category":"Space & Astronomy"},
+            {"word":"NEPTUNE","hint":"The blue gas giant planet that is eighth from the Sun.","category":"Space & Astronomy"},
+            {"word":"JUPITER","hint":"The largest planet in our solar system, famous for its Great Red Spot.","category":"Space & Astronomy"},
+            {"word":"SATURN","hint":"The sixth planet from the Sun, famous for its extensive ring system.","category":"Space & Astronomy"},
+            {"word":"URANUS","hint":"An ice giant planet with a unique sideways axis of rotation.","category":"Space & Astronomy"},
+            {"word":"MERCURY","hint":"The smallest and closest planet to the Sun.","category":"Space & Astronomy"},
+            {"word":"VENUS","hint":"The hottest planet in our solar system, covered in thick clouds.","category":"Space & Astronomy"},
+            {"word":"METEOR","hint":"A streak of light in the sky caused by a space rock burning up.","category":"Space & Astronomy"},
+            {"word":"OBSERVATORY","hint":"A building containing one or more telescopes for astronomical study.","category":"Space & Astronomy"},
+            {"word":"SPUTNIK","hint":"The first artificial satellite, launched into orbit in 1957.","category":"Space & Astronomy"},
+            {"word":"COSMONAUT","hint":"A traveler from the Soviet or Russian space program.","category":"Space & Astronomy"},
+            {"word":"SOLSTICE","hint":"Times in the year when the sun reaches its highest or lowest point.","category":"Space & Astronomy"},
+            {"word":"EQUINOX","hint":"The time when day and night are of approximately equal length.","category":"Space & Astronomy"},
+            {"word":"BLACKHOLE","hint":"A region of space where gravity is so strong nothing can escape.","category":"Space & Astronomy"},
+            {"word":"LIGHTYEAR","hint":"The distance that light travels in one Earth year.","category":"Space & Astronomy"},
+            {"word":"COSMOLOGY","hint":"The scientific study of the origin and evolution of the universe.","category":"Space & Astronomy"},
+            {"word":"TELEMETRY","hint":"The automatic recording and transmission of data from remote sources.","category":"Space & Astronomy"},
+            {"word":"PLANETARIUM","hint":"A theater or room with a dome projection of the night sky.","category":"Space & Astronomy"},
+            {"word":"ASTROPHYSICS","hint":"The branch of astronomy dealing with physical properties of stars.","category":"Space & Astronomy"},
+            {"word":"APOGEE","hint":"The point in an orbit furthest from the body being orbited.","category":"Space & Astronomy"},
+            {"word":"PERIGEE","hint":"The point in an orbit closest to the body being orbited.","category":"Space & Astronomy"},
+            {"word":"DECLINATION","hint":"The angular distance of a point north or south of the celestial equator.","category":"Space & Astronomy"},
+            {"word":"ZODIAC","hint":"A band of the sky divided into twelve signs or constellations.","category":"Space & Astronomy"},
+            {"word":"ZENITH","hint":"The point in the sky directly above an observer.","category":"Space & Astronomy"},
+            {"word":"NADIR","hint":"The point in the sky directly below an observer.","category":"Space & Astronomy"},
+            {"word":"INTERSTELLAR","hint":"Occurring or situated between the stars.","category":"Space & Astronomy"},
+            {"word":"SPACESHIP","hint":"A manned spacecraft used to travel through outer space.","category":"Space & Astronomy"},
+            {"word":"SUPERGIANT","hint":"An exceptionally large and luminous star category.","category":"Space & Astronomy"},
+            {"word":"REDDWARF","hint":"A small, relatively cool star of the main sequence.","category":"Space & Astronomy"},
+            {"word":"WHITEDWARF","hint":"A small, very dense star that has exhausted its nuclear fuel.","category":"Space & Astronomy"},
+            {"word":"ASTROMETRY","hint":"The branch of astronomy dealing with measurements of positions.","category":"Space & Astronomy"},
+            {"word":"COSMOGRAPHY","hint":"The science that maps general features of the universe.","category":"Space & Astronomy"},
+
+            // Nature & Animals
+            {"word":"CHAMELEON","hint":"A specialized lizard known for changing color.","category":"Nature & Animals"},
+            {"word":"PLATYPUS","hint":"An egg-laying semi-aquatic mammal native to Australia.","category":"Nature & Animals"},
+            {"word":"OCTOPUS","hint":"A soft-bodied, eight-armed marine mollusk.","category":"Nature & Animals"},
+            {"word":"PENGUIN","hint":"A flightless seabird living mostly in the Southern Hemisphere.","category":"Nature & Animals"},
+            {"word":"DOLPHIN","hint":"A highly intelligent and playful marine mammal.","category":"Nature & Animals"},
+            {"word":"JELLYFISH","hint":"A gelatinous free-swimming marine animal with stinging tentacles.","category":"Nature & Animals"},
+            {"word":"SEQUOIA","hint":"A giant redwood tree, among the tallest on Earth.","category":"Nature & Animals"},
+            {"word":"ORCHID","hint":"A diverse family of plants with colorful, fragrant flowers.","category":"Nature & Animals"},
+            {"word":"HURRICANE","hint":"A rapidly rotating storm system with a low-pressure center.","category":"Nature & Animals"},
+            {"word":"CATERPILLAR","hint":"The larval stage of a butterfly or moth.","category":"Nature & Animals"},
+            {"word":"KANGAROO","hint":"A large plant-eating marsupial that hops on its hind legs.","category":"Nature & Animals"},
+            {"word":"GIRAFFE","hint":"The tallest living land mammal, with a very long neck.","category":"Nature & Animals"},
+            {"word":"ZEBRA","hint":"An wild horse with distinctive black-and-white stripes.","category":"Nature & Animals"},
+            {"word":"SQUIRREL","hint":"A tree-dwelling rodent with a bushy tail that feeds on nuts.","category":"Nature & Animals"},
+            {"word":"ELEPHANT","hint":"A massive mammal with large ears and a long muscular trunk.","category":"Nature & Animals"},
+            {"word":"CHIMPANZEE","hint":"A highly intelligent great ape native to African forests.","category":"Nature & Animals"},
+            {"word":"GORILLA","hint":"The largest living primate, herbivorous and ground-dwelling.","category":"Nature & Animals"},
+            {"word":"CHEETAH","hint":"The fastest land mammal, characterized by spots.","category":"Nature & Animals"},
+            {"word":"LEOPARD","hint":"A large solitary wild cat with rosette-shaped markings.","category":"Nature & Animals"},
+            {"word":"PANTHER","hint":"A large black wild cat, often a melanistic leopard.","category":"Nature & Animals"},
+            {"word":"TIGER","hint":"A large wild cat with a reddish-orange coat and stripes.","category":"Nature & Animals"},
+            {"word":"LION","hint":"The king of the jungle, living in social prides.","category":"Nature & Animals"},
+            {"word":"WOLF","hint":"A wild carnivorous mammal of the dog family, hunting in packs.","category":"Nature & Animals"},
+            {"word":"FOX","hint":"A small wild dog with a bushy tail and a pointed snout.","category":"Nature & Animals"},
+            {"word":"BEAR","hint":"A heavy, thick-furred mammal with nonretractile claws.","category":"Nature & Animals"},
+            {"word":"KOALA","hint":"An Australian tree-dwelling marsupial that feeds on eucalyptus.","category":"Nature & Animals"},
+            {"word":"PANDA","hint":"A large bear-like mammal with black and white markings, eating bamboo.","category":"Nature & Animals"},
+            {"word":"SLOTH","hint":"A slow-moving tropical mammal hanging from trees.","category":"Nature & Animals"},
+            {"word":"SNAKE","hint":"A long, legless reptile, some species of which are venomous.","category":"Nature & Animals"},
+            {"word":"LIZARD","hint":"A scaly reptile with four legs, a long body, and a tail.","category":"Nature & Animals"},
+            {"word":"FROG","hint":"A tailless amphibian with long hind legs adapted for leaping.","category":"Nature & Animals"},
+            {"word":"TOAD","hint":"A land-dwelling amphibian with dry, warty skin and short legs.","category":"Nature & Animals"},
+            {"word":"SHARK","hint":"A predatory marine fish with multiple teeth rows.","category":"Nature & Animals"},
+            {"word":"WHALE","hint":"A very large marine mammal that breathes through a blowhole.","category":"Nature & Animals"},
+            {"word":"EAGLE","hint":"A large bird of prey with broad wings and keen vision.","category":"Nature & Animals"},
+            {"word":"OWL","hint":"A nocturnal bird of prey with large eyes and silent flight.","category":"Nature & Animals"},
+            {"word":"HAWK","hint":"A diurnal bird of prey with sharp talons.","category":"Nature & Animals"},
+            {"word":"FALCON","hint":"A fast-flying bird of prey trained for hunting.","category":"Nature & Animals"},
+            {"word":"PARROT","hint":"A brightly colored bird mimicking speech.","category":"Nature & Animals"},
+            {"word":"BUTTERFLY","hint":"An insect with large, often brightly colored wings.","category":"Nature & Animals"},
+            {"word":"DRAGONFLY","hint":"A fast-flying insect with two pairs of transparent wings.","category":"Nature & Animals"},
+            {"word":"SPIDER","hint":"An eight-legged arachnid that spins webs to catch prey.","category":"Nature & Animals"},
+            {"word":"SCORPION","hint":"An arachnid with a venomous sting at the tail end.","category":"Nature & Animals"},
+            {"word":"LOBSTER","hint":"A large marine crustacean with pincers.","category":"Nature & Animals"},
+            {"word":"CRAB","hint":"A crustacean with a broad flat shell and five pairs of legs.","category":"Nature & Animals"},
+            {"word":"TURTLE","hint":"A slow-moving reptile protected by a heavy bony shell.","category":"Nature & Animals"},
+            {"word":"CROCODILE","hint":"A large predatory semi-aquatic reptile with a long snout.","category":"Nature & Animals"},
+            {"word":"ALLIGATOR","hint":"A large reptile with a broad snout.","category":"Nature & Animals"},
+            {"word":"DEER","hint":"A hoofed grazing animal, males of which typically grow antlers.","category":"Nature & Animals"},
+            {"word":"ANTELOPE","hint":"A swift, deer-like mammal with permanent hollow horns.","category":"Nature & Animals"},
+            {"word":"ALBATROSS","hint":"A massive oceanic bird known for its incredible wingspan.","category":"Nature & Animals"},
+            {"word":"BARRACUDA","hint":"A predatory ray-finned fish known for its fearsome look.","category":"Nature & Animals"},
+            {"word":"CHINCHILLA","hint":"A small rodent native to the Andes, known for its ultra-soft fur.","category":"Nature & Animals"},
+            {"word":"FLAMINGO","hint":"A tall pink wading bird that stands on one leg.","category":"Nature & Animals"},
+            {"word":"IGUANA","hint":"A large, herbivorous species of lizard native to tropical areas.","category":"Nature & Animals"},
+
+            // Geography & Earth
+            {"word":"GLACIER","hint":"A slowly moving mass of ice formed by compacted snow.","category":"Geography & Earth"},
+            {"word":"VOLCANO","hint":"An opening in the Earth crust that erupts molten rock and gas.","category":"Geography & Earth"},
+            {"word":"ARCHIPELAGO","hint":"A large group or chain of islands.","category":"Geography & Earth"},
+            {"word":"PENINSULA","hint":"A piece of land surrounded by water on three sides.","category":"Geography & Earth"},
+            {"word":"EQUATOR","hint":"An imaginary line dividing the Earth into northern and southern halves.","category":"Geography & Earth"},
+            {"word":"CANYON","hint":"A deep gorge with rock walls, carved by a river.","category":"Geography & Earth"},
+            {"word":"TUNDRA","hint":"A vast, flat, treeless Arctic region with frozen subsoil.","category":"Geography & Earth"},
+            {"word":"SAVANNA","hint":"A grassy plain in tropical regions with few trees.","category":"Geography & Earth"},
+            {"word":"SANDSTORM","hint":"A strong wind carrying clouds of sand across an arid region.","category":"Geography & Earth"},
+            {"word":"AVALANCHE","hint":"A mass of snow and ice falling rapidly down a mountainside.","category":"Geography & Earth"},
+            {"word":"WATERFALL","hint":"A cascade of water falling from a height.","category":"Geography & Earth"},
+            {"word":"CRUST","hint":"The outermost solid shell of our planet.","category":"Geography & Earth"},
+            {"word":"OCEAN","hint":"A very large expanse of sea surrounding the continents.","category":"Geography & Earth"},
+            {"word":"DESERT","hint":"A barren area of land with little to no rainfall.","category":"Geography & Earth"},
+            {"word":"RIVER","hint":"A large natural stream of water flowing in a channel.","category":"Geography & Earth"},
+            {"word":"FOREST","hint":"A large area covered chiefly with trees and undergrowth.","category":"Geography & Earth"},
+            {"word":"ISLAND","hint":"A piece of land completely surrounded by water.","category":"Geography & Earth"},
+            {"word":"MOUNTAIN","hint":"A very high, steep hill rising abruptly from the ground.","category":"Geography & Earth"},
+            {"word":"VALLEY","hint":"A low area of land situated between hills or mountains.","category":"Geography & Earth"},
+            {"word":"FJORD","hint":"A long, narrow, deep inlet of the sea between high cliffs.","category":"Geography & Earth"},
+            {"word":"PLATEAU","hint":"An area of relatively level high ground.","category":"Geography & Earth"},
+            {"word":"ISTHMUS","hint":"A narrow strip of land linking two larger landmasses.","category":"Geography & Earth"},
+            {"word":"LAGOON","hint":"A stretch of salt water separated from the sea by a low sandbank.","category":"Geography & Earth"},
+            {"word":"OASIS","hint":"A fertile spot in a desert where water is found.","category":"Geography & Earth"},
+            {"word":"ESTUARY","hint":"The tidal mouth of a large river, where tide meets stream.","category":"Geography & Earth"},
+            {"word":"DELTA","hint":"A triangular landform at a river mouth.","category":"Geography & Earth"},
+            {"word":"GEOLOGY","hint":"The science that deals with the Earth physical structure.","category":"Geography & Earth"},
+            {"word":"SEISMOGRAPH","hint":"An instrument measuring and recording details of earthquakes.","category":"Geography & Earth"},
+            {"word":"TECTONICS","hint":"The structure of the Earth crust and the forces shaping it.","category":"Geography & Earth"},
+            {"word":"MAGMA","hint":"Hot fluid or semi-fluid rock below the Earth crust.","category":"Geography & Earth"},
+            {"word":"LAVA","hint":"Molten rock that breaks through the Earth surface.","category":"Geography & Earth"},
+            {"word":"CONTINENT","hint":"One of the Earth seven main landmasses.","category":"Geography & Earth"},
+            {"word":"HEMISPHERE","hint":"A half of the Earth, divided by equator or meridian.","category":"Geography & Earth"},
+            {"word":"LATITUDE","hint":"The angular distance north or south of the equator.","category":"Geography & Earth"},
+            {"word":"LONGITUDE","hint":"The angular distance east or west of the prime meridian.","category":"Geography & Earth"},
+            {"word":"MERIDIAN","hint":"A circle of constant longitude passing through the poles.","category":"Geography & Earth"},
+            {"word":"TOPOGRAPHY","hint":"The arrangement of natural physical features of an area.","category":"Geography & Earth"},
+            {"word":"CARTOGRAPHY","hint":"The science or practice of drawing maps.","category":"Geography & Earth"},
+            {"word":"ECOSYSTEM","hint":"A biological community of interacting organisms.","category":"Geography & Earth"},
+            {"word":"BIOME","hint":"A large naturally occurring community of flora and fauna.","category":"Geography & Earth"},
+            {"word":"ATMOSPHERE","hint":"The envelope of gases surrounding the Earth.","category":"Geography & Earth"},
+            {"word":"BIOSPHERE","hint":"The regions of the Earth occupied by living organisms.","category":"Geography & Earth"},
+            {"word":"HYDROSPHERE","hint":"All the waters on the Earth surface.","category":"Geography & Earth"},
+            {"word":"LITHOSPHERE","hint":"The rigid outer part of the Earth crust and upper mantle.","category":"Geography & Earth"},
+            {"word":"STRATOSPHERE","hint":"The layer of the Earth's atmosphere above the troposphere.","category":"Geography & Earth"},
+            {"word":"PERMAFROST","hint":"A thick subsurface layer of soil that remains frozen.","category":"Geography & Earth"},
+            {"word":"GEYSER","hint":"A hot spring in which water intermittently boils and shoots up.","category":"Geography & Earth"},
+
+            // Science & Tech
+            {"word":"ALGORITHM","hint":"A step-by-step set of rules for calculations or problem-solving.","category":"Science & Tech"},
+            {"word":"BLOCKCHAIN","hint":"A decentralized digital ledger used for secure transactions.","category":"Science & Tech"},
+            {"word":"INTERNET","hint":"A global computer network providing information and communication.","category":"Science & Tech"},
+            {"word":"ROBOTICS","hint":"The technology branch dealing with design and build of robots.","category":"Science & Tech"},
+            {"word":"ELECTRICITY","hint":"A form of energy resulting from charged particles.","category":"Science & Tech"},
+            {"word":"MICROSCOPE","hint":"An optical instrument used for viewing very small objects.","category":"Science & Tech"},
+            {"word":"PHOTOSYNTHESIS","hint":"The process by which plants use sunlight to make food.","category":"Science & Tech"},
+            {"word":"EVOLUTION","hint":"The process of development and diversification of living organisms.","category":"Science & Tech"},
+            {"word":"ACIDITY","hint":"The level of acid in a substance, measured on the pH scale.","category":"Science & Tech"},
+            {"word":"FOSSIL","hint":"The preserved remains or impression of a prehistoric organism.","category":"Science & Tech"},
+            {"word":"GENETICS","hint":"The study of heredity and inherited characteristics.","category":"Science & Tech"},
+            {"word":"KINETIC","hint":"Relating to or resulting from movement and motion.","category":"Science & Tech"},
+            {"word":"ATOM","hint":"The basic unit of a chemical element.","category":"Science & Tech"},
+            {"word":"MOLECULE","hint":"A group of atoms bonded together.","category":"Science & Tech"},
+            {"word":"ELECTRON","hint":"A stable subatomic particle with a negative charge.","category":"Science & Tech"},
+            {"word":"PROTON","hint":"A stable subatomic particle occurring in all atomic nuclei.","category":"Science & Tech"},
+            {"word":"NEUTRON","hint":"A subatomic particle of about the same mass as a proton without charge.","category":"Science & Tech"},
+            {"word":"CATALYST","hint":"A substance that increases the rate of a chemical reaction.","category":"Science & Tech"},
+            {"word":"ENZYME","hint":"A substance produced by a living organism acting as a catalyst.","category":"Science & Tech"},
+            {"word":"GENOME","hint":"The complete set of genes present in an organism.","category":"Science & Tech"},
+            {"word":"CHROMOSOME","hint":"A threadlike structure carrying genetic information.","category":"Science & Tech"},
+            {"word":"MUTATION","hint":"The changing of the structure of a gene.","category":"Science & Tech"},
+            {"word":"GRAVITATION","hint":"The movement or tendency to move toward a center of gravity.","category":"Science & Tech"},
+            {"word":"THERMODYNAMICS","hint":"The branch of physical science concerned with heat and energy.","category":"Science & Tech"},
+            {"word":"QUANTUM","hint":"A discrete quantity of energy proportional to frequency.","category":"Science & Tech"},
+            {"word":"RELATIVITY","hint":"Physical phenomena depending on the relative motion of the observer.","category":"Science & Tech"},
+            {"word":"FISSION","hint":"The action of dividing or splitting something into parts.","category":"Science & Tech"},
+            {"word":"FUSION","hint":"The process or result of joining two or more things together.","category":"Science & Tech"},
+            {"word":"LASER","hint":"A device that generates an intense beam of single-colored light.","category":"Science & Tech"},
+            {"word":"SEMICONDUCTOR","hint":"A solid substance conducting electricity between insulator and metal.","category":"Science & Tech"},
+            {"word":"NANOTECHNOLOGY","hint":"Technology dealing with dimensions under 100 nanometers.","category":"Science & Tech"},
+            {"word":"CYBERSECURITY","hint":"Protection against the criminal use of electronic data.","category":"Science & Tech"},
+            {"word":"CRYPTOGRAPHY","hint":"The art of writing or solving codes.","category":"Science & Tech"},
+            {"word":"DATABASE","hint":"A structured set of data held in a computer.","category":"Science & Tech"},
+            {"word":"COMPILER","hint":"A program translating code into machine language.","category":"Science & Tech"},
+            {"word":"SOFTWARE","hint":"Programs and operating systems used by computers.","category":"Science & Tech"},
+            {"word":"HARDWARE","hint":"The physical components of a computer system.","category":"Science & Tech"},
+            {"word":"FIRMWARE","hint":"Permanent software programmed into a read-only memory.","category":"Science & Tech"},
+            {"word":"PROCESSOR","hint":"A machine part that processes data.","category":"Science & Tech"},
+            {"word":"NETWORK","hint":"A system of interconnected computers or devices.","category":"Science & Tech"},
+            {"word":"SUPERCONDUCTOR","hint":"A material that can conduct electricity with zero resistance.","category":"Science & Tech"},
+            {"word":"FLUORESCENCE","hint":"The emission of light by a substance that has absorbed light.","category":"Science & Tech"},
+            {"word":"SPECTROSCOPY","hint":"The study of the interaction between matter and radiated energy.","category":"Science & Tech"},
+
+            // Arts & Culture
+            {"word":"SYMPHONY","hint":"An elaborate musical composition for a full orchestra.","category":"Arts & Culture"},
+            {"word":"SCULPTURE","hint":"The art of making two- or three-dimensional shapes.","category":"Arts & Culture"},
+            {"word":"PORTRAIT","hint":"A painting, drawing, or photograph depicting a person face.","category":"Arts & Culture"},
+            {"word":"METAPHOR","hint":"A figure of speech comparing two unrelated things.","category":"Arts & Culture"},
+            {"word":"CALLIGRAPHY","hint":"The art of producing decorative handwriting.","category":"Arts & Culture"},
+            {"word":"PHILOSOPHY","hint":"The study of the fundamental nature of knowledge and reality.","category":"Arts & Culture"},
+            {"word":"MYTHOLOGY","hint":"A collection of myths belonging to a particular culture.","category":"Arts & Culture"},
+            {"word":"MURAL","hint":"A large painting executed directly on a wall or ceiling.","category":"Arts & Culture"},
+            {"word":"POTTERY","hint":"Dishes and other objects made of baked clay.","category":"Arts & Culture"},
+            {"word":"CANVAS","hint":"A strong coarse cloth used by artists for oil painting.","category":"Arts & Culture"},
+            {"word":"NOVELIST","hint":"A writer who creates fictional books or narratives.","category":"Arts & Culture"},
+            {"word":"BALLET","hint":"An artistic dance form using music to tell a story.","category":"Arts & Culture"},
+            {"word":"OPERA","hint":"A dramatic work set to music for singers and orchestra.","category":"Arts & Culture"},
+            {"word":"DRAMA","hint":"A play for theater, radio, or television.","category":"Arts & Culture"},
+            {"word":"TRAGEDY","hint":"A play dealing with tragic events and having an unhappy ending.","category":"Arts & Culture"},
+            {"word":"COMEDY","hint":"A play or movie intended to make an audience laugh.","category":"Arts & Culture"},
+            {"word":"LITERATURE","hint":"Written works considered to have superior merit.","category":"Arts & Culture"},
+            {"word":"POETRY","hint":"Literary work giving special intensity to expression.","category":"Arts & Culture"},
+            {"word":"TAPESTRY","hint":"A piece of thick textile fabric with pictures woven into it.","category":"Arts & Culture"},
+            {"word":"MOSAIC","hint":"A picture or pattern produced by arranging small colored pieces.","category":"Arts & Culture"},
+            {"word":"CERAMICS","hint":"Pots and other articles made from clay hardened by heat.","category":"Arts & Culture"},
+            {"word":"ARCHITECTURE","hint":"The art or practice of designing and constructing buildings.","category":"Arts & Culture"},
+            {"word":"MINIMALISM","hint":"A trend to use simple, massive forms.","category":"Arts & Culture"},
+            {"word":"SURREALISM","hint":"Art seeking to release creative potential of the unconscious.","category":"Arts & Culture"},
+            {"word":"BAROQUE","hint":"A highly ornate and extravagant style of architecture and art.","category":"Arts & Culture"},
+            {"word":"IMPRESSIONISM","hint":"A style of painting capturing the feeling or light of a scene.","category":"Arts & Culture"},
+            {"word":"FOLKLORE","hint":"Traditional beliefs, customs, and stories of a community.","category":"Arts & Culture"},
+            {"word":"LEGEND","hint":"A traditional story sometimes regarded as historical.","category":"Arts & Culture"},
+            {"word":"FESTIVAL","hint":"A day or period of celebration for cultural reasons.","category":"Arts & Culture"},
+            {"word":"CARNIVAL","hint":"A period of public revelry involving music and processions.","category":"Arts & Culture"},
+            {"word":"RENAISSANCE","hint":"The great revival of art and learning in Europe.","category":"Arts & Culture"},
+            {"word":"CUBISM","hint":"An early 20th-century style of art using simple geometric shapes.","category":"Arts & Culture"},
+            {"word":"DADAISM","hint":"An avant-garde movement mocking conventional art values.","category":"Arts & Culture"},
+
+            // Sports & Recreation
+            {"word":"MARATHON","hint":"A long-distance running race of 26.2 miles.","category":"Sports & Recreation"},
+            {"word":"GYMNASTICS","hint":"Exercises displaying physical agility, flexibility, and coordination.","category":"Sports & Recreation"},
+            {"word":"VOLLEYBALL","hint":"A team game where a ball is hit by hand over a net.","category":"Sports & Recreation"},
+            {"word":"BADMINTON","hint":"A game played with rackets and a shuttlecock over a net.","category":"Sports & Recreation"},
+            {"word":"TOURNAMENT","hint":"A series of contests leading to a single winner.","category":"Sports & Recreation"},
+            {"word":"TRIATHLON","hint":"An athletic contest of swimming, cycling, and running.","category":"Sports & Recreation"},
+            {"word":"STADIUM","hint":"A large arena with tiers of seats for sporting events.","category":"Sports & Recreation"},
+            {"word":"ATHLETE","hint":"A person proficient in sports or physical exercise.","category":"Sports & Recreation"},
+            {"word":"SURFING","hint":"The sport of riding on the face of a breaking ocean wave.","category":"Sports & Recreation"},
+            {"word":"KAYAKING","hint":"Paddling a small narrow boat using a double paddle.","category":"Sports & Recreation"},
+            {"word":"ARCHERY","hint":"The sport or skill of shooting arrows with a bow.","category":"Sports & Recreation"},
+            {"word":"CHESS","hint":"A strategic board game of skill played on 64 squares.","category":"Sports & Recreation"},
+            {"word":"DECATHLON","hint":"A two-day athletic contest featuring ten events.","category":"Sports & Recreation"},
+            {"word":"MOUNTAINEERING","hint":"The sport or activity of climbing mountains.","category":"Sports & Recreation"},
+            {"word":"HIKING","hint":"The activity of going for long walks in the country.","category":"Sports & Recreation"},
+            {"word":"CYCLING","hint":"The sport or activity of riding a bicycle.","category":"Sports & Recreation"},
+            {"word":"BILLIARDS","hint":"A game played on a cloth table with cues and balls.","category":"Sports & Recreation"},
+            {"word":"SQUASH","hint":"Racket sport played by two players in a four-walled court.","category":"Sports & Recreation"},
+            {"word":"FENCING","hint":"The sport of fighting with swords to score points.","category":"Sports & Recreation"},
+            {"word":"ROWING","hint":"The sport of propelling a boat with oars.","category":"Sports & Recreation"},
+
+            // Food & Cuisine
+            {"word":"SPAGHETTI","hint":"Long, thin, solid strings of pasta.","category":"Food & Cuisine"},
+            {"word":"CHOCOLATE","hint":"A sweet food preparation made from roasted cacao seeds.","category":"Food & Cuisine"},
+            {"word":"CROISSANT","hint":"A flaky, buttery, crescent-shaped French pastry.","category":"Food & Cuisine"},
+            {"word":"AVOCADO","hint":"A pear-shaped fruit with oily green flesh and a large seed.","category":"Food & Cuisine"},
+            {"word":"CINNAMON","hint":"An aromatic spice made from the peeled bark of a tree.","category":"Food & Cuisine"},
+            {"word":"ESPRESSO","hint":"Strong black coffee brewed by forcing hot water through beans.","category":"Food & Cuisine"},
+            {"word":"PINEAPPLE","hint":"A large juicy tropical fruit with a tough segmented skin.","category":"Food & Cuisine"},
+            {"word":"HONEY","hint":"A sweet, sticky food fluid made by bees.","category":"Food & Cuisine"},
+            {"word":"VANILLA","hint":"A popular sweet flavoring obtained from orchid pods.","category":"Food & Cuisine"},
+            {"word":"MUSHROOM","hint":"A fleshy spore-producing fruiting body of a fungus.","category":"Food & Cuisine"},
+            {"word":"CHEESE","hint":"A dairy food made from pressed milk curds.","category":"Food & Cuisine"},
+            {"word":"OLIVEOIL","hint":"A liquid fat obtained by pressing whole olives.","category":"Food & Cuisine"},
+            {"word":"COCONUT","hint":"A large tropical seed with sweet white flesh inside.","category":"Food & Cuisine"},
+            {"word":"BANANA","hint":"A long curved yellow fruit with soft sweet flesh.","category":"Food & Cuisine"},
+            {"word":"CHILI","hint":"A small hot-tasting pod used to spice up cooking.","category":"Food & Cuisine"},
+            {"word":"PEACH","hint":"A round stone fruit with juicy yellow flesh and downy skin.","category":"Food & Cuisine"},
+            {"word":"LEMON","hint":"A yellow citrus fruit with a sour, highly acidic juice.","category":"Food & Cuisine"},
+            {"word":"GINGER","hint":"A hot, fragrant spice made from the rhizome of a plant.","category":"Food & Cuisine"},
+            {"word":"GARLIC","hint":"A strong-smelling pungent bulb used in cooking.","category":"Food & Cuisine"},
+            {"word":"BASIL","hint":"An aromatic herb of the mint family, used in cooking.","category":"Food & Cuisine"},
+
+            // Abstract & Concepts
+            {"word":"LABYRINTH","hint":"A complicated network of winding passages; a maze.","category":"Abstract & Concepts"},
+            {"word":"PARADOX","hint":"A self-contradictory statement that may prove to be true.","category":"Abstract & Concepts"},
+            {"word":"EUPHORIA","hint":"A feeling or state of intense excitement and happiness.","category":"Abstract & Concepts"},
+            {"word":"RESILIENCE","hint":"The capacity to recover quickly from difficulties.","category":"Abstract & Concepts"},
+            {"word":"SYMMETRY","hint":"The quality of having similar parts facing each other.","category":"Abstract & Concepts"},
+            {"word":"HARMONY","hint":"The state of forming a pleasing, consistent whole.","category":"Abstract & Concepts"},
+            {"word":"VELOCITY","hint":"The speed of something moving in a given direction.","category":"Abstract & Concepts"},
+            {"word":"MELANCHOLY","hint":"A feeling of pensive, reflective sadness.","category":"Abstract & Concepts"},
+            {"word":"DESTINY","hint":"The events that will necessarily happen in the future.","category":"Abstract & Concepts"},
+            {"word":"ENIGMA","hint":"A person, thing, or puzzle that is mysterious and hard to decode.","category":"Abstract & Concepts"},
+            {"word":"CHAOS","hint":"A state of complete confusion and disorder.","category":"Abstract & Concepts"},
+            {"word":"SYNERGY","hint":"The cooperation of elements to produce a greater effect.","category":"Abstract & Concepts"},
+            {"word":"ILLUSION","hint":"Something that is likely to be wrongly perceived by senses.","category":"Abstract & Concepts"},
+            {"word":"MOMENTUM","hint":"The quantity of motion possessed by a moving body.","category":"Abstract & Concepts"},
+            {"word":"INFINITY","hint":"The state of being endless or limitless in size.","category":"Abstract & Concepts"},
+            {"word":"VORTEX","hint":"A whirling mass of fluid or air, like a whirlpool.","category":"Abstract & Concepts"},
+            {"word":"HORIZON","hint":"The line where the earth's surface and the sky meet.","category":"Abstract & Concepts"},
+            {"word":"SERENDIPITY","hint":"Occurrence of events by chance in a happy way.","category":"Abstract & Concepts"},
+            {"word":"NOSTALGIA","hint":"A sentimental longing or affection for the past.","category":"Abstract & Concepts"},
+            {"word":"EMPATHY","hint":"The ability to understand and share the feelings of another.","category":"Abstract & Concepts"},
+            {"word":"TRANSCENDENCE","hint":"Existence or experience beyond the normal or physical level.","category":"Abstract & Concepts"},
+            {"word":"ZEITGEIST","hint":"The defining spirit or mood of a particular period of history.","category":"Abstract & Concepts"},
+
+            // Tools & Inventions
+            {"word":"COMPASS","hint":"An instrument containing a magnetized pointer showing north.","category":"Tools & Inventions"},
+            {"word":"PRINTINGPRESS","hint":"A historical machine for printing text or illustrations.","category":"Tools & Inventions"},
+            {"word":"STEAMENGINE","hint":"An engine that uses steam expansion to generate power.","category":"Tools & Inventions"},
+            {"word":"THERMOMETER","hint":"An instrument used for measuring temperature.","category":"Tools & Inventions"},
+            {"word":"SUBMARINE","hint":"A watercraft capable of operating completely underwater.","category":"Tools & Inventions"},
+            {"word":"MICROWAVE","hint":"An appliance using electromagnetic waves to cook food quickly.","category":"Tools & Inventions"},
+            {"word":"WINDMILL","hint":"A building with sails spinning to generate power.","category":"Tools & Inventions"},
+            {"word":"BAROMETER","hint":"An instrument measuring atmospheric pressure.","category":"Tools & Inventions"},
+            {"word":"HELICOPTER","hint":"An aircraft lifted and propelled by horizontal rotors.","category":"Tools & Inventions"},
+            {"word":"TELEPHONE","hint":"System for transmitting voices over a distance using wire.","category":"Tools & Inventions"},
+            {"word":"PHOTOGRAPH","hint":"A picture made using a camera.","category":"Tools & Inventions"},
+            {"word":"BATTERY","hint":"A container converting chemical energy into electricity.","category":"Tools & Inventions"},
+            {"word":"GENERATOR","hint":"Machine converting mechanical energy into electricity.","category":"Tools & Inventions"},
+            {"word":"REFRIGERATOR","hint":"Appliance artificially kept cool for food preservation.","category":"Tools & Inventions"},
+            {"word":"CALCULATOR","hint":"Small electronic device for solving math.","category":"Tools & Inventions"},
+
+            // New Additions: Chemistry & Physics
+            {"word":"HYDROGEN","hint":"The lightest and most abundant chemical element in the universe.","category":"Chemistry & Physics"},
+            {"word":"HELIUM","hint":"A light, colorless, odorless noble gas produced by stellar fusion.","category":"Chemistry & Physics"},
+            {"word":"OXYGEN","hint":"A highly reactive nonmetal element essential for aerobic respiration.","category":"Chemistry & Physics"},
+            {"word":"CARBON","hint":"The chemical element that forms the basis of all known organic life.","category":"Chemistry & Physics"},
+            {"word":"NITROGEN","hint":"A gas that makes up about seventy-eight percent of Earth's atmosphere.","category":"Chemistry & Physics"},
+            {"word":"TITANIUM","hint":"A lustrous, strong, corrosion-resistant transition metal.","category":"Chemistry & Physics"},
+            {"word":"SILICON","hint":"A tetravalent metalloid widely used as a semiconductor in computer microchips.","category":"Chemistry & Physics"},
+            {"word":"PLATINUM","hint":"A dense, malleable, highly unreactive precious transition metal.","category":"Chemistry & Physics"},
+            {"word":"URANIUM","hint":"A heavy, silvery-white, weakly radioactive metallic chemical element.","category":"Chemistry & Physics"},
+            {"word":"ELECTRON","hint":"A stable subatomic particle with a negative charge.","category":"Chemistry & Physics"},
+            {"word":"NEUTRINO","hint":"An extremely tiny, nearly massless neutral subatomic particle.","category":"Chemistry & Physics"},
+            {"word":"SPECTROPHOTOMETER","hint":"An instrument used to measure the intensity of light wavelengths.","category":"Chemistry & Physics"},
+            {"word":"THERMOLUMINESCENCE","hint":"The emission of light from a heated mineral or crystalline solid.","category":"Chemistry & Physics"},
+
+            // New Additions: Mathematics & Geometry
+            {"word":"GEOMETRY","hint":"The branch of mathematics concerned with the properties and relations of points and lines.","category":"Mathematics & Logic"},
+            {"word":"CALCULUS","hint":"The mathematical study of continuous change, limits, derivatives, and integrals.","category":"Mathematics & Logic"},
+            {"word":"FRACTAL","hint":"A complex geometric pattern that is self-similar across different scales.","category":"Mathematics & Logic"},
+            {"word":"ASYMPTOTE","hint":"A line that a curve approaches infinitely closely but never quite touches.","category":"Mathematics & Logic"},
+            {"word":"THEOREM","hint":"A mathematical statement that has been proven to be true based on established formulas.","category":"Mathematics & Logic"},
+            {"word":"ALGEBRA","hint":"The branch of mathematics in which letters and symbols represent numbers in formulas.","category":"Mathematics & Logic"},
+            {"word":"FIBONACCI","hint":"A sequence where each number is the sum of the two preceding ones.","category":"Mathematics & Logic"},
+            {"word":"ALGORITHM","hint":"A step-by-step set of operations to perform calculations or data processing.","category":"Mathematics & Logic"},
+            {"word":"PROBABILITY","hint":"The branch of mathematics concerning numerical descriptions of how likely an event is to occur.","category":"Mathematics & Logic"},
+
+            // New Additions: Advanced Philosophy & Logic
+            {"word":"EPISTEMOLOGY","hint":"The theory of knowledge, especially with regard to its methods, validity, and scope.","category":"Philosophy & Logic"},
+            {"word":"METAPHYSICS","hint":"The branch of philosophy that deals with the first principles of things, including abstract concepts.","category":"Philosophy & Logic"},
+            {"word":"EXISTENTIALISM","hint":"A philosophical approach emphasizing the existence of the individual as a free agent.","category":"Philosophy & Logic"},
+            {"word":"STOICISM","hint":"An ancient Greek philosophy focused on virtue, endurance, and emotional resilience.","category":"Philosophy & Logic"},
+            {"word":"RATIONALISM","hint":"The belief or theory that opinions and actions should be based on reason and knowledge.","category":"Philosophy & Logic"},
+            {"word":"EMPIRICISM","hint":"The theory that all knowledge is derived from sense-experience and evidence.","category":"Philosophy & Logic"},
+            {"word":"LOGIC","hint":"The systematic study of valid rules of inference and demonstration.","category":"Philosophy & Logic"},
+
+            // New Additions: Botanical Science
+            {"word":"PHOTOSYNTHESIS","hint":"The biological process of converting light energy into chemical energy by green plants.","category":"Botanical Science"},
+            {"word":"CHLOROPHYLL","hint":"The green pigment found in plants responsible for absorbing light energy.","category":"Botanical Science"},
+            {"word":"EUCALYPTUS","hint":"A fast-growing evergreen tree native to Australia, containing medicinal oils.","category":"Botanical Science"},
+            {"word":"SEQUOIA","hint":"A giant coniferous evergreen redwood tree native to California forests.","category":"Botanical Science"},
+            {"word":"DANDELION","hint":"A widely distributed herbaceous plant with bright yellow flowers and fluffy seed heads.","category":"Botanical Science"},
+            {"word":"RHIZOME","hint":"A continuously growing horizontal underground stem which puts out lateral shoots.","category":"Botanical Science"},
+            {"word":"MYCELIUM","hint":"The vegetative part of a fungus, consisting of a network of fine white filaments.","category":"Botanical Science"},
+            {"word":"ANGIOSPERM","hint":"A diverse plant group characterized by seeds protected within an ovary or fruit.","category":"Botanical Science"},
+
+            // New Additions: Advanced Instruments
+            {"word":"GYROCOMPASS","hint":"A non-magnetic navigation device that uses a spinning wheel to find true north.","category":"Tools & Inventions"},
+            {"word":"ALTIMETER","hint":"An instrument used to measure the altitude of an object above a fixed level.","category":"Tools & Inventions"},
+            {"word":"SPECTROSCOPE","hint":"An apparatus for producing and recording spectra of light for atomic analysis.","category":"Tools & Inventions"},
+            {"word":"SEISMOGRAPH","hint":"An instrument that measures and records details of earthquakes and seismic waves.","category":"Tools & Inventions"},
+            {"word":"CHRONOMETER","hint":"An exceptionally precise timepiece used for determination of longitude at sea.","category":"Tools & Inventions"},
+            {"word":"OSCILLOSCOPE","hint":"A device for viewing oscillations by displaying an electrical signal waveform.","category":"Tools & Inventions"},
+
+            // New Additions: Famous Video Games
+            {"word":"MINECRAFT","hint":"A legendary 3D sandbox game about placing blocks and embarking on adventures.","category":"Famous Video Games"},
+            {"word":"TETRIS","hint":"An iconic puzzle game of arranging falling geometric blocks to clear lines.","category":"Famous Video Games"},
+            {"word":"PACMAN","hint":"A historic arcade game where a yellow circle chomps dots while escaping colorful ghosts.","category":"Famous Video Games"},
+            {"word":"PORTAL","hint":"A physics puzzle platformer featuring an iconic portal gun and GLaDOS.","category":"Famous Video Games"},
+            {"word":"SKYRIM","hint":"A massive open-world fantasy adventure starring the Dragonborn.","category":"Famous Video Games"},
+            {"word":"HALO","hint":"A legendary sci-fi shooter centered on the Master Chief fighting alien forces.","category":"Famous Video Games"},
+            {"word":"METROID","hint":"A groundbreaking sci-fi platformer following galactic bounty hunter Samus Aran.","category":"Famous Video Games"},
+            {"word":"DOOM","hint":"A pioneer of first-person shooters, fighting demon armies on Martian outposts.","category":"Famous Video Games"},
+            {"word":"POKEMON","hint":"A massive franchise centered on catching, training, and battling creatures.","category":"Famous Video Games"},
+            {"word":"ZELDA","hint":"A classical fantasy saga following the heroic Link on quests to save Hyrule.","category":"Famous Video Games"},
+            {"word":"GALAGA","hint":"A fixed shooter arcade game where players defend space against insectoid alien invaders.","category":"Famous Video Games"},
+            {"word":"ASTEROIDS","hint":"An early vector-graphic space shooter focused on blasting massive rocks and flying saucers.","category":"Famous Video Games"},
+            {"word":"HALFLIFE","hint":"An immersive story-driven sci-fi shooter about theoretical physicist Gordon Freeman.","category":"Famous Video Games"},
+            {"word":"FORTNITE","hint":"A widely popular Battle Royale game known for its fast building mechanics and pop-culture events.","category":"Famous Video Games"},
+            {"word":"TERRARIA","hint":"A 2D sandbox action-adventure game about exploring, digging, and battling monsters.","category":"Famous Video Games"},
+            {"word":"PONG","hint":"An ultra-simple table tennis arcade simulator, widely considered the first video game icon.","category":"Famous Video Games"},
+            {"word":"SPACEINVADERS","hint":"A vintage shoot-em-up game where rows of alien sprites slowly march down.","category":"Famous Video Games"},
+            {"word":"WITCHER","hint":"An acclaimed dark fantasy role-playing journey following the monster hunter Geralt.","category":"Famous Video Games"},
+            {"word":"GRANDTHEFTAUTO","hint":"An open-world action-adventure game series famous for car thefts, heist missions, and crime.","category":"Famous Video Games"},
+            {"word":"REDDEADREDEMPTION","hint":"A cinematic open-world western epic tracking outlaws on the American frontier.","category":"Famous Video Games"},
+            {"word":"ELDENRING","hint":"A highly acclaimed open-world action RPG set in the Lands Between, designed with George R.R. Martin.","category":"Famous Video Games"},
+            {"word":"COUNTERSTRIKE","hint":"A competitive multiplayer tactical shooter focused on bomb defusal and hostage rescue.","category":"Famous Video Games"},
+            {"word":"WORLDOFWARCRAFT","hint":"The legendary, long-running massive multiplayer online role-playing game set in Azeroth.","category":"Famous Video Games"},
+            {"word":"CYBERPUNK","hint":"A futuristic open-world action RPG set in the dystopian metropolis of Night City.","category":"Famous Video Games"}
+        ];
+
+        let activeWordBank = [...DICTIONARY_DB];
+        let remainingGamePool = [];
+        let playedHistory = [];
+        
+        // Active Game Configurations
+        let currentTarget = null;
+        let guessedLetters = new Set();
+        let activeDifficulty = "medium";
+        let maxAllowedGuesses = 6;
+        let remainingGuesses = 6;
+        
+        let commanderName = "Recruit Explorer";
+        
+        // Party Tournament Database Vectors
+        let isPartyTournament = false;
+        let partySquadSize = 2;
+        let tournamentPlayersList = []; // Array of { name: '...', score: 0, wins: 0, playedWord: '', result: 'PENDING' }
+        let currentActivePlayerIndex = 0;
+
+        // User Metrics Saved State
+        let activeScore = 0;
+        let activeStreak = 0;
+        let totalGamesPlayed = 0;
+        let totalWinsCount = 0;
+        let audioMuted = false;
+        let hintDecrypted = false;
+
+        // Sound System Synths
+        let synthEngine = null;
+        let ambientSynth = null;
+        let bgLoopActive = false;
+
+        // Fisher-Yates shuffle engine
+        function fisherYatesShuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        /* Displays lobby and registers inputs */
+        function showLobbyScreen() {
+            const lobby = document.getElementById('lobbyScreen');
+            lobby.classList.remove('hidden');
+            triggerSound('tap');
+        }
+
+        function returnToLobbyScreen() {
+            document.getElementById('tournamentLeaderboardOverlay').classList.add('hidden');
+            showLobbyScreen();
+        }
+
+        /* Lobby Form Difficulty selection */
+        function setLobbyDifficulty(lvl) {
+            activeDifficulty = lvl;
+            const diffBtns = ["easy", "medium", "hard"];
+            diffBtns.forEach(btnId => {
+                const el = document.getElementById(`diffBtn_${btnId}`);
+                if (btnId === lvl) {
+                    el.className = "py-2.5 bg-red-950/40 border border-red-500/50 rounded-xl text-xs font-bold transition-all text-red-400 shadow-neon-red";
+                } else {
+                    el.className = "py-2.5 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white";
+                }
+            });
+            triggerSound('tap');
+        }
+
+        /* Lobby Form Mode Switch */
+        function setLobbyMode(isParty) {
+            isPartyTournament = isParty;
+            const soloBtn = document.getElementById('modeBtn_solo');
+            const duelBtn = document.getElementById('modeBtn_duel');
+            
+            const soloWrapper = document.getElementById('soloNameInputWrapper');
+            const partyWrapper = document.getElementById('partyPlayersWrapper');
+
+            if (isParty) {
+                duelBtn.className = "py-3 bg-red-950/40 border border-red-500/50 rounded-xl text-xs font-bold transition-all text-red-400 shadow-neon-red flex items-center justify-center space-x-2";
+                soloBtn.className = "py-3 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center space-x-2";
+                
+                soloWrapper.classList.add('hidden');
+                partyWrapper.classList.remove('hidden');
+                
+                // Initialize standard name arrays
+                renderPartyPlayerInputs();
+            } else {
+                soloBtn.className = "py-3 bg-red-950/40 border border-red-500/50 rounded-xl text-xs font-bold transition-all text-red-400 shadow-neon-red flex items-center justify-center space-x-2";
+                duelBtn.className = "py-3 bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center space-x-2";
+                
+                soloWrapper.classList.remove('hidden');
+                partyWrapper.classList.add('hidden');
+            }
+            triggerSound('tap');
+        }
+
+        function setSquadSize(size) {
+            partySquadSize = size;
+            for (let i = 2; i <= 5; i++) {
+                const btn = document.getElementById(`squadBtn_${i}`);
+                if (i === size) {
+                    btn.className = "flex-1 py-2 bg-red-950/40 border border-red-500/50 rounded-lg text-xs font-bold text-red-400 shadow-neon-red";
+                } else {
+                    btn.className = "flex-1 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs font-bold text-slate-400";
+                }
+            }
+            renderPartyPlayerInputs();
+            triggerSound('tap');
+        }
+
+        function renderPartyPlayerInputs() {
+            const container = document.getElementById('playerInputsContainer');
+            container.innerHTML = "";
+            for (let i = 1; i <= partySquadSize; i++) {
+                const div = document.createElement('div');
+                div.className = "flex items-center space-x-2 bg-slate-950/40 p-1.5 rounded-lg border border-slate-850";
+                div.innerHTML = `
+                    <span class="text-[9px] text-slate-500 font-orbitron font-bold pl-2">OP ${i}</span>
+                    <input type="text" id="partyPlayerInput_${i}" value="Commander ${String.fromCharCode(64 + i)}" class="flex-grow bg-transparent text-xs text-slate-200 focus:outline-none focus:border-red-500">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function startGameFromLobby() {
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            startContinuousSpaceAmbient();
+
+            if (isPartyTournament) {
+                // Initialize active tournament variables
+                tournamentPlayersList = [];
+                for (let i = 1; i <= partySquadSize; i++) {
+                    const nameField = document.getElementById(`partyPlayerInput_${i}`);
+                    const val = nameField ? nameField.value.trim() : `Commander ${String.fromCharCode(64+i)}`;
+                    tournamentPlayersList.push({
+                        name: val || `Commander ${String.fromCharCode(64+i)}`,
+                        score: 0,
+                        wins: 0,
+                        playedWord: "",
+                        result: "PENDING"
+                    });
+                }
+                currentActivePlayerIndex = 0;
+                
+                // Switch global layout visuals
+                document.getElementById('partyTurnBanner').classList.remove('hidden');
+                document.getElementById('metricsCard').classList.add('hidden');
+                
+                // Hide Skip option on multiplayer layout
+                document.getElementById('skipOrbitBtn').classList.add('hidden');
+                document.getElementById('redeployGridBtn').classList.add('hidden');
+
+                // Fire initial loop transition
+                startFreshSimulation();
+            } else {
+                // Setup solo configurations
+                const nameField = document.getElementById('usernameInput');
+                commanderName = nameField.value.trim() || "Recruit Explorer";
+                
+                document.getElementById('partyTurnBanner').classList.add('hidden');
+                document.getElementById('metricsCard').classList.remove('hidden');
+                
+                document.getElementById('skipOrbitBtn').classList.remove('hidden');
+                document.getElementById('redeployGridBtn').classList.remove('hidden');
+
+                startFreshSimulation();
+            }
+            triggerSound('win');
+        }
+
+        function restartSameTournamentGrid() {
+            document.getElementById('tournamentLeaderboardOverlay').classList.add('hidden');
+            // Flush individual scores
+            tournamentPlayersList.forEach(player => {
+                player.score = 0;
+                player.wins = 0;
+                player.result = "PENDING";
+                player.playedWord = "";
+            });
+            currentActivePlayerIndex = 0;
+            startFreshSimulation();
+        }
+
+        /* Lazily instantiate synthesized sounds */
+        function lazyInitAudioSynth() {
+            if (synthEngine === null) {
+                try {
+                    synthEngine = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 }
+                    }).toDestination();
+                    synthEngine.volume.value = -10;
+                } catch (e) {
+                    console.error("Audio block initialized with failure.", e);
+                }
+            }
+        }
+
+        /* Continuous Ambient space BGM loop using native synthesizers */
+        function startContinuousSpaceAmbient() {
+            if (bgLoopActive) return;
+            try {
+                lazyInitAudioSynth();
+                Tone.start();
+
+                ambientSynth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 3, decay: 2, sustain: 0.8, release: 3 }
+                }).toDestination();
+                ambientSynth.volume.value = -28; 
+
+                const spaceChords = [
+                    ["A2", "E3", "A3", "C4"],
+                    ["F2", "C3", "F3", "A3"],
+                    ["G2", "D3", "G3", "B3"],
+                    ["E2", "B2", "E3", "G3"]
+                ];
+                let progressionIdx = 0;
+
+                const spaceLoop = new Tone.Loop(time => {
+                    if (audioMuted) return;
+                    const chord = spaceChords[progressionIdx];
+                    ambientSynth.triggerAttackRelease(chord, "6s", time);
+                    progressionIdx = (progressionIdx + 1) % spaceChords.length;
+                }, "8s").start(0);
+
+                Tone.Transport.start();
+                bgLoopActive = true;
+            } catch (err) {
+                console.warn("Could not fire space ambient synth loop.", err);
+            }
+        }
+
+        function triggerPhysicalScream() {
+            if (audioMuted) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                
+                const ctx = new AudioCtx();
+                
+                // 1. Voice Oscillator
+                const osc = ctx.createOscillator();
+                osc.type = "sawtooth";
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + 0.08);
+                osc.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.5);
+                
+                // 2. Screech Modulator
+                const mod = ctx.createOscillator();
+                const modGain = ctx.createGain();
+                mod.type = "sine";
+                mod.frequency.value = 60; 
+                modGain.gain.value = 500; 
+                
+                mod.connect(modGain);
+                modGain.connect(osc.frequency);
+                
+                // 3. Bandpass Resonance Filter
+                const filter = ctx.createBiquadFilter();
+                filter.type = "bandpass";
+                filter.frequency.setValueAtTime(1400, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(350, ctx.currentTime + 0.5);
+                filter.Q.value = 6.0; 
+                
+                // 4. Decoupling Volume Envelope
+                const gainNode = ctx.createGain();
+                gainNode.gain.setValueAtTime(0.35, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                
+                // 5. White Noise Generator
+                const bufferSize = ctx.sampleRate * 0.5; 
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.18, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+                
+                const noiseFilter = ctx.createBiquadFilter();
+                noiseFilter.type = "bandpass";
+                noiseFilter.frequency.value = 900;
+                noiseFilter.Q.value = 2.5;
+                
+                // Patch Connections
+                osc.connect(filter);
+                filter.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(ctx.destination);
+                
+                // Start Synthesizers
+                osc.start();
+                mod.start();
+                noise.start();
+                
+                // Schedule Fade Stops
+                osc.stop(ctx.currentTime + 0.5);
+                mod.stop(ctx.currentTime + 0.5);
+                noise.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                console.warn("Cybernetic scream simulation failed to synthesize:", e);
+            }
+        }
+
+        /* Sound selector controller mapping */
+        function triggerSound(type) {
+            if (audioMuted) return;
+            lazyInitAudioSynth();
+            if (!synthEngine) return;
+
+            try {
+                Tone.start();
+                if (type === 'tap') {
+                    synthEngine.triggerAttackRelease("A4", "32n");
+                } else if (type === 'correct') {
+                    synthEngine.triggerAttackRelease(["C5", "E5"], "16n");
+                } else if (type === 'incorrect') {
+                    triggerPhysicalScream();
+                } else if (type === 'win') {
+                    const now = Tone.now();
+                    synthEngine.triggerAttackRelease("G4", "16n", now);
+                    synthEngine.triggerAttackRelease("B4", "16n", now + 0.1);
+                    synthEngine.triggerAttackRelease("D5", "16n", now + 0.2);
+                    synthEngine.triggerAttackRelease("G5", "4n", now + 0.3);
+                } else if (type === 'lose') {
+                    const now = Tone.now();
+                    synthEngine.triggerAttackRelease("D3", "8n", now);
+                    synthEngine.triggerAttackRelease("C#3", "8n", now + 0.2);
+                    synthEngine.triggerAttackRelease("B2", "4n", now + 0.4);
+                }
+            } catch (err) {
+                console.warn("Synth output block error:", err);
+            }
+        }
+
+        function toggleMute() {
+            audioMuted = !audioMuted;
+            const icon = document.getElementById('soundIcon');
+            if (audioMuted) {
+                icon.className = "fa-solid fa-volume-xmark text-slate-500 animate-none";
+                showToastNotification("Transmission channel offline.");
+                if (ambientSynth) ambientSynth.volume.value = -99; 
+            } else {
+                icon.className = "fa-solid fa-volume-high text-red-500 animate-pulse";
+                showToastNotification("Transmission channel activated.");
+                if (ambientSynth) ambientSynth.volume.value = -28; 
+                triggerSound('tap');
+            }
+        }
+
+        function handlePhysicalKeyPress(event) {
+            // Guard: Ignore if typing inside any form text fields
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                return;
+            }
+
+            // Guard: Ignore if overlay modals are active
+            if (!document.getElementById('lobbyScreen').classList.contains('hidden') ||
+                !document.getElementById('turnTransitionModalOverlay').classList.contains('hidden') ||
+                !document.getElementById('tournamentLeaderboardOverlay').classList.contains('hidden') ||
+                !document.getElementById('outcomeModalOverlay').classList.contains('hidden')) {
+                return;
+            }
+
+            const char = event.key.toUpperCase();
+            if (char.length === 1 && char >= 'A' && char <= 'Z') {
+                handleKeyboardGuess(char);
+            }
+        }
+
+        function generateVirtualKeyboard() {
+            const row1 = "QWERTYUIOP".split("");
+            const row2 = "ASDFGHJKL".split("");
+            const row3 = "ZXCVBNM".split("");
+
+            const makeKeyButton = (char) => {
+                const btn = document.createElement('button');
+                btn.id = `vkey_${char}`;
+                btn.innerText = char;
+                
+                // If character is already pre-entered, lock and color code the key immediately
+                if (guessedLetters.has(char)) {
+                    btn.className = "flex-1 min-w-[15px] sm:min-w-[28px] py-2 sm:py-3 px-0.5 sm:px-1 bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 rounded-lg text-[9px] sm:text-xs md:text-sm font-bold font-orbitron cursor-default select-none";
+                    btn.disabled = true;
+                } else {
+                    btn.className = "flex-1 min-w-[15px] sm:min-w-[28px] py-2 sm:py-3 px-0.5 sm:px-1 bg-slate-800/80 hover:bg-slate-700 hover:-translate-y-0.5 border border-slate-700 rounded-lg text-[9px] sm:text-xs md:text-sm font-bold tracking-wider font-orbitron text-slate-200 transition-all cursor-pointer hover:shadow-sm select-none active:translate-y-0";
+                }
+                
+                btn.onclick = () => handleKeyboardGuess(char);
+                return btn;
+            };
+
+            const r1 = document.getElementById('keyboardRow1');
+            const r2 = document.getElementById('keyboardRow2');
+            const r3 = document.getElementById('keyboardRow3');
+
+            r1.innerHTML = ''; r2.innerHTML = ''; r3.innerHTML = '';
+
+            row1.forEach(c => r1.appendChild(makeKeyButton(c)));
+            row2.forEach(c => r2.appendChild(makeKeyButton(c)));
+            row3.forEach(c => r3.appendChild(makeKeyButton(c)));
+        }
+
+        function handleKeyboardGuess(letter) {
+            letter = letter.toUpperCase();
+            if (guessedLetters.has(letter) || remainingGuesses <= 0 || !currentTarget) return;
+
+            guessedLetters.add(letter);
+            const btn = document.getElementById(`vkey_${letter}`);
+            if (btn) btn.disabled = true;
+
+            const isHit = currentTarget.word.toUpperCase().includes(letter);
+
+            if (isHit) {
+                if (btn) {
+                    btn.className = "flex-1 min-w-[15px] sm:min-w-[28px] py-2 sm:py-3 px-0.5 sm:px-1 bg-emerald-950/80 border border-emerald-500/50 text-emerald-400 rounded-lg text-[9px] sm:text-xs md:text-sm font-bold font-orbitron cursor-default select-none animate-bounce";
+                    btn.style.animationDuration = '0.3s';
+                }
+                triggerSound('correct');
+
+                // If in Party Mode, correct guess adds score immediately
+                if (isPartyTournament) {
+                    tournamentPlayersList[currentActivePlayerIndex].score += 20;
+                }
+
+                renderWordSlots();
+                checkSimulationSuccessCondition();
+            } else {
+                remainingGuesses--;
+                if (btn) {
+                    btn.className = "flex-1 min-w-[15px] sm:min-w-[28px] py-2 sm:py-3 px-0.5 sm:px-1 bg-red-950/80 border border-red-500/50 text-red-500 rounded-lg text-[9px] sm:text-xs md:text-sm font-bold font-orbitron opacity-50 cursor-default select-none";
+                }
+                triggerSound('incorrect'); 
+
+                // Party Mode wrong guess deducts penalty
+                if (isPartyTournament) {
+                    tournamentPlayersList[currentActivePlayerIndex].score = Math.max(0, tournamentPlayersList[currentActivePlayerIndex].score - 10);
+                }
+
+                triggerExecutionerLimbCut();
+                checkSimulationLossCondition();
+            }
+        }
+
+        function checkSimulationSuccessCondition() {
+            const normalWord = currentTarget.word.replace(/\s+/g, '').toUpperCase();
+            const allMatch = [...normalWord].every(char => guessedLetters.has(char));
+
+            if (allMatch) {
+                if (isPartyTournament) {
+                    const activeOp = tournamentPlayersList[currentActivePlayerIndex];
+                    activeOp.wins++;
+                    activeOp.score += 100; // Large solved bonus
+                    activeOp.playedWord = currentTarget.word;
+                    activeOp.result = "SAVED";
+
+                    setTimeout(() => initiateTurnTransitionModal(), 500);
+                } else {
+                    totalGamesPlayed++;
+                    totalWinsCount++;
+                    activeStreak++;
+                    
+                    let pointsAwarded = 100;
+                    if (remainingGuesses === maxAllowedGuesses) {
+                        pointsAwarded += 150; 
+                    }
+                    activeScore += pointsAwarded;
+
+                    savePersistentStorage();
+                    setTimeout(() => showGameplayOutcomeModal(true), 400);
+                }
+            }
+        }
+
+        function checkSimulationLossCondition() {
+            if (remainingGuesses <= 0) {
+                if (isPartyTournament) {
+                    const activeOp = tournamentPlayersList[currentActivePlayerIndex];
+                    activeOp.playedWord = currentTarget.word;
+                    activeOp.result = "EXTINGUISHED";
+                    
+                    setTimeout(() => initiateTurnTransitionModal(), 500);
+                } else {
+                    totalGamesPlayed++;
+                    activeStreak = 0;
+                    savePersistentStorage();
+                    setTimeout(() => showGameplayOutcomeModal(false), 400);
+                }
+            }
+        }
+
+        function triggerExecutionerLimbCut() {
+            const gallows = document.getElementById('gallowsCard');
+            gallows.classList.add('screen-shake');
+            setTimeout(() => gallows.classList.remove('screen-shake'), 400);
+
+            const errorLimbIds = [
+                ["part_leftArm", 110, 100],
+                ["part_rightArm", 130, 100],
+                ["part_leftLeg", 110, 150],
+                ["part_rightLeg", 130, 150],
+                ["part_torso", 120, 110],
+                ["part_head", 120, 71]
+            ];
+
+            const mistakes = maxAllowedGuesses - remainingGuesses;
+            
+            // Scaled index selector prevents crashes on Easy difficulty (which features up to 8 mistakes)
+            let index = Math.min(Math.floor((mistakes - 1) * (errorLimbIds.length / maxAllowedGuesses)), errorLimbIds.length - 1);
+            if (remainingGuesses === 0) {
+                index = errorLimbIds.length - 1; // Helmet sever must land on final strike
+            }
+
+            if (index >= 0 && index < errorLimbIds.length) {
+                const [id, jx, jy] = errorLimbIds[index];
+                const limb = document.getElementById(id);
+                
+                if (id === "part_head" || index === errorLimbIds.length - 1) {
+                    const visor = document.getElementById('part_leftFoot');
+                    const visorR = document.getElementById('part_rightFoot');
+                    if (visor) visor.setAttribute("class", "severed");
+                    if (visorR) visorR.setAttribute("class", "severed");
+                }
+
+                if (limb) {
+                    const dx = (Math.random() * 120 - 60) + "px";
+                    const dy = (Math.random() * 50 + 80) + "px";
+                    const rot = (Math.random() * 90 - 45) + "deg";
+                    const rotEnd = (Math.random() * 240 - 120) + "deg";
+
+                    limb.style.setProperty('--dx', dx);
+                    limb.style.setProperty('--dy', dy);
+                    limb.style.setProperty('--rot', rot);
+                    limb.style.setProperty('--rot-end', rotEnd);
+                    
+                    limb.setAttribute("class", "severed");
+                }
+
+                triggerBloodSplashParticles(jx, jy);
+            }
+
+            renderRemainingLivesIndicators();
+        }
+
+        function triggerBloodSplashParticles(x, y) {
+            const container = document.getElementById('bloodContainer');
+            if (!container) return;
+
+            for (let i = 0; i < 25; i++) {
+                const particle = document.createElement('div');
+                particle.className = "blood-particle";
+                
+                const px = (x / 200) * 100 + "%";
+                const py = (y / 200) * 100 + "%";
+                particle.style.left = px;
+                particle.style.top = py;
+
+                const size = (Math.random() * 5 + 3) + "px";
+                particle.style.width = size;
+                particle.style.height = size;
+
+                const dx = (Math.random() * 140 - 70) + "px";
+                const dy = (Math.random() * 100 + 40) + "px";
+                particle.style.setProperty('--dx', dx);
+                particle.style.setProperty('--dy', dy);
+
+                container.appendChild(particle);
+                setTimeout(() => particle.remove(), 1000);
+            }
+        }
+
+        function resetGallowsLimbTransformations() {
+            const limbIds = ["part_head", "part_torso", "part_leftArm", "part_rightArm", "part_leftLeg", "part_rightLeg", "part_leftFoot", "part_rightFoot"];
+            limbIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.transition = "none";
+                    el.setAttribute("class", "");
+                    void el.offsetHeight;
+                    el.style.transition = "";
+                }
+            });
+        }
+
+        function renderRemainingLivesIndicators() {
+            const containers = [
+                document.getElementById('livesContainer'),
+                document.getElementById('livesContainerMobile')
+            ];
+
+            containers.forEach(container => {
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i = 0; i < maxAllowedGuesses; i++) {
+                    const node = document.createElement('div');
+                    node.className = `w-2 sm:w-2.5 h-3.5 sm:h-4 rounded-sm transition-all duration-300 ${
+                        i < remainingGuesses 
+                            ? 'bg-red-500 border border-red-600 shadow-neon-red' 
+                            : 'bg-slate-800 border border-slate-900 opacity-20'
+                    }`;
+                    container.appendChild(node);
+                }
+            });
+        }
+
+        function toggleClueDecryption() {
+            const clueDisplay = document.getElementById('clueTextDisplay');
+            const btn = document.getElementById('clueToggleBtn');
+            
+            if (activeDifficulty === "hard") {
+                showToastNotification("Guidance Decryption is offline in HARD mode.");
+                triggerSound('incorrect');
+                return;
+            }
+
+            if (isPartyTournament) {
+                // In party mode, decrypt is free but hints can only be decrypted once
+                if (!hintDecrypted) {
+                    hintDecrypted = true;
+                    clueDisplay.classList.remove('blur-sm');
+                    clueDisplay.innerText = currentTarget.hint;
+                    btn.innerHTML = `<i class="fa-solid fa-lock text-emerald-400"></i><span>Decrypted</span>`;
+                    btn.className = "mt-3 px-4 py-1.5 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-semibold text-emerald-400 cursor-default flex items-center space-x-2";
+                    btn.disabled = true;
+                    triggerSound('correct');
+                }
+                return;
+            }
+
+            if (activeDifficulty === "medium" && !hintDecrypted) {
+                if (activeScore < 50) {
+                    showToastNotification("Incompatible Score. Requires 50 pts to decrypt.");
+                    triggerSound('incorrect');
+                    return;
+                }
+                activeScore -= 50;
+                document.getElementById('globalScoreDisplay').innerText = `${activeScore} pts`;
+                showToastNotification("Guidance decrypted (-50 pts)");
+            }
+
+            if (!hintDecrypted) {
+                hintDecrypted = true;
+                clueDisplay.classList.remove('blur-sm');
+                clueDisplay.innerText = currentTarget.hint;
+                btn.innerHTML = `<i class="fa-solid fa-lock text-emerald-400"></i><span>Decrypted</span>`;
+                btn.className = "mt-3 px-4 py-1.5 bg-slate-950 border border-emerald-500/30 rounded-xl text-xs font-semibold text-emerald-400 cursor-default flex items-center space-x-2";
+                btn.disabled = true;
+                triggerSound('correct');
+            }
+        }
+
+        function renderWordSlots() {
+            const container = document.getElementById('wordDisplayContainer');
+            container.innerHTML = '';
+            const word = currentTarget.word.toUpperCase();
+            
+            for (let i = 0; i < word.length; i++) {
+                const letter = word[i];
+                const box = document.createElement('div');
+                
+                if (letter === " ") {
+                    box.className = "w-4 sm:w-6 h-8 sm:h-12 flex items-center justify-center text-slate-700 font-bold text-sm sm:text-xl";
+                    box.innerText = "•";
+                } else {
+                    box.className = "w-5 sm:w-9 md:w-11 h-8 sm:h-12 md:h-14 bg-slate-950 border-2 rounded-xl flex items-center justify-center font-orbitron text-[10px] sm:text-base md:text-xl font-black transition-all duration-300 ";
+                    
+                    if (guessedLetters.has(letter)) {
+                        box.innerText = letter;
+                        box.className += "border-red-500/80 text-red-400 shadow-neon-red bg-red-950/20 scale-100 animate-pulse";
+                    } else {
+                        box.innerText = "";
+                        box.className += "border-slate-850 text-transparent scale-95 hover:border-slate-750";
+                    }
+                }
+                container.appendChild(box);
+            }
+        }
+
+        function startFreshSimulation() {
+            closeOutcomeModal();
+            resetGallowsLimbTransformations();
+
+            // Set lives and modifiers based on difficulty selections
+            if (activeDifficulty === "easy") {
+                maxAllowedGuesses = 8;
+                const labels = [document.getElementById('difficultyLabel'), document.getElementById('difficultyLabelMobile')];
+                labels.forEach(l => { if (l) l.innerText = "EASY:"; });
+            } else if (activeDifficulty === "medium") {
+                maxAllowedGuesses = 6;
+                const labels = [document.getElementById('difficultyLabel'), document.getElementById('difficultyLabelMobile')];
+                labels.forEach(l => { if (l) l.innerText = "MEDIUM:"; });
+            } else {
+                maxAllowedGuesses = 4;
+                const labels = [document.getElementById('difficultyLabel'), document.getElementById('difficultyLabelMobile')];
+                labels.forEach(l => { if (l) l.innerText = "HARD:"; });
+            }
+            remainingGuesses = maxAllowedGuesses;
+
+            // Setup Custom vs CPU targets
+            if (isPartyTournament) {
+                document.getElementById('currentModeDisplay').innerText = "PARTY";
+                document.getElementById('activePartyPlayerLabel').innerText = tournamentPlayersList[currentActivePlayerIndex].name;
+            } else {
+                document.getElementById('currentModeDisplay').innerText = "SOLO";
+            }
+
+            // Filter active word bank by difficulty lengths
+            let filteredBank = [...activeWordBank];
+            if (activeDifficulty === "easy") {
+                filteredBank = activeWordBank.filter(x => x.word.length <= 6);
+            } else if (activeDifficulty === "medium") {
+                filteredBank = activeWordBank.filter(x => x.word.length > 6 && x.word.length <= 10);
+            } else {
+                filteredBank = activeWordBank.filter(x => x.word.length > 10);
+            }
+
+            if (filteredBank.length === 0) {
+                filteredBank = [...activeWordBank]; 
+            }
+
+            // Filter out words that have been recently played to ensure total freshness
+            let unusedFilteredBank = filteredBank.filter(x => !playedHistory.includes(x.word.toUpperCase()));
+            
+            if (unusedFilteredBank.length === 0) {
+                playedHistory = [];
+                localStorage.setItem('cosmic_hangman_played_history', JSON.stringify([]));
+                unusedFilteredBank = filteredBank;
+            }
+
+            fisherYatesShuffle(unusedFilteredBank);
+
+            // Group the available words by category to ensure uniform category distribution
+            const categoryGroups = {};
+            unusedFilteredBank.forEach(item => {
+                const cat = item.category || "General";
+                if (!categoryGroups[cat]) categoryGroups[cat] = [];
+                categoryGroups[cat].push(item);
+            });
+
+            const availableCategories = Object.keys(categoryGroups);
+            if (availableCategories.length > 0) {
+                // Category-Balanced Selection: Pick a completely random category first
+                const chosenCategory = availableCategories[Math.floor(Math.random() * availableCategories.length)];
+                const categoryWords = categoryGroups[chosenCategory];
+                // Pick a random word from within that chosen category
+                currentTarget = categoryWords[Math.floor(Math.random() * categoryWords.length)];
+            } else {
+                currentTarget = unusedFilteredBank[Math.floor(Math.random() * unusedFilteredBank.length)];
+            }
+
+            if (!currentTarget) {
+                currentTarget = activeWordBank[0];
+            }
+
+            // Add selected target into memory pool to avoid repeats
+            playedHistory.push(currentTarget.word.toUpperCase());
+            if (playedHistory.length > activeWordBank.length * 0.6) {
+                playedHistory.shift();
+            }
+            localStorage.setItem('cosmic_hangman_played_history', JSON.stringify(playedHistory));
+
+            guessedLetters.clear();
+            hintDecrypted = false;
+
+            // Pre-add all numeric characters (0-9) present in the target word
+            const targetWordUpper = currentTarget.word.toUpperCase();
+            for (let i = 0; i < targetWordUpper.length; i++) {
+                const char = targetWordUpper[i];
+                if (char >= '0' && char <= '9') {
+                    guessedLetters.add(char);
+                }
+            }
+
+            // Pre-enter exactly one random unique ALPHABETIC letter of the secret target word as a helper clue
+            const alphabeticLetters = targetWordUpper.replace(/[^A-Z]/g, '').split('');
+            if (alphabeticLetters.length > 0) {
+                const uniqueAlphaLetters = [...new Set(alphabeticLetters)];
+                const randomIdx = Math.floor(Math.random() * uniqueAlphaLetters.length);
+                const preEnteredLetter = uniqueAlphaLetters[randomIdx];
+                guessedLetters.add(preEnteredLetter);
+                
+                // If in Party Mode, award the active player initial points for the pre-entered letter
+                if (isPartyTournament) {
+                    tournamentPlayersList[currentActivePlayerIndex].score += 20;
+                }
+            }
+
+            // Decrypt Button configuration based on difficulty
+            const btn = document.getElementById('clueToggleBtn');
+            const clueDisplay = document.getElementById('clueTextDisplay');
+            clueDisplay.classList.add('blur-sm');
+
+            if (activeDifficulty === "hard") {
+                clueDisplay.innerText = "Guidance Transceiver offline (HARD mode)";
+                btn.className = "mt-3 px-4 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-500 cursor-not-allowed flex items-center space-x-2";
+                btn.innerHTML = `<i class="fa-solid fa-ban text-red-500"></i><span>Decrypt Unavailable</span>`;
+                btn.disabled = true;
+            } else {
+                clueDisplay.innerText = "Transmitting secure navigation guide...";
+                btn.className = "mt-3 px-4 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center space-x-2 shadow-sm";
+                
+                if (activeDifficulty === "medium" && !isPartyTournament) {
+                    btn.innerHTML = `<i class="fa-solid fa-key text-yellow-400"></i><span>Decrypt Guidance (Cost: 50 pts)</span>`;
+                } else {
+                    btn.innerHTML = `<i class="fa-solid fa-key text-yellow-400"></i><span>Decrypt Guidance (FREE)</span>`;
+                }
+                btn.disabled = false;
+            }
+
+            document.getElementById('activeCategoryDisplay').innerText = currentTarget.category || "General Core";
+            document.getElementById('statNameLabel').innerText = isPartyTournament ? tournamentPlayersList[currentActivePlayerIndex].name : commanderName;
+            
+            renderWordSlots();
+            generateVirtualKeyboard();
+            renderRemainingLivesIndicators();
+            syncStatsPanelUI();
+
+            // Run immediate success checking in case the pre-entered letter solved the entire word
+            checkSimulationSuccessCondition();
+        }
+
+        function initiateTurnTransitionModal() {
+            const modal = document.getElementById('turnTransitionModalOverlay');
+            const prevOp = tournamentPlayersList[currentActivePlayerIndex];
+
+            document.getElementById('transPrevPlayer').innerText = prevOp.name;
+            document.getElementById('transWordWas').innerText = prevOp.playedWord;
+            document.getElementById('transResultStatus').innerText = prevOp.result;
+            
+            if (prevOp.result === "SAVED") {
+                document.getElementById('transResultStatus').className = "font-bold text-emerald-400";
+            } else {
+                document.getElementById('transResultStatus').className = "font-bold text-red-500";
+            }
+
+            // Determine if more players exist, otherwise load tournament final leaderboard
+            const nextIdx = currentActivePlayerIndex + 1;
+            if (nextIdx < tournamentPlayersList.length) {
+                document.getElementById('transNextPlayerLabel').innerText = tournamentPlayersList[nextIdx].name;
+                modal.classList.remove('hidden');
+                triggerSound('correct');
+            } else {
+                // End of full Tournament round reached
+                modal.classList.add('hidden');
+                initiateGrandTournamentStandings();
+            }
+        }
+
+        function concludeTurnTransitionAndResume() {
+            document.getElementById('turnTransitionModalOverlay').classList.add('hidden');
+            currentActivePlayerIndex++;
+            startFreshSimulation();
+            triggerSound('win');
+        }
+
+        function initiateGrandTournamentStandings() {
+            const overlay = document.getElementById('tournamentLeaderboardOverlay');
+            const container = document.getElementById('leaderboardList');
+            container.innerHTML = "";
+
+            // Sort players list based on highest scored tournament points
+            const sorted = [...tournamentPlayersList].sort((a,b) => b.score - a.score);
+
+            sorted.forEach((player, idx) => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3.5 rounded-xl border bg-slate-950/40 relative overflow-hidden ";
+                
+                let rankBadge = "";
+                let borderColor = "border-slate-800";
+                let nameColor = "text-slate-300";
+
+                if (idx === 0) {
+                    rankBadge = `<span class="text-xl">🏆</span>`;
+                    borderColor = "border-amber-500/50 shadow-neon-blue bg-amber-950/10";
+                    nameColor = "text-yellow-400 font-extrabold glow-text-gold";
+                } else if (idx === 1) {
+                    rankBadge = `<span class="text-lg">🥈</span>`;
+                    borderColor = "border-slate-400/50";
+                    nameColor = "text-slate-200 font-bold";
+                } else if (idx === 2) {
+                    rankBadge = `<span class="text-base">🥉</span>`;
+                    borderColor = "border-amber-700/50";
+                } else {
+                    rankBadge = `<span class="text-xs text-slate-500 font-orbitron font-bold pl-2">#${idx+1}</span>`;
+                }
+
+                item.className += borderColor;
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 z-10 text-left">
+                        ${rankBadge}
+                        <div>
+                            <span class="uppercase text-xs font-orbitron ${nameColor}">${player.name}</span>
+                            <span class="text-[9px] text-slate-500 block pt-0.5">Target: ${player.playedWord} (${player.result})</span>
+                        </div>
+                    </div>
+                    <div class="text-right z-10">
+                        <span class="font-orbitron font-black text-white text-base block">${player.score} <small class="text-[9px] text-indigo-400">pts</small></span>
+                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider">Rescues: ${player.wins}</span>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            overlay.classList.remove('hidden');
+            triggerSound('win');
+        }
+
+        function skipToNextWord() {
+            if (isPartyTournament) return; // Safeguard
+
+            if (activeScore >= 5) {
+                activeScore -= 5;
+                showToastNotification("Orbit skipped (-5 points penalty)");
+            } else {
+                activeScore = 0;
+                showToastNotification("Orbit skipped.");
+            }
+            activeStreak = 0;
+            savePersistentStorage();
+            startFreshSimulation();
+            triggerSound('incorrect');
+        }
+
+        function loadPersistentStorage() {
+            if (localStorage.getItem('cosmic_hangman_score')) {
+                activeScore = parseInt(localStorage.getItem('cosmic_hangman_score'), 10);
+                activeStreak = parseInt(localStorage.getItem('cosmic_hangman_streak'), 10);
+                totalGamesPlayed = parseInt(localStorage.getItem('cosmic_hangman_total_games'), 10);
+                totalWinsCount = parseInt(localStorage.getItem('cosmic_hangman_total_wins'), 10);
+            }
+            if (localStorage.getItem('cosmic_hangman_played_history')) {
+                try {
+                    playedHistory = JSON.parse(localStorage.getItem('cosmic_hangman_played_history')) || [];
+                } catch(e) {
+                    playedHistory = [];
+                }
+            }
+            syncStatsPanelUI();
+        }
+
+        function savePersistentStorage() {
+            localStorage.setItem('cosmic_hangman_score', activeScore);
+            localStorage.setItem('cosmic_hangman_streak', activeStreak);
+            localStorage.setItem('cosmic_hangman_total_games', totalGamesPlayed);
+            localStorage.setItem('cosmic_hangman_total_wins', totalWinsCount);
+        }
+
+        function syncStatsPanelUI() {
+            document.getElementById('statStreak').innerText = activeStreak;
+            document.getElementById('statWins').innerText = totalWinsCount;
+            document.getElementById('globalScoreDisplay').innerText = `${activeScore} pts`;
+            
+            let ratio = 0;
+            if (totalGamesPlayed > 0) {
+                ratio = Math.round((totalWinsCount / totalGamesPlayed) * 100);
+            }
+            document.getElementById('statRatio').innerText = `${ratio}%`;
+        }
+
+        let activeConfirmCallback = null;
+
+        function resetGlobalStatsCustomModal() {
+            document.getElementById('customConfirmOverlay').classList.remove('hidden');
+            activeConfirmCallback = function(isConfirmed) {
+                if (isConfirmed) {
+                    activeScore = 0;
+                    activeStreak = 0;
+                    totalGamesPlayed = 0;
+                    totalWinsCount = 0;
+                    playedHistory = [];
+                    localStorage.removeItem('cosmic_hangman_played_history');
+                    savePersistentStorage();
+                    syncStatsPanelUI();
+                    showToastNotification("Metrics logs and history cleared.");
+                    triggerSound('incorrect');
+                }
+            };
+        }
+
+        function closeConfirmModal(result) {
+            document.getElementById('customConfirmOverlay').classList.add('hidden');
+            if (activeConfirmCallback) {
+                activeConfirmCallback(result);
+                activeConfirmCallback = null;
+            }
+        }
+
+        function showToastNotification(message) {
+            const toast = document.getElementById('quickAlertToast');
+            const text = document.getElementById('quickAlertText');
+            
+            text.innerText = message;
+            toast.className = "absolute bottom-1.5 left-1/2 -translate-x-1/2 opacity-100 transition-all duration-300 transform translate-y-0 bg-red-950 border border-red-500/50 text-red-300 rounded-lg px-3 py-1 text-[10px] font-semibold select-none flex items-center justify-center space-x-1.5 z-20";
+            
+            setTimeout(() => {
+                toast.className = "absolute bottom-1.5 left-1/2 -translate-x-1/2 opacity-0 transition-all duration-300 transform translate-y-2 bg-red-950/80 border border-red-500/30 text-red-300 rounded-lg px-3 py-1 text-[10px] font-semibold select-none flex items-center justify-center space-x-1.5 pointer-events-none z-20";
+            }, 3000);
+        }
+
+        function showGameplayOutcomeModal(isVictory) {
+            const modal = document.getElementById('outcomeModalOverlay');
+            const title = document.getElementById('outcomeHeaderTitle');
+            const sub = document.getElementById('outcomeSubtitle');
+            const word = document.getElementById('outcomeTargetWord');
+            const hint = document.getElementById('outcomeWordHint');
+            const scoreDisplay = document.getElementById('outcomeScoreDisplay');
+            const streakDisplay = document.getElementById('outcomeStreakCount');
+            const iconBg = document.getElementById('outcomeHeaderIconBg');
+            const icon = document.getElementById('outcomeHeaderIcon');
+            const actionText = document.getElementById('outcomeActionButtonText');
+
+            word.innerText = currentTarget.word;
+            hint.innerText = currentTarget.hint;
+            scoreDisplay.innerText = activeScore;
+            streakDisplay.innerText = activeStreak;
+
+            if (isVictory) {
+                title.innerText = "Portal Aligned";
+                title.className = "font-orbitron text-2xl font-black tracking-wide uppercase mb-1 text-emerald-400 glow-text-blue";
+                sub.innerText = "Explorer Teleported Safely";
+                icon.className = "fa-solid fa-user-astronaut text-emerald-400";
+                iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center mb-4 border border-emerald-500 bg-emerald-950/40 shadow-neon-green animate-bounce";
+                triggerSound('win');
+            } else {
+                title.innerText = "Stability Lost";
+                title.className = "font-orbitron text-2xl font-black tracking-wide uppercase mb-1 text-red-500 glow-text-red";
+                sub.innerText = "Matrix Stabilizer Collapse";
+                icon.className = "fa-solid fa-skull-crossbones text-red-500 animate-pulse";
+                iconBg.className = "w-20 h-20 rounded-full flex items-center justify-center mb-4 border border-red-500 bg-red-950/40 shadow-neon-red";
+                triggerSound('lose');
+            }
+
+            actionText.innerText = "Deploy Next Expedition";
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.children[0].classList.remove('scale-95', 'opacity-0');
+            }, 50);
+        }
+
+        function closeOutcomeModal() {
+            const modal = document.getElementById('outcomeModalOverlay');
+            modal.children[0].classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 250);
+        }
+
+        (function generateCompositeWordBank() {
+            const prefixes = [
+                {p:"NANO", h:"microscopic scale ", c:"Science & Tech"},
+                {p:"MICRO", h:"small scale ", c:"Science & Tech"},
+                {p:"MACRO", h:"large scale ", c:"Science & Tech"},
+                {p:"MEGA", h:"powerful scale ", c:"Science & Tech"},
+                {p:"HYPER", h:"extreme exceeded ", c:"Abstract & Concepts"},
+                {p:"ULTRA", h:"beyond normal ", c:"Abstract & Concepts"},
+                {p:"INFRA", h:"below range ", c:"Science & Tech"},
+                {p:"THERMO", h:"thermal dynamics ", c:"Science & Tech"},
+                {p:"BIO", h:"relating to life ", c:"Nature & Animals"},
+                {p:"GEO", h:"earth features ", c:"Geography & Earth"},
+                {p:"ASTRON", h:"outer space ", c:"Space & Astronomy"},
+                {p:"HYDRO", h:"fluid dynamics ", c:"Geography & Earth"},
+                {p:"CHRONO", h:"time coordination ", c:"Abstract & Concepts"},
+                {p:"PSYCHO", h:"behavioral patterns ", c:"Abstract & Concepts"},
+                {p:"NEURO", h:"nerve paths ", c:"Science & Tech"},
+                {p:"CYBER", h:"digital systems ", c:"Science & Tech"},
+                {p:"ELECTRO", h:"charged particles ", c:"Science & Tech"},
+                {p:"PHOTO", h:"light synthesis ", c:"Science & Tech"},
+                {p:"ECO", h:"environment systems ", c:"Geography & Earth"},
+                {p:"TELE", h:"distance communication ", c:"Tools & Inventions"},
+                {p:"AUTO", h:"self executing ", c:"Science & Tech"},
+                {p:"SPECTRO", h:"light analysis ", c:"Science & Tech"},
+                {p:"PALEONT", h:"prehistoric fossils ", c:"Science & Tech"},
+                {p:"VOLCANO", h:"eruptive geology ", c:"Geography & Earth"},
+                {p:"METEORO", h:"atmospheric weather ", c:"Geography & Earth"},
+                {p:"OCEANO", h:"marine system ", c:"Geography & Earth"}
+            ];
+            const suffixes = [
+                {s:"METRY", h:"measurement coordinates."},
+                {s:"GRAPHY", h:"mapping details."},
+                {s:"SPHERE", h:"structural layer environmental envelope."},
+                {s:"LOGY", h:"scientific study and principles."},
+                {s:"DYNAMIC", h:"forces in motion."},
+                {s:"SYSTEM", h:"interconnected network framework."},
+                {s:"ENGINE", h:"power generator mechanics."},
+                {s:"SENSOR", h:"automatic scanning radar transceiver."},
+                {s:"MATRIX", h:"quantum numerical grid network."},
+                {s:"VECTOR", h:"directional orientation grid lines."},
+                {s:"BEACON", h:"transmitting orbital signal transmitter."}
+            ];
+
+            // Combine prefixes and suffixes to generate thousands of words!
+            prefixes.forEach(pref => {
+                suffixes.forEach(suff => {
+                    const word = (pref.p + suff.s).toUpperCase();
+                    const hint = pref.h + suff.h;
+                    // Only add if not already in DICTIONARY_DB
+                    if (!activeWordBank.some(item => item.word === word)) {
+                        activeWordBank.push({
+                            word: word,
+                            hint: hint,
+                            category: pref.c
+                        });
+                    }
+                });
+            });
+
+            // Generate coordinate codes (e.g. SECTOR_A1, GRID_Z9) to reach the 4,000+ mark
+            const systems = ["SECTOR", "GRID", "BEACON", "ORBIT", "PORTAL", "NODE", "MATRIX", "VECTOR", "STATION"];
+            const zones = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+            systems.forEach(sys => {
+                zones.forEach(zone => {
+                    for (let num = 1; num <= 20; num++) {
+                        const word = `${sys}${zone}${num}`;
+                        const hint = `Procedural coordinate path matching ${sys} reference point ${zone} at quantum level ${num}.`;
+                        activeWordBank.push({
+                            word: word,
+                            hint: hint,
+                            category: "Cosmic Coordinates"
+                        });
+                    }
+                });
+            });
+        })();
+
+        // Register physical keyboard inputs for seamless desktop gameplay
+        window.addEventListener('keydown', handlePhysicalKeyPress);
+
+        // Load metrics on initialization
+        loadPersistentStorage();
+
+        // Initialize Lobby Screen immediately on compile load
+        showLobbyScreen();
+    </script>
+</body>
+</html>
