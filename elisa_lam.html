@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Elisa Lam Case: Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent-red: #c41e3a;
+            --accent-gold: #d4a574;
+            --accent-blue: #4a90d9;
+            --text-primary: #e8e8e8;
+            --text-secondary: #8a8a9a;
+            --text-muted: #5a5a6a;
+            --border: #2a2a3a;
+            --danger: #ff4444;
+            --success: #44ff88;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-red); border-radius: 4px; }
+
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.5rem;
+            color: var(--accent-red);
+            letter-spacing: 2px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--accent-red);
+            color: white;
+            border-color: var(--accent-red);
+        }
+
+        .main-content { margin-top: 70px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.95) 100%),
+                url('https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg?resize=1200:*') center/cover no-repeat;
+            z-index: -2;
+            filter: brightness(0.3) contrast(1.2);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 50%, rgba(196, 30, 58, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(212, 165, 116, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .story-content {
+            max-width: 900px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-red);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(196, 30, 58, 0.4);
+            opacity: 0;
+            animation: slideUp 1s ease 1s forwards;
+        }
+
+        .story-headline span {
+            color: var(--accent-red);
+            display: block;
+            font-size: 1.2em;
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.4rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: slideUp 1s ease 1.5s forwards;
+        }
+
+        .story-text {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.15rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.5rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.5rem;
+            color: var(--accent-red);
+            text-shadow: 0 0 20px rgba(196, 30, 58, 0.5);
+        }
+
+        .story-highlight {
+            background: rgba(196, 30, 58, 0.15);
+            border-left: 3px solid var(--accent-red);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: slideUp 1s ease 2.5s forwards;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: slideUp 1s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: var(--accent-red);
+            color: white;
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-red);
+            cursor: pointer;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 30px rgba(196, 30, 58, 0.4);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: slideUp 1s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+        }
+
+        .story-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            opacity: 0;
+            animation: slideUp 1s ease 4s forwards, bounce 2s infinite 4s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(196, 30, 58, 0.1) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(196, 30, 58, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(196, 30, 58, 0.2);
+            border-color: var(--accent-red);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: rgba(196, 30, 58, 0.2);
+            color: var(--accent-red);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 3px;
+            margin-bottom: 0.8rem;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== VIDEO ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+        }
+
+        .badge-red { background: rgba(196, 30, 58, 0.2); color: var(--accent-red); }
+        .badge-gold { background: rgba(212, 165, 116, 0.2); color: var(--accent-gold); }
+        .badge-blue { background: rgba(74, 144, 217, 0.2); color: var(--accent-blue); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-red), var(--accent-gold));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 15px;
+            height: 15px;
+            background: var(--accent-red);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(196, 30, 58, 0.5);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -37px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+        }
+
+        .timeline-images img:hover { transform: scale(1.05); }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-color: var(--success); }
+        .theory-card.conspiracy { border-color: var(--danger); }
+        .theory-card.alternative { border-color: var(--accent-blue); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .official .theory-icon { background: rgba(68, 255, 136, 0.2); }
+        .conspiracy .theory-icon { background: rgba(255, 68, 68, 0.2); }
+        .alternative .theory-icon { background: rgba(74, 144, 217, 0.2); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+        }
+
+        .theory-probability {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+
+        /* ===== AUDIO ===== */
+        .audio-evidence {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .audio-waveform {
+            height: 60px;
+            background: linear-gradient(90deg, var(--accent-red), var(--accent-gold));
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0.6;
+        }
+
+        .audio-waveform::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                var(--bg-card) 2px,
+                var(--bg-card) 4px
+            );
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .audio-info { flex: 1; }
+
+        .audio-title {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .audio-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-red);
+            border-radius: 4px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        /* ===== MAP ===== */
+        .map-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .map-cell {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            flex-direction: column;
+            padding: 0.5rem;
+        }
+
+        .map-cell:hover {
+            background: rgba(196, 30, 58, 0.2);
+            border-color: var(--accent-red);
+            color: var(--text-primary);
+        }
+
+        .map-cell.highlight {
+            background: rgba(196, 30, 58, 0.3);
+            border-color: var(--accent-red);
+            color: var(--accent-gold);
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 3px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-gold);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-red);
+            box-shadow: 0 5px 20px rgba(196, 30, 58, 0.3);
+        }
+
+        /* ===== GLITCH ===== */
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -1px 0 var(--accent-red);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -1px 0 var(--accent-blue);
+            clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(12px, 9999px, 52px, 0); }
+            20% { clip: rect(65px, 9999px, 11px, 0); }
+            40% { clip: rect(26px, 9999px, 89px, 0); }
+            60% { clip: rect(78px, 9999px, 14px, 0); }
+            80% { clip: rect(53px, 9999px, 43px, 0); }
+            100% { clip: rect(18px, 9999px, 76px, 0); }
+        }
+
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 99px, 0); }
+            20% { clip: rect(12px, 9999px, 56px, 0); }
+            40% { clip: rect(89px, 9999px, 23px, 0); }
+            60% { clip: rect(34px, 9999px, 67px, 0); }
+            80% { clip: rect(76px, 9999px, 12px, 0); }
+            100% { clip: rect(43px, 9999px, 88px, 0); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.5rem; }
+            .story-text { font-size: 1rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 2rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -37px !important;
+                right: auto !important;
+            }
+            .nav-tabs { display: none; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+            .map-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">ELISA LAM</div>
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">A True Crime Investigation</div>
+                    
+                    <h1 class="story-headline">
+                        She Checked Into a Hotel
+                        <span>She Never Checked Out</span>
+                    </h1>
+                    
+                    <p class="story-prologue">
+                        "The water had a funny taste," the guests said. For three weeks, they showered in it. Brushed their teeth with it. Drank it. None of them knew that 21-year-old Elisa Lam was floating naked in the rooftop tank, her body decomposing in 1,000 gallons of darkness.
+                    </p>
+                    
+                    <div class="story-text">
+                        <p>It began with a young woman seeking adventure. Elisa Lam, a 21-year-old Canadian student with a bright smile and a love for travel, arrived at the Cecil Hotel in downtown Los Angeles on January 28, 2013. The hotel was cheap, historic, and—for those who knew its secrets—deeply cursed. Built in the 1920s, it had hosted serial killers, witnessed suicides, and accumulated roughly 80 deaths in its decaying walls. But to a budget traveler, it was just a place to sleep.</p>
+                        
+                        <p>Within days, Elisa's behavior became erratic. Her roommates complained she was leaving strange notes—"go away," "go home"—and locking them out of their shared room. The hotel moved her to a private room. On January 31, her last day alive, she visited The Last Bookstore, where staff remembered her as chatty and friendly. Back at the Cecil, employees saw her wandering the halls. She shouted in the lobby: <em>"I'm crazy, but so is L.A.!"</em> Then she walked toward the elevators—and vanished.</p>
+                        
+                        <p>For nineteen days, no one could find her. Her parents reported her missing. Police searched with dogs. Flyers went up across the city. Then, on February 13, the LAPD released a surveillance video that would haunt the internet forever: 2.5 minutes of Elisa in an elevator, pressing buttons frantically, hiding in corners, making gestures at invisible walls. The timestamp was blurred. Footage appeared missing. The world watched, and the world theorized.</p>
+                        
+                        <p>But the horror was just beginning. For nearly three weeks, hotel guests had complained about low water pressure and discolored, foul-tasting water. Some described it as black. On February 19, maintenance worker Santiago Lopez climbed to the roof to inspect the water tanks. One hatch was open. Looking inside, he discovered Elisa's naked body floating face-up, her clothes and room key at the bottom of the tank. The water that guests had been drinking, showering in, and brushing their teeth with had been slowly absorbing her remains.</p>
+                    </div>
+                    
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-red);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        How did a 21-year-old woman, alone and in distress, navigate a locked, alarmed rooftop, climb a 10-foot ladder to a water tank, open a heavy industrial lid, and drown inside—while leaving no evidence of trauma, no signs of struggle, and no trace of her phone? The coroner ruled it an accident. The internet called it a cover-up. Some called it something darker entirely.
+                    </div>
+                    
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Begin the Investigation ▶</button>
+                    </div>
+                    
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">21</div>
+                            <div class="story-stat-label">Years Old</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">19</div>
+                            <div class="story-stat-label">Days Missing</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">3</div>
+                            <div class="story-stat-label">Weeks in Water</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">∞</div>
+                            <div class="story-stat-label">Unanswered Questions</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-red);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1 class="glitch" data-text="THE VANISHING AT THE CECIL HOTEL">THE VANISHING AT THE CECIL HOTEL</h1>
+                <p class="hero-subtitle">An interactive investigation into one of the most disturbing and debated cases in modern true crime history. Explore the evidence, analyze the video, and decide for yourself what happened to Elisa Lam.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victim</div>
+                        <div class="meta-value">Elisa Lam, 21</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Cecil Hotel, LA</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">Jan 31 - Feb 19, 2013</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Ruling</div>
+                        <div class="meta-value">Accidental Drowning</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('elevator')">
+                    <img src="data:image/jpeg;base64,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" alt="Elevator Video" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Video Evidence</span>
+                        <h3 class="evidence-title">The Elevator Footage</h3>
+                        <p class="evidence-desc">The infamous surveillance video released by LAPD on Feb 13, 2013. Elisa presses multiple buttons, hides in corners, and makes strange gestures. The timestamp is obscured and footage appears edited.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('autopsy')">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-500px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Autopsy Report" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Document</span>
+                        <h3 class="evidence-title">Autopsy Report</h3>
+                        <p class="evidence-desc">Official LA County Coroner's report (Case 2013-01364). Rules accidental drowning with bipolar disorder as contributing factor. No trauma, no assault, sub-therapeutic medication levels.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('watertank')">
+                    <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Water Tanks" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Water Tank Discovery</h3>
+                        <p class="evidence-desc">Maintenance worker Santiago Lopez discovered Elisa's naked body in a 1,000-gallon rooftop cistern after guests complained of black, foul-tasting water for three weeks.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('hotel')">
+                    <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" alt="Cecil Hotel" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Location</span>
+                        <h3 class="evidence-title">The Cecil Hotel</h3>
+                        <p class="evidence-desc">Historic hotel built in 1924, linked to serial killers Richard Ramirez and Jack Unterweger. Roughly 80 deaths in its history. Located at 640 S. Main St, near Skid Row.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('tumblr')">
+                    <img src="https://hips.hearstapps.com/3385b7cfc8e8623a55b54e9a35fd966795ecb695.jpg" alt="Tumblr Blog" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Digital Evidence</span>
+                        <h3 class="evidence-title">The Tumblr Mystery</h3>
+                        <p class="evidence-desc">Elisa's blog "nouvelle-nouveau" continued posting after her death, likely through scheduled "Queue" posts. The timing fueled speculation about stolen phones or hackers.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('netflix')">
+                    <img src="https://m.media-amazon.com/25a74f14fb1f96ea2bf2e47803d3cdb799eae270.jpg" alt="Netflix Documentary" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Media</span>
+                        <h3 class="evidence-title">Netflix: Crime Scene</h3>
+                        <p class="evidence-desc">2021 documentary by Joe Berlinger. 4 episodes exploring the case with hotel staff, investigators, web sleuths, and mental health experts. Reignited global interest.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa Lam Portrait" class="gallery-img" onclick="openLightbox(this)">
+                <img src="data:image/jpeg;base64,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" alt="Elevator Still" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Water Tanks" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" alt="Cecil Hotel Exterior" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known movement and event from Elisa's arrival at the Cecil Hotel to the discovery of her body.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 28, 2013</div>
+                        <div class="timeline-title">Arrival at the Cecil Hotel</div>
+                        <p>Elisa checks into the Cecil Hotel in downtown LA. Originally assigned a shared room, she is moved to a private room (Room 506) after roommates complain about her erratic behavior—leaving notes saying "go away" and locking them out.</p>
+                        <div class="timeline-images">
+                            <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" alt="Cecil Hotel" onclick="openLightbox(this)">
+                            <img src="https://d.ibtimes.co.uk/e911775461df0f343cee9f1c1d03f7bc95d6765f.jpg" alt="Hotel Room" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 31, 2013</div>
+                        <div class="timeline-title">Last Known Day Alive</div>
+                        <p>Elisa visits The Last Bookstore where staff describe her as outgoing. Back at the Cecil, employees see her wandering. She shouts "I'm crazy, but so is L.A.!" in the lobby, is found in a restricted area, then walks toward the elevators.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.travelcaffeine.com/c9bc874e0e30749ccf9df44e550e20710b87dc7e.jpg" alt="The Last Bookstore" onclick="openLightbox(this)">
+                            <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa Lam" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 1, 2013</div>
+                        <div class="timeline-title">Reported Missing</div>
+                        <p>Elisa fails to check out and misses her trip to Santa Cruz. Her parents report her missing to LAPD. Police search with K-9 units but find nothing. Her scent trail is lost near a window leading to a fire escape.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 13, 2013</div>
+                        <div class="timeline-title">Elevator Video Released</div>
+                        <p>LAPD releases 2.5 minutes of elevator surveillance. The video shows Elisa behaving erratically—pressing multiple buttons, hiding, making strange gestures. Timestamp is blurred and nearly a minute appears missing. Goes viral globally.</p>
+                        <div class="timeline-images">
+                            <img src="https://i.cbc.ca/e8409c8a77a9315032312d9a0f804bdc740c0224.jpg" alt="Elevator Still" onclick="openLightbox(this)">
+                            <img src="https://media.thetab.com/8248b1efee4e28d8b9fdc22cecf584a3ab22dc56.jpg" alt="Elevator Analysis" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 19, 2013</div>
+                        <div class="timeline-title">Body Discovered</div>
+                        <p>After nearly three weeks of guest complaints about low water pressure and black water, maintenance worker Santiago Lopez discovers Elisa's naked body floating in a rooftop water tank. The hatch is open. Her clothes, watch, and room key are at the bottom.</p>
+                        <div class="timeline-images">
+                            <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Water Tanks" onclick="openLightbox(this)">
+                            <img src="https://cloudfront-eu-central-1.images.arcpublishing.com/bbfd6336e626a2ae555a1411e9b813f6276dbe10.jpg" alt="Rooftop Recovery" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 21, 2013</div>
+                        <div class="timeline-title">Autopsy Performed</div>
+                        <p>LA County Coroner's Office performs autopsy. Findings: No physical trauma, no sexual assault, no illicit drugs, negligible alcohol (0.02g%), very low bipolar medication levels. Traces of ibuprofen and Sinutab found.</p>
+                        <div class="timeline-images">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-500px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Autopsy" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 20, 2013</div>
+                        <div class="timeline-title">Official Ruling</div>
+                        <p>Death ruled "Accidental Drowning" with "Bipolar Disorder" as significant contributing factor. Coroner states no evidence of foul play. Police believe she accessed roof via fire escape, climbed 10-foot ladder, and entered tank voluntarily.</p>
+                        <div class="timeline-images">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-250px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Report" onclick="openLightbox(this)">
+                            <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>Evidence Board</h1>
+                <p class="hero-subtitle">Examine the physical, digital, and forensic evidence collected during the investigation.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Physical Evidence</span>
+                        <h3 class="evidence-title">The Water Tank</h3>
+                        <p class="evidence-desc">Four 1,000-gallon cisterns on the Cecil Hotel roof. Elisa was found in the easternmost tank. The hatch was found open. Tanks were 8ft tall, 4ft diameter, perched on concrete blocks. No fixed ladder—portable ladder required.</p>
+                        <div class="audio-evidence">
+                            <div class="audio-waveform"></div>
+                            <div class="audio-controls">
+                                <button class="play-btn" onclick="togglePlay(this)">▶</button>
+                                <div class="audio-info">
+                                    <div class="audio-title">Guest Interview: "The Water Had a Funny Taste"</div>
+                                    <div class="audio-meta">British tourist Michael Baugh • Feb 19, 2013</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic Evidence</span>
+                        <h3 class="evidence-title">Toxicology Report</h3>
+                        <p class="evidence-desc">No illicit drugs detected. Prescribed bipolar medications at very low/sub-therapeutic levels, suggesting non-compliance or severe under-medication. Alcohol at 0.02g%.</p>
+                        <div class="document-field">
+                            <div class="document-label">Lamotrigine Level</div>
+                            <div class="document-value">0.08 mcg/mL (Therapeutic: 2.5-15)</div>
+                        </div>
+                        <div class="document-field">
+                            <div class="document-label">Quetiapine Level</div>
+                            <div class="document-value">10 ng/mL (Therapeutic: 100-800)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Missing Evidence</span>
+                        <h3 class="evidence-title">The Missing Phone</h3>
+                        <p class="evidence-desc">Elisa's phone was never recovered—not with her body, not in her room, not anywhere in the hotel. This remains one of the most puzzling aspects. If she drowned accidentally, where is her phone?</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene Photo</span>
+                        <h3 class="evidence-title">Rooftop Access</h3>
+                        <p class="evidence-desc">The Cecil Hotel roof was supposed to be secured with locked doors and alarms. However, a fire escape provided alternative access. Police dogs searched the roof but did not check inside the water tanks during initial search.</p>
+                        <div class="timeline-images">
+                            <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Rooftop" onclick="openLightbox(this)">
+                            <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" alt="Hotel Exterior" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <h3 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Cecil Hotel Floor Plan & Key Locations</h3>
+                <div class="map-grid">
+                    <div class="map-cell">Room 506<br><small>Elisa's Room</small></div>
+                    <div class="map-cell">Elevator<br><small>Video Location</small></div>
+                    <div class="map-cell">Lobby<br><small>Last Seen</small></div>
+                    <div class="map-cell">Fire Escape<br><small>Roof Access</small></div>
+                    <div class="map-cell">Stairwell<br><small>Restricted</small></div>
+                    <div class="map-cell highlight">Water Tanks<br><small>Body Found</small></div>
+                    <div class="map-cell">Maintenance<br><small>Hatch Access</small></div>
+                    <div class="map-cell">Skid Row<br><small>Exterior</small></div>
+                </div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: var(--accent-red);"></div>
+                        <span>Body Discovery Location</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: var(--accent-gold);"></div>
+                        <span>Key Evidence Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background: var(--text-muted);"></div>
+                        <span>Standard Location</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery" style="margin-top: 2rem;">
+                <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa Portrait" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://i.cbc.ca/e8409c8a77a9315032312d9a0f804bdc740c0224.jpg" alt="Elevator Frame" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Tanks" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-500px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Autopsy" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO ANALYSIS SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence Analysis</h1>
+                <p class="hero-subtitle">Frame-by-frame examination of the elevator footage with expert commentary and anomaly detection.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/3TjVBpyHeZM" title="Elisa Lam Elevator Video" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-red">ORIGINAL</span>
+                        <div class="video-title">LAPD Released Elevator Footage</div>
+                        <div class="video-desc">The full 2.5-minute surveillance video released by LAPD on February 13, 2013. Shows Elisa's last known movements before disappearance.</div>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/NU3WQVj1f_A" title="Secrets They Don't Want You to Know" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-blue">ANALYSIS</span>
+                        <div class="video-title">The Elisa Lam Mystery: Secrets & Theories</div>
+                        <div class="video-desc">Comprehensive analysis of the case, elevator anomalies, and unanswered questions surrounding her death.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-grid" style="margin-top: 2rem;">
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Anomaly 1</span>
+                        <h3 class="evidence-title">The Missing Minute</h3>
+                        <p class="evidence-desc">Viewers noticed the timestamp appears to jump erratically. The elevator doors seem about to close before the video jumps to a later point. LAPD and hotel manager Amy Price denied tampering, stating raw tapes were handed directly to investigators. Some speculate footage was removed to protect another person's identity.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Anomaly 2</span>
+                        <h3 class="evidence-title">Obscured Timestamp</h3>
+                        <p class="evidence-desc">The timestamp at the bottom of the video is deliberately blurred and obscured, making it impossible to verify the exact time of recording or confirm if segments were removed. This fueled conspiracy theories about video manipulation.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Behavioral Analysis</span>
+                        <h3 class="evidence-title">Expert Interpretation</h3>
+                        <p class="evidence-desc">Forensic pathologist Dr. Jason Tovar and clinical psychologist Dr. Judy Ho concluded her behavior is consistent with a severe psychotic episode: disorganized thinking, paranoia, hallucinations. Her hand movements suggest she may be feeling invisible walls or warding off perceived threats.</p>
+                        <div class="audio-evidence">
+                            <div class="audio-waveform"></div>
+                            <div class="audio-controls">
+                                <button class="play-btn" onclick="togglePlay(this)">▶</button>
+                                <div class="audio-info">
+                                    <div class="audio-title">Dr. Judy Ho: Behavioral Analysis Commentary</div>
+                                    <div class="audio-meta">Netflix Crime Scene Documentary • 2021</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Technical</span>
+                        <h3 class="evidence-title">Elevator Mechanics</h3>
+                        <p class="evidence-desc">The elevator doors remain open for an unusually long time. Some theorize the "hold door" button was pressed, or someone outside was holding the door. Others suggest the elevator was malfunctioning. The Cecil Hotel was known for broken elevators.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://i.cbc.ca/e8409c8a77a9315032312d9a0f804bdc740c0224.jpg" alt="Elevator Frame 1" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://media.thetab.com/8248b1efee4e28d8b9fdc22cecf584a3ab22dc56.jpg" alt="Elevator Frame 2" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://citysites1.b-cdn.net/676fd3cf3de0e69fa4d1be7e668dbe6eb2002f54.webp" alt="Cecil Hallway" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Competing Theories</h1>
+                <p class="hero-subtitle">Three frameworks for understanding what happened to Elisa Lam. Examine the evidence for each.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">✓</div>
+                        <div>
+                            <div class="theory-name">Official Narrative</div>
+                            <div class="theory-probability">Accident / Mental Health Crisis</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Elisa was off her bipolar medication, experiencing a severe psychotic episode</li>
+                        <li>She accessed the roof via fire escape, bypassing locked doors</li>
+                        <li>Climbed a 10-foot ladder and entered the water tank voluntarily</li>
+                        <li>Removed clothes to try to stay afloat as water rose</li>
+                        <li>Accidentally drowned; open hatch explains how she entered</li>
+                        <li>No evidence of trauma, assault, or foul play in autopsy</li>
+                        <li>Low medication levels confirm she was not taking prescriptions properly</li>
+                        <li>Police dogs missed the tanks during initial search</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">?</div>
+                        <div>
+                            <div class="theory-name">Foul Play / Cover-Up</div>
+                            <div class="theory-probability">Murder / Staged Scene</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>How did she open the heavy tank lid alone?</li>
+                        <li>Why was her phone never found?</li>
+                        <li>Subcutaneous blood pooling in anal area and prolapsed rectum suspicious</li>
+                        <li>Autopsy failed to disclose rape kit or fingernail kit results</li>
+                        <li>Edited elevator video suggests someone else was present</li>
+                        <li>Coroner was reportedly "ambivalent" about accidental ruling</li>
+                        <li>Cecil Hotel's history of violence makes foul play plausible</li>
+                        <li>Could a hotel employee with roof access and alarm codes be involved?</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">∞</div>
+                        <div>
+                            <div class="theory-name">Supernatural / Ritual</div>
+                            <div class="theory-probability">Paranormal / Elevator Game</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Korean "Elevator Game" ritual: pressing buttons in sequence to enter another dimension</li>
+                        <li>Her button-pressing and strange movements match game rules</li>
+                        <li>Cecil Hotel's history of 80+ deaths creates "cursed" reputation</li>
+                        <li>Parallels to horror film "Dark Water" (2005): girl in red jacket dies in water tank</li>
+                        <li>TB test "LAM-ELISA" coincidence fuels biological weapon theories</li>
+                        <li>Her Tumblr posting after death suggests supernatural persistence</li>
+                        <li>Some believe she was "pushed" by unseen forces</li>
+                        <li>The hotel itself as a malevolent entity</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="document-viewer" style="margin-top: 2rem;">
+                <div class="document-stamp">CLASSIFIED</div>
+                <h3 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Unanswered Questions</h3>
+                <div class="document-field">
+                    <div class="document-label">Question #1</div>
+                    <div class="document-value">If the tank lid was so heavy, how did Elisa open it alone? Could it have been opened for her?</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Question #2</div>
+                    <div class="document-value">Why did the elevator video have an obscured timestamp and apparent missing footage?</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Question #3</div>
+                    <div class="document-value">Where is Elisa's phone? It was never found with her body or in her room.</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Question #4</div>
+                    <div class="document-value">Why did her Tumblr blog continue posting after her death? Scheduled posts or something else?</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Question #5</div>
+                    <div class="document-value">How did police dogs search the roof but miss a body in an open water tank?</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Question #6</div>
+                    <div class="document-value">Why were guests drinking and showering in black, foul water for three weeks before anyone checked?</div>
+                </div>
+            </div>
+
+            <div class="image-gallery" style="margin-top: 2rem;">
+                <img src="https://m.media-amazon.com/25a74f14fb1f96ea2bf2e47803d3cdb799eae270.jpg" alt="Netflix Doc" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" alt="Cecil" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" alt="Tanks" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Primary Documents</h1>
+                <p class="hero-subtitle">Original reports, statements, and records from the investigation.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('autopsy-full')">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Official Document</span>
+                        <h3 class="evidence-title">Autopsy Report (Full)</h3>
+                        <p class="evidence-desc">LA County Department of Coroner. Case No. 2013-01364. Performed February 21, 2013. Rules cause of death as Drowning, manner as Accident, with Bipolar Disorder as significant contributing factor.</p>
+                        <div class="document-field">
+                            <div class="document-label">Case Number</div>
+                            <div class="document-value">2013-01364</div>
+                        </div>
+                        <div class="document-field">
+                            <div class="document-label">Date of Autopsy</div>
+                            <div class="document-value">February 21, 2013</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Legal Document</span>
+                        <h3 class="evidence-title">Wrongful Death Lawsuit</h3>
+                        <p class="evidence-desc">Filed by Elisa's parents in September 2013 against the Cecil Hotel. Argued management failed to secure hazardous areas like rooftop water tanks. Dismissed in 2015. Judge ruled hotel not liable for accident resulting from her own actions.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Police Statement</span>
+                        <h3 class="evidence-title">LAPD Press Release</h3>
+                        <p class="evidence-desc">February 19, 2013: "The body of a female was found inside one of the water tanks on the roof of the Cecil Hotel. The body has been identified as Elisa Lam... Preliminary investigation indicates no evidence of foul play."</p>
+                                    </div>
+
+                <div class="evidence-card">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witness Statement</span>
+                        <h3 class="evidence-title">Santiago Lopez (Maintenance)</h3>
+                        <p class="evidence-desc">The maintenance worker who discovered the body. He climbed to the roof to investigate guest complaints about water quality. Found the tank hatch open. Discovered Elisa's naked body floating face-up. Her clothing, watch, and room key were at the bottom of the tank.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="document-viewer" style="margin-top: 2rem;">
+                <div class="document-stamp">EVIDENCE</div>
+                <h3 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Autopsy Summary - Key Findings</h3>
+                <div class="document-field">
+                    <div class="document-label">External Examination</div>
+                    <div class="document-value">Moderate decomposition. No evidence of trauma, cuts, bruises, or injuries. No signs of sexual assault. Body found naked in water tank—clothing, watch, and room key at bottom of tank.</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Toxicology</div>
+                    <div class="document-value">No illicit drugs. Ethanol 0.02 g%. Prescribed medications at sub-therapeutic levels. Traces of ibuprofen and Sinutab.</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Internal Examination</div>
+                    <div class="document-value">Subcutaneous pooling of blood in anal area. Prolapsed rectum (possibly decomposition-related). Lungs consistent with drowning.</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Conclusion</div>
+                    <div class="document-value">CAUSE: Drowning | MANNER: Accident | OTHER SIGNIFICANT CONDITION: Bipolar Disorder</div>
+                </div>
+            </div>
+
+            <div class="image-gallery" style="margin-top: 2rem;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-500px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Autopsy Page 1" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Autopsy_Report_of_Elisa_Lam.pdf/page1-250px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" alt="Autopsy Thumb" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://hips.hearstapps.com/6112ffa36027a050f83af4456c0646a0d50d6583.jpg" alt="Elisa" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://m.media-amazon.com/25a74f14fb1f96ea2bf2e47803d3cdb799eae270.jpg" alt="Documentary" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img src="" alt="Evidence" id="lightbox-img">
+        <div class="lightbox-caption" id="lightbox-caption">Click anywhere to close</div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            lightboxImg.src = img.src;
+            document.getElementById('lightbox-caption').textContent = img.alt || 'Click anywhere to close';
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal Content
+        const modalContent = {
+            'elevator': `
+                <img src="data:image/jpeg;base64,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" class="modal-image" alt="Elevator">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Elevator Video Evidence</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Released by LAPD on February 13, 2013. The footage shows Elisa in the Cecil Hotel elevator for approximately 2.5 minutes.</p>
+                <div class="document-field">
+                    <div class="document-label">Key Observations</div>
+                    <div class="document-value">• Presses multiple floor buttons simultaneously<br>• Peers out into hallway repeatedly<br>• Hides in corner of elevator<br>• Makes strange hand gestures as if feeling invisible walls<br>• Steps out and moves down hallway with sweeping arm movements<br>• Returns to elevator, presses more buttons<br>• Exits elevator for final time</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Anomalies</div>
+                    <div class="document-value">• Timestamp is blurred/obscured<br>• Nearly a minute of footage appears missing<br>• Timecode jumps erratically<br>• Elevator doors stay open unusually long<br>• No other people visible in hallway</div>
+                </div>
+                <div class="audio-evidence" style="margin-top: 1rem;">
+                    <div class="audio-waveform"></div>
+                    <div class="audio-controls">
+                        <button class="play-btn" onclick="togglePlay(this)">▶</button>
+                        <div class="audio-info">
+                            <div class="audio-title">LAPD Statement on Video Release</div>
+                            <div class="audio-meta">Press Conference • February 13, 2013</div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'autopsy': `
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Autopsy_Report_of_Elisa_Lam.pdf/page11-500px-Autopsy_Report_of_Elisa_Lam.pdf.jpg" class="modal-image" alt="Autopsy">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Autopsy Report Analysis</h2>
+                <div class="document-field">
+                    <div class="document-label">Case Information</div>
+                    <div class="document-value">Case No: 2013-01364 | Date: February 21, 2013 | Location: Los Angeles County</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">External Findings</div>
+                    <div class="document-value">Moderate decomposition. No trauma. No evidence of sexual assault. Body found naked in water tank—clothing, watch, and room key at bottom of tank.</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Toxicology Results</div>
+                    <div class="document-value">• Ethanol: 0.02 g%<<br>• Lamotrigine: 0.08 mcg/mL (Sub-therapeutic)<br>• Quetiapine: 10 ng/mL (Sub-therapeutic)<br>• Venlafaxine: Not detected<br>• No illicit drugs detected<br>• Ibuprofen and Sinutab traces present</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Cause & Manner of Death</div>
+                    <div class="document-value">CAUSE: Drowning | MANNER: Accident | CONTRIBUTING: Bipolar Disorder</div>
+                </div>
+            `,
+            'watertank': `
+                <img src="https://bloximages.chicago2.vip.townnews.com/f66cbc75c596bbe63413c892a9434e4035e1c671.jpg" class="modal-image" alt="Water Tank">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Water Tank Discovery</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">On February 19, 2013, maintenance worker Santiago Lopez discovered Elisa's body after guest complaints about water quality.</p>
+                <div class="document-field">
+                    <div class="document-label">Tank Specifications</div>
+                    <div class="document-value">• Capacity: 1,000 gallons<br>• Height: 8 feet<br>• Diameter: 4 feet<br>• Location: Cecil Hotel rooftop<br>• Access: Heavy hatch lid (found open)<br>• No fixed ladder—portable ladder required</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Discovery Details</div>
+                    <div class="document-value">• Body found floating face-up<br>• Naked—clothing at bottom of tank<br>• Watch and room key also at bottom<br>• Tank had to be drained and cut open for removal<br>• Guests had been using contaminated water for ~3 weeks</div>
+                </div>
+                <div class="audio-evidence" style="margin-top: 1rem;">
+                    <div class="audio-waveform"></div>
+                    <div class="audio-controls">
+                        <button class="play-btn" onclick="togglePlay(this)">▶</button>
+                        <div class="audio-info">
+                            <div class="audio-title">Guest Testimony: "We Were Drinking That Water"</div>
+                            <div class="audio-meta">British Tourists • NBC News Interview</div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'hotel': `
+                <img src="https://cdn.abcotvs.com/18c61cca3ff4b968fe3023d829b2519bb635c22d.jpg" class="modal-image" alt="Cecil Hotel">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Cecil Hotel: A History of Death</h2>
+                <div class="document-field">
+                    <div class="document-label">Hotel History</div>
+                    <div class="document-value">Built: 1924 | Location: 640 S. Main St, Downtown LA | Reputation: Budget hotel near Skid Row</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Notable Connections</div>
+                    <div class="document-value">• Richard Ramirez ("The Night Stalker") stayed here during his killing spree<br>• Jack Unterweger (Austrian serial killer) stayed here<br>• Roughly 80 deaths (suicides, overdoses, murders) in previous decade<br>• Known for housing transients and addicts</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Current Status</div>
+                    <div class="document-value">Sold in 2014, converted to supportive housing. Sold again in 2024. Now houses homeless population. Dark reputation persists among true crime enthusiasts.</div>
+                </div>
+            `,
+            'tumblr': `
+                <img src="https://hips.hearstapps.com/3385b7cfc8e8623a55b54e9a35fd966795ecb695.jpg" class="modal-image" alt="Tumblr">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Tumblr Mystery</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Elisa's blog, "nouvelle-nouveau," continued posting after her death, fueling conspiracy theories.</p>
+                <div class="document-field">
+                    <div class="document-label">Blog Activity</div>
+                    <div class="document-value">• Posts continued appearing after February 19, 2013<br>• Most likely explanation: Tumblr "Queue" feature (scheduled posts)<br>• Some posts were reblogs of other content<br>• Final posts stopped after a few weeks</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Theories</div>
+                    <div class="document-value">• Scheduled posts (most likely)<br>• Someone else had her password/phone<br>• Tumblr glitch or automated activity<br>• Supernatural explanation (least likely)</div>
+                </div>
+            `,
+            'netflix': `
+                <img src="https://m.media-amazon.com/25a74f14fb1f96ea2bf2e47803d3cdb799eae270.jpg" class="modal-image" alt="Netflix">
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Crime Scene: The Vanishing at the Cecil Hotel</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">2021 Netflix documentary series by Emmy Award winner Joe Berlinger.</p>
+                <div class="document-field">
+                    <div class="document-label">Documentary Details</div>
+                    <div class="document-value">• Release: February 10, 2021<br>• Episodes: 4<br>• Director: Joe Berlinger<br>• Features: Hotel staff, investigators, web sleuths, mental health experts</div>
+                </div>
+                <div class="document-field">
+                    <div class="document-label">Key Interviews</div>
+                    <div class="document-value">• Amy Price (Hotel Manager)<br>• Detective Tim Marcia (LAPD)<br>• Dr. Jason Tovar (Forensic Pathologist)<br>• Dr. Judy Ho (Clinical Psychologist)<br>• Various web sleuths and journalists</div>
+                </div>
+                <div class="audio-evidence" style="margin-top: 1rem;">
+                    <div class="audio-waveform"></div>
+                    <div class="audio-controls">
+                        <button class="play-btn" onclick="togglePlay(this)">▶</button>
+                        <div class="audio-info">
+                            <div class="audio-title">Documentary Trailer Audio</div>
+                            <div class="audio-meta">Netflix • 2021</div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'autopsy-full': `
+                <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Complete Autopsy Documentation</h2>
+                <div class="document-viewer" style="margin: 0;">
+                    <div class="document-stamp">OFFICIAL RECORD</div>
+                    <div class="document-field">
+                        <div class="document-label">County of Los Angeles - Department of Coroner</div>
+                        <div class="document-value">Autopsy Report No. 2013-01364</div>
+                    </div>
+                    <div class="document-field">
+                        <div class="document-label">Decedent</div>
+                        <div class="document-value">LAM, ELISA | Female | Asian | Age: 21 | DOB: 04/30/1991</div>
+                    </div>
+                    <div class="document-field">
+                        <div class="document-label">Date/Time of Autopsy</div>
+                        <div class="document-value">February 21, 2013 at 0935 hours</div>
+                    </div>
+                    <div class="document-field">
+                        <div class="document-label">Case Summary</div>
+                        <div class="document-value">21 year old Asian woman found in a water storage tank on the roof of her hotel. History of bipolar disorder. No trauma. See separate toxicology report.</div>
+                    </div>
+                    <div class="document-field">
+                        <div class="document-label">Anatomic Summary</div>
+                        <div class="document-value">I. Moderate decomposition<br>II. No trauma<br>III. History of bipolar disorder<br>IV. See separate toxicology report<br>V. See separate microscopic report</div>
+                    </div>
+                    <div class="document-field">
+                        <div class="document-label">Final Diagnoses</div>
+                        <div class="document-value">CAUSE OF DEATH: Drowning<br>OTHER SIGNIFICANT CONDITIONS: Bipolar Disorder<br>MANNER OF DEATH: Accident</div>
+                    </div>
+                </div>
+            `
+        };
+
+        function openModal(type) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            body.innerHTML = modalContent[type] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeLightbox();
+            }
+        });
+
+        // Audio play button animation
+        function togglePlay(btn) {
+            btn.textContent = btn.textContent === '▶' ? '❚❚' : '▶';
+            // In a real implementation, this would play/pause audio
+        }
+    </script>
+</body>
+</html>
