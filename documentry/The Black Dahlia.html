@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Black Dahlia: The Mannequin in the Grass — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0c0c0c;
+            --bg-secondary: #141414;
+            --bg-card: #1a1a1a;
+            --accent-crimson: #8b0000;
+            --accent-gold: #c9a96e;
+            --accent-ivory: #f5f0e8;
+            --text-primary: #e8e4dc;
+            --text-secondary: #9a9590;
+            --text-muted: #5a5652;
+            --border: #2a2a2a;
+            --danger: #cc0000;
+            --success: #4a7c59;
+            --film-grain: rgba(255,255,255,0.02);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(139, 0, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(201, 169, 110, 0.05) 0%, transparent 50%);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-crimson); border-radius: 4px; }
+
+        /* ===== FILM NOIR HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--accent-crimson);
+            letter-spacing: 3px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            color: var(--accent-gold);
+            font-weight: 400;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 2px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--accent-crimson);
+            color: var(--accent-ivory);
+            border-color: var(--accent-crimson);
+        }
+
+        .main-content { margin-top: 70px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION - FILM NOIR AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(12,12,12,0.4) 0%, rgba(12,12,12,0.95) 100%),
+                url('https://cropper.watch.aetnd.com/cdn.watch.aetnd.com/sites/4/2019/01/AE-Black-Dahlia-Elizabeth-Short-GettyImages-514872462.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.6) contrast(1.3) brightness(0.3);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 50%, rgba(139, 0, 0, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(201, 169, 110, 0.08) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .film-grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 900px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-crimson);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem;
+            line-height: 1.05;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 80px rgba(139, 0, 0, 0.5);
+            opacity: 0;
+            animation: slideUp 1s ease 1s forwards;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .story-headline span {
+            color: var(--accent-gold);
+            display: block;
+            font-size: 1.1em;
+            font-weight: 400;
+            font-style: italic;
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: slideUp 1s ease 1.5s forwards;
+            border-left: 3px solid var(--accent-crimson);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.2rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.8rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.5rem;
+            color: var(--accent-crimson);
+            text-shadow: 0 0 30px rgba(139, 0, 0, 0.6);
+            font-weight: 900;
+        }
+
+        .story-highlight {
+            background: rgba(139, 0, 0, 0.12);
+            border-left: 3px solid var(--accent-crimson);
+            padding: 1.8rem;
+            margin: 2.5rem 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: slideUp 1s ease 2.5s forwards;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: slideUp 1s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.2rem 3.5rem;
+            background: var(--accent-crimson);
+            color: var(--accent-ivory);
+            text-decoration: none;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            border-radius: 2px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-crimson);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 40px rgba(139, 0, 0, 0.5);
+            color: var(--accent-gold);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: slideUp 1s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--accent-gold);
+            font-weight: 900;
+        }
+
+        .story-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            opacity: 0;
+            animation: slideUp 1s ease 4s forwards, bounce 2s infinite 4s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(139, 0, 0, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(139, 0, 0, 0.3);
+            font-weight: 900;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+            font-weight: 700;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-crimson);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(139, 0, 0, 0.25);
+            border-color: var(--accent-crimson);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.3);
+            transition: filter 0.3s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0);
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(139, 0, 0, 0.2);
+            color: var(--accent-crimson);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.2rem; }
+
+        .video-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-crimson { background: rgba(139, 0, 0, 0.2); color: var(--accent-crimson); }
+        .badge-gold { background: rgba(201, 169, 110, 0.2); color: var(--accent-gold); }
+        .badge-ivory { background: rgba(245, 240, 232, 0.1); color: var(--accent-ivory); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-crimson), var(--accent-gold));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 15px;
+            height: 15px;
+            background: var(--accent-crimson);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.5);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -37px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: grayscale(0.4);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-color: var(--success); }
+        .theory-card.conspiracy { border-color: var(--danger); }
+        .theory-card.alternative { border-color: var(--accent-gold); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.2); }
+        .conspiracy .theory-icon { background: rgba(204, 0, 0, 0.2); }
+        .alternative .theory-icon { background: rgba(201, 169, 110, 0.2); }
+
+        .theory-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .theory-probability {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-crimson);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 3px solid var(--accent-crimson);
+            color: var(--accent-crimson);
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-gold);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.5);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-crimson);
+            box-shadow: 0 5px 25px rgba(139, 0, 0, 0.3);
+            filter: grayscale(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-crimson);
+            border-radius: 4px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        /* ===== MAP ===== */
+        .map-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .map-cell {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            flex-direction: column;
+            padding: 0.5rem;
+        }
+
+        .map-cell:hover {
+            background: rgba(139, 0, 0, 0.2);
+            border-color: var(--accent-crimson);
+            color: var(--text-primary);
+        }
+
+        .map-cell.highlight {
+            background: rgba(139, 0, 0, 0.3);
+            border-color: var(--accent-crimson);
+            color: var(--accent-gold);
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* ===== TYPEWRITER EFFECT ===== */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent-crimson);
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 1rem 0;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-crimson); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.8rem; }
+            .story-text { font-size: 1.05rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 2rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -37px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.4rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                padding: 0.4rem 0.85rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+            .map-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .hamburger { display: none; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">BLACK <span>DAHLIA</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="film-grain"></div>
+            
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Los Angeles, 1947 — A True Crime Investigation</div>
+                    
+                    <h1 class="story-headline">
+                        She Was Called
+                        <span>The Black Dahlia</span>
+                    </h1>
+                    
+                    <p class="story-prologue">
+                        "At first, I thought it was a mannequin," Betty Bersinger said. She had been pushing her three-year-old daughter in a stroller down Norton Avenue when she saw something white in the grass. But mannequins don't bleed. Mannequins aren't cut in half. And mannequins don't have Glasgow smiles carved into their faces.
+                    </p>
+                    
+                    <div class="story-text">
+                        <p>It began with a young woman chasing a dream. Elizabeth Short, a 22-year-old brunette with piercing blue eyes and a fondness for black dresses, arrived in Hollywood in 1946 with aspirations of stardom. She had come from Massachusetts, from a life of modest means, to a city that promised glitter and fame to anyone beautiful enough. She stayed in cheap hotels, worked as a waitress, and told stories—so many stories—about movie contracts that never existed and romances that never happened.</p>
+                        
+                        <p>They called her the Black Dahlia, a nickname born from the 1946 film <em>The Blue Dahlia</em> and her penchant for dark clothing. But the name would soon take on a far darker meaning. On January 9, 1947, she was last seen at the Biltmore Hotel in downtown Los Angeles. She had been dropped off by Robert "Red" Manley, a married salesman who would be the last known person to see her alive. She was wearing a black tailored suit and a white blouse, carrying a black purse and a black suede shoe.</p>
+                        
+                        <p>For six days, no one knew where she was. Then, on the morning of January 15, Betty Bersinger discovered her naked body in a vacant lot on Norton Avenue, in the Leimert Park neighborhood. The body had been severed cleanly at the waist, drained entirely of blood, and positioned with surgical precision. Her face bore the gruesome "Glasgow smile"—slashes from the corners of her mouth to her ears. Her intestines were tucked neatly beneath her buttocks. Her hands were raised above her head, elbows bent at right angles. Not a drop of blood stained the grass.</p>
+                        
+                        <p>The killer had washed the body, transported it, and posed it like a mannequin in a window display. The precision of the cuts suggested medical knowledge. The positioning suggested artistry. The complete absence of blood suggested someone who knew exactly what they were doing. The press descended like vultures, and the legend of the Black Dahlia was born—one that would haunt Los Angeles for nearly eight decades.</p>
+                    </div>
+                    
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-crimson);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        Who had the surgical skill to bisect a human body with such precision? Who had the psychological composure to pose it in a vacant lot? And why—despite 192 suspects, thousands of tips, and decades of investigation—                        has no one ever been charged with the murder of Elizabeth Short? The LAPD officially lists the case as unsolved. But the files—what remains of them—tell a different story entirely.
+                    </div>
+                    
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+                    
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">22</div>
+                            <div class="story-stat-label">Years Old</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">6</div>
+                            <div class="story-stat-label">Days Missing</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">77</div>
+                            <div class="story-stat-label">Years Unsolved</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">192</div>
+                            <div class="story-stat-label">Named Suspects</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-crimson);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1 class="typewriter" style="border:none;animation:none;white-space:normal;">THE MANNEQUIN IN THE GRASS</h1>
+                <p class="hero-subtitle">An interactive investigation into America's most infamous unsolved murder. Explore the evidence, analyze the suspects, and decide for yourself who killed Elizabeth Short.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victim</div>
+                        <div class="meta-value">Elizabeth Short, 22</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Norton Ave, LA</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">January 15, 1947</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Unsolved</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 2rem; font-size: 2rem;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('crime-scene')">
+                    <img src="https://tessa2.lapl.org/digital/api/singleitem/image/photos/141259/default.jpg" alt="Crime Scene" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Vacant Lot on Norton Avenue</h3>
+                        <p class="evidence-desc">Betty Bersinger discovered Elizabeth's bisected body at 10:30 AM on January 15, 1947. The body was positioned with grotesque precision—hands raised, legs spread, face turned toward the sidewalk. Not a drop of blood at the scene.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('autopsy')">
+                    <img src="https://www.independent.com/wp-content/uploads/2018/06/07/Elizabeth_Short_Mug_Shot.jpg" alt="Autopsy" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Medical Evidence</span>
+                        <h3 class="evidence-title">The Autopsy Findings</h3>
+                        <p class="evidence-desc">Dr. Frederick Newbarr's autopsy revealed the body was severed with surgical precision, all blood drained, organs removed and repositioned. The "Glasgow smile" was carved while Elizabeth was still alive. Ligature marks on wrists and ankles.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('letters')">
+                    <img src="https://www.hachettebookgroup.com/wp-content/uploads/2021/03/LANewspaper.jpg" alt="Letters" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Communication</span>
+                        <h3 class="evidence-title">The Killer's Letters</h3>
+                        <p class="evidence-desc">Nine days after the murder, the LA Examiner received a letter: "Here is Dahlia's belongings. Letter to follow." It contained Elizabeth's birth certificate, social security card, and photographs. The handwriting was never identified.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('suspects')">
+                    <img src="https://www.pasadenastarnews.com/wp-content/uploads/migration/2013/201308/NEWS_130819734_AR_0_0.jpg" alt="Suspects" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Suspects</span>
+                        <h3 class="evidence-title">Dr. George Hodel</h3>
+                        <p class="evidence-desc">LAPD surgeon, abortionist, and friend of surrealist Man Ray. His son Steve Hodel, a retired detective, has spent decades building the case that his father was the killer. DA investigators in 1950 secretly recorded Hodel saying: "Supposin' I did kill the Black Dahlia?"</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('manley')">
+                    <img src="https://tessa2.lapl.org/digital/api/singleitem/image/photos/8358/default.jpg" alt="Robert Manley" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Last Known Contact</span>
+                        <h3 class="evidence-title">Robert "Red" Manley</h3>
+                        <p class="evidence-desc">The 25-year-old married salesman who drove Elizabeth from San Diego to Los Angeles and dropped her at the Biltmore Hotel on January 9. He was the LAPD's first suspect, subjected to a polygraph test, and eventually cleared—but questions remain.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('media')">
+                    <img src="https://i.ebayimg.com/images/g/hbkAAOSwMa9hdfYW/s-l1600.jpg" alt="Media" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Media Frenzy</span>
+                        <h3 class="evidence-title">The Press Circus</h3>
+                        <p class="evidence-desc">The LA Examiner, Herald-Express, and Daily News competed for sensational headlines. Reporters bribed LAPD officers for crime scene photos. Elizabeth's mother was tricked into a press conference with promises her daughter was alive. Ethics died with the Dahlia.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://s.hdnux.com/photos/76/53/77/16433129/4/rawImage.jpg" alt="Elizabeth Short Portrait" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://tessa2.lapl.org/digital/api/singleitem/image/photos/141259/default.jpg" alt="Crime Scene Overview" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://gcp-na-images.contentstack.com/v3/assets/bltea6093859af6183b/bltd0bf7a1d215713f7/69877895e20a87b566a845f4/black-dahlia.jpeg" alt="Killer's Letter" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://sowdenhouse.com/wp-content/uploads/2017/07/suspect-dr-george-hill-hodel.png",
+          "mime": "image/png
+" alt="George Hodel" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known movement and event from Elizabeth Short's final days to the present investigation.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">July 29, 1924</div>
+                        <div class="timeline-title">Birth in Boston</div>
+                        <p>Elizabeth Short is born in Hyde Park, Boston, Massachusetts. She grows up in Medford, one of five daughters of Cleo and Phoebe Short. Her father abandons the family during the Depression, faking his own suicide.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">December 1946</div>
+                        <div class="timeline-title">Arrival in San Diego</div>
+                        <p>Elizabeth is living in San Diego, working as a waitress. She meets Robert "Red" Manley, a 25-year-old married salesman, at the Aztec Theatre. She tells him stories of Hollywood contracts and a fiancé named Gordon Fickling who is supposedly a Major in the Army Air Corps.</p>
+                        <div class="timeline-images">
+                            <img src="https://derangedlacrimes.com/wp-content/uploads/2024/01/Daily_News_1947_01_20_page_3_stan-d-by-red_resize.jpg" alt="Robert Manley" onclick="openLightbox(this)">
+                            <img src="https://www.independent.com/wp-content/uploads/2018/06/07/black-dahlia-1.jpg" alt="Elizabeth Short" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 8-9, 1947</div>
+                        <div class="timeline-title">The Final Drive</div>
+                        <p>Manley drives Elizabeth from San Diego to Los Angeles. They spend the night at the Figueroa Street Motel. The next morning, January 9, Manley drops her at the Biltmore Hotel downtown at approximately 6:30 PM. He watches her walk toward the lobby, carrying her black purse and single black suede shoe. He never sees her again.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 9-14, 1947</div>
+                        <div class="timeline-title">The Missing Days</div>
+                        <p>Elizabeth's movements during these six days remain unknown. Witnesses later claim to have seen her at various locations—the Crown Grill, the Aster Motel, the Biltmore—but none can be confirmed. The LAPD would spend decades trying to trace her steps. Theories range from her being held captive to voluntarily staying with someone she trusted.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 15, 1947</div>
+                        <div class="timeline-title">Discovery</div>
+                        <p>At 10:30 AM, Betty Bersinger discovers the body while walking with her daughter. LAPD detectives arrive to find the bisected corpse, posed with grotesque precision. The body has been washed, blood drained, and surgically severed. No blood at the scene. The temperature is in the 40s—cold enough to preserve the body but not freeze it.</p>
+                        <div class="timeline-images">
+                            <img src="https://m.media-amazon.com/images/I/81kavOu6zTL._AC_UF1000,1000_QL80_.jpg" alt="Crime Scene" onclick="openLightbox(this)">
+                            <img src="https://m.media-amazon.com/images/M/MV5BNjI2YTIxMDMtOGIxZS00Y2I1LTkwY2MtZWU2NTc5Y2IzNDlkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" alt="Elizabeth" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">January 24, 1947</div>
+                        <div class="timeline-title">The Killer's Package</div>
+                        <p>The LA Examiner receives a package addressed to "Editor" with no return address. It contains Elizabeth's birth certificate, social security card, a newspaper clipping about her case, and photographs. The package was carefully wiped clean of fingerprints. A note reads: "Here is Dahlia's belongings. Letter to follow." No letter ever arrived.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1950</div>
+                        <div class="timeline-title">The Hodel Surveillance</div>
+                        <p>DA investigator Frank Jemison and LAPD detective Harry Hansen place Dr. George Hodel under surveillance. They install a microphone in his home and record him saying to a companion: "Supposin' I did kill the Black Dahlia. They couldn't prove it now." The recording is lost for decades, rediscovered in the DA's files in 2003 by Steve Hodel.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2003-Present</div>
+                        <div class="timeline-title">The Investigation Reopened</div>
+                        <p>Steve Hodel, George Hodel's son and a retired LAPD detective, publishes "Black Dahlia Avenger." Using his father's private photo album, DA files, and forensic evidence, he builds the case that George Hodel murdered Elizabeth Short and possibly others. The case remains officially unsolved, but the Hodel theory has gained significant traction among true crime investigators.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Forensic findings, crime scene analysis, and the physical artifacts that define the Black Dahlia case.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" >
+                    <img src="https://gcp-na-images.contentstack.com/v3/assets/bltea6093859af6183b/bltd0bf7a1d215713f7/69877895e20a87b566a845f4/black-dahlia.jpeg" alt="Surgical Precision" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic</span>
+                        <h3 class="evidence-title">Surgical Precision</h3>
+                        <p class="evidence-desc">The body was bisected with a single continuous cut, suggesting advanced anatomical knowledge. The incision followed the line of the lumbar vertebrae, avoiding bone. Dr. Newbarr noted the work suggested "someone with medical training, possibly a surgeon."</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://www.qmul.ac.uk/media/qmul/media/news/items/Black_Dahlia_Mugshot270x230.jpg" alt="Blood Evidence" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic</span>
+                        <h3 class="evidence-title">Complete Blood Drain</h3>
+                        <p class="evidence-desc">Every drop of blood had been removed from Elizabeth's body. The killer either suspended the body upside down or used a pump system. The blood was never found—suggesting the murder occurred elsewhere and the body was transported to Norton Avenue.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://m.media-amazon.com/images/I/71DhOZuQcRL._UF1000,1000_QL80_.jpg" alt="Body Positioning" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Posed Mannequin</h3>
+                        <p class="evidence-desc">Elizabeth's body was arranged with disturbing artistry: arms raised above head, elbows bent at right angles, legs spread. Her face was turned toward the sidewalk, as if on display. The positioning suggests the killer wanted the body to be found and seen.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://goldenglobes.com/wp-content/uploads/2023/11/elizabeth-short_police-bulletin.jpg" alt="Personal Effects" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Evidence</span>
+                        <h3 class="evidence-title">Missing Personal Effects</h3>
+                        <p class="evidence-desc">Elizabeth's black purse, one black suede shoe, and her clothing were never recovered. The killer kept these items as trophies. Some theorists believe the missing shoe was kept as a memento, a common practice among serial killers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Newsreels, documentaries, and investigative footage exploring the Black Dahlia case across eight decades.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/VLXCDEaE2mU?si=K6ebXtdP1BGVdV9T" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-crimson">Documentary</span>
+                        <span class="badge badge-gold">2021</span>
+                        <h3 class="video-title">Black Dahlia: An Unsolved Mystery</h3>
+                        <p class="video-desc">Comprehensive documentary examining the original investigation, key suspects, and modern forensic analysis of the evidence.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                       <iframe width="560" height="315" src="https://www.youtube.com/embed/9suOE6Rwx0A?si=iuS_63vTf285B28E" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-crimson">Investigation</span>
+                        <span class="badge badge-ivory">Steve Hodel</span>
+                        <h3 class="video-title">Steve Hodel: My Father the Killer</h3>
+                        <p class="video-desc">Retired detective Steve Hodel presents his decades-long investigation into his father, Dr. George Hodel, as the prime suspect.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/YXKEfFfFBKo?si=QAp5AR8JdTxHTQSr" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Archive</span>
+                        <span class="badge badge-ivory">1947</span>
+                        <h3 class="video-title">Original Newsreel Footage</h3>
+                        <p class="video-desc">Period news coverage from 1947 showing the crime scene, LAPD investigation, and public reaction to the murder.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PYTHON SCRIPT INTEGRATION: VIDEO SEARCH RESULTS -->
+            <!-- The following section is populated by jarvis_image_agent.py logic -->
+            <div id="video-search-results" style="margin-top: 2rem;">
+                <h3 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;"></h3>
+                <div id="dynamic-video-grid" class="video-grid">
+                    <!-- Dynamic content populated by Python script output -->
+                    <!-- jarvis_results_videos.json structure:
+                    {
+                        "description": "Black Dahlia case documentary",
+                        "videos": [
+                            {
+                                "index": 1,
+                                "video_id": "VIDEO_ID",
+                                "title": "Video Title",
+                                "url": "https://youtube.com/watch?v=VIDEO_ID",
+                                "channel": "Channel Name",
+                                "views": "View Count",
+                                "duration": "Duration",
+                                "thumbnail": "https://img.youtube.com/vi/VIDEO_ID/hqdefault.jpg"
+                            }
+                        ]
+                    }
+                    -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Suspects</h1>
+                <p class="hero-subtitle">Eight decades of investigation have produced hundreds of suspects. These are the most compelling.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unsolved</div>
+                            <div class="theory-probability">LAPD Status: Active Cold Case</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>192 named suspects investigated</li>
+                        <li>25 confessions, all proven false</li>
+                        <li>Thousands of tips processed</li>
+                        <li>Case files partially destroyed in 1980s</li>
+                        <li>No charges ever filed</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">Dr. George Hodel</div>
+                            <div class="theory-probability">Probability: HIGH (per Steve Hodel)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>LAPD surgeon with advanced anatomical knowledge</li>
+                        <li>Recorded saying: "Supposin' I did kill the Black Dahlia"</li>
+                        <li>Owned home at 5121 Franklin Ave (Sowden House)</li>
+                        <li>Friend of Man Ray and surrealist circle</li>
+                        <li>DA surveillance in 1950; never charged</li>
+                        <li>Son Steve Hodel: retired LAPD detective, primary advocate</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Leslie Dillon</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Aspiring mortician with anatomical knowledge</li>
+                        <li>Confessed to friend in Florida</li>
+                        <li>Failed polygraph test</li>
+                        <li>Placed in LA at time of murder</li>
+                        <li>Later recanted; never charged</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Walter Bayley</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Surgeon; lived near crime scene</li>
+                        <li>Daughter's home near Norton Avenue</li>
+                        <li>Advanced surgical skills matching evidence</li>
+                        <li>Died 1948; never interviewed</li>
+                        <li>Theory advanced by retired detective Brian Carr</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Robert Manley</div>
+                            <div class="theory-probability">Probability: LOW (officially cleared)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Last known person to see Elizabeth alive</li>
+                        <li>Passed polygraph test</li>
+                        <li>Cooperative with investigation</li>
+                        <li>No physical evidence linking him</li>
+                        <li>Died 1986; maintained innocence</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">The "Surrealist" Theory</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Body posed like Man Ray's "Les Larmes" photograph</li>
+                        <li>Glasgow smile resembles surrealist art</li>
+                        <li>George Hodel connected to avant-garde art circle</li>
+                        <li>Marcel Duchamp, Man Ray visited Hodel's home</li>
+                        <li>Theory: murder as "art piece" or ritual</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Official reports, transcripts, and evidence files from the original investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">CLASSIFIED</div>
+                
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Playfair Display', serif; font-size: 1.5rem;">LOS ANGELES POLICE DEPARTMENT</h2>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted);">HOMICIDE DIVISION — CASE FILE 1947-61428</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Victim Name</div>
+                    <div class="document-value">Elizabeth Short (AKA "Black Dahlia")</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Death</div>
+                    <div class="document-value">Estimated January 14-15, 1947</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Cause of Death</div>
+                    <div class="document-value">Blunt force trauma to head (initial); exsanguination via bisection</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Autopsy Performed By</div>
+                    <div class="document-value">Dr. Frederick D. Newbarr, LA County Coroner's Office</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Findings</div>
+                    <div class="document-value">
+                        • Body bisected at L3-L4 vertebrae with surgical precision<br>
+                        • All blood removed; body washed<br>
+                        • Face slashed from corners of mouth to ears (ante-mortem)<br>
+                        • Ligature marks on wrists and ankles<br>
+                        • Multiple bruises and contusions; evidence of beating<br>
+                        • Stomach contents: partially digested food (last meal unknown)<br>
+                        • No sexual assault evident<br>
+                        • No drugs or alcohol in system
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Crime Scene Location</div>
+                    <div class="document-value">Vacant lot, 3825 Norton Avenue, Leimert Park, Los Angeles</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-crimson); font-weight: bold;">UNSOLVED — ACTIVE COLD CASE</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                    THIS DOCUMENT IS A RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    ORIGINAL FILES PARTIALLY REDACTED/DESTROYED.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            
+            const content = {
+                'crime-scene': `
+                    <img src="https://s26162.pcdn.co/wp-content/uploads/sites/3/2020/08/Norton-Ave-1024x670.png" class="modal-image" alt="Crime Scene">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">The Vacant Lot on Norton Avenue</h2>
+                    <p>The body was discovered at 10:30 AM on January 15, 1947, by Betty Bersinger, who was walking with her three-year-old daughter. At first, she thought it was a mannequin. The body had been positioned with disturbing precision—arms raised, legs spread, face turned toward the sidewalk as if on display.</p>
+                    <p>Not a drop of blood was found at the scene. The body had been washed, drained, and transported. The grass beneath the body was barely disturbed, suggesting the killer placed it carefully rather than dumping it.</p>
+                `,
+                'autopsy': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Elizabeth_Short_mug_shot.jpg/440px-Elizabeth_Short_mug_shot.jpg" class="modal-image" alt="Elizabeth Short">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Autopsy Findings</h2>
+                    <p>Dr. Frederick Newbarr's autopsy revealed shocking precision. The body was bisected with a single continuous cut following the line of the lumbar vertebrae, avoiding bone entirely. This suggested advanced anatomical knowledge—likely a surgeon or someone with medical training.</p>
+                    <p>The "Glasgow smile" was carved while Elizabeth was still alive. Ligature marks on her wrists and ankles suggested she had been bound. Her stomach contained partially digested food, but the contents could not be identified.</p>
+                `,
+                'letters': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Black_Dahlia_Letter.jpg/440px-Black_Dahlia_Letter.jpg" class="modal-image" alt="Killer's Letter">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">The Killer's Communication</h2>
+                    <p>Nine days after the murder, the LA Examiner received a package containing Elizabeth's birth certificate, social security card, and photographs. The package had been carefully wiped clean of fingerprints. A note read: "Here is Dahlia's belongings. Letter to follow."</p>
+                    <p>No letter ever arrived. The handwriting was never identified. The package was addressed to "Editor" with no return address, suggesting the killer was taunting the press as much as the police.</p>
+                `,
+                'suspects': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/George_Hodel_1951.jpg/440px-George_Hodel_1951.jpg" class="modal-image" alt="George Hodel">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Dr. George Hodel</h2>
+                    <p>George Hill Hodel was a Los Angeles surgeon, abortionist, and socialite. He was friends with surrealist artists Man Ray and Marcel Duchamp. In 1950, DA investigators placed him under surveillance and recorded him saying: "Supposin' I did kill the Black Dahlia. They couldn't prove it now."</p>
+                    <p>His son, Steve Hodel, a retired LAPD detective, has spent decades building the case against his father. He discovered his father's private photo album contained pictures of a woman resembling Elizabeth Short. The DA's files on Hodel were rediscovered in 2003.</p>
+                `,
+                'manley': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Robert_Manley.jpg/440px-Robert_Manley.jpg" class="modal-image" alt="Robert Manley">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Robert "Red" Manley</h2>
+                    <p>Robert Manley was a 25-year-old married salesman who met Elizabeth in San Diego. He drove her to Los Angeles on January 8-9, 1947, and dropped her at the Biltmore Hotel. He was the last known person to see her alive.</p>
+                    <p>Manley was subjected to an intense interrogation and a polygraph test, which he passed. He was eventually cleared as a suspect. However, some investigators have questioned whether he could have encountered Elizabeth again after dropping her at the Biltmore.</p>
+                `,
+                'media': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Black_Dahlia_Newspaper.jpg/640px-Black_Dahlia_Newspaper.jpg" class="modal-image" alt="Newspaper Coverage">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">The Press Circus</h2>
+                    <p>The Black Dahlia case created a media frenzy unprecedented in Los Angeles history. The LA Examiner, Herald-Express, and Daily News competed for sensational headlines. Reporters bribed LAPD officers for crime scene photos. Elizabeth's mother was tricked into a press conference with false promises that her daughter was alive.</p>
+                    <p>The press dubbed her "The Black Dahlia," a name that would immortalize her in American crime lore. The coverage was so intense that it actually hampered the investigation, with false leads and hoax confessions flooding the police.</p>
+                `
+            };
+            
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Dynamic content loader for Python script integration
+        // This function processes jarvis_results_images.json and jarvis_results_videos.json
+        function loadDynamicMedia() {
+            // Images would be loaded from: jarvis_results_images.json
+            // Structure: { "results": [ { "description": "...", "images": [ { "url": "...", "mime": "...", "size_kb": ... } ] } ] }
+            
+            // Videos would be loaded from: jarvis_results_videos.json  
+            // Structure: { "results": [ { "description": "...", "videos": [ { "video_id": "...", "title": "...", "url": "...", "thumbnail": "..." } ] } ] }
+            
+            // Example integration:
+            fetch('jarvis_results_images.json')
+                .then(response => response.json())
+                .then(data => {
+                    const gallery = document.querySelector('.image-gallery');
+                    data.results.forEach(result => {
+                        result.images.forEach(img => {
+                            const imgEl = document.createElement('img');
+                            imgEl.src = img.url;
+                            imgEl.className = 'gallery-img';
+                            imgEl.onclick = () => openLightbox(imgEl);
+                            gallery.appendChild(imgEl);
+                        });
+                    });
+                })
+                .catch(err => console.log('Dynamic images not loaded:', err));
+
+            fetch('jarvis_results_videos.json')
+                .then(response => response.json())
+                .then(data => {
+                    const videoGrid = document.getElementById('dynamic-video-grid');
+                    data.results.forEach(result => {
+                        result.videos.forEach(video => {
+                            const videoCard = document.createElement('div');
+                            videoCard.className = 'video-card';
+                            videoCard.innerHTML = `
+                                <div class="video-container">
+                                    <iframe src="https://www.youtube.com/embed/${video.video_id}" allowfullscreen></iframe>
+                                </div>
+                                <div class="video-info">
+                                    <span class="badge badge-crimson">YouTube</span>
+                                    <h3 class="video-title">${video.title}</h3>
+                                    <p class="video-desc">${video.channel} • ${video.views} views</p>
+                                </div>
+                            `;
+                            videoGrid.appendChild(videoCard);
+                        });
+                    });
+                })
+                .catch(err => console.log('Dynamic videos not loaded:', err));
+        }
+
+        // Initialize dynamic media loading
+        document.addEventListener('DOMContentLoaded', loadDynamicMedia);
+    </script>
+
+</body>
+</html>
