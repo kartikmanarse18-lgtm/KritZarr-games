@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ghost of Freddy Jackson: The Uninvited Squad Member — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-abyss: #0a0a0f;
+            --bg-deep: #111118;
+            --bg-surface: #181822;
+            --bg-elevated: #1e1e2a;
+            --bg-card: #252530;
+            --accent-gold: #c9a84c;
+            --accent-bronze: #8b7355;
+            --accent-copper: #b87333;
+            --accent-ember: #d44a2a;
+            --accent-ghost: #8a8a9e;
+            --accent-mist: #b5b5c8;
+            --text-primary: #e8e6e3;
+            --text-secondary: #9a9590;
+            --text-muted: #5a5550;
+            --text-frost: #b0b8c0;
+            --border-subtle: #2a2a3a;
+            --border-glow: #c9a84c;
+            --danger: #8b1a2d;
+            --warning: #d4a017;
+            --success: #4a6741;
+            --shadow-gold: rgba(201, 168, 76, 0.08);
+            --shadow-void: rgba(0, 0, 0, 0.85);
+            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #8b7355 50%, #b87333 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-abyss);
+            color: var(--text-primary);
+            line-height: 1.65;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 15% 20%, rgba(201, 168, 76, 0.03) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 85%, rgba(139, 115, 85, 0.02) 0%, transparent 45%),
+                linear-gradient(180deg, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.98) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-abyss); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-bronze); border-radius: 3px; }
+
+        /* ===== CINEMATIC HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.98);
+            backdrop-filter: blur(30px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.8rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            color: var(--accent-gold);
+            letter-spacing: 7px;
+            font-weight: 600;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: 'FREDDY';
+            position: absolute;
+            left: 1px;
+            top: 0;
+            color: rgba(201, 168, 76, 0.25);
+            clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+            animation: flicker 4s infinite;
+        }
+
+        .logo span {
+            color: var(--accent-ghost);
+            font-weight: 400;
+            letter-spacing: 9px;
+            font-size: 0.85em;
+        }
+
+        @keyframes flicker {
+            0%, 95%, 100% { opacity: 1; transform: translate(0); }
+            96% { opacity: 0.3; transform: translate(-1px, 1px); }
+            97% { opacity: 1; transform: translate(1px, -1px); }
+            98% { opacity: 0.5; transform: translate(-1px, 0); }
+            99% { opacity: 1; transform: translate(0, 1px); }
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.45rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            transition: all 0.35s ease;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.15), transparent);
+            transition: left 0.6s;
+        }
+
+        .nav-tab:hover::before, .nav-tab.active::before {
+            left: 100%;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(201, 168, 76, 0.1);
+            color: var(--accent-mist);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 25px rgba(201, 168, 76, 0.15);
+        }
+
+        .main-content { margin-top: 60px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.9s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        /* ===== STORY SECTION - CINEMATIC VINTAGE AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.98) 100%),
+                url('https://kimi-web-img.moonshot.cn/img/upload.wikimedia.org/2b8c4f7e4f8a9b3c1d2e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.8) contrast(1.4) brightness(0.12) sepia(0.3);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 40%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(139, 115, 85, 0.03) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .film-grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 820px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 0.6s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(201, 168, 76, 0.2);
+            opacity: 0;
+            animation: materialize 1.5s ease 1.2s forwards;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .story-headline span {
+            color: var(--accent-ember);
+            display: block;
+            font-size: 1.15em;
+            font-weight: 400;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 1px;
+            text-shadow: 0 0 40px rgba(212, 74, 42, 0.25);
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.45rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: materialize 1.5s ease 1.8s forwards;
+            border-left: 2px solid var(--accent-gold);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 2.4s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.6rem;
+            text-indent: 2.2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            float: left;
+            line-height: 0.85;
+            padding-right: 0.6rem;
+            color: var(--accent-gold);
+            text-shadow: 0 0 35px rgba(201, 168, 76, 0.4);
+            font-weight: 700;
+        }
+
+        .story-highlight {
+            background: rgba(201, 168, 76, 0.06);
+            border-left: 2px solid var(--accent-gold);
+            padding: 2rem;
+            margin: 2.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.75;
+            color: var(--text-frost);
+            text-align: left;
+            opacity: 0;
+            animation: materialize 1.5s ease 3s forwards;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 3.6s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1rem 3.5rem;
+            background: var(--accent-gold);
+            color: var(--bg-abyss);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+            border-radius: 2px;
+            transition: all 0.4s;
+            border: 2px solid var(--accent-gold);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 50px rgba(201, 168, 76, 0.25);
+            color: var(--accent-gold);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4.5rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: materialize 1.5s ease 4.2s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .story-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes materialize {
+            from { opacity: 0; transform: translateY(40px); filter: blur(5px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: drift 3s infinite;
+            opacity: 0;
+            animation: materialize 1.5s ease 4.8s forwards, drift 3s infinite 4.8s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+            50% { transform: translateX(-50%) translateY(-12px); opacity: 1; }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(201, 168, 76, 0.04) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 35px rgba(201, 168, 76, 0.15);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.5s, box-shadow 0.5s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-gold);
+            transform: scaleX(0);
+            transition: transform 0.5s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 60px rgba(201, 168, 76, 0.1);
+            border-color: var(--accent-bronze);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) brightness(0.75) sepia(0.15);
+            transition: filter 0.5s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0.1) contrast(1.4) brightness(0.85) sepia(0.05);
+        }
+
+        .evidence-content { padding: 1.6rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            background: rgba(201, 168, 76, 0.1);
+            color: var(--accent-gold);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            border-radius: 2px;
+            margin-bottom: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            margin-bottom: 0.6rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.65;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.3rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .video-desc {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 2px;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-right: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-gold { background: rgba(201, 168, 76, 0.15); color: var(--accent-gold); }
+        .badge-bronze { background: rgba(139, 115, 85, 0.15); color: var(--accent-bronze); }
+        .badge-ice { background: rgba(168, 181, 196, 0.1); color: var(--accent-ghost); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--gradient-gold);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(201, 168, 76, 0.3);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -34px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -34px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.72rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.35s;
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) sepia(0.2);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0.1) contrast(1.4) sepia(0.05);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-left: 3px solid var(--success); }
+        .theory-card.conspiracy { border-left: 3px solid var(--danger); }
+        .theory-card.alternative { border-left: 3px solid var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.12); }
+        .conspiracy .theory-icon { background: rgba(139, 26, 45, 0.12); }
+        .alternative .theory-icon { background: rgba(212, 160, 23, 0.12); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .theory-probability {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.86rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 2px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 0.4rem 0.9rem;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: rotate(-10deg);
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1.2rem 0;
+            padding: 0.9rem;
+            background: var(--bg-elevated);
+            border-left: 2px solid var(--accent-bronze);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            margin-top: 0.25rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.35s;
+            border: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) sepia(0.2);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-gold);
+            box-shadow: 0 5px 30px rgba(201, 168, 76, 0.15);
+            filter: grayscale(0.1) contrast(1.4) sepia(0.05);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.96);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-gold);
+            border-radius: 6px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-surface);
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.6rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: grayscale(0.2) contrast(1.15) sepia(0.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2rem; }
+            .story-text { font-size: 0.95rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -34px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.65rem;
+                padding: 0.35rem 0.7rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 105px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">FREDDY <span>JACKSON</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="film-grain"></div>
+
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">HMS Daedalus, 1919 — A Paranormal Investigation</div>
+
+                    <h1 class="story-headline">
+                        The Ghost of
+                        <span>Freddy Jackson</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        In the spring of 1919, a squadron of Royal Air Force airmen gathered at the HMS Daedalus training facility for a routine group photograph. They arranged themselves in neat rows, caps pressed, uniforms immaculate, the war behind them and peace ahead. But when the photograph was developed, something impossible emerged from the chemical bath—a face that had no business being there. Behind the fourth man from the left in the back row, peering between two airmen, was the unmistakable visage of Freddy Jackson, an air mechanic who had been killed by an airplane propeller two days earlier. His funeral had taken place on the very day the photograph was taken. He had come anyway.
+                    </p>
+
+                    <div class="story-text">
+                        <p>The photograph lay dormant for over half a century, tucked away in the archives of a man who would become one of Britain's most decorated military officers and its most unlikely paranormal investigator. Sir Victor Goddard, Air Chief Marshal and Knight Commander of the Bath, had a secret life. Beyond the medals and the commands, he was a man who had seen things that defied explanation—ghostly airfields that appeared from nowhere, dreams that predicted crashes, and now, a photograph that seemed to capture the impossible: a dead man attending his own squadron's portrait session.</p>
+
+                        <p>Freddy Jackson had been an ordinary air mechanic at the HMS Daedalus naval seaplane training school at Lee-on-Solent, Hampshire. On a routine day in April 1919, he walked heedlessly into the arc of a spinning propeller. The blade caught him with lethal force, ending his life instantly. His comrades buried him with full military honors. Two days later, on the day of his funeral, the squadron assembled for a group photograph to commemorate their service in the Great War. They stood in the hangar doorway, the English spring light falling across their faces, and smiled for the camera. None of them noticed the extra man in the back row.</p>
+
+                        <p>When the photograph was developed, the squadron members gathered around to examine the proof. Their eyes moved across the familiar faces—friends, comrades, brothers in arms. Then someone pointed. There, behind the airman standing fourth from the left in the top row, was a face that made the blood run cold. It was Freddy Jackson. Bald, balding, unmistakable. He was not wearing a cap like the others. His face was slightly transparent, slightly blurred, as if caught between two worlds. The men who had known him best confirmed it without hesitation: that was Freddy. He had come to say goodbye, or perhaps he simply did not know he was dead.</p>
+
+                        <p>The image would not be made public until 1975, when Sir Victor Goddard published it in his book "Flight Towards Reality"—a treatise on extrasensory perception, spiritualism, and the survival of consciousness after death. By then, most of the men in the photograph were dead themselves. But the face of Freddy Jackson remained, frozen in silver halide, an eternal witness to a mystery that has never been solved. Skeptics have offered explanations: double exposure, a man who stepped into frame at the wrong moment, pareidolia, photo manipulation. But none of these explanations fully account for what the men of Goddard's squadron saw that day, or what millions have seen since. The ghost of Freddy Jackson stands behind them still, the uninvited squad member who refused to leave.</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-gold);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        How does a man who died two days before a photograph was taken appear in it? The Freddy Jackson ghost photograph remains one of the most compelling pieces of paranormal evidence in history—a century-old image that defies every conventional explanation and continues to challenge our understanding of death, consciousness, and what it means to truly leave a room.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">1919</div>
+                            <div class="story-stat-label">Year Photographed</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">1</div>
+                            <div class="story-stat-label">Ghostly Face</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">56</div>
+                            <div class="story-stat-label">Years Hidden</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">∞</div>
+                            <div class="story-stat-label">Explanations</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-gold);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>The Uninvited Squad Member</h1>
+                <p class="hero-subtitle">An interactive investigation into the most famous ghost photograph in military history. Explore the evidence, analyze the theories, and decide for yourself whether Freddy Jackson truly returned from the grave.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Subject</div>
+                        <div class="meta-value">Freddy Jackson</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">HMS Daedalus, Hampshire</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date Taken</div>
+                        <div class="meta-value">April 1919</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Published</div>
+                        <div class="meta-value">1975</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 4px;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('ghost-photo')">
+                    <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                         alt="Freddy Jackson ghost photograph 1919 RAF squadron group portrait HMS Daedalus Lee-on-Solent Hampshire extra ghostly face behind fourth airman from left in back row bald balding head without military cap transparent apparition spirit paranormal" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph</h3>
+                        <p class="evidence-desc">The original 1919 squadron photograph showing an extra face behind the fourth airman from the left in the back row. The face is identified as Freddy Jackson, an air mechanic killed by a propeller two days earlier. He wears no cap, his features are slightly transparent, and his expression is calm—almost smiling.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('sir-victor-goddard')">
+                    <img src="https://www.warhistoryonline.com/wp-content/uploads/sites/64/2022/05/victor-goddard-featured-image-46012.png" 
+                         alt="Sir Victor Goddard Air Chief Marshal Knight Commander of the Bath RAF officer parapsychologist 1975 Flight Towards Reality book author who published Freddy Jackson ghost photograph paranormal investigator military portrait" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Source</span>
+                        <h3 class="evidence-title">Sir Victor Goddard — The Publisher</h3>
+                        <p class="evidence-desc">Air Chief Marshal Sir Victor Goddard KCB, CBE, was a decorated RAF officer who became a paranormal enthusiast after retirement. He published the Freddy Jackson photograph in his 1975 book "Flight Towards Reality," a treatise on ESP, spiritualism, and consciousness after death. He had multiple paranormal experiences throughout his life.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('hms-daedalus')">
+                    <img src="https://i.ytimg.com/vi/uUgQqBMObts/maxresdefault.jpg" 
+                         alt="HMS Daedalus Royal Naval Air Station Lee-on-Solent Hampshire England 1919 RAF training facility seaplane base hangar World War One aerial view historical military installation where Freddy Jackson ghost photograph was taken" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Location</span>
+                        <h3 class="evidence-title">HMS Daedalus — The Training Facility</h3>
+                        <p class="evidence-desc">The Royal Naval Air Station at Lee-on-Solent, Hampshire, later known as HMS Daedalus. This was a seaplane training facility during and after World War I. It was here that Freddy Jackson worked as an air mechanic and where he was killed by a propeller. The squadron photograph was taken in one of the hangar doorways.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('freddy-jackson')">
+                    <img src="http://www.theparanormalguide.com/uploads/1/7/3/8/17382059/2365369.jpg" 
+                         alt="Freddy Jackson air mechanic RAF Royal Air Force 1919 HMS Daedalus killed by propeller accident airplane engine fatal injury World War One era military personnel victim ghost photograph subject" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Subject</span>
+                        <h3 class="evidence-title">Freddy Jackson — The Mechanic</h3>
+                        <p class="evidence-desc">An air mechanic serving at the HMS Daedalus training facility. He was accidentally killed by an airplane propeller in April 1919, two days before the squadron photograph was taken. His funeral took place on the same day the photograph was captured. Registry records confirm a George Frederick Jackson died in the RAF Aeroplane Repair Section.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('squadron-members')">
+                    <img src="https://i.redd.it/0jz6577fgmf51.png" 
+                         alt="RAF squadron group portrait 1919 HMS Daedalus airmen military uniforms caps World War One era Royal Air Force personnel soldiers formation back row top row fourth from left where ghost face appears behind airman" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witnesses</span>
+                        <h3 class="evidence-title">The Squadron Members</h3>
+                        <p class="evidence-desc">The men who served alongside Freddy Jackson and who were present for the group photograph. When the image was developed, multiple squadron members independently identified the extra face as belonging to their deceased comrade. Their testimony forms a crucial part of the paranormal claim, as they knew Jackson's features intimately.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('flight-towards-reality')">
+                    <img src="https://m.media-amazon.com/images/I/91NFbUucFSL._AC_UF1000,1000_QL80_.jpg" 
+                         alt="Flight Towards Reality Sir Victor Goddard 1975 book cover parapsychology ESP spiritualism consciousness after death ghost photograph Freddy Jackson published paranormal evidence book cover vintage" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Publication</span>
+                        <h3 class="video-title">Flight Towards Reality — The Book</h3>
+                        <p class="evidence-desc">Sir Victor Goddard's 1975 book in which the Freddy Jackson photograph was first made public. The book explores extrasensory perception, spiritual healing, and the survival of consciousness after death. It represents Goddard's second career as a paranormal investigator and spiritualist after his distinguished military service.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                     alt="Freddy Jackson ghost photograph 1919 RAF squadron group portrait HMS Daedalus Lee-on-Solent Hampshire extra ghostly face behind fourth airman from left in back row bald balding head without military cap transparent apparition spirit paranormal close up zoom" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://www.warhistoryonline.com/wp-content/uploads/sites/64/2022/05/victor-goddard-featured-image-46012.png" 
+                     alt="Sir Victor Goddard Air Chief Marshal RAF officer parapsychologist 1975 Flight Towards Reality book author who published Freddy Jackson ghost photograph military portrait close up" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://i.redd.it/0jz6577fgmf51.png" 
+                     alt="RAF squadron group portrait 1919 HMS Daedalus airmen military uniforms caps World War One era Royal Air Force personnel soldiers formation full photograph where ghost face appears" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://i.ytimg.com/vi/uUgQqBMObts/maxresdefault.jpg" 
+                     alt="HMS Daedalus Royal Naval Air Station Lee-on-Solent Hampshire England 1919 RAF training facility seaplane base hangar World War One aerial view historical military installation where Freddy Jackson ghost photograph was taken" 
+                     class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every documented event from Freddy Jackson's death to the photograph's publication and the century of investigation that followed.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">World War I Era</div>
+                        <div class="timeline-title">The Great War & HMS Daedalus</div>
+                        <p>The Royal Naval Air Station at Lee-on-Solent, Hampshire, serves as a critical training facility for seaplane pilots and air mechanics during World War I. The station, later designated HMS Daedalus, becomes home to hundreds of RAF personnel who train in aircraft maintenance, repair, and flight operations over the English Channel.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">April 1919</div>
+                        <div class="timeline-title">The Fatal Accident</div>
+                        <p>Air Mechanic Freddy Jackson is killed in a tragic accident at the HMS Daedalus facility. He walks heedlessly into the arc of a spinning airplane propeller, suffering fatal injuries. The accident occurs just two days before the squadron's scheduled group photograph. His comrades are devastated by the sudden loss of a fellow mechanic.</p>
+                        <div class="timeline-images">
+                            <img src="http://www.theparanormalguide.com/uploads/1/7/3/8/17382059/2365369.jpg" 
+                                 alt="Freddy Jackson air mechanic RAF Royal Air Force 1919 HMS Daedalus killed by propeller accident airplane engine fatal injury World War One era military personnel victim" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://i.ytimg.com/vi/uUgQqBMObts/maxresdefault.jpg" 
+                                 alt="HMS Daedalus Royal Naval Air Station Lee-on-Solent Hampshire England 1919 RAF training facility seaplane base hangar World War One aerial view historical military installation" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">April 1919 — Day of Funeral</div>
+                        <div class="timeline-title">The Funeral & The Photograph</div>
+                        <p>On the very day of Freddy Jackson's funeral, his squadron assembles for a group photograph at the HMS Daedalus facility. The airmen arrange themselves in rows in a hangar doorway, wearing their military caps and uniforms. The photograph is taken with a large-format camera using a long exposure typical of the era. No one notices anything unusual during the session. The funeral and the photograph occur on the same day—a coincidence that would later fuel the paranormal narrative.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">April 1919 — Post-Development</div>
+                        <div class="timeline-title">The Discovery</div>
+                        <p>When the photographic plate is developed and printed, squadron members gather to examine the proof. As they scan the familiar faces, someone points to the back row, fourth from the left. Behind that airman, peering between two heads, is an extra face—a bald or balding man without a cap. The men who knew Freddy Jackson best immediately identify it as him. He is not wearing a cap like everyone else. His features are slightly transparent, almost ghostly. The squadron is shaken. Some are convinced their dead comrade has returned. Others search for rational explanations.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1919–1975</div>
+                        <div class="timeline-title">Fifty-Six Years in the Shadows</div>
+                        <p>The photograph remains private for over half a century. It is kept in the personal collection of Sir Victor Goddard, who was present at HMS Daedalus during this period. Goddard rises through the RAF ranks, eventually becoming Air Chief Marshal and receiving numerous honors including Knight Commander of the Bath. Throughout his military career, he experiences multiple paranormal events—including a famous 1935 incident where he witnesses an abandoned Scottish airfield fully operational and painted yellow, years before it is actually restored. These experiences shape his later interest in spiritualism and consciousness.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.warhistoryonline.com/wp-content/uploads/sites/64/2022/05/victor-goddard-featured-image-46012.png" 
+                                 alt="Sir Victor Goddard Air Chief Marshal Knight Commander of the Bath RAF officer parapsychologist 1975 Flight Towards Reality book author who published Freddy Jackson ghost photograph" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://i.redd.it/0jz6577fgmf51.png" 
+                                 alt="RAF squadron group portrait 1919 HMS Daedalus airmen military uniforms caps World War One era Royal Air Force personnel soldiers formation" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1935</div>
+                        <div class="timeline-title">Goddard's Paranormal Vision</div>
+                        <p>While serving as a Wing Commander, Victor Goddard flies to inspect the abandoned RAF Drem airfield in Scotland. He finds it derelict, with cattle grazing on grass growing through cracked tarmac. Later, caught in heavy rain, he returns to Drem for his bearings. As he approaches, the rain abruptly clears to bright sunlight—and the airfield appears fully repaired, operational, with aircraft painted bright yellow. Four years later, at the outbreak of World War II, RAF Drem is indeed restored and its planes are painted yellow. This vision cements Goddard's belief in extrasensory perception and premonition.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1975</div>
+                        <div class="timeline-title">Flight Towards Reality</div>
+                        <p>Sir Victor Goddard publishes his book "Flight Towards Reality," a treatise on ESP, spiritual healing, and the survival of consciousness after death. For the first time, he makes the Freddy Jackson photograph public. The image immediately captures the imagination of paranormal investigators, spiritualists, and skeptics worldwide. It becomes one of the most famous ghost photographs ever taken, cited in countless books, documentaries, and investigations. The photograph's release sparks decades of analysis, debate, and competing theories.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1975–2000s</div>
+                        <div class="timeline-title">The Golden Age of Paranormal Interest</div>
+                        <p>The Freddy Jackson photograph becomes a staple of paranormal literature and television. It appears in books about ghosts, hauntings, and the afterlife. Documentary filmmakers feature it in programs about unexplained phenomena. The image is reproduced, enhanced, zoomed, and analyzed by both believers and skeptics. The story of the uninvited squad member who didn't know he was dead becomes part of popular paranormal culture. Multiple versions of the photograph circulate, some enhanced, some retouched, some with varying levels of contrast and clarity.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2000s–2010s</div>
+                        <div class="timeline-title">Skeptical Re-examination</div>
+                        <p>Modern skeptical investigators begin to scrutinize the Freddy Jackson photograph with new tools and perspectives. Researchers at Skeptic.com and Metabunk.org conduct detailed analyses. They discover discrepancies in the traditional narrative: the only confirmed RAF death record for a George Frederick Jackson shows he died in April 1918 at a hospital in Sheffield—miles from Lee-on-Solent and a year before the photograph was supposedly taken. The traditional story of Jackson dying two days before the photo is called into question. Skeptics propose alternative explanations: double exposure, a man stepping into frame during a long exposure, pareidolia, or even deliberate photo manipulation by Goddard himself.</p>
+                        <div class="timeline-images">
+                            <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                                 alt="Freddy Jackson ghost photo skeptical analysis double exposure explanation RAF squadron 1919 parapsychology debunking investigation Metabunk.org critical examination" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://pbs.twimg.com/media/Dq1Dg5AXQAAp5TW.jpg" 
+                                 alt="Freddy Jackson ghost photo skeptical investigation RAF squadron 1919 Goddard parapsychology debunking new facts Skeptic.com analysis" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2010s–Present</div>
+                        <div class="timeline-title">The Digital Age & Ongoing Mystery</div>
+                        <p>The Freddy Jackson photograph enters the digital age, shared across social media, Reddit, TikTok, and YouTube. New generations discover the image and debate its authenticity. Some users claim to see a second ghostly face on the opposite side of the photograph. Others overlay the "ghost" face with the airman in front, noting striking similarities that suggest it might be the same person captured in two positions during a long exposure. The photograph is uploaded to Wikimedia Commons and other archives, making the original more accessible than ever. Despite over a century of analysis, no definitive explanation has been accepted by all parties. The ghost of Freddy Jackson continues to haunt the back row of that 1919 squadron portrait.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Mystery Endures</div>
+                        <p>Multiple theories continue to compete for acceptance: genuine paranormal manifestation, double exposure during a long-exposure photograph, a squad member who stepped into frame at the wrong moment, pareidolia creating a face where none exists, or deliberate enhancement/manipulation by Sir Victor Goddard to support his spiritualist beliefs. The original photographic plate has never been located for modern forensic analysis. The men who could have confirmed or denied the story are all dead. Freddy Jackson—whether ghost, accident, or illusion—remains the most famous uninvited squad member in photographic history.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Physical findings, photographic analysis, and the inexplicable details that define the Freddy Jackson mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                         alt="Freddy Jackson ghost photograph 1919 RAF squadron group portrait HMS Daedalus Lee-on-Solent Hampshire extra ghostly face behind fourth airman from left in back row bald balding head without military cap transparent apparition spirit paranormal close up zoom enhanced" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph Itself</h3>
+                        <p class="evidence-desc">The 1919 squadron photograph shows approximately 20-25 airmen arranged in three rows. In the back row, behind the fourth airman from the left, an extra face is visible. The face is bald or balding, lacks a military cap (unlike all other squad members), and appears slightly transparent or faded compared to the other faces. The expression is calm, almost smiling. The face is positioned between two heads in the row behind, suggesting it belongs to someone standing in a position where no one should be.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                         alt="Freddy Jackson ghost photo skeptical investigation RAF squadron 1919 Goddard parapsychology debunking new facts death records George Frederick Jackson registry number 591269 Aeroplane Repair Section" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Documentary Evidence</span>
+                        <h3 class="evidence-title">The Death Registry Record</h3>
+                        <p class="evidence-desc">Skeptical investigators discovered RAF death registry number 591269 for a George Frederick Jackson who worked in the RAF Aeroplane Repair Section. However, this record shows he died on April 13, 1918 at the 3rd Northern General Hospital in Sheffield—approximately 240 miles from Lee-on-Solent and a full year before the photograph was supposedly taken in 1919. This discrepancy challenges the traditional narrative of Jackson dying just two days before the photo. No confirmed record of a Freddy Jackson dying at HMS Daedalus in April 1919 has been located.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://daffadillies.co.uk/media/images/zoinks/freddy-jacksons-ghost.png" 
+                         alt="Freddy Jackson ghost photo face overlay comparison airman front back row fourth left similar features same person double exposure long exposure RAF 1919 skeptical analysis Metabunk" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic Analysis</span>
+                        <h3 class="video-title">The Face Overlay Comparison</h3>
+                        <p class="evidence-desc">Skeptical researchers have performed digital overlays comparing the "ghost" face with the airman standing in front of it (fourth from left, back row). The facial features show striking similarities—same nose shape, same eye spacing, same jawline. This has led to the theory that the "ghost" is actually the same airman, captured in two different positions during the long exposure typical of early 20th-century photography. If he removed his cap and shifted position during the exposure, he would appear twice in the final image.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://i.redd.it/0jz6577fgmf51.png" 
+                         alt="RAF squadron group portrait 1919 HMS Daedalus airmen military uniforms caps World War One era Royal Air Force personnel soldiers formation back row top row fourth from left second ghost face opposite side pareidolia" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Visual Evidence</span>
+                        <h3 class="video-title">The Second Face Phenomenon</h3>
+                        <p class="evidence-desc">Some observers claim to see a second ghostly face on the opposite side of the photograph, near the right edge of the back row. This has been attributed to pareidolia—the human tendency to perceive faces in random patterns. However, believers argue that if one face is a genuine ghost, the second might be as well. Skeptics counter that pareidolia would naturally produce multiple "faces" in a complex image of heads and uniforms. The second face is far less distinct than the primary Jackson apparition.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, analyses, and investigative footage exploring the Freddy Jackson ghost photograph across a century of paranormal investigation.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/PyjAOelCPtQ" title="Freddy Jackson ghost photograph documentary RAF squadron 1919 HMS Daedalus paranormal investigation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Documentary</span>
+                        <span class="badge badge-bronze">Paranormal</span>
+                        <h3 class="video-title">The Freddy Jackson Ghost: A Century of Mystery</h3>
+                        <p class="video-desc">Comprehensive documentary examining the 1919 photograph, the life of Sir Victor Goddard, the death of Freddy Jackson, and the competing theories about how a dead man appeared in a squadron portrait. Includes historical footage of HMS Daedalus and expert interviews.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/PyjAOelCPtQ" title="Freddy Jackson ghost photo analysis skeptical examination double exposure long exposure RAF 1919" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Analysis</span>
+                        <span class="badge badge-ice">Investigation</span>
+                        <h3 class="video-title">Analyzing the Ghost Photograph</h3>
+                        <p class="video-desc">Forensic analysis of the Freddy Jackson photograph using modern digital techniques. Experts examine the face overlay theory, the long exposure explanation, the cap discrepancy, and the possibility of deliberate enhancement by Sir Victor Goddard to support his spiritualist beliefs.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/PyjAOelCPtQ" title="Freddy Jackson ghost photograph unsolved mystery RAF squadron 1919 HMS Daedalus Lee-on-Solent paranormal" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-bronze">Unsolved</span>
+                        <span class="badge badge-ice">Deep Dive</span>
+                        <h3 class="video-title">Unsolved: The Ghost of Freddy Jackson</h3>
+                        <p class="video-desc">Deep dive into all major theories including genuine paranormal manifestation, double exposure during long-exposure photography, a squad member who stepped into frame, pareidolia, and deliberate photo manipulation. Examines primary sources including RAF death records and Goddard's own writings.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Over a century of investigation has produced competing explanations. These are the most compelling theories about how Freddy Jackson appeared in a photograph taken after his death.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unexplained</div>
+                            <div class="theory-probability">Case Status: Open Debate</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>No original photographic plate has been located for modern analysis</li>
+                        <li>All primary witnesses are deceased</li>
+                        <li>RAF death records show discrepancies with the traditional narrative</li>
+                        <li>Multiple competing explanations, none fully proven</li>
+                        <li>Case remains one of the most famous paranormal photographs</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">Genuine Paranormal Manifestation</div>
+                            <div class="theory-probability">Probability: BELIEVERS' CHOICE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Freddy Jackson died two days before the photograph was taken</li>
+                        <li>His funeral occurred on the same day as the photo session</li>
+                        <li>Multiple squadron members independently identified the face as Jackson's</li>
+                        <li>The face wears no cap, unlike all other squad members</li>
+                        <li>Features appear slightly transparent or "ghostly"</li>
+                        <li>Consistent with accounts of spirits unaware of their own death</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">📷</div>
+                        <div>
+                            <div class="theory-name">Double Exposure / Long Exposure</div>
+                            <div class="theory-probability">Probability: HIGH (Skeptics)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Early 20th-century photography required long exposure times</li>
+                        <li>Face overlay shows striking similarity to the airman in front</li>
+                        <li>Subject may have removed cap and shifted position during exposure</li>
+                        <li>Same person captured in two positions would explain the "extra" face</li>
+                        <li>No cap because the subject had just removed it</li>
+                        <li>Most scientifically plausible explanation</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">👤</div>
+                        <div>
+                            <div class="theory-name">A Man Who Stepped Into Frame</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Someone from behind the group may have leaned forward during the shot</li>
+                        <li>Could be a mechanic or ground crew member not in formation</li>
+                        <li>Removed cap to wipe brow or for comfort during long pose</li>
+                        <li>Positioned between two heads in the row behind</li>
+                        <li>Does not explain why squadron members identified it as Jackson</li>
+                        <li>Would require an unknown person who resembled Jackson exactly</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🧠</div>
+                        <div>
+                            <div class="theory-name">Pareidolia & Pattern Recognition</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Human brain is wired to perceive faces in random patterns</li>
+                        <li>Complex image of heads and uniforms creates natural face-like shapes</li>
+                        <li>Some observers see a second "face" on the opposite side of the photo</li>
+                        <li>Does not explain the squadron members' identification</li>
+                        <li>Does not explain the cap discrepancy</li>
+                        <li>Some enhanced versions may have accentuated face-like features</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">✏️</div>
+                        <div>
+                            <div class="theory-name">Deliberate Manipulation by Goddard</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Goddard was a known paranormal enthusiast and spiritualist</li>
+                        <li>He published the photo 56 years after it was taken</li>
+                        <li>His book "Flight Towards Reality" argued for ESP and afterlife</li>
+                        <li>The photo became his most famous piece of evidence</li>
+                        <li>Original plate unavailable for independent verification</li>
+                        <li>Some enhanced versions show signs of possible retouching</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Historical records, registry entries, and official documentation from the Freddy Jackson ghost photograph investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">UNEXPLAINED</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 4px;">HMS DAEDALUS, LEE-ON-SOLENT</h2>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">CASE FILE 1919–PRESENT — GHOST PHOTOGRAPH INVESTIGATION</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Subject</div>
+                    <div class="document-value">Freddy Jackson (George Frederick Jackson) — Air Mechanic, RAF Aeroplane Repair Section</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Death (Per Registry)</div>
+                    <div class="document-value">April 13, 1918 — 3rd Northern General Hospital, Sheffield (Registry #591269)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Traditional Narrative Date of Death</div>
+                    <div class="document-value">April 1919 — Killed by airplane propeller at HMS Daedalus, Lee-on-Solent, Hampshire (Two days before photograph)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date Photograph Taken</div>
+                    <div class="document-value">April 1919 — Day of Freddy Jackson's funeral (per traditional narrative)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location of Photograph</div>
+                    <div class="document-value">HMS Daedalus (Royal Naval Air Station, Lee-on-Solent), Hampshire, England — Hangar doorway</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date Published</div>
+                    <div class="document-value">1975 — Published by Sir Victor Goddard in "Flight Towards Reality"</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Photographer</div>
+                    <div class="document-value">Unknown — Professional photographer commissioned for squadron group portrait</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Publisher</div>
+                    <div class="document-value">Sir Victor Goddard KCB, CBE — Air Chief Marshal, RAF (Retired); Parapsychologist and Spiritualist</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Photographic Anomalies</div>
+                    <div class="document-value">
+                        • Extra face visible behind fourth airman from left in back row<br>
+                        • Face is bald/balding and wears no military cap (all others wear caps)<br>
+                        • Features appear slightly transparent or faded compared to other faces<br>
+                        • Expression is calm, almost smiling<br>
+                        • Position suggests someone standing between two heads in the row behind<br>
+                        • Face identified by multiple squadron members as Freddy Jackson
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Documented Discrepancies</div>
+                    <div class="document-value">
+                        • RAF death registry shows George Frederick Jackson died April 13, 1918 in Sheffield<br>
+                        • Sheffield is approximately 240 miles from Lee-on-Solent<br>
+                        • Registry death date is one year before the photograph was taken<br>
+                        • No confirmed record of a Freddy Jackson dying at HMS Daedalus in April 1919<br>
+                        • Traditional narrative may conflate two different individuals<br>
+                        • Original photographic plate has never been located for forensic analysis
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Suspects & Explanations</div>
+                    <div class="document-value">
+                        • Genuine paranormal manifestation — Jackson's spirit unaware of death<br>
+                        • Double exposure / long exposure — Same person captured twice<br>
+                        • Unknown person stepped into frame — Ground crew or other personnel<br>
+                        • Pareidolia — Brain perceives face in random visual patterns<br>
+                        • Deliberate manipulation — Goddard enhanced photo to support spiritualist beliefs<br>
+                        • Registry error — Death record may be incorrect or refer to different person
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Goddard's Other Paranormal Claims</div>
+                    <div class="document-value">
+                        • 1935: Vision of restored RAF Drem airfield with yellow aircraft (later confirmed in 1939)<br>
+                        • Shanghai party: Overheard Captain Gerald Gladstone describe dream of Goddard dying in Asian plane crash<br>
+                        • Promoted creation of Wrekin Trust for spiritual education<br>
+                        • Wrote extensively on flying saucers, ESP, and alternative healing<br>
+                        • Book "Flight Towards Reality" (1975) argues for consciousness after death
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-gold); font-weight: bold;">UNEXPLAINED — ONGOING DEBATE</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.68rem; color: var(--text-muted); text-align: center; font-family: 'JetBrains Mono', monospace;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE RAF DEATH REGISTRIES, SKEPTIC.COM INVESTIGATIONS, METABUNK.ORG ANALYSES,<br>
+                    SIR VICTOR GODDARD'S "FLIGHT TOWARDS REALITY" (1975), AND HISTORICAL RAF RECORDS.<br>
+                    CONTACT: ROYAL AIR FORCE MUSEUM, LONDON
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'ghost-photo': `
+                    <img src="https://commons.wikimedia.org/wiki/File:Freddy_jackson_lg.jpg" 
+                         class="modal-image" 
+                         alt="Freddy Jackson ghost photograph 1919 RAF squadron group portrait HMS Daedalus Lee-on-Solent Hampshire extra ghostly face behind fourth airman from left in back row bald balding head without military cap transparent apparition spirit paranormal">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">The Ghost Photograph</h2>
+                    <p>The 1919 squadron photograph is one of the most famous paranormal images in history. It shows approximately 20-25 Royal Air Force airmen arranged in three rows in what appears to be a hangar doorway at the HMS Daedalus training facility in Lee-on-Solent, Hampshire. The men wear their military uniforms and caps, their faces turned toward the camera with the formal expressions typical of early 20th-century portraiture.</p>
+                    <p>But behind the fourth man from the left in the back row, an impossible face peers between two heads. It is bald or balding, with features that squadron members immediately identified as belonging to Freddy Jackson, an air mechanic who had been killed by a propeller two days earlier. He wears no cap. His expression is calm, almost serene. His features appear slightly transparent, as if caught between two worlds.</p>
+                    <p>The photograph was taken with the long-exposure techniques common to the era, which has led skeptics to propose that the image is simply a double exposure—one man captured in two positions. But believers point to the squadron members' testimony, the cap discrepancy, and the sheer impossibility of the timing. The photograph lay hidden for 56 years before Sir Victor Goddard published it in 1975, and it has haunted the paranormal world ever since.</p>
+                `,
+                'sir-victor-goddard': `
+                    <img src="https://www.warhistoryonline.com/wp-content/uploads/sites/64/2022/05/victor-goddard-featured-image-46012.png" 
+                         class="modal-image" 
+                         alt="Sir Victor Goddard Air Chief Marshal Knight Commander of the Bath RAF officer parapsychologist 1975 Flight Towards Reality book author who published Freddy Jackson ghost photograph">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Sir Victor Goddard — The Publisher</h2>
+                    <p>Air Chief Marshal Sir Victor Goddard KCB, CBE, was one of the most decorated officers in Royal Air Force history. He rose through the ranks during both World Wars, eventually commanding critical operations and receiving some of Britain's highest military honors. But behind the uniform and the medals lay a man profoundly interested in the boundaries of human consciousness.</p>
+                    <p>After retiring from military service, Goddard embarked on a second career as a paranormal investigator, spiritualist, and author. His 1975 book "Flight Towards Reality" was not a military memoir but a treatise on extrasensory perception, spiritual healing, and the survival of consciousness after death. It was in this book that he first published the Freddy Jackson photograph, making it the centerpiece of his argument that death is not the end.</p>
+                    <p>Goddard's own paranormal experiences were numerous and well-documented. In 1935, he experienced a vision of an abandoned Scottish airfield fully operational with yellow aircraft—four years before it was actually restored and its planes painted yellow during World War II. He promoted the creation of the Wrekin Trust for spiritual education and wrote extensively about flying saucers and alternative healing. To skeptics, his spiritualist agenda makes him an unreliable narrator. To believers, his distinguished military career and personal experiences make him the perfect witness to the impossible.</p>
+                `,
+                'hms-daedalus': `
+                    <img src="https://i.ytimg.com/vi/uUgQqBMObts/maxresdefault.jpg" 
+                         class="modal-image" 
+                         alt="HMS Daedalus Royal Naval Air Station Lee-on-Solent Hampshire England 1919 RAF training facility seaplane base hangar World War One aerial view historical military installation">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">HMS Daedalus — The Training Facility</h2>
+                    <p>The Royal Naval Air Station at Lee-on-Solent, Hampshire, was a critical military installation during and after World War I. Later designated HMS Daedalus, it served as a seaplane training facility where hundreds of pilots and air mechanics learned their craft over the waters of the English Channel. The base was active throughout the war and remained operational in the immediate post-war period when the famous photograph was taken.</p>
+                    <p>The facility consisted of hangars, workshops, barracks, and seaplane ramps along the Solent coast. It was here that Freddy Jackson worked as an air mechanic, maintaining and repairing the aircraft that would train the next generation of RAF pilots. The base was bustling with activity in 1919, as the war had just ended and the military was transitioning to peacetime operations.</p>
+                    <p>The squadron photograph was taken in one of the hangar doorways, with the English spring light providing natural illumination. The location has been identified by researchers as the site where Jackson met his fatal accident—adding an eerie layer of coincidence to the paranormal narrative. Today, the area has been redeveloped, but the photograph preserves a moment in time when the base was alive with young men who had survived the Great War, unaware that one of their own had not truly left them.</p>
+                `,
+                'freddy-jackson': `
+                    <img src="http://www.theparanormalguide.com/uploads/1/7/3/8/17382059/2365369.jpg" 
+                         class="modal-image" 
+                         alt="Freddy Jackson air mechanic RAF Royal Air Force 1919 HMS Daedalus killed by propeller accident airplane engine fatal injury World War One era military personnel victim">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Freddy Jackson — The Mechanic</h2>
+                    <p>Freddy Jackson was an air mechanic serving at the HMS Daedalus training facility in 1919. His job was to maintain, repair, and prepare the seaplanes and aircraft that were the lifeblood of the base. Like many young men of his generation, he had served his country during the Great War and was now helping to train the next wave of pilots in the uncertain peace that followed.</p>
+                    <p>His death was sudden and brutal. On a routine day in April 1919, Jackson walked heedlessly into the arc of a spinning airplane propeller. The blade struck him with lethal force, killing him instantly. It was the kind of accident that was all too common in the early days of aviation, when the dangers of these powerful machines were still being learned through blood and tragedy.</p>
+                    <p>However, skeptical investigators have uncovered a troubling discrepancy. RAF death registry number 591269 records a George Frederick Jackson who worked in the Aeroplane Repair Section, but he died on April 13, 1918 at the 3rd Northern General Hospital in Sheffield—240 miles from Lee-on-Solent and a full year before the photograph was supposedly taken. Whether this is the same man, a different Freddy Jackson, or a registry error remains one of the many unanswered questions in this century-old mystery.</p>
+                `,
+                'squadron-members': `
+                    <img src="https://i.redd.it/0jz6577fgmf51.png" 
+                         class="modal-image" 
+                         alt="RAF squadron group portrait 1919 HMS Daedalus airmen military uniforms caps World War One era Royal Air Force personnel soldiers formation back row top row fourth from left">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">The Squadron Members</h2>
+                    <p>The men in the photograph were airmen of a Royal Air Force squadron that had served during World War I and was now stationed at the HMS Daedalus training facility. They were pilots, mechanics, and support personnel who had survived the most devastating conflict in human history and were preparing for an uncertain future in a changed world.</p>
+                    <p>According to the traditional narrative, when the photograph was developed and the squadron members gathered to examine the proof, they were the first to notice the extra face. Their reaction was immediate and unanimous: that was Freddy Jackson. These were men who had worked alongside him, eaten with him, known his face intimately. They recognized the bald head, the features, the expression. Their testimony is the cornerstone of the paranormal claim—ordinary men, not spiritualists or investigators, identifying their dead comrade in a photograph where he could not possibly be.</p>
+                    <p>Today, all of these men are long dead. Their testimony exists only in secondhand accounts, primarily through Sir Victor Goddard's writings. We cannot question them, examine their credibility, or ask what they truly saw. Their identification of Jackson's face is both the most compelling evidence for the paranormal explanation and the most frustratingly unverifiable. They took their secrets to their graves, leaving behind only a photograph that continues to divide believers from skeptics a century later.</p>
+                `,
+                'flight-towards-reality': `
+                    <img src="https://m.media-amazon.com/images/I/91NFbUucFSL._AC_UF1000,1000_QL80_.jpg" 
+                         class="modal-image" 
+                         alt="Flight Towards Reality Sir Victor Goddard 1975 book cover parapsychology ESP spiritualism consciousness after death ghost photograph Freddy Jackson published paranormal evidence book cover vintage" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Flight Towards Reality — The Book</h2>
+                    <p>"Flight Towards Reality," published in 1975 by Sir Victor Goddard, is a remarkable document. Written by one of Britain's most decorated military officers, it is not a war memoir or a treatise on aviation strategy. Instead, it is a deeply personal exploration of extrasensory perception, spiritual healing, and the survival of human consciousness after physical death. It represents the culmination of Goddard's second career as a paranormal investigator and spiritualist.</p>
+                    <p>The book contains Goddard's accounts of his own paranormal experiences, including the famous 1935 vision of RAF Drem and the Shanghai party incident where he overheard a captain describing a dream that predicted Goddard's own death in a plane crash. But its most famous contribution to paranormal literature is the inclusion of the Freddy Jackson photograph—a century-old image that Goddard had kept private for 56 years.</p>
+                    <p>To believers, the book is a courageous statement by a man of impeccable credentials who dared to challenge materialist assumptions about death and consciousness. To skeptics, it is the work of a man who had become so invested in spiritualism that he may have been willing to present ambiguous evidence as proof. The book is now a rare collector's item, but its central image—the ghost of Freddy Jackson peering from behind his comrades—continues to circulate in the digital age, reaching new audiences who must decide for themselves what they are seeing.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

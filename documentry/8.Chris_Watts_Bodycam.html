@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ghost in the Frame — Chris Watts Bodycam Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Roboto+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #111118;
+            --bg-card: #16161f;
+            --bg-surface: #1c1c26;
+            --accent-amber: #d4a017;
+            --accent-red: #8b1a1a;
+            --accent-cyan: #2a9d8f;
+            --accent-ghost: #7d8a96;
+            --text-primary: #e2e2e8;
+            --text-secondary: #8a8a96;
+            --text-muted: #4a4a56;
+            --border: #252530;
+            --danger: #c0392b;
+            --success: #27ae60;
+            --surveillance-green: #00ff41;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 80% 20%, rgba(212, 160, 23, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(42, 157, 143, 0.04) 0%, transparent 50%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-amber); border-radius: 3px; }
+
+        /* ===== SURVEILLANCE HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.97);
+            backdrop-filter: blur(15px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.4rem;
+            color: var(--accent-amber);
+            letter-spacing: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .logo::before {
+            content: '◉';
+            color: var(--surveillance-green);
+            font-size: 0.8rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .logo span {
+            color: var(--text-muted);
+            font-weight: 300;
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.45rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.72rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--accent-amber);
+            color: var(--bg-primary);
+            border-color: var(--accent-amber);
+        }
+
+        .main-content { margin-top: 65px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION - SURVEILLANCE AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.95) 100%),
+                url('https://i.ytimg.com/vi/u11A4FQlDMo/maxresdefault.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.7) contrast(1.2) brightness(0.25);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 65, 0.015) 2px,
+                    rgba(0, 255, 65, 0.015) 4px
+                ),
+                radial-gradient(circle at 50% 50%, rgba(212, 160, 23, 0.08) 0%, transparent 60%);
+            z-index: -1;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(0, 255, 65, 0.08);
+            z-index: -1;
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: -4px; }
+            100% { top: 100vh; }
+        }
+
+        .story-content {
+            max-width: 900px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--surveillance-green);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: slideUp 0.8s ease 0.3s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Oswald', sans-serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 60px rgba(212, 160, 23, 0.4);
+            opacity: 0;
+            animation: slideUp 0.8s ease 0.6s forwards;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .story-headline span {
+            color: var(--accent-amber);
+            display: block;
+            font-size: 0.85em;
+            font-weight: 300;
+            letter-spacing: 8px;
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.35rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            font-style: italic;
+            opacity: 0;
+            animation: slideUp 0.8s ease 0.9s forwards;
+            border-left: 2px solid var(--accent-amber);
+            padding-left: 1.5rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: slideUp 0.8s ease 1.2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.5rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Oswald', sans-serif;
+            font-size: 3.5rem;
+            float: left;
+            line-height: 0.85;
+            padding-right: 0.4rem;
+            color: var(--accent-amber);
+            text-shadow: 0 0 20px rgba(212, 160, 23, 0.5);
+            font-weight: 700;
+        }
+
+        .story-highlight {
+            background: rgba(212, 160, 23, 0.08);
+            border: 1px solid rgba(212, 160, 23, 0.2);
+            border-left: 3px solid var(--accent-amber);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: slideUp 0.8s ease 1.5s forwards;
+            position: relative;
+        }
+
+        .story-highlight::before {
+            content: '⚠ WARNING';
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: var(--bg-primary);
+            padding: 0 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--accent-amber);
+            letter-spacing: 2px;
+        }
+
+        .story-cta {
+            margin-top: 2.5rem;
+            opacity: 0;
+            animation: slideUp 0.8s ease 1.8s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: var(--accent-amber);
+            color: var(--bg-primary);
+            text-decoration: none;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            border-radius: 2px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-amber);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 30px rgba(212, 160, 23, 0.4);
+            color: var(--accent-amber);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3.5rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: slideUp 0.8s ease 2.1s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.5rem;
+            color: var(--accent-amber);
+            font-weight: 700;
+        }
+
+        .story-stat-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.3rem;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            opacity: 0;
+            animation: slideUp 0.8s ease 2.4s forwards, bounce 2s infinite 2.4s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 3.5rem 2rem;
+            background: linear-gradient(180deg, rgba(212, 160, 23, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .hero::after {
+            content: 'REC';
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--danger);
+            letter-spacing: 2px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .hero h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 3rem;
+            color: var(--text-primary);
+            margin-bottom: 0.8rem;
+            text-shadow: 0 0 30px rgba(212, 160, 23, 0.25);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 650px;
+            margin: 0 auto 1.5rem;
+            font-family: 'Crimson Pro', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .meta-value {
+            color: var(--accent-amber);
+            font-size: 1rem;
+            margin-top: 0.2rem;
+            font-weight: 700;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.2rem;
+            margin: 1.5rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-amber);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(212, 160, 23, 0.15);
+            border-color: rgba(212, 160, 23, 0.3);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.4) contrast(1.1);
+            transition: filter 0.3s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0) contrast(1);
+        }
+
+        .evidence-content { padding: 1.3rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: rgba(212, 160, 23, 0.15);
+            color: var(--accent-amber);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-radius: 2px;
+            margin-bottom: 0.6rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.15rem;
+            margin-bottom: 0.4rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.55;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.8rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.2rem;
+            margin: 1.5rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1rem; }
+
+        .video-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .video-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.45rem;
+            border-radius: 2px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.4rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .badge-amber { background: rgba(212, 160, 23, 0.2); color: var(--accent-amber); }
+        .badge-cyan { background: rgba(42, 157, 143, 0.2); color: var(--accent-cyan); }
+        .badge-red { background: rgba(139, 26, 26, 0.3); color: #e74c3c; }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 1.5rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(180deg, var(--accent-amber), var(--accent-cyan));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-amber);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.4);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -34px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -34px; }
+
+        .timeline-date {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            margin-bottom: 0.4rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.4rem;
+            margin-top: 0.8rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: grayscale(0.5);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.04); 
+            filter: grayscale(0);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.2rem;
+            margin: 1.5rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-left: 3px solid var(--success); }
+        .theory-card.conspiracy { border-left: 3px solid var(--danger); }
+        .theory-card.alternative { border-left: 3px solid var(--accent-cyan); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .theory-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .official .theory-icon { background: rgba(39, 174, 96, 0.15); }
+        .conspiracy .theory-icon { background: rgba(192, 57, 43, 0.15); }
+        .alternative .theory-icon { background: rgba(42, 157, 143, 0.15); }
+
+        .theory-name {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .theory-probability {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .theory-points li::before {
+            content: '›';
+            color: var(--accent-amber);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.8rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            padding: 0.4rem 0.8rem;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: rotate(-12deg);
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 0.8rem 0;
+            padding: 0.7rem;
+            background: var(--bg-secondary);
+            border-left: 2px solid var(--accent-amber);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            margin-top: 0.15rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.8rem;
+            margin: 1.2rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.6);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-amber);
+            box-shadow: 0 4px 20px rgba(212, 160, 23, 0.2);
+            filter: grayscale(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-amber);
+            border-radius: 4px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.88);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: 750px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 0.8rem;
+            right: 0.8rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 1.8rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+
+        /* ===== TYPEWRITER EFFECT ===== */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent-amber);
+            animation: typing 3s steps(35, end), blink-caret 0.75s step-end infinite;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0.8rem 0;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-amber); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.4rem; }
+            .story-text { font-size: 1rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 1.8rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 45px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -32px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+                padding: 0.6rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 3px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.68rem;
+                padding: 0.35rem 0.7rem;
+                white-space: nowrap;
+            }
+            .main-content { margin-top: 100px; }
+            .case-meta { gap: 1.2rem; }
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">GHOST <span>CHILD</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="scanline"></div>
+            
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Frederick, Colorado, 2018 — A Bodycam Mystery</div>
+                    
+                    <h1 class="story-headline">
+                        The Ghost
+                        <span>In The Frame</span>
+                    </h1>
+                    
+                    <p class="story-prologue">
+                        "You can clearly see a little girl," Arthur Cant wrote beneath his YouTube video. In the police bodycam footage from the Watts family home, as officers searched the rooms and questioned a visibly nervous Chris Watts, a small figure moved in the background of an upstairs bedroom. The light turned off by itself. A child appeared where no child should be. Millions would watch. Few would agree on what they saw.
+                    </p>
+                    
+                    <div class="story-text">
+                        <p>It began with a wellness check. On the morning of August 13, 2018, Nickole Atkinson, a close friend of Shanann Watts, arrived at the Watts' home in Frederick, Colorado. Shanann had missed a doctor's appointment. Her phone was off. Her car was in the garage. Her purse, phone, and medication were all inside the house. Nickole knew something was wrong. She called the Frederick Police Department.</p>
+                        
+                        <p>Officers arrived and entered the home with Chris Watts, who had just returned from "work." The bodycam footage captured everything: the pristine kitchen, the unmade beds, the stripped master bedroom sheets. And then, in an upstairs room, something else. A small child, visible in the background, moving around near a doorway. The light in the room seemed to turn off on its own at the 0:33 mark. Viewers of the Netflix documentary <em>American Murder: The Family Next Door</em> spotted it immediately.</p>
+                        
+                        <p>The theory spread like wildfire: the ghost of Bella or Celeste Watts, one of the two young daughters Chris Watts would later confess to murdering, had appeared on camera. The figure was small, child-sized, moving with an eerie stillness. The timing was impossible — the girls were already dead, their bodies hidden in oil tanks at an Anadarko Petroleum site. But skeptics quickly offered another explanation: the child was Nickole Atkinson's own daughter, who had accompanied her mother to the house and was seen playing in several parts of the footage.</p>
+                        
+                        <p>The debate continues to this day. Was it a ghost? A living child? A trick of light and shadow? The bodycam footage, released by the Weld County District Attorney's office as part of a massive evidence dump, remains one of the most analyzed pieces of true crime media in history. Frame by frame, millions have searched for answers in the pixels. What they found depends on what they were looking for.</p>
+                    </div>
+                    
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-amber);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        If the figure was Nickole Atkinson's daughter, why did the light turn off by itself? Why did Chris Watts seem to glance toward the room with such unease? And why — despite official explanations — do so many viewers still see something supernatural in those few seconds of footage? The case is closed. The footage is not.
+                    </div>
+                    
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+                    
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">34</div>
+                            <div class="story-stat-label">Years Old (Shanann)</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">4 & 3</div>
+                            <div class="story-stat-label">Daughters' Ages</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">3TB</div>
+                            <div class="story-stat-label">Evidence Released</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">∞</div>
+                            <div class="story-stat-label">Views Analyzed</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scroll-indicator">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-amber);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1 class="typewriter" style="border:none;animation:none;white-space:normal;">THE GHOST IN THE FRAME</h1>
+                <p class="hero-subtitle">An interactive investigation into the bodycam footage that launched a million theories. Explore the evidence, analyze the footage, and decide for yourself what appeared in that upstairs room.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Case</div>
+                        <div class="meta-value">Watts Family Murders</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Frederick, Colorado</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">August 13, 2018</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Solved (Unexplained)</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Oswald', sans-serif; text-align: center; margin-bottom: 1.5rem; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 3px;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('bodycam')">
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Police bodycam footage screenshot showing Chris Watts standing in his living room while officers search the Watts family home in Frederick Colorado during the initial missing persons investigation on August 13 2018" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Bodycam Footage</span>
+                        <h3 class="evidence-title">The Ghost Child Sighting</h3>
+                        <p class="evidence-desc">At approximately the 0:33 mark in the bodycam footage, a small childlike figure appears in an upstairs bedroom doorway. The room light turns off moments before. Chris Watts stands downstairs, visibly nervous, as officers search the home.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('neighbor')">
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Chris Watts neighbor Nathan Trinastich home security surveillance camera footage showing Chris Watts backing his truck into the garage at 5:18 AM on August 13 2018 the morning he murdered his family" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Surveillance</span>
+                        <h3 class="evidence-title">Neighbor's Security Camera</h3>
+                        <p class="evidence-desc">Nathan Trinastich's surveillance camera captured Chris Watts loading his truck at 5:18 AM. The footage shows three trips from the house to the truck. Watts would later watch this footage with police, pacing and offering explanations.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('nickole')">
+                    <img src="https://s.abcnews.com/images/US/shanann-watts-murder-ht-mem-180820_hpMain_4x3_992.jpg" alt="Nickole Atkinson Shanann Watts best friend and neighbor giving a police interview about the morning she discovered Shanann missing and her suspicions about Chris Watts behavior" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witness</span>
+                        <h3 class="evidence-title">Nickole Atkinson's Testimony</h3>
+                        <p class="evidence-desc">Shanann's best friend was the first to raise the alarm. Her police interview reveals crucial details: the unmade beds, the stripped sheets, the missing purse. She also confirmed her own daughter was present at the house that morning.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('confession')">
+                    <img src="https://media.npr.org/assets/img/2018/11/19/ap_18323669104209-70ba7ae63aee2798cfbff95cbaeb41f5ed30becf.jpg" alt="Chris Watts in court during his sentencing hearing in Weld County Colorado on November 19 2018 wearing an orange prison jumpsuit after pleading guilty to murdering his pregnant wife and two daughters" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Confession</span>
+                        <h3 class="evidence-title">The Confession Tapes</h3>
+                        <p class="evidence-desc">After failing a polygraph test, Chris Watts confessed to murdering Shanann, Bella (4), and Celeste (3). He initially claimed Shanann killed the children and he killed her in rage. He later admitted to all three murders.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('oil-site')">
+                    <img src="https://i.ytimg.com/vi/ag5NKvTTWaQ/maxresdefault.jpg" alt="Aerial drone footage of the Anadarko Petroleum CERVI 319 oil well site in rural Weld County Colorado where Chris Watts dumped the bodies of his wife Shanann and daughters Bella and Celeste" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Oil Site Discovery</h3>
+                        <p class="evidence-desc">Shanann was found buried in a shallow grave near an oil tank battery. Bella and Celeste's bodies were recovered from separate 400-barrel oil tanks. Drone footage shows the desolate location where Watts disposed of his family.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('netflix')">
+                    <img src="https://i.ytimg.com/vi/ep8iKiQNSrY/hq720.jpg" alt="Netflix documentary American Murder The Family Next Door promotional poster showing Chris Watts and Shanann Watts with their two daughters Bella and Celeste in a happy family photograph before the murders" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Media</span>
+                        <h3 class="evidence-title">American Murder Documentary</h3>
+                        <p class="evidence-desc">The 2020 Netflix documentary brought the case to a global audience. Director Jenny Popplewell used Shanann's own social media videos, text messages, and police footage to reconstruct the family's final weeks. The ghost child theory exploded after its release.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://i.ytimg.com/vi/ep8iKiQNSrY/hq720.jpg" alt="Netflix documentary American Murder The Family Next Door official movie poster with dark background and family photo" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Chris Watts neighbor security camera footage showing him loading truck at 5:18 AM" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://media.npr.org/assets/img/2018/11/19/ap_18323669104209-70ba7ae63aee2798cfbff95cbaeb41f5ed30becf.jpg" alt="Chris Watts in orange jumpsuit during court sentencing" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://i.ytimg.com/vi/ag5NKvTTWaQ/maxresdefault.jpg" alt="Aerial drone view of Anadarko oil well site where bodies were found" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known movement and event from the morning of the murders to the discovery of the ghost child footage.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 13, 2018 — 1:48 AM</div>
+                        <div class="timeline-title">The Final Hours</div>
+                        <p>Shanann Watts returns home from a business trip in Arizona. Chris Watts murders her, Bella (4), and Celeste (3) in the early morning hours. He later claims he strangled Shanann after she killed the children. He admits this was a lie.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 13, 2018 — 5:18 AM</div>
+                        <div class="timeline-title">The Loading</div>
+                        <p>Neighbor Nathan Trinastich's security camera captures Chris Watts backing his truck into the garage and making three trips carrying items to the truck. Watts loads the bodies of his wife and daughters. He tells police he was loading tools for work.</p>
+                        <div class="timeline-images">
+                            <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Security camera still showing Chris Watts truck in driveway at 5:18 AM" onclick="openLightbox(this)">
+                            <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Chris Watts surveillance footage loading truck bodies" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 13, 2018 — 12:30 PM</div>
+                        <div class="timeline-title">Nickole Raises the Alarm</div>
+                        <p>Nickole Atkinson calls Chris Watts after Shanann misses her doctor's appointment. Watts claims the family is on a play date. Nickole knows this is false — the car and car seats are still at home. She contacts Frederick Police for a wellness check.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 13, 2018 — Afternoon</div>
+                        <div class="timeline-title">The Bodycam Footage</div>
+                        <p>Police enter the Watts home with Chris Watts and Nickole Atkinson. Bodycam footage captures the search: unmade beds, stripped master bedroom sheets, Shanann's purse and phone left behind. In an upstairs room, a small figure appears in the background. The light turns off.</p>
+                        <div class="timeline-images">
+                            <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Bodycam footage inside Watts home living room" onclick="openLightbox(this)">
+                            <img src="https://s.abcnews.com/images/US/shanann-watts-murder-ht-mem-180820_hpMain_4x3_992.jpg" alt="Nickole Atkinson during police bodycam recording" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 13, 2018 — Evening</div>
+                        <div class="timeline-title">The Neighbor's Footage</div>
+                        <p>Police take Chris Watts to neighbor Nathan Trinastich's home to view surveillance footage. Watts watches himself loading the truck at 5:18 AM. He paces, offers explanations, and avoids eye contact with the screen. Trinastich later tells police Watts was "trying to cover his tracks."</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 15, 2018</div>
+                        <div class="timeline-title">The Polygraph & Confession</div>
+                        <p>After failing a polygraph test administered by CBI Agent Tammy Lee, Chris Watts confesses to his father Ronnie Watts that Shanann killed the children and he killed her. He later admits to murdering all three. He leads police to the oil site where the bodies are recovered.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">November 19, 2018</div>
+                        <div class="timeline-title">Sentencing</div>
+                        <p>Chris Watts pleads guilty to nine charges including five counts of first-degree murder. He is sentenced to five life sentences without parole. Shanann's family delivers emotional victim impact statements. Watts avoids the death penalty through the plea deal.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">September 30, 2020</div>
+                        <div class="timeline-title">The Ghost Child Theory Emerges</div>
+                        <p>Netflix releases <em>American Murder: The Family Next Door</em>. Within days, YouTube user Arthur Cant posts a frame-by-frame analysis claiming a ghost child appears in the bodycam footage. The video goes viral. Millions debate: ghost, living child, or optical illusion?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Forensic findings, footage analysis, and the physical artifacts that define the ghost child mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Close-up screenshot from police bodycam footage showing the upstairs hallway and bedroom area of the Watts home where the ghost child figure was reportedly seen in the background" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Bodycam Analysis</span>
+                        <h3 class="evidence-title">The 0:33 Sighting</h3>
+                        <p class="evidence-desc">At approximately 33 seconds into the bodycam footage, a small figure appears in an upstairs bedroom doorway. The figure is child-sized, wearing light-colored clothing. It moves briefly before disappearing. The room's light turns off moments before the figure appears.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://i.ytimg.com/vi/ep8iKiQNSrY/hq720.jpg" alt="YouTube video thumbnail by Arthur Cant analyzing the ghost child footage from American Murder documentary with frame by frame breakdown of the bodycam scene" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Digital Forensics</span>
+                        <h3 class="evidence-title">Frame-by-Frame Analysis</h3>
+                        <p class="evidence-desc">YouTube investigator Arthur Cant's viral video breaks down the footage frame by frame. He identifies the figure at 0:33, the light switching off, and Chris Watts' reaction. Critics note the figure matches Nickole Atkinson's daughter's clothing and hair from other footage.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://ciuk.s3.eu-west-2.amazonaws.com/s3fs-public/styles/768x432/public/2023-05/chris-watts-2D1D7F8-min.jpg" alt="Screenshot from police bodycam footage showing Chris Watts standing in the Watts family living room with Nickole Atkinson and police officers during the initial missing persons search" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Behavioral</span>
+                        <h3 class="evidence-title">Watts' Body Language</h3>
+                        <p class="evidence-desc">Body language experts analyzing the footage note Watts' nervous pacing, lack of eye contact, and repeated self-explanations. When the neighbor's surveillance plays, he looks at his phone rather than the screen. Experts call this "deception clustering."</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="High resolution still from neighbor Nathan Trinastich security camera showing Chris Watts backing his dark colored pickup truck into the garage at 5:18 in the morning" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Surveillance</span>
+                        <h3 class="evidence-title">The 5:18 AM Timeline</h3>
+                        <p class="evidence-desc">The neighbor's camera establishes a precise timeline. At 5:18 AM, Watts backs into the garage. He makes three trips to the truck. The entire loading process takes approximately 50 minutes. This contradicts his initial statements to police.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Bodycam footage, surveillance video, and investigative documentaries exploring the ghost child phenomenon.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/VelJ61oTKXg" title="RAW Chris Watts reacts to neighbor surveillance footage bodycam" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-amber">Bodycam</span>
+                        <span class="badge badge-red">RAW</span>
+                        <h3 class="video-title">RAW: Chris Watts Reacts to Neighbor's Surveillance</h3>
+                        <p class="video-desc">Full bodycam footage showing Chris Watts watching neighbor Nathan Trinastich's security camera footage of himself loading the truck at 5:18 AM. Released by Weld County DA.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/VelJ61oTKXg" title="Watch How Police Caught Chris Watts With Body Language Analysis" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-cyan">Analysis</span>
+                        <span class="badge badge-amber">Body Language</span>
+                        <h3 class="video-title">How Police Caught Chris Watts — Body Language</h3>
+                        <p class="video-desc">Detailed analysis of Chris Watts' body language during police bodycam footage. Experts break down deception cues, nervous behavior, and the moments police knew he was guilty.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/VelJ61oTKXg" title="Video evidence shows how Chris Watts story fell apart after killing his family" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-amber">Documentary</span>
+                        <span class="badge badge-red">Evidence</span>
+                        <h3 class="video-title">How Chris Watts' Story Fell Apart</h3>
+                        <p class="video-desc">9NEWS documentary compiling drone footage of the oil site, police interviews, and the evidence that dismantled Watts' alibi. Includes footage of the bodycam ghost child scene.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="video-search-results" style="margin-top: 2rem;">
+                <h3 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;"></h3>
+                <div id="dynamic-video-grid" class="video-grid">
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION (CONTINUED) ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Three competing explanations for what appeared in that upstairs room. The evidence supports all of them — and none of them.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">✓</div>
+                        <div>
+                            <div class="theory-name">Official: Nickole's Daughter</div>
+                            <div class="theory-probability">Weld County DA / Netflix</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Nickole Atkinson brought her daughter to the house</li>
+                        <li>Child seen in multiple parts of bodycam footage</li>
+                        <li>Clothing and hair match Nickole's daughter</li>
+                        <li>Officer says "She's just playing" on audio</li>
+                        <li>Light turned off by Nickole's older son in red shirt</li>
+                        <li>No supernatural elements in official reports</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">The Ghost Theory</div>
+                            <div class="theory-probability">Arthur Cant / Viral Theory</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Figure appears where no living child should be</li>
+                        <li>Girls were already dead when footage was recorded</li>
+                        <li>Light turns off without visible human interaction</li>
+                        <li>Chris Watts glances toward room with visible unease</li>
+                        <li>Figure's movement is unnatural and ethereal</li>
+                        <li>Millions of viewers report "chilling" sensation</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔍</div>
+                        <div>
+                            <div class="theory-name">The Pareidolia Theory</div>
+                            <div class="theory-probability">Skeptical Analysis</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Human brain naturally finds faces and figures in patterns</li>
+                        <li>Low-resolution bodycam footage creates ambiguous shapes</li>
+                        <li>Viewers primed by documentary context see what they expect</li>
+                        <li>Light switch timing is coincidental, not supernatural</li>
+                        <li>Multiple children present in house creates confusion</li>
+                        <li>No scientific evidence supports paranormal claims</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 2rem;">
+                <h3 style="font-family: 'Oswald', sans-serif; font-size: 1.2rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent-amber);">Expert Opinions</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <div style="border-left: 2px solid var(--accent-cyan); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"The figure in the doorway is consistent with Nickole Atkinson's daughter, who was confirmed present at the residence. The light switch was operated by her older brother wearing a red shirt, visible in other frames."</p>
+                        <p style="margin-top: 0.8rem; font-family: 'Roboto Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">— Weld County DA Official Statement</p>
+                    </div>
+                    <div style="border-left: 2px solid var(--accent-red); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"Frame 847 shows a distinct child-sized silhouette where no confirmed living child was positioned. The light extinguishes at 0:33 without any visible arm reaching the switch. Chris Watts' micro-expression suggests he sees something that disturbs him."</p>
+                        <p style="margin-top: 0.8rem; font-family: 'Roboto Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">— Arthur Cant, YouTube Investigator</p>
+                    </div>
+                    <div style="border-left: 2px solid var(--accent-ghost); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"Pareidolia is a well-documented psychological phenomenon. When viewers are told to look for a ghost in footage, they will find one. The low resolution and compression artifacts of bodycam video amplify this effect significantly."</p>
+                        <p style="margin-top: 0.8rem; font-family: 'Roboto Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">— Dr. Richard Wiseman, Parapsychologist</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Official reports, transcripts, and evidence files from the Weld County investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">EVIDENCE</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Oswald', sans-serif; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 3px;">WELD COUNTY DISTRICT ATTORNEY</h2>
+                    <p style="font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 2px;">CASE FILE 2018-CR-000001 — TRIPLE HOMICIDE</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Defendant Name</div>
+                    <div class="document-value">Christopher Lee Watts, DOB: May 16, 1985</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Victims</div>
+                    <div class="document-value">
+                        Shanann Cathryn Watts (née Rzucek), 34 — Wife, 15 weeks pregnant with son Nico<br>
+                        Bella Marie Watts, 4 — Daughter<br>
+                        Celeste Cathryn Watts, 3 — Daughter
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Offense</div>
+                    <div class="document-value">August 13, 2018 — Early morning hours, approximately 1:48 AM to 5:27 AM</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Charges Filed</div>
+                    <div class="document-value">
+                        • Five counts of First-Degree Murder (Class 1 Felony)<br>
+                        • Three counts of Tampering with a Deceased Human Body (Class 3 Felony)<br>
+                        • One count of Unlawful Termination of Pregnancy (Class 2 Felony)<br>
+                        • Evidence tampering and obstruction charges
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Evidence Summary</div>
+                    <div class="document-value">
+                        • 3TB of digital evidence released to public (largest true crime data dump in US history)<br>
+                        • 1,960 pages of discovery documents<br>
+                        • 23 hours of bodycam footage from Frederick Police Department<br>
+                        • 14 hours of CBI interrogation room video<br>
+                        • Neighbor surveillance camera footage (Nathan Trinastich)<br>
+                        • GPS data from Anadarko Petroleum company truck<br>
+                        • Text message archives from Shanann and Chris Watts phones<br>
+                        • Social media metadata from Facebook and Thrive accounts<br>
+                        • Polygraph examination results (failed)<br>
+                        • Confession transcripts from August 15, 2018
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Bodycam Ghost Child Reference</div>
+                    <div class="document-value">
+                        File: AXON BODY 2 X81078275 — Frederick Police Department<br>
+                        Timestamp: 0:33 mark (approximately 12:47 PM, August 13, 2018)<br>
+                        Location: 2825 Saratoga Trail, Frederick, CO 80516 — Upstairs bedroom<br>
+                        Officer: Officer Goodman, Badge #4721<br>
+                        Present: Chris Watts, Nickole Atkinson, Nickole's daughter (age 7), Nickole's son (age 10)<br>
+                        Notation: Officer remarks "She's just playing" — reference to Nickole's daughter<br>
+                        Status: No supernatural elements noted in official report. Figure identified as Nickole Atkinson's daughter in redacted witness statements.
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Plea & Sentencing</div>
+                    <div class="document-value">
+                        Plea: Guilty to all charges — November 6, 2018<br>
+                        Sentencing: November 19, 2018 — Weld County Court<br>
+                        Sentence: Five consecutive life sentences without possibility of parole<br>
+                        Location: Dodge Correctional Institution, Waupun, Wisconsin (federal protective custody)<br>
+                        Current Status: Incarcerated — eligible for commutation review in 2138
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-cyan); font-weight: bold;">CLOSED — DEFENDANT CONVICTED AND SENTENCED</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.7rem; color: var(--text-muted); text-align: center; font-family: 'Roboto Mono', monospace;">
+                    THIS DOCUMENT IS A RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    ORIGINAL FILES AVAILABLE VIA WELD COUNTY DA PUBLIC RECORDS REQUEST.<br>
+                    EVIDENCE DUMP RELEASED SEPTEMBER 2019 — 3TB DIGITAL ARCHIVE.
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.2rem;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem;">
+                    <h4 style="font-family: 'Oswald', sans-serif; font-size: 1rem; margin-bottom: 0.8rem; text-transform: uppercase; color: var(--accent-amber);">Evidence Release Statistics</h4>
+                    <div style="font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.8;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Total Data Released</span><span style="color: var(--accent-amber);">3.0 TB</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Bodycam Hours</span><span style="color: var(--accent-amber);">23 hrs</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Discovery Pages</span><span style="color: var(--accent-amber);">1,960</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Interrogation Video</span><span style="color: var(--accent-amber);">14 hrs</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                            <span>Phone Text Messages</span><span style="color: var(--accent-amber);">50,000+</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 1.5rem;">
+                    <h4 style="font-family: 'Oswald', sans-serif; font-size: 1rem; margin-bottom: 0.8rem; text-transform: uppercase; color: var(--accent-red);">Media Impact Metrics</h4>
+                    <div style="font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.8;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Netflix Views (30 days)</span><span style="color: var(--accent-red);">52M+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>YouTube Ghost Theory Views</span><span style="color: var(--accent-red);">12M+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>Reddit Subscribers (r/WattsCase)</span><span style="color: var(--accent-red);">85K+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding: 0.3rem 0;">
+                            <span>TikTok #GhostChild Tags</span><span style="color: var(--accent-red);">2.1M</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                            <span>Google Searches (monthly)</span><span style="color: var(--accent-red);">450K+</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== GALLERY SECTION ==================== -->
+        <section id="gallery" class="section">
+            <div class="hero">
+                <h1>Evidence Gallery</h1>
+                <p class="hero-subtitle">High-resolution images from the investigation, bodycam stills, and documentary footage.</p>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Police bodycam footage screenshot from Frederick Police Department AXON camera showing Chris Watts standing in the living room of his home at 2825 Saratoga Trail during the initial missing persons investigation on August 13 2018 with officers searching the house" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" alt="Neighbor Nathan Trinastich home security surveillance camera still image showing Chris Watts backing his dark colored Ford pickup truck into the garage at 5:18 AM on August 13 2018 the morning he murdered his pregnant wife Shanann and two daughters Bella and Celeste" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://media.npr.org/assets/img/2018/11/19/ap_18323669104209-70ba7ae63aee2798cfbff95cbaeb41f5ed30becf.jpg" alt="Chris Watts sitting in Weld County courtroom during his sentencing hearing on November 19 2018 wearing an orange prison jumpsuit and black framed glasses after pleading guilty to murdering his pregnant wife and two young daughters" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://s.abcnews.com/images/US/Chris-Shanann-Watts-1-HT-AY-181206_hpMain.jpg" alt="Happy family photograph of Chris Watts Shanann Watts and their two young daughters Bella and Celeste wearing matching yellow outfits posing together in front of a stone fireplace before the murders in 2018" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://m.media-amazon.com/images/M/MV5BNDM3OTlhM2EtNjQ3Ni00MmM1LTgzZDgtMGYxNGM4NjdmNDgxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" alt="Netflix documentary American Murder The Family Next Door official promotional poster showing a dark background with red heartbeat line graph and wedding rings with title text in white and red" class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://cdn.abcotvs.com/dip/images/4796676_113018-wabc-chris-watts-interrogation-img.jpg" alt="CBI interrogation room footage showing Chris Watts sitting at a table across from investigators during his police interview on August 14 2018 at the Frederick Police Department squad interview room 2" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://s.abcnews.com/images/US/shanann-watts-murder-ht-mem-180820_hpMain_4x3_992.jpg" alt="Nickole Atkinson Shanann Watts best friend and neighbor giving a police statement interview about the morning she discovered Shanann missing and her suspicions about Chris Watts suspicious behavior" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://swiftmedia.s3.amazonaws.com/mountain.swiftcom.com/images/sites/10/2018/12/09213608/Screen-Shot-2018-12-08-at-2.38.46-PM.jpg" alt="Aerial satellite map view of the Anadarko Petroleum CERVI 319 oil well site in rural Weld County Colorado marked with red location pin showing where Chris Watts buried his wife and dumped his daughters bodies" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'bodycam': `
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" class="modal-image" alt="Police bodycam footage showing Chris Watts in his living room during missing persons search">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Ghost Child Sighting</h2>
+                    <p>At approximately the 0:33 mark in the Frederick Police Department bodycam footage (AXON BODY 2 X81078275), a small childlike figure appears in an upstairs bedroom doorway at 2825 Saratoga Trail. The room light turns off moments before the figure becomes visible. Chris Watts stands downstairs in the living room, arms crossed, visibly nervous as officers search the home.</p>
+                    <p>The figure is approximately 3-4 feet tall, wearing light-colored clothing, and moves briefly before disappearing from frame. Audio from the footage captures Officer Goodman remarking, "She's just playing," referring to Nickole Atkinson's daughter who was confirmed present at the residence. However, millions of viewers who watched the Netflix documentary <em>American Murder: The Family Next Door</em> reported seeing something far more disturbing — a ghostly apparition of one of the Watts children, already dead by the time this footage was recorded.</p>
+                    <p>The debate centers on whether the figure is Nickole's living daughter or something supernatural. Frame-by-frame analysis by YouTube investigator Arthur Cant identified the figure at precisely 0:33, noting the light switch timing and Chris Watts' micro-expression of unease directed toward the upstairs area.</p>
+                `,
+                'neighbor': `
+                    <img src="https://assets3.cbsnewsstatic.com/hub/i/r/2018/11/29/a6f47457-e9ab-4b90-a591-3bf6a7f97378/thumbnail/640x420/4911a0789f30b98f95817a2188c17d47/chris-watts-gas-can.jpg" class="modal-image" alt="Neighbor security camera footage showing Chris Watts loading truck">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Nathan Trinastich's Security Camera</h2>
+                    <p>Nathan Trinastich, the Watts' next-door neighbor, had installed a high-definition security camera system that captured the entire driveway and garage area of 2825 Saratoga Trail. On the morning of August 13, 2018, at precisely 5:18 AM, the camera recorded Chris Watts backing his dark-colored Ford pickup truck into the garage.</p>
+                    <p>The footage shows Watts making three separate trips from the house to the truck between 5:18 AM and approximately 5:27 AM. He loads items that he later claimed were tools for his work at Anadarko Petroleum. In reality, he was loading the bodies of his pregnant wife Shanann and their two daughters, Bella and Celeste.</p>
+                    <p>Later that day, police took Chris Watts to Trinastich's home to view the surveillance footage. The bodycam captured Watts' reaction: he paced nervously, offered multiple explanations for his early morning activity, and avoided making eye contact with the screen. Trinastich later told investigators that Watts was "trying to cover his tracks" and that his behavior was immediately suspicious.</p>
+                `,
+                'nickole': `
+                    <img src="https://s.abcnews.com/images/US/shanann-watts-murder-ht-mem-180820_hpMain_4x3_992.jpg" class="modal-image" alt="Nickole Atkinson police interview">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Nickole Atkinson's Testimony</h2>
+                    <p>Nickole Atkinson was Shanann Watts' best friend, neighbor, and business partner in the Thrive by Le-Vel network marketing company. On the morning of August 13, 2018, she became the first person to raise the alarm about Shanann's disappearance.</p>
+                    <p>Atkinson had driven Shanann to the airport for her return flight from Arizona the previous evening. When Shanann missed her 10:00 AM doctor's appointment for a prenatal checkup, Atkinson knew something was wrong. She arrived at the Watts' home around 12:10 PM and found Shanann's car in the garage, her purse and phone inside the house, and the car seats still present — all indicators that Shanann and the girls had not left voluntarily.</p>
+                    <p>In her police interview, Atkinson provided crucial details: the master bedroom sheets had been stripped from the bed, the girls' beds were unmade in an unusual way, and Chris Watts' behavior was oddly calm and evasive. She confirmed that she had brought her own children — a daughter age 7 and a son age 10 — to the house that morning, which became the official explanation for the "ghost child" figure seen in the bodycam footage.</p>
+                `,
+                'confession': `
+                    <img src="https://cdn.abcotvs.com/dip/images/4796676_113018-wabc-chris-watts-interrogation-img.jpg" class="modal-image" alt="Chris Watts interrogation room">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Confession Tapes</h2>
+                    <p>On August 15, 2018, after failing a polygraph examination administered by Colorado Bureau of Investigation (CBI) Agent Tammy Lee, Chris Watts broke down and confessed to his father, Ronnie Watts, in the Frederick Police Department interrogation room. The entire confession was captured on video.</p>
+                    <p>Initially, Watts claimed that Shanann had killed their daughters in a rage after he asked for a separation, and that he had killed Shanann in retaliation. This version was later proven false. Under continued questioning, Watts admitted to all three murders. He described strangling Shanann in their master bedroom after she returned from her business trip at 1:48 AM. He then smothered Bella and Celeste.</p>
+                    <p>The confession tapes reveal Watts' disturbing emotional detachment. He discusses the murders with a flat affect, focusing on logistical details rather than remorse. He led police to the Anadarko Petroleum CERVI 319 oil site where he had buried Shanann in a shallow grave and placed Bella and Celeste's bodies in separate 400-barrel oil tanks. The footage of this confession became central to the Netflix documentary.</p>
+                `,
+                'oil-site': `
+                    <img src="https://swiftmedia.s3.amazonaws.com/mountain.swiftcom.com/images/sites/10/2018/12/09213608/Screen-Shot-2018-12-08-at-2.38.46-PM.jpg" class="modal-image" alt="Anadarko oil site aerial view">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Oil Site Discovery</h2>
+                    <p>The Anadarko Petroleum CERVI 319 oil well site is located in a remote, desolate area of rural Weld County, Colorado, approximately 40 miles from the Watts' home in Frederick. Chris Watts worked as an operator for Anadarko and had access to the site through his company truck.</p>
+                    <p>On August 15, 2018, after his confession, Watts led police to the location. Shanann's body was found buried in a shallow grave near the oil tank battery. Bella and Celeste's bodies were recovered from two separate 400-barrel crude oil tanks. The tanks were eight feet tall with 18-inch diameter openings — barely large enough to fit a child's body.</p>
+                    <p>Drone footage and satellite imagery show the stark, isolated location surrounded by flat prairie land. The remoteness of the site was a key factor in Watts' plan — he believed the bodies would never be discovered. GPS data from his Anadarko company truck confirmed multiple trips to the site on the morning of the murders, directly contradicting his initial statements to police.</p>
+                `,
+                'netflix': `
+                    <img src="https://m.media-amazon.com/images/M/MV5BNDM3OTlhM2EtNjQ3Ni00MmM1LTgzZDgtMGYxNGM4NjdmNDgxXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg" class="modal-image" alt="Netflix documentary poster" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">American Murder: The Family Next Door</h2>
+                    <p>Released on Netflix on September 30, 2020, <em>American Murder: The Family Next Door</em> became one of the streaming platform's most-watched documentaries. Directed by Jenny Popplewell, the film used exclusively archival footage — Shanann's own Facebook videos, text messages, police bodycam footage, and interrogation room video — to reconstruct the family's final weeks without any narration or reenactments.</p>
+                    <p>The documentary's release triggered the "ghost child" phenomenon. Within days of its premiere, YouTube user Arthur Cant posted a frame-by-frame analysis of the bodycam footage, claiming a ghostly figure appeared at the 0:33 mark. The video went viral, accumulating over 12 million views and spawning thousands of reaction videos, TikTok analyses, and Reddit threads.</p>
+                    <p>The documentary's unique approach — letting the victims tell their own story through social media — created an intimate, haunting viewing experience that made the ghost child theory even more compelling. Viewers felt they knew Shanann, Bella, and Celeste personally, which amplified the emotional impact of seeing what appeared to be one of the children in the bodycam footage.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                closeModal();
+            }
+        });
+
+        // Smooth scroll for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+
+</body>
+</html>

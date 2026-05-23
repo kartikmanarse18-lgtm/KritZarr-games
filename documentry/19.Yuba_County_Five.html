@@ -1,0 +1,1545 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Yuba County Five: The American Dyatlov Pass — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Source+Sans+Pro:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e0f;
+            --bg-secondary: #111618;
+            --bg-card: #161c1e;
+            --accent-ice: #7ec8e3;
+            --accent-frost: #b8dce8;
+            --accent-ember: #c45c3e;
+            --accent-pine: #4a7c59;
+            --text-primary: #e0e6e8;
+            --text-secondary: #8a9499;
+            --text-muted: #4a5459;
+            --border: #1e282c;
+            --danger: #c45c3e;
+            --warning: #d4a843;
+            --success: #4a7c59;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 15% 30%, rgba(126, 200, 227, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 85% 70%, rgba(196, 92, 62, 0.04) 0%, transparent 50%);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-ice); border-radius: 4px; }
+
+        /* ===== HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: rgba(10, 14, 15, 0.97);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--accent-ice);
+            letter-spacing: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            color: var(--accent-ember);
+            font-weight: 400;
+            font-size: 0.9em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(126, 200, 227, 0.15);
+            color: var(--accent-ice);
+            border-color: var(--accent-ice);
+            box-shadow: 0 0 20px rgba(126, 200, 227, 0.1);
+        }
+
+        .main-content { margin-top: 70px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                linear-gradient(180deg, rgba(10,14,15,0.3) 0%, rgba(10,14,15,0.95) 100%),
+                url('https://images.unsplash.com/photo-1517299321609-52687d1bc55a?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.4) contrast(1.2) brightness(0.25) hue-rotate(180deg);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(126, 200, 227, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(196, 92, 62, 0.06) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .snow-particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            animation: snowfall 20s linear infinite;
+        }
+
+        @keyframes snowfall {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-200px); }
+        }
+
+        .story-content {
+            max-width: 900px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-ice);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(126, 200, 227, 0.3);
+            opacity: 0;
+            animation: slideUp 1s ease 1s forwards;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .story-headline span {
+            color: var(--accent-ember);
+            display: block;
+            font-size: 1.15em;
+            font-weight: 400;
+            font-style: italic;
+            font-family: 'Merriweather', serif;
+        }
+
+        .story-prologue {
+            font-family: 'Merriweather', serif;
+            font-size: 1.4rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: slideUp 1s ease 1.5s forwards;
+            border-left: 3px solid var(--accent-ice);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Merriweather', serif;
+            font-size: 1.15rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.8rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.5rem;
+            color: var(--accent-ice);
+            text-shadow: 0 0 30px rgba(126, 200, 227, 0.4);
+            font-weight: 800;
+        }
+
+        .story-highlight {
+            background: rgba(126, 200, 227, 0.08);
+            border-left: 3px solid var(--accent-ice);
+            padding: 1.8rem;
+            margin: 2.5rem 0;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: slideUp 1s ease 2.5s forwards;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: slideUp 1s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.2rem 3.5rem;
+            background: var(--accent-ice);
+            color: var(--bg-primary);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            border-radius: 3px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-ice);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 40px rgba(126, 200, 227, 0.3);
+            color: var(--accent-ice);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: slideUp 1s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            color: var(--accent-ember);
+            font-weight: 800;
+        }
+
+        .story-stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: slideUp 1s ease 4s forwards, bounce 2s infinite 4s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(126, 200, 227, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.2rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(126, 200, 227, 0.2);
+            font-weight: 800;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Merriweather', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-ice);
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+            font-weight: 700;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--accent-ice);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(126, 200, 227, 0.15);
+            border-color: rgba(126, 200, 227, 0.3);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.3) contrast(1.1);
+            transition: filter 0.3s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0) contrast(1);
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(126, 200, 227, 0.15);
+            color: var(--accent-ice);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 3px;
+            margin-bottom: 0.8rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== IMAGE GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.4) contrast(1.1);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-ice);
+            box-shadow: 0 5px 25px rgba(126, 200, 227, 0.2);
+            filter: grayscale(0) contrast(1);
+        }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-ice), var(--accent-ember));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 15px; height: 15px;
+            background: var(--accent-ice);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(126, 200, 227, 0.5);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -37px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--accent-ember);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: grayscale(0.4);
+        }
+
+        .timeline-images img:hover {
+            transform: scale(1.05);
+            filter: grayscale(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-ice);
+            border-radius: 6px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.5rem; }
+            .story-text { font-size: 1.05rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 2rem; }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.4rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                padding: 0.4rem 0.85rem;
+                white-space: nowrap;
+            }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1.5rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -37px !important;
+                right: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">YUBA COUNTY <span>FIVE</span></div>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection(&quot;story&quot;)">Story</button>
+            <button class="nav-tab" onclick="showSection(&quot;overview&quot;)">Overview</button>
+            <button class="nav-tab" onclick="showSection(&quot;timeline&quot;)">Timeline</button>
+            <button class="nav-tab" onclick="showSection(&quot;evidence&quot;)">Evidence</button>
+            <button class="nav-tab" onclick="showSection(&quot;video&quot;)">Video</button>
+            <button class="nav-tab" onclick="showSection(&quot;theories&quot;)">Theories</button>
+            <button class="nav-tab" onclick="showSection(&quot;documents&quot;)">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="snow-particles"></div>
+
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Plumas National Forest, 1978 — A True Crime Investigation</div>
+
+                    <h1 class="story-headline">
+                        They Called Them
+                        <span>The American Dyatlov Pass</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        &quot;It was a bad road. He wouldn&apos;t drive his car up the bad road. He respected it.&quot; Melba Madruga said of her son Jack. Yet on February 24, 1978, five young men from Yuba County drove 70 miles in the wrong direction, up a snow-packed mountain road into the Plumas National Forest, and vanished into one of the most baffling mysteries in American history.
+                    </p>
+
+                    <div class="story-text">
+                        <p>It began with five friends who loved basketball. Jack Madruga, 30, was the quiet, reliable driver who had served in Vietnam and bought his turquoise 1969 Mercury Montego with military money. Bill Sterling, 29, was an avid bowler with a gentle soul. Ted Weiher, 32, was a gentle giant who worked as a janitor and looked after the others. Jackie Huett, 24, was a loving shadow to Ted, dependent on his care. And Gary Mathias, 25, was the outlier—a former Army musician with paranoid schizophrenia, on medication but carrying a troubled past.</p>
+
+                        <p>They called themselves &quot;the boys.&quot; They met through a Yuba County nonprofit basketball program for adults with disabilities. On February 24, 1978, they piled into Jack&apos;s Mercury to drive 50 miles north to Chico State University to watch their beloved UC Davis basketball team play. They stopped at Behr&apos;s Market for snacks and milk before the 10 PM closing. The clerk remembered them because they delayed her closing routine. That was the last time anyone saw all five together alive.</p>
+
+                        <p>When morning came and the boys hadn&apos;t returned, their families reported them missing. The next day, the Gators—their basketball team—were scheduled to play in a Special Olympics tournament where the winners would get a free week in Disneyland. These men had laid out their uniforms the night before. They were not going to miss that game. Yet they never came home.</p>
+
+                        <p>Four days later, on February 28, Jack Madruga&apos;s Mercury Montego was found abandoned on the Oroville-Quincy Highway in Butte County—70 miles in the wrong direction from home, thousands of feet up in snow-covered mountains. The car had a quarter tank of gas, the doors were unlocked, one window was down, and the snacks had been eaten. The car was not stuck. The keys were gone. And the five men had vanished into a wilderness where temperatures plunged below freezing and snowdrifts reached six feet deep.</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-ice);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        Why did five men who knew the route home drive 70 miles in the wrong direction, up a mountain road none of them had any reason to travel? Why did they abandon a working car with gas in the tank? How did four of them end up dead in a Forest Service trailer 19 miles away, with one having starved to death despite ample food nearby? And where is Gary Mathias—the only one never found, the one with schizophrenia, the one whose shoes were left behind in the trailer while another man&apos;s shoes went missing? The Yuba County Sheriff&apos;s Office still lists the case as active. But the truth, like the snow that buried them, remains frozen in time.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection(&quot;overview&quot;)">Enter the Investigation &#9654;</button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">5</div>
+                            <div class="story-stat-label">Young Men</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">70</div>
+                            <div class="story-stat-label">Miles Wrong</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">48</div>
+                            <div class="story-stat-label">Years Unsolved</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">1</div>
+                            <div class="story-stat-label">Never Found</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-ice);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>OUT IN THE COLD</h1>
+                <p class="hero-subtitle">An interactive investigation into America&apos;s most perplexing wilderness disappearance. Explore the evidence, analyze the theories, and decide for yourself what happened to the Yuba County Five.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victims</div>
+                        <div class="meta-value">5 Young Men</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Plumas National Forest</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">February 24, 1978</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Unsolved</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: &#39;Cinzel&#39;, serif; text-align: center; margin-bottom: 2rem; font-size: 2rem;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal(&quot;abandoned-car&quot;)">
+                    <img src="https://dyatlovpass.com/resources/340/Yuba-county-5-Missing-poster.jpg" alt="Abandoned 1969 Mercury Montego car stuck in deep snow on remote mountain road in Plumas National Forest California winter 1978" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Abandoned Mercury Montego</h3>
+                        <p class="evidence-desc">Jack Madruga&apos;s turquoise 1969 Mercury Montego was found on February 28, 1978, on the Oroville-Quincy Highway in Butte County. The car had a quarter tank of gas, was not stuck in snow, doors unlocked, one window down, snacks eaten. The keys were missing. It was 70 miles in the wrong direction from home.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(&quot;forest-trailer&quot;)">
+                    <img src="https://allthatsinteresting.com/wordpress/wp-content/uploads/2023/04/forest-service-trailer.jpg" alt="Remote US Forest Service trailer cabin in snowy Plumas National Forest California winter abandoned building" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Discovery Site</span>
+                        <h3 class="evidence-title">The Forest Service Trailer</h3>
+                        <p class="evidence-desc">On June 4, 1978, a motorcyclist discovered Ted Weiher&apos;s emaciated body inside a USFS trailer 19 miles from the abandoned car. He had survived 8-13 weeks, lost nearly 100 pounds, and was wrapped in eight sheets. The trailer contained a year&apos;s worth of canned food and a propane heater—both untouched.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(&quot;ted-weiher&quot;)">
+                    <img src="https://pbs.twimg.com/media/G90vkzzaYAAkgry.jpg" alt="Ted Weiher Yuba County Five missing person portrait photo young man with developmental disability 1978" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Victim</span>
+                        <h3 class="evidence-title">Ted Weiher — The Survivor</h3>
+                        <p class="evidence-desc">Ted Weiher, 32, was found in the trailer having survived for months. He had a full beard (clean-shaven when he disappeared), lost 80-100 pounds, and suffered from gangrene and frostbite. His boots were missing. Gary Mathias&apos;s sneakers were found in the trailer. Ted&apos;s wallet and a watch that didn&apos;t belong to him were on the nightstand.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(&quot;gary-mathias&quot;)">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/e/e7/Gary_Mathias.png" alt="Gary Mathias Yuba County Five missing person portrait photo schizophrenic veteran never found 1978" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Missing Person</span>
+                        <h3 class="evidence-title">Gary Mathias — The One Never Found</h3>
+                        <p class="evidence-desc">Gary Mathias, 25, was the only member never found. A former Army musician with paranoid schizophrenia, he had a history of violence and drug use. His shoes were found in the trailer where Ted died, while Ted&apos;s boots were gone. Law enforcement initially suspected Mathias may have been involved in the others&apos; deaths.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(&quot;joseph-schons&quot;)">
+                    <img src="https://images2.minutemediacdn.com/image/upload/c_fill,w_720,ar_16:9,f_auto,q_auto,g_auto/shape/cover/sport/532063-istock-638643984-a0df40f3a76a180cfcb20746f2bb7c9a.jpg" alt="Snowy mountain road at night with car headlights and flashlights in dark forest wilderness Plumas National Forest" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witness</span>
+                        <h3 class="evidence-title">Joseph Schons — The Lone Witness</h3>
+                        <p class="evidence-desc">Joseph Schons told police he was stranded in his car on the same mountain road that night. He saw people with flashlights around a car, heard them call for help twice, but when he called out, they went silent and turned off their lights. He later saw a group of men walking away with a woman. His account remains controversial.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(&quot;other-victims&quot;)">
+                    <img src="https://images.saymedia-content.com/.image/ar_16:9%2Cc_fill%2Ccs_srgb%2Cfl_progressive%2Cq_auto:eco%2Cw_1200/MTk1NjkyODMzNDY5MTc5ODQx/the-yuba-county-5-terror-on-the-mountain.jpg" alt="Snowy mountain wilderness landscape Plumas National Forest California with pine trees and rocky terrain" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Victims</span>
+                        <h3 class="evidence-title">The Other Three</h3>
+                        <p class="evidence-desc">Jack Madruga, 30, was found near a stream with car keys in his pocket—animals had scattered his remains. Bill Sterling, 29, was reduced to bones scattered across the forest floor. Jackie Huett, 24, was identified when his father picked up his jacket and his son&apos;s spine fell out. All were found between the car and the trailer.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://dyatlovpass.com/resources/340/Friends-with-a-snowy-fate-thumb.jpg" alt="Snow-covered pine forest in winter wilderness dark atmospheric landscape Plumas National Forest" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://i.ytimg.com/vi/n65zorDqeXM/hq720.jpg" alt="Abandoned car in snow on remote mountain road winter night dark moody atmospheric" class="gallery-img" onclick="openLightbox(this)">
+                <img src="http://minutemedia-ressh.cloudinary.com/image/upload/v1645964832/shape/cover/sport/532063-istock-638643984-a0df40f3a76a180cfcb20746f2bb7c9a.jpg" alt="Vintage 1960s car abandoned in deep snow on rural mountain road California winter" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://l.icdbcdn.com/oh/766ca9d2-7689-497b-bdba-390f7abb8220.jpg" alt="Remote wooden cabin trailer in snowy forest wilderness US Forest Service building" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known movement and event from the night of the basketball game to the present investigation.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 24, 1978 — Evening</div>
+                        <div class="timeline-title">The Basketball Game</div>
+                        <p>The five men attend the UC Davis vs. Chico State basketball game at California State University, Chico. They are seen sitting away from the crowd, distinctive in their behavior. The editor of the Chico newspaper later recalls seeing them. After the game, they stop at Behr&apos;s Market for snacks, milk, and sodas before the 10 PM closing.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.actionfloors.com/wp-content/uploads/2018/02/Yuba-49ers-CenterCourt.jpg" alt="College basketball game arena interior 1970s style gymnasium with wooden floor" onclick="openLightbox(this)">
+                            <img src="https://c8.alamy.com/comp/3D2TF68/shopping-1971-a-woman-shops-in-a-self-service-store-that-also-offers-a-manually-handled-section-of-food-like-fresh-meat-sausages-both-the-idea-of-self-service-and-the-shopping-trolley-came-from-america-and-aimed-to-encrease-sales-the-customer-could-pick-out-the-groceries-and-put-in-the-shopping-trolly-and-proceed-to-the-store-checkout-conard-ref-cv11-5-3D2TF68.jpg" alt="Vintage 1970s convenience store interior with shelves and checkout counter" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 24-25, 1978 — Night</div>
+                        <div class="timeline-title">The Disappearance</div>
+                        <p>Instead of driving 50 miles south on Highway 70 back to Yuba City, the group drives 70 miles east into the Sierra Nevada mountains on the Oroville-Quincy Highway. Joseph Schons, stranded in his car on the same road, sees flashlights and hears voices. When he calls for help, the lights go out and voices fall silent. He later sees figures walking away.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 25, 1978 — Morning</div>
+                        <div class="timeline-title">The Search Begins</div>
+                        <p>The men&apos;s families report them missing when they fail to return home. The Gators basketball team is scheduled to play in a Special Olympics tournament that morning—the winners would receive a free week at Disneyland. The men had laid out their uniforms the night before. They never arrive. Search efforts begin immediately but focus on the wrong areas.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">February 28, 1978</div>
+                        <div class="timeline-title">The Car Is Found</div>
+                        <p>Jack Madruga&apos;s 1969 Mercury Montego is discovered on the Oroville-Quincy Highway in Butte County, 70 miles from Chico and far from the route home. The car is not stuck, has a quarter tank of gas, doors are unlocked, one window is down, and snacks are eaten. The keys and the men are missing. Snow is 4-6 feet deep. Temperatures are below freezing.</p>
+                        <div class="timeline-images">
+                            <img src="https://i.ytimg.com/vi/w400y2WCNwg/hq720.jpg" alt="Abandoned car in snow on remote mountain road winter 1970s California" onclick="openLightbox(this)">
+                            <img src="http://minutemedia-ressh.cloudinary.com/image/upload/v1645964832/shape/cover/sport/532063-istock-638643984-a0df40f3a76a180cfcb20746f2bb7c9a.jpg" alt="Snowy mountain road at night with headlights in dark forest" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 4, 1978</div>
+                        <div class="timeline-title">Ted Weiher Discovered</div>
+                        <p>A motorcyclist off-roading near the Daniel Zink campground discovers Ted Weiher&apos;s body in a USFS trailer. He is on a bed, wrapped in eight sheets, hands folded on his chest. He has a full beard, has lost 80-100 pounds, and shows signs of gangrene and frostbite. A propane heater and a year&apos;s worth of canned food are untouched nearby. Gary Mathias&apos;s shoes are in the trailer; Ted&apos;s boots are gone.</p>
+                        <div class="timeline-images">
+                            <img src="https://allthatsinteresting.com/wordpress/wp-content/uploads/2023/04/forest-service-trailer.jpg" alt="Remote US Forest Service trailer cabin in snowy wilderness" onclick="openLightbox(this)">
+                            <img src="https://images.squarespace-cdn.com/content/v1/59eb601f2aeba56e54f2636a/d6564649-a4aa-4218-b6c9-efc14d826c01/yuba2.PNG" alt="Missing person portrait placeholder young man 1970s" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 6-8, 1978</div>
+                        <div class="timeline-title">The Others Are Found</div>
+                        <p>Search teams find the remains of Jack Madruga and Bill Sterling on opposite sides of the mountain road, about eight miles from the car and closer to the trailer. Madruga&apos;s car keys are still in his pocket. Sterling is reduced to scattered bones. On June 8, Jackie Huett&apos;s father finds his son&apos;s jacket; when he picks it up, Jackie&apos;s spine falls out. His skull is found 50 feet away.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 19, 1978</div>
+                        <div class="timeline-title">Search Called Off</div>
+                        <p>After two weeks of searching with no sign of Gary Mathias, investigators call off the search. Mathias&apos;s family is left without closure. The case officially remains open but goes cold. Theories range from Mathias wandering deeper into the wilderness to foul play involving an unknown party.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2003-Present</div>
+                        <div class="timeline-title">The Investigation Continues</div>
+                        <p>Yuba County Sheriff&apos;s Office cold case investigators, including Brian Bernardis, continue to revisit the case. Author Tony Wright spends four years researching and publishes &quot;Things Aren&apos;t Right: The Disappearance of the Yuba County Five.&quot; The case gains renewed attention as the &quot;American Dyatlov Pass,&quot; drawing comparisons to the 1959 Russian incident. Gary Mathias remains missing.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Forensic findings, crime scene analysis, and the physical artifacts that define the Yuba County Five case.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://dyatlovpass.com/resources/340/Yuba-county-5-Missing-poster.jpg" alt="Vintage turquoise 1969 Mercury Montego car abandoned in deep snow on remote mountain road California 1978" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic</span>
+                        <h3 class="evidence-title">The Working Car</h3>
+                        <p class="evidence-desc">Madruga&apos;s Mercury Montego was found in working condition with a quarter tank of gas. The car was not stuck in snow and could have been pushed free. The doors were unlocked, one window was down, and snacks had been eaten. Yet the keys and the men were gone. Why would five men abandon a working car in freezing temperatures without proper clothing?</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://assets.reflections.live/1711627756942-lub6jwoh.png" alt="Canned food supplies and propane heater inside remote forest service trailer cabin" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic</span>
+                        <h3 class="evidence-title">The Untouched Supplies</h3>
+                        <p class="evidence-desc">The USFS trailer contained a year&apos;s worth of canned food in an outside locker, a propane heater, and burnable wood and paper. Only 31 cans were opened and eaten. The propane tank was untouched. A candle had been lit but no fire was started. The food was opened with an Army P-38 can opener—only Mathias and Madruga had military experience with this tool.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://pbs.twimg.com/media/G90vkzzaYAAkgry.jpg" alt="Ted Weiher emaciated body discovered in forest service trailer wrapped in sheets 1978" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">Ted Weiher&apos;s Condition</h3>
+                        <p class="evidence-desc">Weiher survived 8-13 weeks based on beard growth. He lost 80-100 pounds from his 200-pound frame. He had gangrene in his legs, five toes lost to frostbite, and his pant legs were rolled up. He was wrapped in eight sheets with hands folded on his chest. A watch that didn&apos;t belong to him and his wallet were on the nightstand. His boots were missing.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/e/e7/Gary_Mathias.png" alt="Gary Mathias missing person portrait schizophrenic veteran Yuba County Five never found" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Evidence</span>
+                        <h3 class="evidence-title">The Shoe Swap</h3>
+                        <p class="evidence-desc">Gary Mathias&apos;s sneakers were found inside the trailer where Ted Weiher died. Ted Weiher&apos;s own leather boots were missing. Investigators believe Mathias may have swapped shoes because Ted&apos;s boots were better suited for snow. This suggests Mathias was in the trailer and left after Ted died—or that Ted wore Mathias&apos;s shoes when he left.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence &amp; Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, news reports, and investigative footage exploring the Yuba County Five case across nearly five decades.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/0sz2fNx0HW8" title="Yuba County Five documentary video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ice">Documentary</span>
+                        <span class="badge badge-ember">2024</span>
+                        <h3 class="video-title">The Yuba County Five: American Dyatlov Pass</h3>
+                        <p class="video-desc">Comprehensive documentary examining the disappearance, search efforts, and the baffling circumstances surrounding the five men who vanished in the Plumas National Forest.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/0sz2fNx0HW8" title="Yuba County Five news report video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ice">News Report</span>
+                        <span class="badge badge-ember">ABC10</span>
+                        <h3 class="video-title">Families Plead for Answers: The Mystery of the Yuba County Five</h3>
+                        <p class="video-desc">ABC10 investigative report featuring interviews with surviving family members and cold case investigators discussing the ongoing mystery.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/0sz2fNx0HW8" title="Dyatlov Pass comparison video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Analysis</span>
+                        <span class="badge badge-ivory">Comparison</span>
+                        <h3 class="video-title">American Dyatlov: Comparing the Two Cases</h3>
+                        <p class="video-desc">Expert analysis comparing the Yuba County Five disappearance with the 1959 Dyatlov Pass incident in Russia, exploring similarities and differences.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories &amp; Suspects</h1>
+                <p class="hero-subtitle">Nearly five decades of investigation have produced multiple theories. These are the most compelling explanations for what happened.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#9878;</div>
+                        <div>
+                            <div class="theory-name">Official: Death by Exposure</div>
+                            <div class="theory-probability">Yuba County Sheriff Status: Active Cold Case</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Men got lost on mountain road during snowstorm</li>
+                        <li>Abandoned car and tried to find shelter on foot</li>
+                        <li>Four died of hypothermia/exposure in wilderness</li>
+                        <li>Ted Weiher found shelter but succumbed to starvation</li>
+                        <li>Gary Mathias likely perished in the wilderness</li>
+                        <li>No evidence of foul play: no bullet holes, stab wounds, or weapons</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#128308;</div>
+                        <div>
+                            <div class="theory-name">Gary Mathias Theory</div>
+                            <div class="theory-probability">Probability: HIGH (per initial investigators)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Mathias was only member with paranoid schizophrenia</li>
+                        <li>History of violence; charged with assault twice</li>
+                        <li>Only member never found; body never recovered</li>
+                        <li>His shoes found in trailer; Ted&apos;s boots missing</li>
+                        <li>May have had psychotic episode leading group astray</li>
+                        <li>Family noted he sometimes stopped taking medication</li>
+                        <li>However: No signs of disturbance at basketball game</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#128309;</div>
+                        <div>
+                            <div class="theory-name">Foul Play / Abduction Theory</div>
+                            <div class="theory-probability">Probability: MODERATE (per families)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Joseph Schons saw flashlights and heard voices—then silence</li>
+                        <li>Group had no reason to drive 70 miles in wrong direction</li>
+                        <li>Madruga was protective of his car; wouldn&apos;t drive bad roads</li>
+                        <li>Men were dressed for valley weather, not mountain snow</li>
+                        <li>Ted Weiher was wrapped in sheets as if cared for</li>
+                        <li>Rumors of fight at convenience store; town bully confession</li>
+                        <li>&quot;Somebody made them&quot; — Perry Weiher</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#128309;</div>
+                        <div>
+                            <div class="theory-name">Wrong Turn / Forbestown Theory</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Mathias had friends in Forbestown near the mountain road</li>
+                        <li>Possible they took wrong turn near Oroville</li>
+                        <li>May have followed snowcat tracks thinking shelter was near</li>
+                        <li>Group had cognitive disabilities affecting judgment</li>
+                        <li>Storm conditions may have disoriented Madruga</li>
+                        <li>However: Madruga knew the area and was reliable driver</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#128309;</div>
+                        <div>
+                            <div class="theory-name">The &quot;Bizarre as Hell&quot; Theory</div>
+                            <div class="theory-probability">Probability: UNKNOWN</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Jack Beecham, Yuba County Undersheriff: &quot;Bizarre as hell&quot;</li>
+                        <li>Ted survived months but didn&apos;t use available food/heat</li>
+                        <li>Army P-38 can opener used—only Mathias/Madruga knew how</li>
+                        <li>Watch on nightstand didn&apos;t belong to any victim</li>
+                        <li>Weiher&apos;s pant legs rolled up revealing gangrene</li>
+                        <li>Five toes lost to frostbite; body in state of decomposition</li>
+                        <li>Case defies logical explanation</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">&#128308;</div>
+                        <div>
+                            <div class="theory-name">The Dyatlov Connection</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Both cases involve groups dying in remote winter wilderness</li>
+                        <li>Inexplicable decisions to leave shelter/safety</li>
+                        <li>Bodies found in bizarre circumstances</li>
+                        <li>No satisfactory explanation for behavior</li>
+                        <li>Yuba County Five: 1978 California; Dyatlov: 1959 Russia</li>
+                        <li>Both cases remain officially unsolved</li>
+                        <li>Paranormal or unknown natural phenomenon theories</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Official reports, transcripts, and evidence files from the original investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">COLD CASE</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: &#39;Cinzel&#39;, serif; font-size: 1.5rem;">YUBA COUNTY SHERIFF&apos;S OFFICE</h2>
+                    <p style="font-family: &#39;IBM Plex Mono&#39;, monospace; font-size: 0.8rem; color: var(--text-muted);">MISSING PERSONS / DEATH INVESTIGATION — CASE FILE 1978-0224</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Victim Names</div>
+                    <div class="document-value">Jack Antone Madruga (30), William Lee &quot;Bill&quot; Sterling (29), Theodore Earl &quot;Ted&quot; Weiher (32), Jackie Charles Huett (24), Gary Dale Mathias (25)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Disappearance</div>
+                    <div class="document-value">February 24-25, 1978</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Last Known Location</div>
+                    <div class="document-value">Behr&apos;s Market, Chico, California (approx. 10:00 PM)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Vehicle Found</div>
+                    <div class="document-value">1969 Mercury Montego, Oroville-Quincy Highway, Butte County (February 28, 1978)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Findings</div>
+                    <div class="document-value">
+                        &#8226; Car found 70 miles in wrong direction; working condition, quarter tank gas<br>
+                        &#8226; Ted Weiher found in USFS trailer June 4; survived 8-13 weeks, died of starvation/exposure<br>
+                        &#8226; 31 cans of food opened; propane heater and year&apos;s supply of food untouched<br>
+                        &#8226; Jack Madruga found June 6; hypothermia/exposure, keys in pocket<br>
+                        &#8226; Bill Sterling found June 6; skeletal remains, cause undetermined<br>
+                        &#8226; Jackie Huett found June 8; father discovered remains<br>
+                        &#8226; Gary Mathias never found; shoes discovered in trailer<br>
+                        &#8226; No evidence of foul play; no weapons, bullet holes, or stab wounds
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Witness Statement</div>
+                    <div class="document-value">Joseph Schons: Saw flashlights and heard voices on mountain road night of disappearance. Called for help; voices went silent and lights extinguished. Later saw group walking with woman.</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-ice); font-weight: bold;">ACTIVE COLD CASE — UNSOLVED</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                    THIS DOCUMENT IS A RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    ORIGINAL FILES MAINTAINED BY YUBA COUNTY SHERIFF&apos;S OFFICE.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&#215;</button>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <style>
+        /* ===== VIDEO SECTION STYLES ===== */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+
+        .video-info { padding: 1.2rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .badge-ice { background: rgba(126, 200, 227, 0.15); color: var(--accent-ice); }
+        .badge-ember { background: rgba(196, 92, 62, 0.15); color: var(--accent-ember); }
+        .badge-gold { background: rgba(212, 168, 67, 0.15); color: var(--warning); }
+        .badge-ivory { background: rgba(224, 230, 232, 0.1); color: var(--text-primary); }
+
+        /* ===== THEORIES SECTION STYLES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-color: var(--success); }
+        .theory-card.conspiracy { border-color: var(--danger); }
+        .theory-card.alternative { border-color: var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.2); }
+        .conspiracy .theory-icon { background: rgba(196, 92, 62, 0.2); }
+        .alternative .theory-icon { background: rgba(212, 168, 67, 0.2); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .theory-probability {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .theory-points li::before {
+            content: '&#9654;';
+            color: var(--accent-ice);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS SECTION STYLES ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem; right: 2rem;
+            border: 3px solid var(--accent-ice);
+            color: var(--accent-ice);
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-ember);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== RESPONSIVE ADDITIONS ===== */
+        @media (max-width: 768px) {
+            .video-grid { grid-template-columns: 1fr; }
+            .theory-board { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'abandoned-car': `
+                    <img src="https://dyatlovpass.com/resources/340/Yuba-county-5-Missing-poster.jpg" class="modal-image" alt="Abandoned car in snow">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Abandoned Mercury Montego</h2>
+                    <p>Jack Madruga's turquoise 1969 Mercury Montego was discovered on February 28, 1978, on the Oroville-Quincy Highway in Butte County. The car was found 70 miles in the wrong direction from Yuba City, thousands of feet up in the Sierra Nevada where snow was 4-6 feet deep.</p>
+                    <p>The car was in working condition with a quarter tank of gas. It was not stuck in the snow and could easily have been pushed free. The doors were unlocked, one window was down, and the snacks from Behr's Market had been eaten. The car keys were missing. The men were wearing only light coats suitable for valley weather, not mountain snow.</p>
+                    <p>Madruga was known to be extremely protective of his car. His mother stated, "It was a bad road. He wouldn't drive his car up the bad road. He respected it." This makes the car's presence on the mountain road one of the case's greatest mysteries.</p>
+                `,
+                'forest-trailer': `
+                    <img src="https://allthatsinteresting.com/wordpress/wp-content/uploads/2023/04/forest-service-trailer.jpg" class="modal-image" alt="Forest service trailer">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Forest Service Trailer</h2>
+                    <p>On June 4, 1978, a motorcyclist off-roading near the Daniel Zink campground in Plumas National Forest discovered a USFS trailer that was ordinarily used by firefighting crews. Inside, he found the emaciated, decomposing body of Ted Weiher.</p>
+                    <p>Ted was lying on a bed on his back, wrapped neatly in eight sheets as if someone had tried to keep him comfortable or take care of him. He had a full beard, indicating he had survived for several weeks if not months. He had lost approximately 80-100 pounds from his 200-pound frame.</p>
+                    <p>The trailer contained bizarre contradictions: a propane heater that was never turned on, a year's worth of canned food in an outside locker that was never opened, and 31 cans of food that had been opened and partially eaten. The food was opened with an Army P-38 can opener—a tool only Mathias and Madruga would have known how to use from their military service.</p>
+                `,
+                'ted-weiher': `
+                    <img src="https://pbs.twimg.com/media/G90vkzzaYAAkgry.jpg" class="modal-image" alt="Ted Weiher">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Ted Weiher — The Survivor</h2>
+                    <p>Theodore Earl "Ted" Weiher was 32 years old when he disappeared. He was described as a gentle giant who worked as a janitor and snack bar clerk. He was particularly protective of Jackie Huett, who was dependent on him for help with everyday tasks like making phone calls.</p>
+                    <p>When Ted was found in the USFS trailer, he had survived for an estimated 8-13 weeks based on his beard growth. He had lost 80-100 pounds and suffered from severe gangrene in his legs, with five toes lost to frostbite. His pant legs were rolled up above his knees, revealing the extent of his injuries.</p>
+                    <p>Most perplexing was the presence of a brown leather wallet, a ring inscribed with "Ted," and a bead necklace on the nightstand—along with a yellow metal watch that his family said did not belong to him. His boots were missing, but Gary Mathias's sneakers were found in the trailer. Ted's cause of death was ruled as exposure/pulmonary edema, often called "wet lung."</p>
+                `,
+                'gary-mathias': `
+                    <img src="https://upload.wikimedia.org/wikipedia/en/e/e7/Gary_Mathias.png" class="modal-image" alt="Gary Mathias">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Gary Mathias — The One Never Found</h2>
+                    <p>Gary Dale Mathias was 25 years old and the outlier of the group. Unlike the others who had developmental disabilities, Mathias was a former Army musician who had been diagnosed with paranoid schizophrenia. He took Stellazine and Cogentin to control his symptoms.</p>
+                    <p>Mathias had a troubled past. He had been charged with assault twice and had a history of drug use. His stepfather described his episodes as "going haywire" when he failed to take his medication, which usually resulted in hospitalization at a Veterans Administration facility.</p>
+                    <p>His shoes were found in the trailer where Ted Weiher died, while Ted's boots were missing. This led initial investigators to suspect Mathias may have been involved in the deaths of the others. However, author Tony Wright notes that Mathias's criminal activity had slowed after 1975 when he began mental health counseling and medication. No one reported him behaving strangely at the basketball game.</p>
+                `,
+                'joseph-schons': `
+                    <img src="https://images2.minutemediacdn.com/image/upload/c_fill,w_720,ar_16:9,f_auto,q_auto,g_auto/shape/cover/sport/532063-istock-638643984-a0df40f3a76a180cfcb20746f2bb7c9a.jpg" class="modal-image" alt="Mountain road at night">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Joseph Schons — The Lone Witness</h2>
+                    <p>Joseph Schons came forward with a disturbing account of the night the Yuba County Five disappeared. He told police he had been driving on the same mountain road when his car got stuck in the snow. While trying to free his vehicle, he suffered a mild heart attack and retreated inside his car to wait for morning.</p>
+                    <p>During the night, Schons saw people with flashlights around his car and heard them call for help twice. When he called out to them, the voices fell silent and the flashlights were turned off. Later, he saw what appeared to be a group of men walking away from the area, with one figure possibly being a woman.</p>
+                    <p>Schons's account has been both compelling and controversial. Some investigators believe he may have seen the Yuba County Five, while others question the reliability of his testimony given his medical condition that night. His statement remains one of the few potential witness accounts in the case.</p>
+                `,
+                'other-victims': `
+                    <img src="https://images.saymedia-content.com/.image/ar_16:9%2Cc_fill%2Ccs_srgb%2Cfl_progressive%2Cq_auto:eco%2Cw_1200/MTk1NjkyODMzNDY5MTc5ODQx/the-yuba-county-5-terror-on-the-mountain.jpg" class="modal-image" alt="Mountain wilderness">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Other Three Victims</h2>
+                    <p><strong>Jack Madruga (30):</strong> The driver of the group. A Vietnam veteran who was quiet, introverted, and extremely protective of his car. His remains were found near a stream, picked apart by animals. His car keys were still in his pants pocket. The coroner ruled his cause of death as hypothermia/exposure.</p>
+                    <p><strong>Bill Sterling (29):</strong> An avid bowler known for being sweet and athletic. His remains were reduced to bones scattered across the forest floor by scavenging animals. The coroner could not determine a definitive cause of death due to the state of the remains.</p>
+                    <p><strong>Jackie Huett (24):</strong> The youngest of the group. He had a slight droop to his head and was sometimes slow to respond. He was deeply dependent on Ted Weiher. His father, also named Jack, found his son's jacket during the search; when he picked it up, Jackie's spine fell out. His skull was found 50 feet away, identified by his teeth.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Close modal/lightbox on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeLightbox();
+            }
+        });
+    </script>
+
+</body>
+</html>

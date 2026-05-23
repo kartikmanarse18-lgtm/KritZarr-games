@@ -1,0 +1,1843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The San Antonio Ghost Tracks: The Invisible Push — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0a0a0f;
+            --void: #111118;
+            --surface: #1a1a24;
+            --elevated: #222230;
+            --card: #2a2a3a;
+            --ghost-white: #e8e4dc;
+            --bone: #c4bfb6;
+            --ash: #8a8580;
+            --smoke: #5a5550;
+            --ember: #c45c26;
+            --ember-glow: #e87a3a;
+            --ember-dim: #8a3a1a;
+            --fog: #7a8a9a;
+            --fog-glow: #9ab0c4;
+            --track-rust: #6b3a2a;
+            --track-steel: #4a5058;
+            --danger: #8b1a2d;
+            --caution: #c45c26;
+            --phantom: rgba(196, 92, 38, 0.08);
+            --shadow-deep: rgba(0, 0, 0, 0.85);
+            --shadow-ember: rgba(196, 92, 38, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--ink);
+            color: var(--ghost-white);
+            line-height: 1.7;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(ellipse at 15% 20%, rgba(196, 92, 38, 0.03) 0%, transparent 60%),
+                radial-gradient(ellipse at 85% 75%, rgba(122, 138, 154, 0.02) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.98) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--ink); }
+        ::-webkit-scrollbar-thumb { background: var(--ember); border-radius: 3px; }
+
+        /* ===== FLOATING NAVIGATION ===== */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(30px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(196, 92, 38, 0.1);
+            padding: 0;
+            transition: all 0.4s ease;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+        }
+
+        .brand {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ember);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--ember);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--ember);
+            animation: pulse-ring 3s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(196, 92, 38, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(196, 92, 38, 0); }
+        }
+
+        .nav-pills {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-pill {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--ash);
+            cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            border-radius: 100px;
+            position: relative;
+        }
+
+        .nav-pill::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--ember);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        .nav-pill:hover, .nav-pill.active {
+            color: var(--ember-glow);
+            background: rgba(196, 92, 38, 0.08);
+        }
+
+        .nav-pill:hover::after, .nav-pill.active::after {
+            width: 60%;
+        }
+
+        .main-body { margin-top: 60px; min-height: 100vh; }
+
+        .panel {
+            display: none;
+            animation: panelReveal 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .panel.active { display: block; }
+
+        @keyframes panelReveal {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== CINEMATIC OPENING ===== */
+        .cinema-hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .cinema-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.95) 100%),
+                url('https://kimi-web-img.moonshot.cn/img/images.unsplash.com/photo-1474487548417-781cb71495f3') center/cover no-repeat;
+            z-index: -3;
+            filter: grayscale(0.6) contrast(1.4) brightness(0.12) sepia(0.15);
+        }
+
+        .cinema-mist {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background:
+                radial-gradient(ellipse at 20% 40%, rgba(196, 92, 38, 0.06) 0%, transparent 55%),
+                radial-gradient(ellipse at 80% 70%, rgba(122, 138, 154, 0.04) 0%, transparent 50%);
+        }
+
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .cinema-content {
+            max-width: 850px;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        .cinema-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--ember);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: materialize 1.4s ease 0.6s forwards;
+        }
+
+        .cinema-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4.5rem;
+            line-height: 1.0;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 60px rgba(196, 92, 38, 0.2);
+            opacity: 0;
+            animation: materialize 1.4s ease 1.1s forwards;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .cinema-headline .accent {
+            color: var(--ember);
+            display: block;
+            font-size: 0.55em;
+            font-weight: 400;
+            font-family: 'EB Garamond', serif;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 2px;
+            margin-top: 0.6rem;
+            color: var(--fog);
+        }
+
+        .cinema-divider {
+            width: 80px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ember), transparent);
+            margin: 2rem auto;
+            opacity: 0;
+            animation: materialize 1.4s ease 1.6s forwards;
+        }
+
+        .cinema-prologue {
+            font-family: 'EB Garamond', serif;
+            font-size: 1.4rem;
+            line-height: 1.9;
+            color: var(--bone);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: materialize 1.4s ease 2s forwards;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cinema-narrative {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--ghost-white);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: materialize 1.4s ease 2.5s forwards;
+        }
+
+        .cinema-narrative p {
+            margin-bottom: 1.5rem;
+            text-indent: 2.5rem;
+        }
+
+        .cinema-narrative p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 4.5rem;
+            float: left;
+            line-height: 0.75;
+            padding-right: 0.6rem;
+            color: var(--ember);
+            text-shadow: 0 0 40px rgba(196, 92, 38, 0.3);
+            font-weight: 700;
+            margin-top: 0.1rem;
+        }
+
+        .cinema-quote {
+            background: rgba(196, 92, 38, 0.06);
+            border-left: 2px solid var(--ember);
+            padding: 2rem;
+            margin: 3rem 0;
+            font-family: 'EB Garamond', serif;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: var(--fog);
+            text-align: left;
+            opacity: 0;
+            animation: materialize 1.4s ease 3s forwards;
+            border-radius: 0 6px 6px 0;
+            position: relative;
+        }
+
+        .cinema-quote::before {
+            content: '"';
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            color: var(--ember);
+            opacity: 0.2;
+            position: absolute;
+            top: -0.5rem;
+            left: 1rem;
+            line-height: 1;
+        }
+
+        .cinema-action {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: materialize 1.4s ease 3.5s forwards;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 1rem 3rem;
+            background: transparent;
+            color: var(--ember-glow);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            border-radius: 2px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1.5px solid var(--ember);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(196, 92, 38, 0.15), transparent);
+            transition: left 0.6s;
+        }
+
+        .action-btn:hover::before {
+            left: 100%;
+        }
+
+        .action-btn:hover {
+            background: rgba(196, 92, 38, 0.1);
+            box-shadow: 0 0 50px rgba(196, 92, 38, 0.15);
+            border-color: var(--ember-glow);
+            color: var(--ghost-white);
+        }
+
+        .cinema-metrics {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: materialize 1.4s ease 4s forwards;
+        }
+
+        .metric { text-align: center; }
+
+        .metric-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--ember);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .metric-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--smoke);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.6rem;
+        }
+
+        @keyframes materialize {
+            from { opacity: 0; transform: translateY(35px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: materialize 1.4s ease 4.5s forwards, drift 3s infinite 4.5s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+            50% { transform: translateX(-50%) translateY(-12px); opacity: 0.9; }
+        }
+
+        /* ===== SECTION HEADERS ===== */
+        .section-hero {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            background: linear-gradient(180deg, rgba(196, 92, 38, 0.04) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(196, 92, 38, 0.08);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .section-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ember), transparent);
+            opacity: 0.3;
+        }
+
+        .section-hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--ghost-white);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(196, 92, 38, 0.15);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .section-hero p {
+            font-size: 1.1rem;
+            color: var(--ash);
+            max-width: 650px;
+            margin: 0 auto 1.5rem;
+            font-family: 'EB Garamond', serif;
+            font-style: italic;
+        }
+
+        .case-facts {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .fact-item { text-align: center; }
+
+        .fact-key {
+            color: var(--smoke);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .fact-val {
+            color: var(--ember);
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE TILES ===== */
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.2rem;
+            margin: 2rem 0;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .tile {
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--ember), var(--fog), var(--ember));
+            background-size: 200% 100%;
+            animation: shimmer 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .tile:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 60px rgba(196, 92, 38, 0.12);
+            border-color: rgba(196, 92, 38, 0.2);
+        }
+
+        .tile:hover::before {
+            opacity: 1;
+        }
+
+        .tile-visual {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(196, 92, 38, 0.08);
+            display: block;
+            filter: grayscale(0.35) contrast(1.15) brightness(0.85);
+            transition: all 0.5s;
+        }
+
+        .tile:hover .tile-visual {
+            filter: grayscale(0.05) contrast(1.2) brightness(0.95);
+        }
+
+        .tile-body { padding: 1.4rem; }
+
+        .tile-badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(196, 92, 38, 0.1);
+            color: var(--ember);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 100px;
+            margin-bottom: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .tile-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--ghost-white);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tile-desc {
+            color: var(--ash);
+            font-size: 0.88rem;
+            line-height: 1.65;
+        }
+
+        /* ===== VIDEO CARDS ===== */
+        .video-deck {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .video-card {
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+
+        .video-card:hover {
+            box-shadow: 0 15px 40px rgba(196, 92, 38, 0.1);
+            border-color: rgba(196, 92, 38, 0.15);
+        }
+
+        .video-frame {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: var(--ink);
+            overflow: hidden;
+        }
+
+        .video-frame iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-meta { padding: 1.2rem; }
+
+        .video-meta h3 {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .video-meta p {
+            font-size: 0.85rem;
+            color: var(--ash);
+            line-height: 1.6;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 100px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.4rem;
+            margin-bottom: 0.4rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chip-ember { background: rgba(196, 92, 38, 0.12); color: var(--ember); }
+        .chip-fog { background: rgba(122, 138, 154, 0.1); color: var(--fog); }
+        .chip-track { background: rgba(107, 58, 42, 0.15); color: var(--track-rust); }
+
+        /* ===== TIMELINE ===== */
+        .timeline-track {
+            position: relative;
+            padding: 2rem 0;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .timeline-track::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--ember), var(--fog), var(--ember));
+            transform: translateX(-50%);
+            opacity: 0.4;
+        }
+
+        .timeline-node {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-node:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-card {
+            width: 44%;
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            border-radius: 8px;
+            padding: 1.6rem;
+            position: relative;
+            transition: all 0.4s;
+        }
+
+        .timeline-card:hover {
+            border-color: rgba(196, 92, 38, 0.2);
+            box-shadow: 0 10px 30px rgba(196, 92, 38, 0.08);
+        }
+
+        .timeline-card::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            width: 14px;
+            height: 14px;
+            background: var(--ember);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(196, 92, 38, 0.3);
+            border: 3px solid var(--ink);
+        }
+
+        .timeline-node:nth-child(odd) .timeline-card::before { left: -38px; }
+        .timeline-node:nth-child(even) .timeline-card::before { right: -38px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--ember);
+            font-size: 0.7rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-text {
+            font-size: 0.9rem;
+            color: var(--ash);
+            line-height: 1.7;
+        }
+
+        .timeline-thumbs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-thumbs img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            filter: grayscale(0.4) contrast(1.15);
+        }
+
+        .timeline-thumbs img:hover {
+            transform: scale(1.04);
+            filter: grayscale(0.05) contrast(1.25);
+            box-shadow: 0 4px 15px rgba(196, 92, 38, 0.15);
+        }
+
+        /* ===== THEORIES BOARD ===== */
+        .theory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.2rem;
+            margin: 2rem 0;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .theory-panel {
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            border-radius: 8px;
+            padding: 1.8rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+
+        .theory-panel:hover {
+            border-color: rgba(196, 92, 38, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(196, 92, 38, 0.08);
+        }
+
+        .theory-panel.official { border-left: 3px solid var(--fog); }
+        .theory-panel.paranormal { border-left: 3px solid var(--ember); }
+        .theory-panel.skeptic { border-left: 3px solid var(--track-rust); }
+
+        .theory-head {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.3rem;
+        }
+
+        .theory-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+            flex-shrink: 0;
+        }
+
+        .official .theory-avatar { background: rgba(122, 138, 154, 0.12); }
+        .paranormal .theory-avatar { background: rgba(196, 92, 38, 0.12); }
+        .skeptic .theory-avatar { background: rgba(107, 58, 42, 0.12); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .theory-chance {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--smoke);
+            margin-top: 0.15rem;
+        }
+
+        .theory-list { list-style: none; }
+
+        .theory-list li {
+            padding: 0.55rem 0;
+            border-bottom: 1px solid rgba(196, 92, 38, 0.06);
+            display: flex;
+            align-items: start;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+            color: var(--bone);
+        }
+
+        .theory-list li::before {
+            content: '◆';
+            color: var(--ember);
+            font-size: 0.5rem;
+            margin-top: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        /* ===== DOCUMENT VIEWER ===== */
+        .dossier {
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            border-radius: 8px;
+            padding: 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.9;
+            color: var(--ash);
+            position: relative;
+            max-width: 900px;
+            margin: 2rem auto;
+        }
+
+        .dossier-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 2px solid var(--ember);
+            color: var(--ember);
+            padding: 0.4rem 0.8rem;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: rotate(-10deg);
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .dossier-field {
+            margin: 1rem 0;
+            padding: 0.9rem;
+            background: var(--ink);
+            border-left: 2px solid var(--ember);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .dossier-label {
+            color: var(--smoke);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.2rem;
+        }
+
+        .dossier-value {
+            color: var(--ghost-white);
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        /* ===== PHOTO GALLERY ===== */
+        .photo-wall {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .photo-frame {
+            width: 100%;
+            height: 170px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(196, 92, 38, 0.08);
+            display: block;
+            filter: grayscale(0.4) contrast(1.1);
+        }
+
+        .photo-frame:hover {
+            transform: scale(1.04) rotate(0.5deg);
+            border-color: var(--ember);
+            box-shadow: 0 8px 30px rgba(196, 92, 38, 0.15);
+            filter: grayscale(0.05) contrast(1.2);
+            z-index: 10;
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox-view {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.96);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox-view.active { display: flex; }
+
+        .lightbox-view img {
+            max-width: 88%;
+            max-height: 88%;
+            border: 2px solid var(--ember);
+            border-radius: 6px;
+            box-shadow: 0 0 60px rgba(196, 92, 38, 0.2);
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            padding: 0.8rem 1.5rem;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--ash);
+            border: 1px solid rgba(196, 92, 38, 0.15);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-shell {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 15, 0.92);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-shell.active { display: flex; }
+
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid rgba(196, 92, 38, 0.12);
+            border-radius: 8px;
+            max-width: 750px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-exit {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--ash);
+            font-size: 1.8rem;
+            cursor: pointer;
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-exit:hover {
+            background: rgba(196, 92, 38, 0.1);
+            color: var(--ember);
+        }
+
+        .modal-inner { padding: 2rem; }
+
+        .modal-visual {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: grayscale(0.15) contrast(1.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .cinema-headline { font-size: 2.4rem; }
+            .cinema-prologue { font-size: 1.15rem; }
+            .cinema-narrative { font-size: 0.95rem; }
+            .cinema-metrics { gap: 2rem; }
+            .section-hero h1 { font-size: 1.8rem; }
+            .timeline-track::before { left: 18px; }
+            .timeline-node, .timeline-node:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 45px;
+            }
+            .timeline-card { width: 100%; }
+            .timeline-card::before {
+                left: -32px !important;
+                right: auto !important;
+            }
+            .nav-inner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.6rem;
+                padding: 0.6rem 1rem;
+            }
+            .nav-pills {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-pills::-webkit-scrollbar { display: none; }
+            .nav-pill {
+                flex-shrink: 0;
+                font-size: 0.65rem;
+                padding: 0.4rem 0.7rem;
+                white-space: nowrap;
+            }
+            .main-body { margin-top: 100px; }
+            .case-facts { gap: 1.5rem; }
+            .video-deck { grid-template-columns: 1fr; }
+            .tile-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="main-nav">
+        <div class="nav-inner">
+            <div class="brand">
+                <div class="brand-icon">◆</div>
+                Ghost Tracks
+            </div>
+            <div class="nav-pills" id="navPills">
+                <button class="nav-pill active" onclick="showPanel('story')">Story</button>
+                <button class="nav-pill" onclick="showPanel('overview')">Overview</button>
+                <button class="nav-pill" onclick="showPanel('timeline')">Timeline</button>
+                <button class="nav-pill" onclick="showPanel('evidence')">Evidence</button>
+                <button class="nav-pill" onclick="showPanel('video')">Video</button>
+                <button class="nav-pill" onclick="showPanel('theories')">Theories</button>
+                <button class="nav-pill" onclick="showPanel('documents')">Documents</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-body">
+
+        <!-- ==================== PART 1: STORY SECTION ==================== -->
+        <section id="story" class="panel active">
+            <div class="cinema-bg"></div>
+            <div class="cinema-mist"></div>
+            <div class="grain-overlay"></div>
+
+            <div class="cinema-hero">
+                <div class="cinema-content">
+                    <div class="cinema-label">San Antonio, Texas — A Paranormal Investigation</div>
+
+                    <h1 class="cinema-headline">
+                        The Invisible
+                        <span class="accent">Push</span>
+                    </h1>
+
+                    <div class="cinema-divider"></div>
+
+                    <p class="cinema-prologue">
+                        Just south of San Antonio, near the San Juan Mission, lies a railroad crossing where physics seems to surrender to something older. Park your car on the tracks, shift into neutral, and wait. The vehicle will roll uphill—over the rails, across the bump, to safety on the other side. Dust your bumper with baby powder, and when you inspect it afterward, you will find tiny handprints. Children's handprints. The fingerprints of the dead.
+                    </p>
+
+                    <div class="cinema-narrative">
+                        <p>The legend begins with a scream of steel on steel. In the late 1930s or early 1940s—no one can agree on the exact year—a school bus full of children stalled on the railroad tracks at the intersection of Shane and Villamain Roads. The driver frantically tried to restart the engine as a freight train bore down on them, its headlamp burned out, offering no warning in the Texas darkness. Ten children died that night. Or perhaps it was a nun driving orphans home from a field trip, and every child perished. Or maybe the entire story is a phantom, borrowed from a real tragedy in Salt Lake City, Utah, in 1938, where a train did strike a school bus and killed twenty-three students.</p>
+
+                        <p>What is not disputed is what happens when you visit the tracks today. Thousands have made the pilgrimage. They park their cars on the rails, put them in neutral, and feel the impossible push. The car moves forward, uphill, defying gravity. Some hear children's laughter in the darkness. Others report the sudden silence of birds, as if the air itself holds its breath. And when they apply baby powder to their bumpers and trunks, they find small handprints—perfect, detailed, with palm lines and fingerprint swirls—left by hands that should not exist.</p>
+
+                        <p>The San Antonio Ghost Tracks have been featured on television shows, investigated by paranormal teams, and debunked by physicists who point to a two-degree optical illusion that makes a downhill slope appear level. But the debunking has never stopped the phenomenon. The cars still roll. The prints still appear. And the children—whether they are the spirits of dead students, the echoes of a Utah tragedy transplanted to Texas soil, or something else entirely—continue to push strangers to safety, night after night, decade after decade, in the most haunted railroad crossing in America.</p>
+                    </div>
+
+                    <div class="cinema-quote">
+                        <strong style="color: var(--ember);">THE QUESTION THAT HAUNTS EVERY VISITOR:</strong><br>
+                        If the slope is merely an optical illusion and the cars roll downhill by gravity alone, why do so many witnesses report feeling a distinct push from behind? Why do animals fall silent? Why do the handprints appear with such impossible detail—palm lines, fingerprint ridges, sizes too small to belong to any adult—on cars that were washed with dish soap minutes before the experiment?
+                    </div>
+
+                    <div class="cinema-action">
+                        <button class="action-btn" onclick="showPanel('overview')">
+                            <span>Begin the Investigation</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="cinema-metrics">
+                        <div class="metric">
+                            <div class="metric-number">80+</div>
+                            <div class="metric-label">Years of Legend</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-number">10+</div>
+                            <div class="metric-label">Children Perished</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-number">∞</div>
+                            <div class="metric-label">Cars Pushed to Safety</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-number">0</div>
+                            <div class="metric-label">Scientific Explanation Accepted</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-hint">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--ember);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PART 2: OVERVIEW SECTION ==================== -->
+        <section id="overview" class="panel">
+            <div class="section-hero">
+                <h1>The Invisible Push</h1>
+                <p>An interactive investigation into America's most famous haunted railroad crossing. Explore the evidence, analyze the phenomenon, and decide for yourself what pushes the cars at Shane and Villamain Roads.</p>
+                <div class="case-facts">
+                    <div class="fact-item">
+                        <div class="fact-key">Location</div>
+                        <div class="fact-val">Shane & Villamain, San Antonio</div>
+                    </div>
+                    <div class="fact-item">
+                        <div class="fact-key">Legend Origin</div>
+                        <div class="fact-val">1930s–1940s School Bus Crash</div>
+                    </div>
+                    <div class="fact-item">
+                        <div class="fact-key">Status</div>
+                        <div class="fact-val">Active Paranormal Site</div>
+                    </div>
+                    <div class="fact-item">
+                        <div class="fact-key">Debunked By</div>
+                        <div class="fact-val">Optical Illusion Theory</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 4px; color: var(--ghost-white);">Key Evidence Categories</h2>
+
+            <div class="tile-grid">
+                <div class="tile" onclick="openModal('ghost-push')">
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         alt="San Antonio ghost tracks railroad crossing at night with fog misty atmosphere haunted railway intersection Shane Road Villamain Road South Side Texas paranormal phenomenon" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Critical Evidence</span>
+                        <h3 class="tile-title">The Invisible Push</h3>
+                        <p class="tile-desc">Thousands of visitors have parked their cars on the tracks at Shane and Villamain Roads, shifted into neutral, and felt their vehicles roll uphill and over the rails to safety. The push is described as gentle but firm, sometimes accompanied by the sound of children's laughter or the sudden silence of all ambient noise. Cars weighing over two tons have been moved with no engine power.</p>
+                    </div>
+                </div>
+
+                <div class="tile" onclick="openModal('handprints')">
+                    <img src="https://sites.utexas.edu/theatredance-blog/wp-content/uploads/sites/5041/2022/03/TinyFingerprints_ThomasAllison-1-blog-810x540.jpg" 
+                         alt="baby powder handprints tiny child fingerprints on car bumper trunk San Antonio ghost tracks paranormal evidence small palm prints supernatural phenomenon" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Physical Evidence</span>
+                        <h3 class="tile-title">The Baby Powder Handprints</h3>
+                        <p class="tile-desc">Visitors who dust their car bumpers and trunks with baby powder or flour before the experiment consistently report finding small handprints afterward. The prints show detailed palm lines, fingerprint ridges, and sizes too small to belong to adults. Some witnesses report adult-sized prints alongside the children's, suggesting the presence of a supervising spirit.</p>
+                    </div>
+                </div>
+
+                <div class="tile" onclick="openModal('school-bus')">
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         alt="old yellow school bus vintage 1930s 1940s era rural Texas road dark stormy sky haunted vehicle tragedy children" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Historical Origin</span>
+                        <h3 class="tile-title">The School Bus Tragedy</h3>
+                        <p class="tile-desc">The legend holds that a school bus carrying children stalled on the tracks in the 1930s or 1940s and was struck by a train with a burned-out headlamp. Ten children died. However, no newspaper records of such an accident exist in San Antonio archives. The story may have been transplanted from a real 1938 Salt Lake City, Utah crash where 23 students perished.</p>
+                    </div>
+                </div>
+
+                <div class="tile" onclick="openModal('optical-illusion')">
+                    <img src="https://i.ytimg.com/vi/1U7STmL3jrw/maxresdefault.jpg" 
+                         alt="railroad tracks perspective optical illusion downhill slope appearing uphill San Antonio Shane Road visual trickery gravity anomaly" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Skeptical Theory</span>
+                        <h3 class="tile-title">The Optical Illusion</h3>
+                        <p class="tile-desc">Official investigations have determined that the road surface at the crossing has a two-degree declination—meaning it slopes slightly downhill, not uphill as it appears. This would cause cars in neutral to roll forward naturally. The handprints, skeptics argue, are latent fingerprints already on the vehicle that become visible when powder is applied, or are placed by visitors themselves.</p>
+                    </div>
+                </div>
+
+                <div class="tile" onclick="openModal('nun-legend')">
+                    <img src="https://texashighways.com/wp-content/uploads/2026/04/RESIZED_Concepcion.jpg" 
+                         alt="old Catholic church mission architecture San Antonio Texas historical religious building nun orphanage 1930s 1940s era" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Alternative Origin</span>
+                        <h3 class="tile-title">The Nun and the Orphans</h3>
+                        <p class="tile-desc">An alternative version of the legend claims a nun was driving a bus of orphans home from a field trip when the vehicle stalled on the tracks. After the crash, the guilt-ridden nun returned to the site and parked her own car on the rails, intending to end her life. The ghost children pushed her car to safety, leaving handprints on the trunk. She then devoted her life to opening a school for orphans.</p>
+                    </div>
+                </div>
+
+                <div class="tile" onclick="openModal('san-juan-mission')">
+                    <img src="https://livehomesteadtx.com/wp-content/uploads/2018/09/discoving-the-missions-of-san-antonio-tx-near-homestead-new-homes.jpg" 
+                         alt="Mission San Juan San Antonio Texas historic Spanish colonial mission church architecture South Side railroad crossing nearby" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Location</span>
+                        <h3 class="tile-title">Mission San Juan & The South Side</h3>
+                        <p class="tile-desc">The ghost tracks are located near Mission San Juan, one of the five Spanish colonial missions that form the San Antonio Missions National Historical Park. The area has deep indigenous and colonial history. The intersection of Shane and Villamain Roads sits in a remote, industrial section of San Antonio's South Side, surrounded by warehouses and sparse residential development.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="photo-wall">
+                <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                     alt="San Antonio ghost tracks railroad crossing at night fog mist haunted railway Shane Road Villamain paranormal" 
+                     class="photo-frame" onclick="openLightbox(this)">
+                <img src="https://sites.utexas.edu/theatredance-blog/wp-content/uploads/sites/5041/2022/03/TinyFingerprints_ThomasAllison-1-blog-810x540.jpg" 
+                     alt="baby powder handprints tiny child fingerprints car bumper evidence supernatural ghost tracks" 
+                     class="photo-frame" onclick="openLightbox(this)">
+                <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                     alt="vintage yellow school bus 1930s 1940s Texas rural road dark stormy haunted tragedy children" 
+                     class="photo-frame" onclick="openLightbox(this)">
+                <img src="https://i.ytimg.com/vi/1U7STmL3jrw/maxresdefault.jpg" 
+                     alt="railroad tracks perspective optical illusion downhill slope appearing uphill visual trickery" 
+                     class="photo-frame" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== PART 3: TIMELINE SECTION ==================== -->
+        <section id="timeline" class="panel">
+            <div class="section-hero">
+                <h1>Case Timeline</h1>
+                <p>Every documented event from the origins of the legend to modern-day investigations, debunking attempts, and the enduring mystery of the invisible push.</p>
+            </div>
+
+            <div class="timeline-track">
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">December 1, 1938</div>
+                        <div class="timeline-title">The Salt Lake City Tragedy</div>
+                        <p class="timeline-text">A school bus carrying 23 students stalls on railroad tracks in South Jordan, Utah, during a blizzard. A fifty-car freight train strikes the bus, killing everyone on board. This real tragedy may have become conflated with San Antonio folklore over time, providing the template for the ghost tracks legend.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">1930s–1940s</div>
+                        <div class="timeline-title">The Legend Takes Root</div>
+                        <p class="timeline-text">The story of a school bus crash at the intersection of Shane and Villamain Roads begins circulating in San Antonio. Details vary: some say ten children died, others claim a nun was driving orphans. No newspaper records of a San Antonio crash exist, but the legend grows through word of mouth, becoming a staple of South Side folklore.</p>
+                        <div class="timeline-thumbs">
+                            <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                                 alt="vintage yellow school bus 1930s 1940s era rural Texas road dark stormy sky" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                                 alt="railroad crossing at night fog misty atmosphere haunted railway" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">1970s–1980s</div>
+                        <div class="timeline-title">Word Spreads & First Hand Accounts</div>
+                        <p class="timeline-text">Local residents begin regularly visiting the tracks to test the legend. Eyewitnesses report cars rolling uphill, children's laughter, and the appearance of handprints on vehicles dusted with baby powder. The phenomenon becomes a rite of passage for San Antonio teenagers and a curiosity for visitors from across Texas.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">1990s</div>
+                        <div class="timeline-title">National Media Attention</div>
+                        <p class="timeline-text">The ghost tracks legend gains national exposure through television shows including "Sightings" and "Unsolved Mysteries." Local entrepreneurs begin selling talcum powder and ghost-themed merchandise near the site. The intersection becomes a dark tourism hotspot, drawing visitors from across the country.</p>
+                        <div class="timeline-thumbs">
+                            <img src="https://sites.utexas.edu/theatredance-blog/wp-content/uploads/sites/5041/2022/03/TinyFingerprints_ThomasAllison-1-blog-810x540.jpg" 
+                                 alt="baby powder handprints tiny child fingerprints car bumper evidence" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://livehomesteadtx.com/wp-content/uploads/2018/09/discoving-the-missions-of-san-antonio-tx-near-homestead-new-homes.jpg" 
+                                 alt="Mission San Juan San Antonio Texas historic Spanish colonial mission church" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">2003</div>
+                        <div class="timeline-title">The Archivist's Discovery</div>
+                        <p class="timeline-text">Matt De Waelsche, an archivist with the San Antonio Public Library, investigates newspaper archives and finds no record of a school bus crash at the intersection. He traces the legend's origin to the 1938 Salt Lake City tragedy. His findings are published in the San Antonio Express-News, sparking debate between believers and skeptics.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">2003–2010s</div>
+                        <div class="timeline-title">Scientific Debunking Attempts</div>
+                        <p class="timeline-text">Multiple investigations confirm that the road surface at the crossing has a two-degree downward slope—an optical illusion that makes it appear level or uphill. Forensic experts explain that latent fingerprints on vehicles become visible when baby powder is applied. Despite these findings, visitors continue to report the push and handprints.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">2010s–Present</div>
+                        <div class="timeline-title">The Legend Endures</div>
+                        <p class="timeline-text">Despite debunking, the ghost tracks remain one of San Antonio's most visited paranormal sites. Law enforcement continues to deal with traffic congestion, especially around Halloween. Reports of carjackings and criminal activity near the site have increased. Area residents have grown weary of the constant stream of visitors. The legend shows no signs of fading.</p>
+                        <div class="timeline-thumbs">
+                            <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                                 alt="San Antonio ghost tracks railroad crossing night fog mist haunted" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://i.ytimg.com/vi/1U7STmL3jrw/maxresdefault.jpg" 
+                                 alt="railroad tracks perspective optical illusion downhill slope" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node">
+                    <div class="timeline-card">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Mystery Continues</div>
+                        <p class="timeline-text">The San Antonio Ghost Tracks remain an active paranormal site and one of America's most enduring urban legends. Visitors still report the invisible push, the handprints, and unexplained phenomena. Whether the result of optical illusion, mass hysteria, or genuine supernatural intervention, the tracks continue to defy complete explanation—and thousands still make the pilgrimage each year.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PART 4: EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="panel">
+            <div class="section-hero">
+                <h1>The Evidence</h1>
+                <p>Physical findings, documented testimonies, eyewitness accounts, and the inexplicable details that define the San Antonio Ghost Tracks mystery.</p>
+            </div>
+
+            <div class="tile-grid">
+                <div class="tile">
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         alt="San Antonio ghost tracks railroad crossing at night with thick fog mist atmosphere Shane Road Villamain Road haunted railway intersection South Side Texas paranormal site visitors cars" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Primary Phenomenon</span>
+                        <h3 class="tile-title">The Invisible Push</h3>
+                        <p class="tile-desc">The central phenomenon: cars placed in neutral on the tracks roll uphill and over the rails without engine power. Witnesses describe the movement as smooth and deliberate, not the jerky roll of gravity alone. Some report feeling a distinct pressure from behind, as if hands are pushing the vehicle. The push has been tested with cars weighing over 5,000 pounds, including Lincoln Continentals and heavy SUVs.</p>
+                    </div>
+                </div>
+
+                <div class="tile">
+                    <img src="https://sites.utexas.edu/theatredance-blog/wp-content/uploads/sites/5041/2022/03/TinyFingerprints_ThomasAllison-1-blog-810x540.jpg" 
+                         alt="baby powder tiny handprints child fingerprints palm lines detailed evidence on car rear bumper trunk San Antonio ghost tracks supernatural proof paranormal investigation" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Physical Evidence</span>
+                        <h3 class="tile-title">The Baby Powder Handprints</h3>
+                        <p class="tile-desc">The most compelling physical evidence: visitors dust their bumpers with baby powder or flour, place their car on the tracks in neutral, and afterward find small handprints. The prints show palm lines, fingerprint ridges, and sizes consistent with children aged 6–10. Some witnesses report both child-sized and adult-sized prints. The prints appear on the bumper and trunk ridge—areas too low for most adults to touch naturally.</p>
+                    </div>
+                </div>
+
+                <div class="tile">
+                    <img src="https://i.ytimg.com/vi/1U7STmL3jrw/maxresdefault.jpg" 
+                         alt="railroad tracks perspective vanishing point optical illusion downhill slope appearing flat or uphill San Antonio Shane Road visual trickery gravity physics anomaly investigation" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Scientific Counter-Evidence</span>
+                        <h3 class="tile-title">The Two-Degree Declination</h3>
+                        <p class="tile-desc">Official measurements confirm the road surface at the crossing slopes downward at approximately two degrees. This subtle incline, combined with visual cues from the surrounding landscape, creates an optical illusion that makes the slope appear level or uphill. Skeptics argue this explains the car movement entirely—vehicles in neutral simply roll downhill, and the human brain misinterprets the direction due to the illusion.</p>
+                    </div>
+                </div>
+
+                <div class="tile">
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         alt="vintage yellow school bus 1930s 1940s era rural Texas road dark stormy sky tragedy children death haunted vehicle historical photograph" 
+                         class="tile-visual">
+                    <div class="tile-body">
+                        <span class="tile-badge">Historical Research</span>
+                        <h3 class="tile-title">The Missing Newspaper Records</h3>
+                        <p class="tile-desc">Despite extensive searches of San Antonio newspaper archives by librarian Matt De Waelsche and others, no record of a school bus crash at the intersection exists. An accident of such magnitude would have been front-page news. The absence of documentation suggests the legend was either fabricated locally or borrowed from the 1938 Salt Lake City tragedy and transplanted to San Antonio through oral tradition.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PART 5: VIDEO SECTION ==================== -->
+        <section id="video" class="panel">
+            <div class="section-hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p>Documentaries, news reports, investigative footage, and firsthand accounts exploring the San Antonio Ghost Tracks phenomenon across decades.</p>
+            </div>
+
+            <div class="video-deck">
+                <div class="video-card">
+                    <div class="video-frame">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/IwrQac9HOmE" title="San Antonio ghost tracks history legend documentary paranormal investigation Shane Road Villamain" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-meta">
+                        <span class="chip chip-ember">Documentary</span>
+                        <span class="chip chip-fog">News Report</span>
+                        <h3>San Antonio's Ghost Tracks Will Be History</h3>
+                        <p>KSAT 12 news report covering the history of the ghost tracks, the legend of the school bus tragedy, and the site's status as one of San Antonio's most enduring paranormal attractions. Includes interviews with locals and footage of the actual crossing.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-frame">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/IwrQac9HOmE" title="San Antonio ghost tracks paranormal investigation baby powder handprints invisible push evidence" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-meta">
+                        <span class="chip chip-ember">Investigation</span>
+                        <span class="chip chip-track">Paranormal</span>
+                        <h3>Ghost Tracks: Paranormal Investigation</h3>
+                        <p>Deep dive into the ghost tracks phenomenon, examining firsthand accounts of the invisible push, baby powder handprint experiments, and attempts to capture evidence of the supernatural. Investigators test the optical illusion theory against witness testimony.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-frame">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/IwrQac9HOmE" title="San Antonio ghost tracks debunked optical illusion scientific explanation gravity slope investigation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-meta">
+                        <span class="chip chip-fog">Analysis</span>
+                        <span class="chip chip-track">Debunking</span>
+                        <h3>Debunking the Ghost Tracks: Science vs. Legend</h3>
+                        <p>Scientific analysis of the optical illusion theory, including measurements of the road's actual slope, explanations for the handprint phenomenon, and forensic examination of why cars appear to roll uphill. Examines the psychology of mass hysteria and belief.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PART 6: THEORIES SECTION ==================== -->
+        <section id="theories" class="panel">
+            <div class="section-hero">
+                <h1>Theories & Explanations</h1>
+                <p>Eighty years of investigation have produced competing explanations. These are the most compelling theories about what pushes the cars at the San Antonio Ghost Tracks.</p>
+            </div>
+
+            <div class="theory-grid">
+                <div class="theory-panel official">
+                    <div class="theory-head">
+                        <div class="theory-avatar">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Optical Illusion</div>
+                            <div class="theory-chance">Scientific Consensus</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>The road surface has a two-degree downward slope, invisible to the eye</li>
+                        <li>Surrounding landscape creates visual cues that reverse perceived direction</li>
+                        <li>Cars in neutral roll downhill by gravity alone—no push required</li>
+                        <li>Handprints are latent fingerprints already on vehicles, revealed by powder</li>
+                        <li>Mass hysteria and expectation bias amplify normal phenomena</li>
+                    </ul>
+                </div>
+
+                <div class="theory-panel paranormal">
+                    <div class="theory-head">
+                        <div class="theory-avatar">👻</div>
+                        <div>
+                            <div class="theory-name">Ghost Children Theory</div>
+                            <div class="theory-chance">Probability: HIGH (Believers)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>Spirits of children killed in the bus crash push cars to prevent similar tragedies</li>
+                        <li>Handprints are physical manifestations of ghostly contact</li>
+                        <li>The push is described as distinct from gravity—gentle but firm pressure</li>
+                        <li>Animals fall silent and birds stop singing near the tracks</li>
+                        <li>The legend persists because the phenomenon is real and repeatable</li>
+                    </ul>
+                </div>
+
+                <div class="theory-panel skeptic">
+                    <div class="theory-head">
+                        <div class="theory-avatar">🔍</div>
+                        <div>
+                            <div class="theory-name">Borrowed Legend Theory</div>
+                            <div class="theory-chance">Probability: HIGH (Historians)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>The 1938 Salt Lake City bus crash was reported nationally and entered folklore</li>
+                        <li>San Antonio residents adopted and localized the story over generations</li>
+                        <li>No newspaper records exist of a crash at the San Antonio intersection</li>
+                        <li>The phenomenon of cars rolling on slopes is common at many locations</li>
+                        <li>The legend gained traction through media exposure and tourism</li>
+                    </ul>
+                </div>
+
+                <div class="theory-panel paranormal">
+                    <div class="theory-head">
+                        <div class="theory-avatar">✦</div>
+                        <div>
+                            <div class="theory-name">Psychic Residue Theory</div>
+                            <div class="theory-chance">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>The area may have hosted earlier tragedies predating the bus legend</li>
+                        <li>Indigenous history and colonial violence may have left psychic imprints</li>
+                        <li>The children's spirits may not be from a bus crash but from another event</li>
+                        <li>Paranormal investigators report other phenomena in the area</li>
+                        <li>The location near Mission San Juan adds layers of historical death</li>
+                    </ul>
+                </div>
+
+                <div class="theory-panel skeptic">
+                    <div class="theory-head">
+                        <div class="theory-avatar">📐</div>
+                        <div>
+                            <div class="theory-name">Magnetic Anomaly Theory</div>
+                            <div class="theory-chance">Probability: LOW</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>Underground mineral deposits could create localized magnetic fields</li>
+                        <li>Magnetic forces might interact with vehicle metal components</li>
+                        <li>No geological surveys have confirmed unusual mineral content</li>
+                        <li>Would not explain handprints or auditory phenomena</li>
+                        <li>Magnetic fields strong enough to move cars would affect compasses</li>
+                    </ul>
+                </div>
+
+                <div class="theory-panel official">
+                    <div class="theory-head">
+                        <div class="theory-avatar">🎭</div>
+                        <div>
+                            <div class="theory-name">Mass Hysteria Theory</div>
+                            <div class="theory-chance">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-list">
+                        <li>Expectation and group dynamics create perceived supernatural events</li>
+                        <li>Visitors arrive believing they will experience something unusual</li>
+                        <li>The power of suggestion makes normal sensations feel paranormal</li>
+                        <li>Social reinforcement strengthens belief in the phenomenon</li>
+                        <li>Does not fully explain the physical handprint evidence</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PART 7: DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="panel">
+            <div class="section-hero">
+                <h1>Case Documents</h1>
+                <p>Historical records, eyewitness accounts, scientific investigations, and official documentation from the San Antonio Ghost Tracks investigation.</p>
+            </div>
+
+            <div class="dossier">
+                <div class="dossier-stamp">UNSOLVED</div>
+
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 4px; color: var(--ghost-white);">SAN ANTONIO GHOST TRACKS</h2>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--smoke); margin-top: 0.5rem;">PARANORMAL INVESTIGATION DOSSIER — SHANE & VILLAMAIN ROADS</p>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Location</div>
+                    <div class="dossier-value">Intersection of Shane Road and Villamain Road, South Side, San Antonio, Texas (Near Mission San Juan)</div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Legend Origin Date</div>
+                    <div class="dossier-value">1930s–1940s (Exact date unknown; no newspaper records confirm a crash at this location)</div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Possible Real-World Origin</div>
+                    <div class="dossier-value">December 1, 1938 — School bus crash in South Jordan, Utah (Salt Lake City area). Train struck bus during blizzard, killing 23 students. News coverage may have inspired or been conflated with San Antonio legend.</div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Primary Phenomena</div>
+                    <div class="dossier-value">
+                        • Cars placed in neutral on tracks roll uphill and over rails without engine power<br>
+                        • Baby powder / flour applied to bumpers reveals small handprints after experiment<br>
+                        • Visitors report hearing children's laughter, voices, and sudden ambient silence<br>
+                        • Some witnesses report seeing apparitions of children near the tracks<br>
+                        • Phantom train sounds (whistle, rumbling, screeching brakes) reported with no train present
+                    </div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Scientific Findings</div>
+                    <div class="dossier-value">
+                        • Road surface measured at approximately two-degree downward declination (optical illusion)<br>
+                        • Forensic analysis: latent fingerprints on vehicles become visible when powder applied<br>
+                        • No geological anomalies or magnetic fields detected in the area<br>
+                        • No records of school bus crash in San Antonio newspaper archives (Matt De Waelsche, 2003)<br>
+                        • Phenomenon consistent with known gravity hills and magnetic hills worldwide
+                    </div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Documented Eyewitness Accounts</div>
+                    <div class="dossier-value">
+                        • Brenda Pacheco (published account): Car moved quickly over tracks; baby powder revealed "tiny hand prints, plain and clear, with lines of the palms and swirls of the fingerprints"<br>
+                        • Myrene (Hawaii, 2008): Witnessed Lincoln Continental pushed with transmission in park; driver terrified; parakeet fell silent at tracks<br>
+                        • Multiple visitors: Report adult-sized handprints alongside child prints on trunks<br>
+                        • Local residents: Report seeing little girl hitchhiker who vanishes from car; ghost of child holding teddy bear in photographs
+                    </div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Media Coverage</div>
+                    <div class="dossier-value">
+                        • Television: "Sightings" (1990s), "Unsolved Mysturies" (1990s), Discovery Channel features<br>
+                        • Print: San Antonio Express-News (multiple articles, 2003–2018), Texas magazines<br>
+                        • Online: Featured on paranormal websites, YouTube documentaries, Reddit discussions<br>
+                        • News: KSAT 12 coverage of tracks as enduring San Antonio landmark (2018)
+                    </div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Safety & Legal Concerns</div>
+                    <div class="dossier-value">
+                        • Traffic congestion, especially during Halloween season<br>
+                        • Reports of carjackings, purse snatchings, and criminal activity near site<br>
+                        • Visitors parking on active railroad tracks create safety hazard<br>
+                        • Area residents have complained about noise, litter, and trespassing<br>
+                        • Local law enforcement has stationed patrol cars at intersection during peak times
+                    </div>
+                </div>
+
+                <div class="dossier-field">
+                    <div class="dossier-label">Case Status</div>
+                    <div class="dossier-value" style="color: var(--ember); font-weight: bold;">ACTIVE PARANORMAL SITE — LEGEND ENDURES</div>
+                </div>
+
+                <div style="margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid rgba(196, 92, 38, 0.08); font-size: 0.68rem; color: var(--smoke); text-align: center; font-family: 'JetBrains Mono', monospace;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE NEWSPAPER ARCHIVES, PARANORMAL INVESTIGATION RECORDS, AND EYEWITNESS TESTIMONIES.<br>
+                    VISIT AT YOUR OWN RISK. RESPECT LOCAL RESIDENTS AND PRIVATE PROPERTY.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox-view" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-shell" id="modal">
+        <div class="modal-card">
+            <button class="modal-exit" onclick="closeModal()">×</button>
+            <div class="modal-inner" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(panelId).classList.add('active');
+            document.querySelectorAll('.nav-pill').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'ghost-push': `
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         class="modal-visual" 
+                         alt="San Antonio ghost tracks railroad crossing at night fog mist haunted railway intersection">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Invisible Push</h2>
+                    <p>The central mystery of the San Antonio Ghost Tracks is the invisible push. Visitors park their cars directly on the railroad tracks at the intersection of Shane and Villamain Roads, shift into neutral, take their foot off the brake, and wait. Within seconds, the car begins to move forward—over the rails, across the bump, to safety on the other side.</p>
+                    <p>What makes the phenomenon remarkable is that the movement appears to be uphill. The road looks level or slightly inclined toward the tracks, yet the car rolls forward with surprising speed. Some drivers report feeling a distinct pressure from behind, as if multiple hands are pushing the vehicle. Others describe the movement as too smooth and too fast to be explained by gravity alone.</p>
+                    <p>Experiments have been conducted with vehicles of various weights, from compact cars to Lincoln Continentals weighing over 5,000 pounds. In one famous account, a driver put the transmission in park, and the car still moved forward over the tracks, the wheels dragging against the locked transmission. The driver was reportedly terrified, jumping from the vehicle and refusing to return.</p>
+                    <p>Skeptics point to the two-degree downward slope as the explanation. But believers argue that the sensation of being pushed, the consistency of the phenomenon across different vehicles and weather conditions, and the accompanying auditory phenomena—children's laughter, sudden silence, phantom train sounds—suggest something more than simple physics.</p>
+                `,
+                'handprints': `
+                    <img src="https://sites.utexas.edu/theatredance-blog/wp-content/uploads/sites/5041/2022/03/TinyFingerprints_ThomasAllison-1-blog-810x540.jpg" 
+                         class="modal-visual" 
+                         alt="baby powder handprints tiny child fingerprints car bumper evidence">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Baby Powder Handprints</h2>
+                    <p>The baby powder experiment is the most compelling piece of physical evidence associated with the ghost tracks. Visitors wash their cars thoroughly with dish soap to remove all oils and fingerprints, then dust the rear bumper and trunk with baby powder or flour. They place the car on the tracks in neutral, allow it to roll over, and then inspect the vehicle.</p>
+                    <p>Consistently, witnesses report finding small handprints on the powder-covered surfaces. The prints are described as detailed—showing palm lines, fingerprint ridges, and sizes consistent with children between 6 and 10 years old. Some witnesses report finding both child-sized prints and adult-sized prints, suggesting the presence of both children and a supervising adult spirit.</p>
+                    <p>Brenda Pacheco, one of the most cited witnesses, described her experience: "I was so excited, I got out to check the back of my car and there were the tiny hand prints! Plain and clear, and so, so tiny! The prints were so perfect, you could see the lines of the palms, and the swirls of the fingerprints!"</p>
+                    <p>Skeptics argue that latent fingerprints—oils left on car surfaces that are invisible to the naked eye—become visible when powder is applied. However, witnesses counter that they thoroughly wash their cars before the experiment, and the prints appear only on the bumper and trunk ridge—areas too low for adults to touch in normal circumstances, and always with fingertips pointing upward, as if pushing.</p>
+                `,
+                'school-bus': `
+                    <img src="https://i0.wp.com/sanantonioreport.org/wp-content/uploads/2015/08/11911530_10156021038520077_205406027_n.jpg" 
+                         class="modal-visual" 
+                         alt="vintage yellow school bus 1930s 1940s era rural Texas road dark stormy sky">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The School Bus Tragedy</h2>
+                    <p>The origin story of the ghost tracks centers on a school bus crash. According to the most common version, in the 1930s or 1940s, a school bus carrying children stalled on the railroad tracks at the intersection of Shane and Villamain Roads. The driver frantically tried to restart the engine as a freight train approached with a burned-out headlamp, offering no warning in the darkness. The train struck the bus, killing ten children.</p>
+                    <p>An alternative version claims a nun was driving a bus of orphans home from a field trip when the same tragedy occurred. In this telling, the guilt-ridden nun later returned to the tracks and parked her own car on the rails, intending to end her life. The ghost children pushed her car to safety, leaving handprints on the trunk. She then devoted her remaining years to opening a school for orphans.</p>
+                    <p>However, extensive searches of San Antonio newspaper archives by librarian Matt De Waelsche found no record of such a crash. An accident of this magnitude would have been front-page news. The absence of documentation suggests the legend was either entirely fabricated or borrowed from another tragedy.</p>
+                    <p>The most likely real-world origin is the December 1, 1938 school bus crash in South Jordan, Utah, where a train struck a bus during a blizzard, killing 23 students. This tragedy received national news coverage and may have been adopted and localized by San Antonio residents over subsequent generations, eventually becoming indistinguishable from local history.</p>
+                `,
+                'optical-illusion': `
+                    <img src="https://i.ytimg.com/vi/1U7STmL3jrw/maxresdefault.jpg" 
+                         class="modal-visual" 
+                         alt="railroad tracks perspective optical illusion downhill slope">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Optical Illusion</h2>
+                    <p>The primary scientific explanation for the ghost tracks phenomenon is an optical illusion. Official measurements have confirmed that the road surface at the crossing slopes downward at approximately two degrees. While this seems slight, it is sufficient to cause a car in neutral to roll forward with noticeable speed.</p>
+                    <p>The illusion works because of the surrounding landscape. The horizon line, the angle of nearby buildings, the slope of adjacent terrain, and the perspective of the railroad tracks themselves all combine to trick the human brain into perceiving a downhill slope as level or uphill. This is a well-documented phenomenon known as a "gravity hill" or "magnetic hill," and similar locations exist worldwide.</p>
+                    <p>Forensic experts have also addressed the handprint phenomenon. They explain that human skin constantly produces oils, and even after washing a car with dish soap, microscopic traces of oil remain on the surface. When baby powder or flour is applied, these latent fingerprints become visible. The prints appear small because they are partial prints or because the powder application creates the illusion of smaller size.</p>
+                    <p>Psychologists add that expectation bias plays a significant role. Visitors arrive at the tracks already believing they will experience something supernatural. This expectation causes them to interpret normal sensations—gravity, wind, engine vibration—as paranormal. The power of suggestion, especially in group settings, can create shared hallucinations and reinforced beliefs.</p>
+                `,
+                'nun-legend': `
+                    <img src="https://texashighways.com/wp-content/uploads/2026/04/RESIZED_Concepcion.jpg" 
+                         class="modal-visual" 
+                         alt="old Catholic church mission architecture San Antonio Texas historical religious building">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Nun and the Orphans</h2>
+                    <p>An alternative version of the ghost tracks legend introduces a nun as the central figure. In this telling, a nun was driving a bus of orphans home from a field trip on a dark evening. As the bus approached the railroad crossing at Shane and Villamain Roads, the engine stalled. The nun tried to restart it quietly so as not to wake the sleeping children.</p>
+                    <p>A freight train emerged from the darkness, its headlamp burned out, giving no warning of its approach. The nun frantically turned the key, but it was too late. The train smashed through the bus, cutting it in half. The nun was thrown through the windshield but miraculously survived. All the children were killed instantly.</p>
+                    <p>Weeks later, consumed by guilt, the nun returned to the site. She parked her car on the tracks and waited for the next train to end her life. As a train approached, she heard small familiar voices. Her car began to move forward, as if pushed from behind. The car rolled to safety just as the train roared past. She got out and found children's handprints on the trunk.</p>
+                    <p>Realizing the children had saved her, the nun found new purpose. She opened a school for orphans and taught there until her death. This version adds a redemptive arc to the tragedy and may explain why some witnesses report both child-sized and adult-sized handprints—the adult prints belonging to the protective nun.</p>
+                `,
+                'san-juan-mission': `
+                    <img src="https://livehomesteadtx.com/wp-content/uploads/2018/09/discoving-the-missions-of-san-antonio-tx-near-homestead-new-homes.jpg" 
+                         class="modal-visual" 
+                         alt="Mission San Juan San Antonio Texas historic Spanish colonial mission church architecture">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Mission San Juan & The South Side</h2>
+                    <p>The ghost tracks are located near Mission San Juan, one of the five Spanish colonial missions that form the San Antonio Missions National Historical Park, a UNESCO World Heritage Site. The missions were established in the early 18th century to spread Christianity among indigenous populations and to serve as a buffer against French expansion from Louisiana.</p>
+                    <p>Mission San Juan was founded in 1716 and moved to its current location in 1731. The area has a deep and often tragic history. Indigenous peoples including the Coahuiltecan suffered from disease, displacement, and cultural disruption during the colonial period. The land around the mission has been the site of centuries of death, struggle, and spiritual significance.</p>
+                    <p>The intersection of Shane and Villamain Roads sits in a remote, industrial section of San Antonio's South Side. The area is surrounded by warehouses, sparse residential development, and railroad infrastructure. The isolation of the location contributes to the eerie atmosphere that visitors describe. At night, the area is dark and quiet, with few streetlights and little traffic.</p>
+                    <p>Some paranormal investigators suggest that the deep historical trauma of the area—indigenous displacement, colonial violence, and centuries of hardship—may have created a "psychic residue" that manifests as the ghostly phenomena experienced at the tracks. Whether or not a school bus crash ever occurred, the land itself may hold memories that surface in unexpected ways.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                closeModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

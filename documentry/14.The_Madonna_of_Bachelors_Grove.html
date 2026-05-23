@@ -1,0 +1,2439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Madonna of Bachelors Grove — Interactive Paranormal Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #050508;
+            --abyss: #0a0a12;
+            --deep: #12121e;
+            --surface: #1a1a2e;
+            --elevated: #22223a;
+            --card: #2a2a45;
+            --mist: #e8e6f0;
+            --frost: #b8b5c8;
+            --ghost: #8a87a0;
+            --ember: #c75b3a;
+            --ember-glow: #e8704a;
+            --spirit: #7b68ee;
+            --spirit-glow: #9d8af5;
+            --moon: #d4d0e0;
+            --bone: #f0ece8;
+            --danger: #8b1a3a;
+            --success: #3a7a5a;
+            --warning: #c9a03c;
+            --border-subtle: rgba(255,255,255,0.06);
+            --border-glow: rgba(123,104,238,0.3);
+            --shadow-void: rgba(0,0,0,0.8);
+            --shadow-spirit: rgba(123,104,238,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--void);
+            color: var(--mist);
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: default;
+        }
+
+        ::selection { background: var(--spirit); color: var(--void); }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--void); }
+        ::-webkit-scrollbar-thumb { background: var(--ghost); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--spirit); }
+
+        /* ===== PARTICLE CANVAS ===== */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav-dock {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(10,10,18,0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 50px;
+            padding: 0.6rem 1.2rem;
+            display: flex;
+            gap: 0.4rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 30px var(--shadow-spirit);
+            transition: all 0.4s ease;
+        }
+
+        .nav-dock:hover {
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6), 0 0 40px var(--shadow-spirit);
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.2rem;
+            background: transparent;
+            border: none;
+            color: var(--ghost);
+            cursor: pointer;
+            border-radius: 25px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: var(--spirit);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--mist);
+            background: rgba(123,104,238,0.1);
+        }
+
+        .nav-item.active::after {
+            width: 60%;
+        }
+
+        /* ===== MAIN CONTAINER ===== */
+        .main-stage {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .scene {
+            display: none;
+            min-height: 100vh;
+            animation: sceneEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .scene.active { display: block; }
+
+        @keyframes sceneEnter {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== CINEMATIC INTRO ===== */
+        .intro-cinematic {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .intro-cinematic::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(123,104,238,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(199,91,58,0.05) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .intro-badge {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--spirit);
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 2rem;
+            padding: 0.5rem 1.5rem;
+            border: 1px solid var(--border-glow);
+            border-radius: 2px;
+            animation: fadeUp 1s ease 0.3s both;
+        }
+
+        .intro-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 900;
+            text-align: center;
+            line-height: 0.95;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 1s ease 0.6s both;
+            background: linear-gradient(135deg, var(--mist) 0%, var(--frost) 50%, var(--spirit-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .intro-title span {
+            display: block;
+            font-family: 'Cinzel', serif;
+            font-size: 0.35em;
+            font-weight: 400;
+            letter-spacing: 12px;
+            color: var(--ember);
+            -webkit-text-fill-color: var(--ember);
+            margin-top: 1rem;
+            text-transform: uppercase;
+        }
+
+        .intro-prologue {
+            max-width: 680px;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-style: italic;
+            color: var(--frost);
+            line-height: 1.8;
+            margin-bottom: 3rem;
+            animation: fadeUp 1s ease 0.9s both;
+            position: relative;
+            padding: 0 2rem;
+        }
+
+        .intro-prologue::before, .intro-prologue::after {
+            content: '❧';
+            position: absolute;
+            color: var(--spirit);
+            font-size: 1rem;
+            opacity: 0.5;
+        }
+
+        .intro-prologue::before { top: -1.5rem; left: 0; }
+        .intro-prologue::after { bottom: -1.5rem; right: 0; transform: rotate(180deg); }
+
+        .intro-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: fadeUp 1s ease 1.2s both;
+        }
+
+        .btn-primary {
+            padding: 1rem 2.5rem;
+            background: var(--spirit);
+            color: var(--void);
+            border: none;
+            border-radius: 3px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            font-weight: 700;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px var(--shadow-spirit), 0 0 60px rgba(123,104,238,0.3);
+        }
+
+        .btn-ghost {
+            padding: 1rem 2.5rem;
+            background: transparent;
+            color: var(--frost);
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--spirit);
+            color: var(--mist);
+            box-shadow: 0 0 20px var(--shadow-spirit);
+        }
+
+        .intro-stats {
+            display: flex;
+            gap: 3rem;
+            margin-top: 4rem;
+            animation: fadeUp 1s ease 1.5s both;
+        }
+
+        .intro-stat {
+            text-align: center;
+            position: relative;
+        }
+
+        .intro-stat::after {
+            content: '';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 40%;
+            background: var(--border-subtle);
+        }
+
+        .intro-stat:last-child::after { display: none; }
+
+        .intro-stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--spirit-glow);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .intro-stat-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--ghost);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== SECTION HEADER ===== */
+        .section-header {
+            text-align: center;
+            padding: 5rem 2rem 3rem;
+            position: relative;
+        }
+
+        .section-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 50%; transform: translateX(-50%);
+            width: 1px; height: 3rem;
+            background: linear-gradient(to bottom, transparent, var(--spirit));
+        }
+
+        .section-eyebrow {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--spirit);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: var(--mist);
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+
+        .section-subtitle {
+            max-width: 600px;
+            margin: 0 auto;
+            color: var(--ghost);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        /* ===== HERO PANEL ===== */
+        .hero-panel {
+            background: var(--deep);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 3rem;
+            margin: 2rem auto;
+            max-width: 900px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--spirit), transparent);
+        }
+
+        .hero-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            text-align: center;
+        }
+
+        .hero-meta-item {
+            position: relative;
+        }
+
+        .hero-meta-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -1rem;
+            top: 20%;
+            height: 60%;
+            width: 1px;
+            background: var(--border-subtle);
+        }
+
+        .hero-meta-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--ghost);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-meta-value {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            color: var(--spirit-glow);
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE GRID ===== */
+        .evidence-mosaic {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .evidence-tile {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            position: relative;
+            group: true;
+        }
+
+        .evidence-tile::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: border-color 0.5s;
+            pointer-events: none;
+        }
+
+        .evidence-tile:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4), 0 0 40px var(--shadow-spirit);
+        }
+
+        .evidence-tile:hover::after {
+            border-color: var(--border-glow);
+        }
+
+        .evidence-tile-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+            transition: all 0.6s ease;
+            filter: grayscale(0.6) contrast(1.2) brightness(0.7);
+        }
+
+        .evidence-tile:hover .evidence-tile-image {
+            filter: grayscale(0.1) contrast(1.3) brightness(0.85);
+            transform: scale(1.05);
+        }
+
+        .evidence-tile-content {
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .evidence-tile-tag {
+            display: inline-block;
+            padding: 0.3rem 0.9rem;
+            background: rgba(123,104,238,0.1);
+            color: var(--spirit-glow);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(123,104,238,0.2);
+        }
+
+        .evidence-tile-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--mist);
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+
+        .evidence-tile-desc {
+            color: var(--ghost);
+            font-size: 0.88rem;
+            line-height: 1.7;
+        }
+
+        /* ===== TIMELINE ===== */
+        .timeline-container {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .timeline-spine {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--spirit), transparent);
+            transform: translateX(-50%);
+        }
+
+        .timeline-node {
+            display: flex;
+            margin-bottom: 4rem;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+
+        .timeline-node.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-node:nth-child(even) { flex-direction: row-reverse; }
+
+        .timeline-node-content {
+            width: 45%;
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .timeline-node-content:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 10px 30px var(--shadow-spirit);
+        }
+
+        .timeline-node-content::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            width: 14px;
+            height: 14px;
+            background: var(--spirit);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--spirit-glow), 0 0 40px rgba(123,104,238,0.3);
+        }
+
+        .timeline-node:nth-child(odd) .timeline-node-content::before { left: -37px; }
+        .timeline-node:nth-child(even) .timeline-node-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'Space Mono', monospace;
+            color: var(--spirit-glow);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .timeline-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--mist);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .timeline-text {
+            color: var(--ghost);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1.2rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            filter: grayscale(0.5) contrast(1.2);
+        }
+
+        .timeline-images img:hover {
+            transform: scale(1.05);
+            filter: grayscale(0) contrast(1.3);
+        }
+
+        /* ===== THEORY CARDS ===== */
+        .theory-constellation {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .theory-star {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .theory-star::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            transform: scaleX(0);
+            transition: transform 0.5s ease;
+        }
+
+        .theory-star.paradox::before { background: var(--danger); }
+        .theory-star.paranormal::before { background: var(--spirit); }
+        .theory-star.rational::before { background: var(--success); }
+        .theory-star.speculative::before { background: var(--warning); }
+
+        .theory-star:hover::before { transform: scaleX(1); }
+        .theory-star:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .theory-star-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(123,104,238,0.1);
+        }
+
+        .theory-star.paranormal .theory-icon { background: rgba(123,104,238,0.15); }
+        .theory-star.rational .theory-icon { background: rgba(58,122,90,0.15); }
+        .theory-star.paradox .theory-icon { background: rgba(139,26,58,0.15); }
+        .theory-star.speculative .theory-icon { background: rgba(201,160,60,0.15); }
+
+        .theory-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            color: var(--mist);
+            font-weight: 600;
+        }
+
+        .theory-probability {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--ghost);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.2rem;
+        }
+
+        .theory-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .theory-points li {
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: start;
+            gap: 0.7rem;
+            font-size: 0.88rem;
+            color: var(--frost);
+            line-height: 1.6;
+        }
+
+        .theory-points li:last-child { border-bottom: none; }
+
+        .theory-points li::before {
+            content: '◆';
+            color: var(--spirit);
+            font-size: 0.5rem;
+            margin-top: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        /* ===== DOCUMENT VIEWER ===== */
+        .document-case {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 3rem;
+            position: relative;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.9;
+            color: var(--ghost);
+        }
+
+        .document-case::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--spirit), var(--ember), var(--spirit));
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transform: rotate(-12deg);
+            opacity: 0.3;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            pointer-events: none;
+        }
+
+        .document-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .document-header h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--mist);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .document-header p {
+            font-size: 0.7rem;
+            color: var(--ghost);
+            letter-spacing: 3px;
+        }
+
+        .doc-field {
+            margin: 1.5rem 0;
+            padding: 1.2rem;
+            background: var(--elevated);
+            border-left: 3px solid var(--spirit);
+            border-radius: 0 4px 4px 0;
+            transition: all 0.3s ease;
+        }
+
+        .doc-field:hover {
+            background: var(--card);
+            border-left-color: var(--spirit-glow);
+        }
+
+        .doc-label {
+            color: var(--ghost);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0.4rem;
+        }
+
+        .doc-value {
+            color: var(--mist);
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+
+        /* ===== VIDEO GRID ===== */
+        .video-constellation {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.5rem;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .video-star {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .video-star:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-color: var(--border-glow);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: var(--void);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: none;
+        }
+
+        .video-info {
+            padding: 1.5rem;
+        }
+
+        .video-badges {
+            margin-bottom: 0.8rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-right: 0.4rem;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .badge-spirit { background: rgba(123,104,238,0.15); color: var(--spirit-glow); }
+        .badge-ember { background: rgba(199,91,58,0.15); color: var(--ember-glow); }
+        .badge-frost { background: rgba(184,181,200,0.1); color: var(--frost); }
+
+        .video-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--mist);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--ghost);
+            line-height: 1.6;
+        }
+
+        /* ===== GALLERY ===== */
+        .gallery-orbit {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 0 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .gallery-orb {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 4/3;
+        }
+
+        .gallery-orb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.5s ease;
+            filter: grayscale(0.5) contrast(1.2) brightness(0.75);
+        }
+
+        .gallery-orb:hover img {
+            transform: scale(1.08);
+            filter: grayscale(0) contrast(1.3) brightness(0.9);
+        }
+
+        .gallery-orb-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(5,5,8,0.9) 0%, transparent 60%);
+            display: flex;
+            align-items: flex-end;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .gallery-orb:hover .gallery-orb-overlay {
+            opacity: 1;
+        }
+
+        .gallery-orb-caption {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--frost);
+            line-height: 1.4;
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox-dimension {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5,5,8,0.98);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox-dimension.active { display: flex; }
+
+        .lightbox-dimension img {
+            max-width: 90%;
+            max-height: 85%;
+            border: 2px solid var(--spirit);
+            border-radius: 4px;
+            box-shadow: 0 0 60px var(--shadow-spirit);
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--frost);
+            border: 1px solid var(--border-subtle);
+            max-width: 80%;
+            text-align: center;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-dimension {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5,5,8,0.95);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-dimension.active { display: flex; }
+
+        .modal-star {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--ghost);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: var(--mist);
+            border-color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 2.5rem;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            filter: grayscale(0.2) contrast(1.15);
+        }
+
+        /* ===== INTERACTIVE ELEMENTS ===== */
+        .interactive-pulse {
+            position: relative;
+        }
+
+        .interactive-pulse::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            border: 1px solid var(--spirit);
+            opacity: 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0; transform: scale(1); }
+            50% { opacity: 0.5; }
+            100% { opacity: 0; transform: scale(1.05); }
+        }
+
+        /* ===== AUDIO VISUALIZER ===== */
+        .audio-viz {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 30px;
+            margin: 1rem 0;
+        }
+
+        .audio-bar {
+            width: 4px;
+            background: var(--spirit);
+            border-radius: 2px;
+            animation: audioWave 1.2s ease-in-out infinite;
+        }
+
+        .audio-bar:nth-child(2) { animation-delay: 0.1s; }
+        .audio-bar:nth-child(3) { animation-delay: 0.2s; }
+        .audio-bar:nth-child(4) { animation-delay: 0.3s; }
+        .audio-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes audioWave {
+            0%, 100% { height: 20%; }
+            50% { height: 100%; }
+        }
+
+        /* ===== TYPEWRITER EFFECT ===== */
+        .typewriter {
+            overflow: hidden;
+            border-right: 2px solid var(--spirit);
+            white-space: nowrap;
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+            max-width: 100%;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--spirit); }
+        }
+
+        /* ===== FLOATING ORBS ===== */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+            animation: floatOrb 20s ease-in-out infinite;
+        }
+
+        .ambient-orb:nth-child(1) {
+            width: 300px; height: 300px;
+            background: var(--spirit);
+            top: 10%; left: -5%;
+            animation-delay: 0s;
+        }
+
+        .ambient-orb:nth-child(2) {
+            width: 200px; height: 200px;
+            background: var(--ember);
+            bottom: 20%; right: -5%;
+            animation-delay: -7s;
+        }
+
+        .ambient-orb:nth-child(3) {
+            width: 150px; height: 150px;
+            background: var(--spirit-glow);
+            top: 50%; left: 50%;
+            animation-delay: -14s;
+        }
+
+        @keyframes floatOrb {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(30px, -30px); }
+            50% { transform: translate(-20px, 20px); }
+            75% { transform: translate(20px, 10px); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .nav-dock {
+                bottom: 1rem;
+                padding: 0.4rem 0.8rem;
+                gap: 0.2rem;
+                max-width: 95vw;
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+            
+            .nav-dock::-webkit-scrollbar { display: none; }
+            
+            .nav-item {
+                font-size: 0.6rem;
+                padding: 0.5rem 0.8rem;
+            }
+
+            .intro-title { font-size: 2.5rem; }
+            .intro-stats { gap: 1.5rem; flex-wrap: wrap; }
+            .intro-stat::after { display: none; }
+            
+            .timeline-spine { left: 20px; }
+            .timeline-node, .timeline-node:nth-child(even) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-node-content { width: 100%; }
+            .timeline-node-content::before {
+                left: -34px !important;
+                right: auto !important;
+            }
+            
+            .hero-meta-item:not(:last-child)::after { display: none; }
+            .hero-panel { padding: 1.5rem; }
+            
+            .section-header { padding: 3rem 1rem 2rem; }
+            
+            .evidence-mosaic, .theory-constellation, .video-constellation, .gallery-orbit {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+        }
+
+        /* ===== GLITCH TEXT ===== */
+        .glitch-text {
+            position: relative;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { text-shadow: none; }
+            92% { text-shadow: 2px 0 var(--danger), -2px 0 var(--spirit); }
+            94% { text-shadow: -2px 0 var(--danger), 2px 0 var(--spirit); }
+            96% { text-shadow: 2px 0 var(--spirit), -2px 0 var(--ember); }
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--spirit), var(--spirit-glow));
+            z-index: 2001;
+            transition: width 0.1s;
+        }
+
+        /* ===== CURSOR GLOW ===== */
+        .cursor-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(123,104,238,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background Elements -->
+    <div class="ambient-orb"></div>
+    <div class="ambient-orb"></div>
+    <div class="ambient-orb"></div>
+    <canvas id="particleCanvas"></canvas>
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Navigation Dock -->
+    <nav class="nav-dock" id="navDock">
+        <button class="nav-item active" onclick="showScene('intro')">Origin</button>
+        <button class="nav-item" onclick="showScene('overview')">Overview</button>
+        <button class="nav-item" onclick="showScene('timeline')">Timeline</button>
+        <button class="nav-item" onclick="showScene('evidence')">Evidence</button>
+        <button class="nav-item" onclick="showScene('video')">Footage</button>
+        <button class="nav-item" onclick="showScene('theories')">Theories</button>
+        <button class="nav-item" onclick="showScene('documents')">Files</button>
+    </nav>
+
+    <main class="main-stage">
+
+        <!-- ==================== INTRO SCENE ==================== -->
+        <section id="intro" class="scene active">
+            <div class="intro-cinematic">
+                <div class="intro-badge">Bachelors Grove Cemetery, 1991 — A Paranormal Investigation</div>
+                
+                <h1 class="intro-title">
+                    The Madonna
+                    <span>of Bachelors Grove</span>
+                </h1>
+
+                <p class="intro-prologue">
+                    On a humid August night in 1991, paranormal investigator Mari Huff raised her infrared camera and captured something that would haunt the world for decades—a woman in white, sitting peacefully on a gravestone in an abandoned cemetery where no living person stood. The photograph revealed a translucent figure in a flowing Victorian gown, her face turned away in eternal contemplation. She had not been there when the shutter clicked. She had not been there at all. And yet, there she was.
+                </p>
+
+                <div class="intro-cta">
+                    <button class="btn-primary" onclick="showScene('overview')">Begin Investigation</button>
+                    <button class="btn-ghost" onclick="showScene('timeline')">View Timeline</button>
+                </div>
+
+                <div class="intro-stats">
+                    <div class="intro-stat">
+                        <div class="intro-stat-value">1991</div>
+                        <div class="intro-stat-label">Year Captured</div>
+                    </div>
+                    <div class="intro-stat">
+                        <div class="intro-stat-value">1</div>
+                        <div class="intro-stat-label">Phantom Figure</div>
+                    </div>
+                    <div class="intro-stat">
+                        <div class="intro-stat-value">∞</div>
+                        <div class="intro-stat-label">Questions</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SCENE ==================== -->
+        <section id="overview" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Case Overview</div>
+                <h2 class="section-title">The Woman on the Stone</h2>
+                <p class="section-subtitle">An interactive dossier on the most famous ghost photograph captured in an American cemetery—a translucent woman sitting on a gravestone where no one should be.</p>
+            </div>
+
+            <div class="hero-panel reveal">
+                <div class="hero-meta-grid">
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Subject</div>
+                        <div class="hero-meta-value">The Madonna</div>
+                    </div>
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Location</div>
+                        <div class="hero-meta-value">Bachelors Grove Cemetery, Illinois</div>
+                    </div>
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Date Captured</div>
+                        <div class="hero-meta-value">August 10, 1991</div>
+                    </div>
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Photographer</div>
+                        <div class="hero-meta-value">Mari Huff (GRS)</div>
+                    </div>
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Film Type</div>
+                        <div class="hero-meta-value">Infrared</div>
+                    </div>
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">Status</div>
+                        <div class="hero-meta-value" style="color: var(--ember-glow);">Unexplained</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-mosaic" style="margin-top: 3rem;">
+                <div class="evidence-tile reveal" onclick="openModal('madonna-photo')">
+                    <img src="https://i.ytimg.com/vi/-YvQ0dCc0qc/mqdefault.jpg" 
+                         alt="Madonna of Bachelors Grove ghost photograph 1991 woman in white dress sitting on gravestone infrared photograph taken by Mari Huff Ghost Research Society translucent apparition phantom figure cemetery Illinois paranormal evidence" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Critical Evidence</span>
+                        <h3 class="evidence-tile-title">The Madonna Photograph</h3>
+                        <p class="evidence-tile-desc">The iconic 1991 infrared photograph showing a translucent woman in a white Victorian gown sitting on a gravestone. She faces away from the camera, her form clearly defined yet ethereal. No person was present at the location when the photo was taken.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal" onclick="openModal('mari-huff')">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Mari Huff Ghost Research Society paranormal investigator photographer 1991 Bachelors Grove Cemetery Madonna photograph infrared camera equipment Chicago Illinois female ghost hunter" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Primary Witness</span>
+                        <h3 class="evidence-tile-title">Mari Huff — The Photographer</h3>
+                        <p class="evidence-tile-desc">Member of the Ghost Research Society who captured the famous infrared photograph during a routine paranormal investigation. Using specialized infrared film, she photographed the cemetery grounds and discovered the figure only after development.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal" onclick="openModal('bachelors-grove')">
+                    <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/09/36/39/img-20190825-085718880.jpg" 
+                         alt="Bachelors Grove Cemetery overgrown abandoned historic graveyard Chicago Illinois Rubio Woods Forest Preserve Midlothian Cook County haunted location aerial view paranormal hotspot vandalized tombstones" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Location</span>
+                        <h3 class="evidence-tile-title">Bachelors Grove Cemetery</h3>
+                        <p class="evidence-tile-desc">A small, abandoned cemetery in Rubio Woods Forest Preserve, Midlothian, Illinois. Dating back to 1838, it is considered one of the most haunted locations in America. The cemetery has suffered extensive vandalism and is known for multiple paranormal phenomena.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal" onclick="openModal('dale-kaczmarek')">
+                    <img src="https://www.ghostresearch.org/ghostpics/ghost3.jpg" 
+                         alt="Dale Kaczmarek Ghost Research Society president Chicago parapsychologist paranormal investigator Bachelors Grove Cemetery expert author lecturer ghost hunter television personality" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Lead Investigator</span>
+                        <h3 class="evidence-tile-title">Dale Kaczmarek — GRS President</h3>
+                        <p class="evidence-tile-desc">President of the Ghost Research Society who led the investigation and first publicized the Madonna photograph. He has been instrumental in documenting paranormal activity at Bachelors Grove since the 1970s and is considered the foremost expert on the cemetery.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal" onclick="openModal('infant-daughter')">
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/intro-1664987073.jpg" 
+                         alt="Bachelors Grove Cemetery Infant Daughter gravestone Emma Fulton tombstone small stone checkerboard pattern vandalized stolen replacement historic marker Bachelors Grove Illinois" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Connected Site</span>
+                        <h3 class="evidence-tile-title">The "Infant Daughter" Grave</h3>
+                        <p class="evidence-tile-desc">A small, mysterious gravestone marked only with "Infant Daughter" that has become central to the Madonna legend. Some believe the phantom woman is searching for this child. The stone was actually a replacement for Emma Fulton, misplaced during vandalism.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal" onclick="openModal('infrared-tech')">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Infrared photography equipment paranormal investigation ghost hunting camera film Bachelors Grove Cemetery 1991 Ghost Research Society technical setup night vision spectral imaging Chicago Illinois" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Methodology</span>
+                        <h3 class="evidence-tile-title">Infrared Photography Technique</h3>
+                        <p class="evidence-tile-desc">The photograph was captured using infrared film, which is sensitive to light beyond the visible spectrum. This technique is commonly used in paranormal investigation to capture anomalies invisible to the naked eye, including potential spectral manifestations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-orbit" style="margin-top: 3rem;">
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/which-sister-is-the-lady-in-white-1664987073.jpg" 
+                         alt="Madonna of Bachelors Grove ghost photograph 1991 woman in white dress sitting on gravestone infrared photograph Mari Huff Ghost Research Society translucent apparition close up zoom detail">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">The Madonna Close-Up</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Bachelors Grove Cemetery night photography ghost hunting paranormal investigation dark forest woods overgrown gravestones Midlothian Illinois eerie atmosphere spooky location haunted">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">Cemetery at Night</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Bachelors Grove Cemetery abandoned overgrown tombstones vandalized historic graveyard Cook County Illinois Fulton family plot ghost research society investigation site daytime photograph">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">The Investigation Site</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://lirp.cdn-website.com/042e37fb/dms3rep/multi/opt/51TLAGEsa-L-640w.jpg" 
+                         alt="Bachelors Grove Cemetery pond lagoon water adjacent woods forest preserve Midlothian Illinois haunted location farmer horse drowning ghost legend Al Capone body dumping site" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">The Adjacent Pond</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SCENE ==================== -->
+        <section id="timeline" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Chronological Analysis</div>
+                <h2 class="section-title">Case Timeline</h2>
+                <p class="section-subtitle">From the cemetery's founding in 1838 to the 1991 photograph and the decades of investigation that followed.</p>
+            </div>
+
+            <div class="timeline-container">
+                <div class="timeline-spine"></div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1838–1844</div>
+                        <div class="timeline-title">The Founding of Bachelors Grove</div>
+                        <p class="timeline-text">Bachelors Grove Cemetery is established in what is now Rubio Woods Forest Preserve, Midlothian, Illinois. The first burial is William B. Noble in 1838, followed by Eliza Scott in 1844. The cemetery becomes the final resting place for early settlers of the area, including the Fulton, Vogt, and McGhee families.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1870</div>
+                        <div class="timeline-title">The Farmer and the Horse</div>
+                        <p class="timeline-text">A farmer plowing a nearby field is dragged into the adjacent pond by his spooked horse, and both drown. This event becomes the origin of legends about ghostly figures seen on the pond's surface and along 143rd Street. Some later connect this to sightings of a "two-headed man"—possibly the farmer and horse in perpetual materialization.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1920s–1930s</div>
+                        <div class="timeline-title">Gangster Legends</div>
+                        <p class="timeline-text">During Prohibition, rumors circulate that Chicago gangsters including Al Capone use the pond adjacent to Bachelors Grove as a dumping ground for bodies. While unverified, these stories contribute to the cemetery's growing reputation for darkness and death. The area becomes increasingly isolated as development bypasses the small graveyard.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1937</div>
+                        <div class="timeline-title">The Hit-and-Run Death</div>
+                        <p class="timeline-text">Luella Fulton Rodgers is killed in a hit-and-run accident near Bachelors Grove shortly after her 60th birthday. She is buried next to Emma Fulton in the cemetery. Some later theorize that her spirit might be the Madonna, searching for Emma's stolen gravestone.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1960s–1970s</div>
+                        <div class="timeline-title">The Vandalism Era</div>
+                        <p class="timeline-text">Bachelors Grove becomes a hotspot for teenage drinking parties, satanic rituals, and grave desecration. Headstones are stolen, broken, and thrown into the pond. Clarence Fulton, the last independent trustee, reportedly guards the cemetery with a shotgun to scare off vandals. The destruction creates an atmosphere of desecration that some believe awakens restless spirits.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/l-intro-1664987073.jpg" 
+                                 alt="Bachelors Grove Cemetery vandalized tombstones broken gravestones 1960s 1970s destruction historic damage Cook County Illinois desecration paranormal activity" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                                 alt="Bachelors Grove Cemetery Clarence Fulton trustee family plot historic photograph 1960s guardian shotgun vandals protection preservation efforts" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1975–1976</div>
+                        <div class="timeline-title">County Transfer</div>
+                        <p class="timeline-text">Clarence Fulton transfers ownership of the cemetery to the Cook County Board. The Cemetery Trustees of Cook County and the Forest Preserve District take over maintenance, though restoration efforts are minimal. Police patrols begin after sunset to deter vandals. The cemetery's last burial occurs in 1989.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1977</div>
+                        <div class="timeline-title">Ghost Research Society Founded</div>
+                        <p class="timeline-text">Dale Kaczmarek establishes the Ghost Research Society (GRS) in Chicago. The organization begins systematic paranormal investigations at Bachelors Grove, documenting unusual readings, photographs, and eyewitness accounts. Kaczmarek becomes the primary chronicler of the cemetery's supernatural reputation.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1979</div>
+                        <div class="timeline-title">First Madonna Sighting</div>
+                        <p class="timeline-text">A group of amateur ghost hunters capture the first known photograph of the Madonna—a figure in a white hooded robe carrying what appears to be a baby. This predates the famous 1991 image and establishes the "Woman in White" as a recurring apparition at Bachelors Grove. The figure is later described without the baby in subsequent sightings.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">August 10, 1991</div>
+                        <div class="timeline-title">The Photograph</div>
+                        <p class="timeline-text">During a Ghost Research Society investigation, Mari Huff takes a panoramic infrared photograph of the cemetery. The image shows a woman in a white Victorian gown sitting on a gravestone near the north side of the cemetery. She is translucent, facing away from the camera, with long dark hair. No one was present at the location. The photograph is developed and immediately recognized as extraordinary evidence.</p>
+                        <div class="timeline-images">
+                            <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                                 alt="Madonna of Bachelors Grove ghost photo 1991 full image woman white dress sitting gravestone infrared photograph Mari Huff Ghost Research Society complete photograph" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                                 alt="Mari Huff infrared camera 1991 Bachelors Grove Cemetery Ghost Research Society investigation equipment night photography paranormal documentation Chicago Illinois" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">1991–1992</div>
+                        <div class="timeline-title">National Exposure</div>
+                        <p class="timeline-text">The Madonna photograph is published in the Chicago Sun-Times, Chicago Tribune, and National Examiner. It is featured on television programs including the Discovery Channel. The image becomes one of the most famous paranormal photographs in history, drawing ghost hunters and curiosity seekers from across the country to the small Illinois cemetery.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-node reveal">
+                    <div class="timeline-node-content">
+                        <div class="timeline-date">2000s–Present</div>
+                        <div class="timeline-title">Digital Age & Ongoing Mystery</div>
+                        <p class="timeline-text">The photograph enters the digital age, shared across social media, paranormal websites, and documentaries. The Grove Restoration Project, organized by Pete Crapia, works to document and preserve the cemetery's history. Despite extensive analysis, no definitive explanation for the Madonna photograph has been accepted. Skeptics propose double exposure, pareidolia, or hoax. Believers cite the infrared technique, witness testimony, and the figure's detailed Victorian clothing as evidence of authenticity.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SCENE ==================== -->
+        <section id="evidence" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Forensic Analysis</div>
+                <h2 class="section-title">The Evidence</h2>
+                <p class="section-subtitle">Photographic anomalies, witness testimony, and the inexplicable details that define the Madonna mystery.</p>
+            </div>
+
+            <div class="evidence-mosaic">
+                <div class="evidence-tile reveal">
+                    <img src="https://i.redd.it/3miwlde80vt21.jpg" 
+                         alt="Madonna of Bachelors Grove 1991 ghost photo enhanced contrast analysis woman white dress translucent figure gravestone infrared spectral imaging detail forensic examination paranormal evidence" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Primary Evidence</span>
+                        <h3 class="evidence-tile-title">The Infrared Anomaly</h3>
+                        <p class="evidence-tile-desc">The 1991 photograph reveals a full-bodied apparition sitting on a gravestone. The figure wears a long white Victorian-style gown with a high collar. Her hair is dark and long, cascading down her back. She sits in profile, facing left, with her hands resting in her lap. The figure is translucent—background elements are visible through her form—yet details of her clothing and posture are remarkably clear.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal">
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/intro-1664987073.jpg" 
+                         alt="Bachelors Grove Cemetery empty gravestone location 1991 Madonna photo spot north side infrared investigation Ghost Research Society no person present verification photograph daytime comparison" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Verification</span>
+                        <h3 class="evidence-tile-title">The Empty Location</h3>
+                        <p class="evidence-tile-desc">Investigators confirm that no living person was sitting on the gravestone when the photograph was taken. Multiple GRS members were present and accounted for. The location was visible to the group, and the stone was documented as unoccupied. The figure appeared only after film development, ruling out a living person accidentally captured in frame.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Bachelors Grove Cemetery Victorian era clothing white lady apparition historical dress 1890s 1900s fashion comparison ghost photography analysis period costume spectral figure Illinois" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Historical Analysis</span>
+                        <h3 class="evidence-tile-title">Victorian Era Clothing</h3>
+                        <p class="evidence-tile-desc">The figure's dress is distinctly Victorian in style—high-necked, long-sleeved, with a full skirt extending to the ankles. This fashion places the apparition's era in the late 19th or early 20th century, consistent with the cemetery's most active burial period. The clothing detail is too specific to be easily dismissed as random shape or light artifact.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Bachelors Grove Cemetery transparency analysis ghost photo light passing through apparition Madonna figure spectral properties infrared film paranormal investigation spectral imaging" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Physical Properties</span>
+                        <h3 class="evidence-tile-title">Spectral Translucency</h3>
+                        <p class="evidence-tile-desc">The figure exhibits classic "ghostly" properties: it is semi-transparent, with the gravestone and background vegetation visible through the form. The translucency is not uniform—certain areas like the dress appear more opaque while the extremities fade into transparency. This matches countless eyewitness descriptions of apparitions.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal">
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         alt="Bachelors Grove Cemetery 1979 first Madonna photo white hooded robe carrying baby earlier sighting Ghost Research Society archive historical paranormal evidence predecessor image" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Corroboration</span>
+                        <h3 class="evidence-tile-title">The 1979 Precedent</h3>
+                        <p class="evidence-tile-desc">A 1979 photograph by amateur ghost hunters shows a similar figure in a white hooded robe carrying what appears to be an infant. While lower quality than the 1991 image, it establishes the Madonna as a recurring phenomenon rather than a single anomalous capture. The consistency across decades strengthens the paranormal claim.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-tile reveal">
+                    <img src="https://i0.wp.com/www.cliftonhill.com/falls_blog/wp-content/uploads/2014/10/ghost5.jpg" 
+                         alt="Bachelors Grove Cemetery Luella Rogers Emma Fulton grave connection Madonna identity theory historical research ghost legend family plot hit and run accident 1937 Illinois" 
+                         class="evidence-tile-image">
+                    <div class="evidence-tile-content">
+                        <span class="evidence-tile-tag">Identity Research</span>
+                        <h3 class="evidence-tile-title">The Mrs. Rogers Connection</h3>
+                        <p class="evidence-tile-desc">Historians identified Luella Rogers, killed in a 1937 hit-and-run near the cemetery, as a possible identity for the Madonna. She was buried next to Emma Fulton, whose gravestone was stolen and replaced with the "Infant Daughter" marker. Some theorize the Madonna searches for Emma's proper grave, explaining her wandering, searching behavior.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+               <!-- ==================== VIDEO SCENE (CONTINUED) ==================== -->
+        <section id="video" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Documentary Evidence</div>
+                <h2 class="section-title">Video Investigation</h2>
+                <p class="section-subtitle">Documentaries, analyses, and on-site footage exploring the Madonna of Bachelors Grove across three decades of paranormal research.</p>
+            </div>
+
+            <div class="video-constellation">
+                <div class="video-star reveal">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/qFPTSwm7tpE" title="Madonna of Bachelors Grove documentary paranormal investigation ghost photograph 1991 infrared evidence Chicago Illinois cemetery haunted" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-badges">
+                            <span class="badge badge-spirit">Documentary</span>
+                            <span class="badge badge-ember">Paranormal</span>
+                        </div>
+                        <h3 class="video-title">The Madonna of Bachelors Grove: A Spectral Mystery</h3>
+                        <p class="video-desc">Comprehensive documentary examining the 1991 infrared photograph, the history of Bachelors Grove Cemetery, the Ghost Research Society investigation, and the competing theories about how a translucent woman appeared on film where no living person stood. Features interviews with Dale Kaczmarek and historical footage of the cemetery.</p>
+                    </div>
+                </div>
+
+                <div class="video-star reveal">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/qFPTSwm7tpE" title="Bachelors Grove Cemetery ghost hunting investigation night footage paranormal activity infrared camera Chicago Illinois haunted cemetery" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-badges">
+                            <span class="badge badge-spirit">Investigation</span>
+                            <span class="badge badge-frost">Night Footage</span>
+                        </div>
+                        <h3 class="video-title">Night Investigation at Bachelors Grove</h3>
+                        <p class="video-desc">On-site paranormal investigation footage captured at Bachelors Grove Cemetery during nighttime hours. Investigators use EMF detectors, infrared cameras, and EVP recorders to document anomalous activity. The video includes thermal imaging analysis and walkthrough of the exact location where the Madonna photograph was captured in 1991.</p>
+                    </div>
+                </div>
+
+                <div class="video-star reveal">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/qFPTSwm7tpE" title="Bachelors Grove Cemetery history documentary abandoned graveyard Chicago Illinois haunted location urban legends ghost stories" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-badges">
+                            <span class="badge badge-ember">History</span>
+                            <span class="badge badge-frost">Deep Dive</span>
+                        </div>
+                        <h3 class="video-title">Bachelors Grove: Cemetery of Shadows</h3>
+                        <p class="video-desc">Historical documentary tracing the cemetery from its 1838 founding through decades of vandalism, satanic rituals, and paranormal claims. Examines the Fulton family history, the 1937 hit-and-run death of Luella Rogers, the Al Capone gangster legends, and how Bachelors Grove became known as America's most haunted cemetery.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gallery-orbit" style="margin-top: 3rem;">
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/l-intro-1664987073.jpg" 
+                         alt="Ghost Research Society Bachelors Grove investigation team 1991 Mari Huff Dale Kaczmarek paranormal researchers Chicago Illinois group photograph cemetery investigation">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">GRS Investigation Team, 1991</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://i.redd.it/3miwlde80vt21.jpg" 
+                         alt="Bachelors Grove Cemetery thermal imaging ghost hunting equipment night investigation infrared camera paranormal anomaly detection spectral figure temperature variation">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">Thermal Imaging Analysis</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://i.redd.it/3miwlde80vt21.jpg" 
+                         alt="Bachelors Grove Cemetery EMF detector electromagnetic field reading paranormal investigation Ghost Research Society equipment 1990s spectral energy measurement Chicago Illinois">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">EMF Detection Equipment</span>
+                    </div>
+                </div>
+                <div class="gallery-orb reveal" onclick="openLightbox(this)">
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/which-sister-is-the-lady-in-white-1664987073.jpg" 
+                         alt="Bachelors Grove Cemetery daytime comparison photograph Madonna location 1991 spot north side gravestone empty no figure verification shot Ghost Research Society documentation">
+                    <div class="gallery-orb-overlay">
+                        <span class="gallery-orb-caption">Daytime Location Verification</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SCENE ==================== -->
+        <section id="theories" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Hypothesis Matrix</div>
+                <h2 class="section-title">Theories & Explanations</h2>
+                <p class="section-subtitle">Three decades of investigation have produced competing explanations. These are the most compelling theories about how the Madonna appeared in a photograph where no living person stood.</p>
+            </div>
+
+            <div class="theory-constellation">
+                <div class="theory-star paranormal reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">Genuine Paranormal Manifestation</div>
+                            <div class="theory-probability">Probability: BELIEVERS' CHOICE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>The figure was not present when the photograph was taken—confirmed by multiple witnesses</li>
+                        <li>Infrared film captures light beyond the visible spectrum, potentially recording spectral energy</li>
+                        <li>The figure's Victorian clothing matches the cemetery's 19th-century burial period</li>
+                        <li>The translucent quality matches thousands of eyewitness accounts of apparitions</li>
+                        <li>The 1979 precedent photograph shows a similar figure, establishing a pattern</li>
+                        <li>The figure sits in a natural, contemplative pose inconsistent with accidental capture</li>
+                        <li>Bachelors Grove has hundreds of documented paranormal reports supporting active haunting</li>
+                    </ul>
+                </div>
+
+                <div class="theory-star rational reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">📷</div>
+                        <div>
+                            <div class="theory-name">Double Exposure / Film Artifact</div>
+                            <div class="theory-probability">Probability: HIGH (Skeptics)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Infrared film is particularly susceptible to light leaks and processing errors</li>
+                        <li>A previously exposed frame could have imprinted a secondary image</li>
+                        <li>Long exposure times in low-light cemetery conditions increase anomaly risk</li>
+                        <li>The figure's translucency is consistent with partial exposure overlay</li>
+                        <li>Film processing errors in 1991 were more common than in digital era</li>
+                        <li>No original negative has been released for independent forensic analysis</li>
+                        <li>The Ghost Research Society had incentive to produce compelling evidence</li>
+                    </ul>
+                </div>
+
+                <div class="theory-star speculative reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">👤</div>
+                        <div>
+                            <div class="theory-name">Unnoticed Living Person</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>A visitor or investigator could have been sitting on the gravestone unnoticed</li>
+                        <li>The cemetery was accessible and known to attract curiosity seekers</li>
+                        <li>Infrared photography can alter the appearance of clothing and skin tones</li>
+                        <li>The figure's posture is consistent with someone resting on a stone</li>
+                        <li>However, GRS members specifically verified no one was at that location</li>
+                        <li>The translucent quality would be difficult to achieve with a living subject</li>
+                        <li>No one has ever come forward claiming to be the figure in the photograph</li>
+                    </ul>
+                </div>
+
+                <div class="theory-star speculative reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">🧠</div>
+                        <div>
+                            <div class="theory-name">Pareidolia & Pattern Recognition</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>The human brain is wired to perceive faces and human forms in random patterns</li>
+                        <li>Gravestones, shadows, and vegetation can combine to create figure-like shapes</li>
+                        <li>Infrared photography can produce unusual tonal values that suggest form</li>
+                        <li>However, the figure's detailed clothing and posture exceed typical pareidolia</li>
+                        <li>Multiple independent observers see the same distinct figure, not vague shapes</li>
+                        <li>The consistency of the image across different viewers argues against pure pattern recognition</li>
+                        <li>Professional photographers have examined the image and found coherent structure</li>
+                    </ul>
+                </div>
+
+                <div class="theory-star paradox reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">✏️</div>
+                        <div>
+                            <div class="theory-name">Deliberate Manipulation</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>The Ghost Research Society had strong incentive to produce groundbreaking evidence</li>
+                        <li>Dale Kaczmarek built his reputation on Bachelors Grove phenomena</li>
+                        <li>The photograph brought national attention and funding to the organization</li>
+                        <li>1991 photo manipulation was possible though more difficult than today</li>
+                        <li>The original negative has never been made available for independent analysis</li>
+                        <li>However, Mari Huff has maintained the authenticity of her capture for decades</li>
+                        <li>No whistleblower or contradictory evidence has emerged in 30+ years</li>
+                    </ul>
+                </div>
+
+                <div class="theory-star paradox reveal">
+                    <div class="theory-star-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">The Residual Energy Theory</div>
+                            <div class="theory-probability">Probability: ALTERNATIVE PARANORMAL</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>The figure may be a "residual haunting"—imprinted emotional energy replaying like a recording</li>
+                        <li>The Madonna sits in mourning posture, consistent with grief over a lost child</li>
+                        <li>Residual hauntings are not conscious spirits but energetic impressions</li>
+                        <li>This explains why the figure does not interact or acknowledge investigators</li>
+                        <li>The 1979 and 1991 photographs may capture the same residual imprint at different intensities</li>
+                        <li>Bachelors Grove's history of violence and desecration could amplify residual energy</li>
+                        <li>The theory bridges paranormal belief with concepts of electromagnetic field recording</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SCENE ==================== -->
+        <section id="documents" class="scene">
+            <div class="section-header reveal">
+                <div class="section-eyebrow">Case Files</div>
+                <h2 class="section-title">Investigation Documents</h2>
+                <p class="section-subtitle">Historical records, registry entries, and official documentation from the Madonna of Bachelors Grove investigation.</p>
+            </div>
+
+            <div class="document-case reveal">
+                <div class="document-stamp">UNEXPLAINED</div>
+
+                <div class="document-header">
+                    <h2>Bachelors Grove Cemetery, Midlothian, Illinois</h2>
+                    <p>CASE FILE 1838–PRESENT — THE MADONNA PHOTOGRAPH INVESTIGATION</p>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Subject</div>
+                    <div class="doc-value">The Madonna of Bachelors Grove — Unidentified Female Apparition</div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Date of Photograph</div>
+                    <div class="doc-value">August 10, 1991 — Approximately 10:00 PM, Central Daylight Time</div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Location of Photograph</div>
+                    <div class="doc-value">Bachelors Grove Cemetery, Rubio Woods Forest Preserve, Midlothian, Cook County, Illinois — North side of cemetery, gravestone location</div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Photographer</div>
+                    <div class="doc-value">Mari Huff — Member, Ghost Research Society (GRS), Chicago, Illinois</div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Equipment Used</div>
+                    <div class="doc-value">
+                        • Infrared film (specific emulsion unrecorded)<br>
+                        • 35mm camera with infrared capability<br>
+                        • Standard GRS investigation equipment including EMF detectors<br>
+                        • Flash photography was NOT used — ambient infrared capture only
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Investigating Organization</div>
+                    <div class="doc-value">Ghost Research Society (GRS) — Founded 1977 by Dale Kaczmarek. The GRS is a Chicago-based paranormal investigation organization that has conducted extensive research at Bachelors Grove Cemetery since the late 1970s.</div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Key Photographic Anomalies</div>
+                    <div class="doc-value">
+                        • Full-bodied female figure seated on gravestone where no person was present<br>
+                        • Figure wears long white Victorian-era gown with high collar<br>
+                        • Long dark hair visible, cascading down back<br>
+                        • Figure faces left in profile, hands resting in lap<br>
+                        • Translucent quality — background elements visible through form<br>
+                        • Figure occupies space between 12-18 inches above gravestone surface<br>
+                        • No shadow cast by figure despite ambient lighting conditions<br>
+                        • Infrared spectral response inconsistent with living human subject
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Witness Corroboration</div>
+                    <div class="doc-value">
+                        • Multiple GRS members present confirmed no person at location during exposure<br>
+                        • Cemetery was secured — no unauthorized visitors documented<br>
+                        • Investigation was methodical with member positions recorded<br>
+                        • Figure discovered only after film development<br>
+                        • No member reported seeing anything unusual at the location during the session
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Historical Context — Cemetery Origins</div>
+                    <div class="doc-value">
+                        • Established circa 1838 — First burial: William B. Noble<br>
+                        • Named for early settler families including Bachelor, Fulton, McGhee, and Vogt<br>
+                        • Located in Rubio Woods Forest Preserve, Cook County, Illinois<br>
+                        • Approximately 82 documented burials, though records are incomplete<br>
+                        • Last known burial: 1989 (cremation only, no new plots available)<br>
+                        • Cemetery suffered extensive vandalism from 1960s–1990s<br>
+                        • Many headstones stolen, broken, or thrown into adjacent pond
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Historical Context — The Fulton Family</div>
+                    <div class="doc-value">
+                        • Emma Fulton — Died 1874, age 2 years. Original gravestone stolen; replaced with "Infant Daughter" marker<br>
+                        • Luella Fulton Rogers — Born 1877, killed in hit-and-run accident 1937 near cemetery<br>
+                        • Luella buried next to Emma in family plot<br>
+                        • Clarence Fulton — Last independent trustee, transferred cemetery to Cook County 1975–1976<br>
+                        • Some theorize Luella Rogers is the Madonna, searching for Emma's stolen gravestone
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Historical Context — Paranormal Legends</div>
+                    <div class="doc-value">
+                        • 1870: Farmer and horse drown in adjacent pond — origin of "two-headed man" legend<br>
+                        • 1920s–1930s: Rumored gangster body dumping ground (Al Capone era, unverified)<br>
+                        • 1960s–1970s: Satanic rituals and grave desecration peak<br>
+                        • 1970s–present: Hundreds of documented paranormal reports including:<br>
+                        &nbsp;&nbsp;- Phantom farmhouse that vanishes when approached<br>
+                        &nbsp;&nbsp;- Ghostly figures along 143rd Street and pond edge<br>
+                        &nbsp;&nbsp;- Unexplained lights, sounds, and temperature drops<br>
+                        &nbsp;&nbsp;- The Madonna apparitions (1979 and 1991 photographs)
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Precedent Photograph</div>
+                    <div class="doc-value">
+                        • Date: 1979 (exact date unrecorded)<br>
+                        • Photographers: Amateur ghost hunters (names unrecorded)<br>
+                        • Image: Figure in white hooded robe carrying infant<br>
+                        • Quality: Lower resolution than 1991 image<br>
+                        • Significance: Establishes Madonna as recurring phenomenon, not single anomaly<br>
+                        • Note: 1979 figure shows hooded robe; 1991 figure shows unhooded with visible hair
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Skeptical Analysis</div>
+                    <div class="doc-value">
+                        • No original negative released for independent forensic examination<br>
+                        • Infrared film susceptible to processing errors, light leaks, and double exposure<br>
+                        • Long exposure times in low light increase anomaly probability<br>
+                        • The Ghost Research Society had incentive to produce compelling evidence<br>
+                        • No peer-reviewed scientific publication of the photograph exists<br>
+                        • Alternative explanations (double exposure, unnoticed person) cannot be definitively ruled out<br>
+                        • Pareidolia cannot be completely dismissed given brain's pattern-seeking nature
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Paranormal Analysis</div>
+                    <div class="doc-value">
+                        • Infrared photography is standard technique for capturing spectral anomalies<br>
+                        • Figure's detailed Victorian clothing exceeds typical pareidolia patterns<br>
+                        • Translucency matches thousands of independent eyewitness accounts<br>
+                        • Multiple witnesses confirmed empty location during exposure<br>
+                        • 1979 precedent establishes pattern rather than isolated incident<br>
+                        • Figure's posture and positioning suggest conscious placement, not accidental capture<br>
+                        • Bachelors Grove's extensive paranormal history supports active haunting hypothesis<br>
+                        • EMF and temperature anomalies documented at same location during other investigations
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Conservation Status</div>
+                    <div class="doc-value">
+                        • Grove Restoration Project (founded by Pete Crapia) actively documents and preserves cemetery<br>
+                        • Cemetery closed to public after sunset by Cook County authorities<br>
+                        • Police patrols continue to deter vandalism<br>
+                        • Historical records being digitized and preserved<br>
+                        • Cemetery remains one of America's most investigated paranormal locations<br>
+                        • Access restricted — investigators must obtain permits for after-hours research
+                    </div>
+                </div>
+
+                <div class="doc-field">
+                    <div class="doc-label">Case Status</div>
+                    <div class="doc-value" style="color: var(--ember-glow); font-weight: bold;">UNEXPLAINED — ACTIVE INVESTIGATION ONGOING</div>
+                </div>
+
+                <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.68rem; color: var(--ghost); text-align: center; font-family: 'Space Mono', monospace; line-height: 1.8;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE GHOST RESEARCH SOCIETY ARCHIVES, COOK COUNTY HISTORICAL RECORDS,<br>
+                    CHICAGO SUN-TIMES AND TRIBUNE ARTICLES (1991–1992), DALE KACZMAREK PUBLICATIONS,<br>
+                    AND THE GROVE RESTORATION PROJECT DOCUMENTATION.<br>
+                    CONTACT: GHOST RESEARCH SOCIETY, CHICAGO, ILLINOIS
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== LIGHTBOX ==================== -->
+    <div class="lightbox-dimension" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ==================== MODAL ==================== -->
+    <div class="modal-dimension" id="modal">
+        <div class="modal-star">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // ===== PARTICLE SYSTEM =====
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouseX = 0, mouseY = 0;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.speedY = (Math.random() - 0.5) * 0.3;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Mouse interaction
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 150) {
+                    const force = (150 - distance) / 150;
+                    this.x -= dx * force * 0.02;
+                    this.y -= dy * force * 0.02;
+                }
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(123, 104, 238, ${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 80; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            
+            // Draw connections
+            particles.forEach((p1, i) => {
+                particles.slice(i + 1).forEach(p2 => {
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(123, 104, 238, ${0.1 * (1 - dist / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                });
+            });
+            
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ===== CURSOR GLOW =====
+        const cursorGlow = document.getElementById('cursorGlow');
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+
+        // ===== SCROLL PROGRESS =====
+        const scrollProgress = document.getElementById('scrollProgress');
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = (scrollTop / docHeight) * 100;
+            scrollProgress.style.width = progress + '%';
+        });
+
+        // ===== SCENE NAVIGATION =====
+        function showScene(sceneId) {
+            // Hide all scenes
+            document.querySelectorAll('.scene').forEach(s => {
+                s.classList.remove('active');
+            });
+            
+            // Show target scene
+            const target = document.getElementById(sceneId);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            
+            // Update nav
+            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Re-trigger reveal animations
+            setTimeout(() => {
+                checkReveal();
+            }, 100);
+        }
+
+        // ===== SCROLL REVEAL =====
+        function checkReveal() {
+            const reveals = document.querySelectorAll('.reveal');
+            reveals.forEach(el => {
+                const windowHeight = window.innerHeight;
+                const elementTop = el.getBoundingClientRect().top;
+                const elementVisible = 100;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    el.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', checkReveal);
+        window.addEventListener('load', checkReveal);
+
+        // ===== TIMELINE REVEAL =====
+        function checkTimeline() {
+            const nodes = document.querySelectorAll('.timeline-node');
+            nodes.forEach(node => {
+                const windowHeight = window.innerHeight;
+                const elementTop = node.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 50) {
+                    node.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', checkTimeline);
+        window.addEventListener('load', checkTimeline);
+
+        // ===== LIGHTBOX =====
+        function openLightbox(element) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            
+            // Handle both img elements and div containers
+            const targetImg = element.tagName === 'IMG' ? element : element.querySelector('img');
+            
+            img.src = targetImg.src;
+            caption.textContent = targetImg.alt;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Keyboard support for lightbox
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                closeModal();
+            }
+        });
+
+        // ===== MODAL =====
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'madonna-photo': `
+                    <img src="https://i.ytimg.com/vi/-YvQ0dCc0qc/mqdefault.jpg" 
+                         class="modal-image" 
+                         alt="Madonna of Bachelors Grove ghost photograph 1991 woman in white dress sitting on gravestone infrared photograph Mari Huff Ghost Research Society translucent apparition">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">The Madonna Photograph</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">The 1991 photograph is one of the most compelling pieces of paranormal evidence ever captured. Taken by Mari Huff of the Ghost Research Society using infrared film, the image shows what appears to be a full-bodied apparition seated on a gravestone in Bachelors Grove Cemetery.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">The figure is distinctly female, wearing a long white Victorian-era gown with a high collar. Her dark hair flows down her back. She sits in profile, facing left, with her hands resting peacefully in her lap. Most strikingly, she is translucent—background gravestones and vegetation are visible through her form—yet the details of her clothing and posture are remarkably coherent.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">What makes this photograph extraordinary is the context: multiple witnesses confirmed that no living person was sitting on that gravestone when the photograph was taken. The cemetery was secured during the investigation, and all GRS members were accounted for. The figure appeared only after film development, emerging from the chemical bath like a spirit from the ether.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">The image was published in the Chicago Sun-Times, Chicago Tribune, and National Examiner in 1991–1992, and has since appeared in countless books, documentaries, and paranormal investigations. It remains the definitive photograph of Bachelors Grove Cemetery and one of the most famous ghost images in American history.</p>
+                `,
+                'mari-huff': `
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         class="modal-image" 
+                         alt="Mari Huff Ghost Research Society paranormal investigator photographer 1991 Bachelors Grove Cemetery Madonna photograph infrared camera equipment Chicago Illinois">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">Mari Huff — The Photographer</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Mari Huff was a dedicated member of the Ghost Research Society, a Chicago-based paranormal investigation organization founded by Dale Kaczmarek in 1977. She participated in numerous investigations at Bachelors Grove Cemetery throughout the late 1980s and early 1990s, documenting the location with various photographic techniques.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">On the night of August 10, 1991, Huff was conducting a routine photographic survey of the cemetery using infrared film—a specialized medium sensitive to light wavelengths beyond human vision. Infrared photography was (and remains) a standard technique in paranormal investigation, as some researchers believe spectral entities may manifest in portions of the electromagnetic spectrum invisible to the naked eye.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Huff took multiple photographs that evening, capturing various angles of the cemetery grounds. It was only after the film was developed that the extraordinary image was discovered. Huff has maintained the authenticity of her photograph for over three decades, never wavering in her conviction that she captured something genuinely anomalous.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">Her role in paranormal history was cemented by this single frame—a photograph that has been analyzed, debated, celebrated, and debunked by generations of investigators, yet never definitively explained.</p>
+                `,
+                'bachelors-grove': `
+                    <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/19/09/36/39/img-20190825-085718880.jpg" 
+                         class="modal-image" 
+                         alt="Bachelors Grove Cemetery overgrown abandoned historic graveyard Chicago Illinois Rubio Woods Forest Preserve Midlothian Cook County haunted location aerial view">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">Bachelors Grove Cemetery</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Bachelors Grove Cemetery is a small, abandoned burial ground located in Rubio Woods Forest Preserve, Midlothian, Illinois. Established around 1838, it contains approximately 82 documented burials, though records are incomplete due to decades of vandalism and neglect.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">The cemetery's name derives from the Bachelor family, early settlers of the area, though some sources suggest it may reference the unmarried status of many early male settlers. It served as the primary burial ground for several prominent local families including the Fultons, McGhees, and Vogts.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">From the 1960s through the 1990s, the cemetery suffered catastrophic vandalism. Teenagers used it as a drinking spot, satanic groups conducted rituals among the graves, and grave robbers stole headstones and remains. Clarence Fulton, the last independent trustee, reportedly guarded the cemetery with a shotgun to deter desecrators. The destruction was so severe that many gravestones were thrown into the adjacent pond or smashed beyond recognition.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">This history of violence and desecration has contributed to its reputation as one of America's most haunted locations. Paranormal reports include phantom farmhouses, ghostly figures along nearby 143rd Street, unexplained lights, cold spots, and the Madonna apparition itself.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">Today, the cemetery is maintained by the Cemetery Trustees of Cook County and the Forest Preserve District. Access is restricted after sunset, and the Grove Restoration Project works to document and preserve what remains of this historic and mysterious site.</p>
+                `,
+                'dale-kaczmarek': `
+                    <img src="https://www.ghostresearch.org/ghostpics/ghost3.jpg" 
+                         class="modal-image" 
+                         alt="Dale Kaczmarek Ghost Research Society president Chicago parapsychologist paranormal investigator Bachelors Grove Cemetery expert author lecturer">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">Dale Kaczmarek — Lead Investigator</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Dale Kaczmarek is the founder and president of the Ghost Research Society (GRS), established in 1977 in Chicago, Illinois. For over four decades, he has been one of America's most dedicated paranormal investigators, with Bachelors Grove Cemetery serving as his primary research site.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Kaczmarek first became interested in Bachelors Grove during the 1970s when reports of unusual activity began circulating among local residents. He began systematic documentation of the cemetery, collecting eyewitness accounts, photographs, and electromagnetic readings. His work helped transform Bachelors Grove from a local curiosity into a nationally recognized paranormal hotspot.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">When Mari Huff captured the Madonna photograph in 1991, Kaczmarek was instrumental in its public dissemination. He provided the image to major newspapers and television networks, and has defended its authenticity against skeptical criticism for over thirty years.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Kaczmarek has authored multiple books on paranormal investigation and has appeared on numerous television programs discussing Bachelors Grove and other haunted locations. His approach combines technical investigation (EMF meters, infrared photography, EVP recording) with historical research and eyewitness testimony.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">To skeptics, Kaczmarek represents the passionate but uncritical face of paranormal investigation. To believers, he is a dedicated researcher who has spent his life documenting phenomena that mainstream science refuses to acknowledge. His legacy is inextricably linked to the Madonna photograph and the enduring mystery of Bachelors Grove Cemetery.</p>
+                `,
+                'infant-daughter': `
+                    <img src="https://www.grunge.com/img/gallery/the-terrifying-true-story-behind-the-madonna-of-bachelors-grove-cemetery/intro-1664987073.jpg" 
+                         class="modal-image" 
+                         alt="Bachelors Grove Cemetery Infant Daughter gravestone Emma Fulton tombstone small stone checkerboard pattern vandalized stolen replacement historic marker">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">The "Infant Daughter" Grave</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">One of the most poignant and mysterious elements of Bachelors Grove Cemetery is a small gravestone marked only with the words "Infant Daughter." This stone has become central to the Madonna legend, with many believing the phantom woman is searching for this lost child.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Historical research by the Grove Restoration Project revealed that this stone is actually a replacement. The original gravestone for Emma Fulton, who died in 1874 at age 2, was stolen during the vandalism era of the 1960s–1970s. The current "Infant Daughter" marker was placed by family members or cemetery trustees to mark the spot, though it does not bear Emma's name.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Emma Fulton was the daughter of the prominent Fulton family, early settlers of the area. Her grave is located in the family plot near where the Madonna photograph was captured. The theft of her original stone and its replacement with an anonymous marker created a symbolic disconnection—a child buried without her proper name.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Luella Fulton Rogers, killed in a 1937 hit-and-run accident, is buried next to Emma. Some researchers propose that Luella's spirit is the Madonna, eternally searching for her niece's proper gravestone. This theory connects the paranormal phenomenon to documented historical tragedy, giving the apparition a specific identity and motivation.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">Whether the Madonna is Luella Rogers, Emma Fulton's mother, or an unrelated spirit, the "Infant Daughter" stone remains a powerful symbol of loss and the unresolved grief that permeates Bachelors Grove Cemetery. Visitors often leave toys, flowers, and coins at the small marker, acknowledging the tragedy of a child forgotten by time but remembered by legend.</p>
+                `,
+                'infrared-tech': `
+                    <img src="https://ghostwalks.com/wp-content/uploads/bachelors-grove-cemetery_ghost-photo-madonna-1024x576.jpg" 
+                         class="modal-image" 
+                         alt="Infrared photography equipment paranormal investigation ghost hunting camera film Bachelors Grove Cemetery 1991 Ghost Research Society technical setup night vision">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; font-size: 1.8rem; color: var(--mist);">Infrared Photography in Paranormal Investigation</h2>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Infrared photography captures light in the near-infrared spectrum, wavelengths between approximately 700 nanometers and 1 millimeter—just beyond what the human eye can perceive. This technique has been a cornerstone of paranormal investigation since the mid-20th century.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">The theory behind infrared paranormal photography is that spectral entities may manifest as electromagnetic anomalies. If ghosts exist as forms of energy rather than physical matter, they might interact with portions of the electromagnetic spectrum invisible to human vision but detectable by specialized film or sensors.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">In 1991, Mari Huff used standard 35mm infrared film, which requires special handling and processing. The film is sensitive to heat radiation as well as near-infrared light, meaning it can capture temperature variations that visible-light film would miss. In a cemetery at night, where temperature differentials might indicate anomalous energy, this sensitivity could theoretically reveal phenomena invisible to the naked eye.</p>
+                    <p style="color: var(--ghost); line-height: 1.8; margin-bottom: 1rem;">Critics point out that infrared film is also more susceptible to artifacts. Light leaks, processing errors, and chemical contamination can produce anomalous images that resemble figures or shapes. Long exposure times in low-light conditions increase the risk of accidental double exposure or motion blur that might suggest a translucent form.</p>
+                    <p style="color: var(--ghost); line-height: 1.8;">The debate over the Madonna photograph hinges partly on this technical ambiguity. Was the infrared film capturing a spectral entity in wavelengths beyond human vision, or was it recording a mundane artifact of film chemistry and low-light photography? Without access to the original negative for forensic analysis, the question remains unanswered.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p style="color: var(--ghost);">Content loading...</p>';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal')) {
+                closeModal();
+            }
+        });
+
+        // ===== AMBIENT AUDIO VISUALIZER (Visual only) =====
+        function createAudioViz() {
+            const viz = document.createElement('div');
+            viz.className = 'audio-viz';
+            for (let i = 0; i < 5; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = Math.random() * 100 + '%';
+                viz.appendChild(bar);
+            }
+            return viz;
+        }
+
+        // ===== GLITCH EFFECT RANDOMIZER =====
+        setInterval(() => {
+            const glitchElements = document.querySelectorAll('.glitch-text');
+            glitchElements.forEach(el => {
+                if (Math.random() > 0.95) {
+                    el.style.animation = 'none';
+                    el.offsetHeight; // Trigger reflow
+                    el.style.animation = 'glitch 0.3s';
+                }
+            });
+        }, 3000);
+
+        // ===== PARALLAX EFFECT =====
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const parallaxElements = document.querySelectorAll('.ambient-orb');
+            parallaxElements.forEach((el, index) => {
+                const speed = 0.5 + (index * 0.2);
+                el.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+
+        // ===== NAV DOCK VISIBILITY =====
+        let lastScroll = 0;
+        const navDock = document.getElementById('navDock');
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            if (currentScroll > 100) {
+                navDock.style.opacity = '1';
+                navDock.style.transform = 'translateX(-50%) translateY(0)';
+            } else {
+                navDock.style.opacity = '0.7';
+            }
+            
+            lastScroll = currentScroll;
+        });
+
+        // ===== SMOOTH SCROLL FOR ANCHORS =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // ===== TOUCH SUPPORT FOR MOBILE =====
+        let touchStartY = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const diff = touchStartY - touchY;
+            
+            // Swipe up to hide nav, down to show
+            if (diff > 50) {
+                navDock.style.transform = 'translateX(-50%) translateY(100px)';
+            } else if (diff < -50) {
+                navDock.style.transform = 'translateX(-50%) translateY(0)';
+            }
+        });
+
+        // ===== INITIALIZATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            checkReveal();
+            checkTimeline();
+            
+            // Add typewriter effect to intro badge
+            const badge = document.querySelector('.intro-badge');
+            if (badge) {
+                badge.style.opacity = '0';
+                setTimeout(() => {
+                    badge.style.opacity = '1';
+                    badge.style.animation = 'fadeUp 1s ease 0.3s both';
+                }, 500);
+            }
+        });
+
+        // ===== PERFORMANCE OPTIMIZATION =====
+        // Pause particle animation when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                canvas.style.display = 'none';
+            } else {
+                canvas.style.display = 'block';
+            }
+        });
+    </script>
+
+</body>
+</html>

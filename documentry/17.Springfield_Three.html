@@ -1,0 +1,2280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Springfield Three: The Broken Porch Light — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Source+Sans+Pro:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;500;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #080a0f;
+            --bg-deep: #0d1117;
+            --bg-surface: #161b22;
+            --bg-elevated: #1c2128;
+            --accent-ember: #c75b39;
+            --accent-gold: #d4a574;
+            --accent-frost: #b8c5d6;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-dim: #484f58;
+            --border-subtle: #21262d;
+            --border-active: #30363d;
+            --danger: #da3633;
+            --warning: #d29922;
+            --success: #3fb950;
+            --shadow-ember: rgba(199, 91, 57, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            line-height: 1.65;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 15% 50%, rgba(199, 91, 57, 0.06) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 20%, rgba(212, 165, 116, 0.04) 0%, transparent 50%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-void); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-ember); border-radius: 3px; }
+
+        /* ===== HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(8, 10, 15, 0.92);
+            backdrop-filter: blur(24px) saturate(1.2);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.9rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.35rem;
+            color: var(--accent-ember);
+            letter-spacing: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent-ember), transparent);
+        }
+
+        .logo span {
+            color: var(--accent-gold);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.1rem;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--accent-ember);
+            opacity: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s;
+            z-index: -1;
+            border-radius: 6px;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            color: var(--text-primary);
+            border-color: var(--accent-ember);
+        }
+
+        .nav-tab:hover::before, .nav-tab.active::before {
+            opacity: 0.12;
+            transform: scaleX(1);
+        }
+
+        .nav-tab.active {
+            border-color: var(--accent-ember);
+            box-shadow: 0 0 20px var(--shadow-ember);
+        }
+
+        .main-content { margin-top: 64px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        /* ===== STORY SECTION ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 5rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(8,10,15,0.5) 0%, rgba(8,10,15,0.96) 100%),
+                url('https://upload.wikimedia.org/wikipedia/en/9/9e/Springfield_Three_missing_persons_flyer_1992.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.7) contrast(1.2) brightness(0.25) sepia(0.15);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 60%, rgba(199, 91, 57, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 30%, rgba(212, 165, 116, 0.06) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 880px;
+            text-align: center;
+            z-index: 1;
+            position: relative;
+        }
+
+        .story-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-ember);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: revealUp 1s ease 0.4s forwards;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .story-eyebrow::before, .story-eyebrow::after {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-ember));
+        }
+
+        .story-eyebrow::after {
+            background: linear-gradient(90deg, var(--accent-ember), transparent);
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            line-height: 1.08;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(199, 91, 57, 0.35);
+            opacity: 0;
+            animation: revealUp 1.1s ease 0.9s forwards;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text-primary);
+        }
+
+        .story-headline span {
+            color: var(--accent-gold);
+            display: block;
+            font-size: 1.15em;
+            font-weight: 400;
+            font-style: italic;
+            font-family: 'Crimson Pro', serif;
+            letter-spacing: 1px;
+            margin-top: 0.3rem;
+            text-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.45rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: revealUp 1s ease 1.4s forwards;
+            border-left: 2px solid var(--accent-ember);
+            padding-left: 2rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .story-prologue::before {
+            content: '"';
+            position: absolute;
+            left: -0.8rem;
+            top: -1.2rem;
+            font-size: 4rem;
+            color: var(--accent-ember);
+            opacity: 0.3;
+            font-family: 'Cinzel', serif;
+        }
+
+        .story-text {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.15rem;
+            line-height: 1.95;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: revealUp 1s ease 1.9s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.6rem;
+            text-indent: 2.5rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            float: left;
+            line-height: 0.85;
+            padding-right: 0.6rem;
+            color: var(--accent-ember);
+            text-shadow: 0 0 25px rgba(199, 91, 57, 0.5);
+            font-weight: 800;
+            margin-top: 0.1rem;
+        }
+
+        .story-highlight {
+            background: linear-gradient(135deg, rgba(199, 91, 57, 0.08), rgba(212, 165, 116, 0.04));
+            border: 1px solid var(--border-subtle);
+            border-left: 3px solid var(--accent-ember);
+            padding: 2rem;
+            margin: 2.5rem 0;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.92rem;
+            line-height: 1.75;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: revealUp 1s ease 2.4s forwards;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+        }
+
+        .story-highlight::before {
+            content: '!';
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            color: var(--accent-ember);
+            opacity: 0.15;
+        }
+
+        .story-cta {
+            margin-top: 3.5rem;
+            opacity: 0;
+            animation: revealUp 1s ease 2.9s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.1rem 3.2rem;
+            background: transparent;
+            color: var(--accent-gold);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            border-radius: 4px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1.5px solid var(--accent-ember);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(199, 91, 57, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .story-btn:hover::before {
+            left: 100%;
+        }
+
+        .story-btn:hover {
+            background: rgba(199, 91, 57, 0.1);
+            box-shadow: 0 0 40px var(--shadow-ember), inset 0 0 20px rgba(199, 91, 57, 0.05);
+            color: var(--text-primary);
+            border-color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3.5rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: revealUp 1s ease 3.4s forwards;
+        }
+
+        .story-stat { 
+            text-align: center; 
+            position: relative;
+            padding: 0 1rem;
+        }
+
+        .story-stat:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -1.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 40px;
+            background: var(--border-subtle);
+        }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--accent-gold);
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .story-stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.6rem;
+        }
+
+        @keyframes revealUp {
+            from { opacity: 0; transform: translateY(25px); filter: blur(3px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: revealUp 1s ease 3.9s forwards, float 3s ease-in-out infinite 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            background: linear-gradient(180deg, rgba(199, 91, 57, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-ember), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.2rem;
+            color: var(--text-primary);
+            margin-bottom: 1.2rem;
+            text-shadow: 0 0 30px rgba(199, 91, 57, 0.2);
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 680px;
+            margin: 0 auto 2rem;
+            font-family: 'Crimson Pro', serif;
+            font-style: italic;
+            line-height: 1.7;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .meta-item { 
+            text-align: center; 
+            padding: 0.8rem 1.2rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            min-width: 120px;
+        }
+
+        .meta-label {
+            color: var(--text-dim);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0.4rem;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-ember), var(--accent-gold));
+            transform: scaleX(0);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 30px var(--shadow-ember);
+            border-color: var(--border-active);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.4) contrast(1.1);
+            transition: all 0.4s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0) contrast(1);
+        }
+
+        .evidence-content { padding: 1.6rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: rgba(199, 91, 57, 0.12);
+            color: var(--accent-ember);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            border-radius: 4px;
+            margin-bottom: 0.9rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+            border: 1px solid rgba(199, 91, 57, 0.2);
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.6rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.65;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .video-card:hover {
+            border-color: var(--border-active);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .video-info { padding: 1.3rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .video-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-right: 0.4rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .badge-ember { background: rgba(199, 91, 57, 0.1); color: var(--accent-ember); border-color: rgba(199, 91, 57, 0.25); }
+        .badge-gold { background: rgba(212, 165, 116, 0.1); color: var(--accent-gold); border-color: rgba(212, 165, 116, 0.25); }
+        .badge-frost { background: rgba(184, 197, 214, 0.08); color: var(--accent-frost); border-color: rgba(184, 197, 214, 0.2); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-ember), var(--accent-gold), var(--accent-ember));
+            transform: translateX(-50%);
+            opacity: 0.4;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 1.8rem;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .timeline-content:hover {
+            border-color: var(--border-active);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-ember);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(199, 91, 57, 0.4);
+            border: 2px solid var(--bg-void);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -34px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -34px; }
+
+        .timeline-date {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.75rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: 2.5px;
+            font-weight: 500;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            filter: grayscale(0.5);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.04); 
+            filter: grayscale(0);
+            border-color: var(--accent-ember);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .theory-card:hover {
+            border-color: var(--border-active);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .theory-card.official { border-top: 3px solid var(--success); }
+        .theory-card.conspiracy { border-top: 3px solid var(--danger); }
+        .theory-card.alternative { border-top: 3px solid var(--accent-gold); }
+        .theory-card.speculative { border-top: 3px solid var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .official .theory-icon { color: var(--success); }
+        .conspiracy .theory-icon { color: var(--danger); }
+        .alternative .theory-icon { color: var(--accent-gold); }
+        .speculative .theory-icon { color: var(--warning); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .theory-probability {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            margin-top: 0.2rem;
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: start;
+            gap: 0.6rem;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            color: var(--text-secondary);
+        }
+
+        .theory-points li:last-child { border-bottom: none; }
+
+        .theory-points li::before {
+            content: '›';
+            color: var(--accent-ember);
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 1;
+            margin-top: 0.1rem;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 2.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2.5rem;
+            right: 2.5rem;
+            border: 2.5px solid var(--accent-ember);
+            color: var(--accent-ember);
+            padding: 0.6rem 1.2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transform: rotate(-12deg);
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-family: 'Cinzel', serif;
+        }
+
+        .document-field {
+            margin: 1.1rem 0;
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .document-label {
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            margin-bottom: 0.3rem;
+            font-weight: 500;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.35s;
+            border: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.6);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03) translateY(-3px);
+            border-color: var(--accent-ember);
+            box-shadow: 0 8px 30px rgba(199, 91, 57, 0.2);
+            filter: grayscale(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 10, 15, 0.97);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 88%;
+            max-height: 88%;
+            border: 2px solid var(--accent-ember);
+            border-radius: 8px;
+            box-shadow: 0 0 60px rgba(199, 91, 57, 0.2);
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-surface);
+            padding: 0.8rem 1.8rem;
+            border-radius: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 10, 15, 0.88);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--accent-ember);
+            color: var(--text-primary);
+            border-color: var(--accent-ember);
+        }
+
+        .modal-body { padding: 2.5rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* ===== MAP ===== */
+        .map-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .map-cell {
+            aspect-ratio: 1;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            flex-direction: column;
+            padding: 0.5rem;
+        }
+
+        .map-cell:hover {
+            background: rgba(199, 91, 57, 0.15);
+            border-color: var(--accent-ember);
+            color: var(--text-primary);
+        }
+
+        .map-cell.highlight {
+            background: rgba(199, 91, 57, 0.2);
+            border-color: var(--accent-ember);
+            color: var(--accent-gold);
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* ===== TYPEWRITER ===== */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent-ember);
+            animation: typing 3.5s steps(45, end), blink-caret 0.75s step-end infinite;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 1rem 0;
+            display: inline-block;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-ember); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.4rem; }
+            .story-text { font-size: 1.05rem; }
+            .story-stats { gap: 2rem; }
+            .story-stat:not(:last-child)::after { display: none; }
+            .hero h1 { font-size: 1.8rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -34px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.68rem;
+                padding: 0.35rem 0.75rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 100px; }
+            .case-meta { gap: 1rem; }
+            .video-grid { grid-template-columns: 1fr; }
+            .map-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .hamburger { display: none; }
+    
+
+        /* ===== HAMBURGER MENU FIX ===== */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            cursor: pointer;
+            gap: 5px;
+            padding: 6px;
+        }
+        .hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--accent-ember);
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        /* ===== STORY BACKGROUND VISIBILITY FIX ===== */
+        .story-bg, .story-overlay, .vignette {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #story.active ~ .story-bg,
+        #story.active ~ .story-overlay,
+        #story.active ~ .vignette,
+        .section.active#story .story-bg,
+        .section.active#story .story-overlay,
+        .section.active#story .vignette {
+            opacity: 1;
+        }
+        /* Alternative: use JS to toggle a body class */
+        body.story-active .story-bg,
+        body.story-active .story-overlay,
+        body.story-active .vignette {
+            opacity: 1;
+        }
+
+        /* ===== MODAL OVERLAY CLICK-TO-CLOSE ===== */
+        .modal-overlay {
+            cursor: pointer;
+        }
+        .modal-content {
+            cursor: default;
+        }
+
+        /* ===== MOBILE NAV MENU ===== */
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .nav-tabs {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(8, 10, 15, 0.98);
+                backdrop-filter: blur(24px);
+                border-bottom: 1px solid var(--border-subtle);
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+                display: none;
+                max-height: calc(100vh - 60px);
+                overflow-y: auto;
+            }
+            .nav-tabs.mobile-open {
+                display: flex;
+            }
+            .nav-tab {
+                width: 100%;
+                text-align: center;
+                padding: 0.8rem;
+            }
+        }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">SPRINGFIELD <span>THREE</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="vignette"></div>
+            
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Springfield, Missouri, 1992 — A True Crime Investigation</div>
+                    
+                    <h1 class="story-headline">
+                        They Were Called
+                        <span>The Springfield Three</span>
+                    </h1>
+                    
+                    <p class="story-prologue">
+                        The glass globe was shattered, but the bulb still burned. It was the only sign that something had gone terribly wrong at 1717 East Delmar Street. Three women— a mother, her daughter, and her daughter\'s best friend— had vanished into the Missouri dawn, leaving behind their purses, their cars, their cigarettes, and a beloved Yorkshire terrier named Cinnamon who would never stop waiting by the door.
+                    </p>
+                    
+                    <div class="story-text">
+                        <p>It began with a celebration. June 6, 1992, was graduation day at Kickapoo High School in Springfield, Missouri. Stacy McCall, an 18-year-old with long dark blonde hair and light-colored eyes, and her best friend Suzanne "Suzie" Streeter, a 19-year-old with shoulder-length blonde hair and brown eyes, walked across the stage together. They had their whole lives ahead of them— plans to attend Missouri State University, careers to build, dreams to chase.</p>
+                        
+                        <p>After the ceremony, the girls changed clothes and set out to celebrate. They attended several graduation parties across Springfield and the surrounding area. Their original plan was to spend the night at a hotel in Branson and visit a water park the next day. But as the night wore on, plans changed. Around 2:00 AM, Suzie and Stacy left their friend Janelle Kirby\'s house in Battlefield, Missouri, and decided to spend the night at Suzie\'s home instead.</p>
+                        
+                        <p>Sherrill Levitt, Suzie\'s 47-year-old mother, was already home. A skilled cosmetologist with short bleached-blonde hair, she had been working on renovating the small house at 1717 East Delmar Street. She was a chain smoker, fiercely independent, and deeply protective of her daughter. That night, she was alone except for Cinnamon, the family\'s Yorkshire terrier.</p>
+                        
+                        <p>Sometime between 2:15 AM and 7:30 AM, all three women disappeared. When Janelle Kirby arrived the next morning, she found the front door unlocked. The glass globe covering the porch light had been shattered, though the bulb itself remained intact. Inside, the women\'s purses sat on the floor of Suzie\'s bedroom— Sherrill\'s containing nearly $900 in cash from her salon work. Their cars were parked outside. Their cigarettes, keys, and makeup wipes lay undisturbed. The television in Suzie\'s room showed nothing but static snow, as if a movie had ended and no one had been there to turn it off. Cinnamon was frantic, running through the house in distress.</p>
+                        
+                        <p>But the three women were gone. No signs of struggle. No blood. No forced entry. Just a broken porch light, a dog that wouldn\'t stop barking, and a mystery that would haunt Springfield for more than three decades.</p>
+                    </div>
+                    
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-ember);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        How do three women vanish from a locked house in the middle of the night without leaving a trace? Who shattered the porch light globe, and why? What was on the answering machine message that was accidentally erased— a message police believed might have contained the only real clue? And why— despite thousands of tips, multiple suspects, and decades of investigation— have Sherrill Levitt, Suzie Streeter, and Stacy McCall never been found? The Springfield Police Department lists the case as active. But the files tell a story of contamination, missed opportunities, and shadows that stretch across the Ozarks.
+                    </div>
+                    
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+                    
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">3</div>
+                            <div class="story-stat-label">Women Missing</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">34</div>
+                            <div class="story-stat-label">Years Unsolved</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">5+</div>
+                            <div class="story-stat-label">Named Suspects</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">0</div>
+                            <div class="story-stat-label">Bodies Found</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scroll-indicator">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-ember);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1 class="typewriter" style="border:none;animation:none;white-space:normal;">THE BROKEN PORCH LIGHT</h1>
+                <p class="hero-subtitle">An interactive investigation into America\'s most confounding missing persons case. Explore the evidence, analyze the suspects, and decide for yourself what happened to Sherrill Levitt, Suzie Streeter, and Stacy McCall.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victims</div>
+                        <div class="meta-value">3 Women</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">1717 E Delmar St</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">June 7, 1992</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Active Cold Case</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: \'Cinzel\', serif; text-align: center; margin-bottom: 2rem; font-size: 1.8rem; letter-spacing: 1px;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal(\'crime-scene\')">
+                    <img src="https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1024-512,f_auto,q_auto:best/newscms/2022_23/3556882/springfield_3_wide_social_1.jpg" alt="Springfield Three 1992 missing persons flyer showing photographs of Sherrill Levitt Suzie Streeter and Stacy McCall with physical descriptions and contact information" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">1717 East Delmar Street</h3>
+                        <p class="evidence-desc">The modest home where three women vanished between 2:15 AM and 7:30 AM. The front door was found unlocked, a glass porch light globe shattered but bulb intact. All personal belongings remained inside including purses with cash, cars in the driveway, and the family dog Cinnamon.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(\'broken-light\')">
+                    <img src="https://thumbs.dreamstime.com/b/weathered-worn-interior-light-fixture-21426171.jpg" alt="Close up photograph of a broken glass porch light fixture with shattered globe pieces on wooden porch steps at night with warm bulb glow" class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Physical Evidence</span>
+                        <h3 class="evidence-title">The Broken Porch Light</h3>
+                        <p class="evidence-desc">The shattered glass globe on the front porch light remains the most perplexing clue. Friend Mike Henson swept up the broken glass before police arrived, potentially destroying evidence. The bulb remained intact and burning— suggesting the globe was broken from outside or during a struggle.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(\'answering-machine\')">
+                    <img src="https://www.shutterstock.com/image-photo/old-vintage-answering-machine-two-260nw-1485296993.jpg" alt="Vintage 1990s answering machine with cassette tape and blinking red message light on wooden table" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Communication</span>
+                        <h3 class="evidence-title">The Erased Message</h3>
+                        <p class="evidence-desc">Stacy\'s mother Janis McCall discovered a strange message on the answering machine when searching for clues. In her panic, the message was accidentally erased. Police believed it may have contained vital information but it was lost forever— a critical piece of evidence destroyed by grief.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(\'suspects\')">
+                    <img src="https://militaryjusticeforall.com/wp-content/uploads/2013/11/robert-cox.jpg" alt="Mugshot photograph of Robert Craig Cox convicted criminal and primary suspect in Springfield Three disappearance case" class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Prime Suspect</span>
+                        <h3 class="evidence-title">Robert Craig Cox</h3>
+                        <p class="evidence-desc">Former Army Ranger and convicted kidnapper who claimed he knew the women were dead and buried in Springfield. He lived in the area at the time of the disappearance and had a history of violence against women. He refused to provide details but hinted at knowledge only the killer would possess.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(\'prank-calls\')">
+                    <img src="https://png.pngtree.com/png-clipart/20250427/original/pngtree-a-vintage-black-rotary-telephone-with-brass-accents-and-coiled-cord-png-image_20849149.png" alt="Vintage black rotary telephone with coiled cord on dark wooden surface dramatic lighting" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Obscene Calls</span>
+                        <h3 class="evidence-title">The Prank Caller</h3>
+                        <p class="evidence-desc">When Janelle Kirby answered the phone at the house, an unidentified male made sexual innuendos using obscene language. He called back immediately after she hung up. Suzie had complained about similar prank calls since moving in with her mother. Police do not believe the calls were related to the disappearance.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal(\'contamination\')">
+                    <img src="https://m.media-amazon.com/images/I/71gc63+Kn6L._AC_UF1000,1000_QL80_.jpg" alt="Crime scene tape yellow and black police line do not cross cordoning off residential area" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Investigation</span>
+                        <h3 class="evidence-title">Scene Contamination</h3>
+                        <p class="evidence-desc">Police estimated 10-20 people entered the house before officers arrived. Friends and family cleaned coffee cups, emptied ashtrays, and moved items while searching for clues. Officer Rick Bookout arrived to find a crowded driveway and a compromised scene. The contamination may have destroyed the case.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1024-512,f_auto,q_auto:best/newscms/2022_23/3556882/springfield_3_wide_social_1.jpg" alt="Springfield Three missing persons poster 1992 showing Sherrill Levitt Suzie Streeter Stacy McCall photographs and physical descriptions" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://militaryjusticeforall.com/wp-content/uploads/2013/11/robert-cox.jpg" alt="Robert Craig Cox mugshot convicted kidnapper primary suspect Springfield Three case" class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://thumbs.dreamstime.com/b/weathered-worn-interior-light-fixture-21426171.jpg" alt="Broken glass porch light fixture shattered globe on wooden steps at night" class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://www.shutterstock.com/image-photo/old-vintage-answering-machine-two-260nw-1485296993.jpg" alt="Vintage 1990s answering machine with cassette tape red blinking light" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known movement and event from graduation night to the present investigation.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">November 1, 1944</div>
+                        <div class="timeline-title">Birth of Sherrill Levitt</div>
+                        <p>Sherrill Elizabeth Levitt is born in Seattle, Washington. She later moves to Springfield, Missouri, where she builds a career as a cosmetologist and raises her daughter Suzanne after a divorce.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">March 9, 1973</div>
+                        <div class="timeline-title">Birth of Suzie Streeter</div>
+                        <p>Suzanne "Suzie" Elizabeth Streeter is born in Springfield, Missouri, to Sherrill Levitt and Brent Streeter. She grows up to be artistic, outgoing, and popular at Kickapoo High School.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">April 23, 1974</div>
+                        <div class="timeline-title">Birth of Stacy McCall</div>
+                        <p>Stacy Kathleen McCall is born in Springfield, Missouri, to Janis and Stuart McCall. She grows up in a middle-class family and becomes best friends with Suzie Streeter at Kickapoo High School.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 6, 1992 — Evening</div>
+                        <div class="timeline-title">Graduation Night</div>
+                        <p>Stacy McCall and Suzie Streeter graduate from Kickapoo High School. They attend multiple graduation parties across Springfield and Battlefield, Missouri. Their friend Janelle Kirby joins them for part of the evening.</p>
+                        <div class="timeline-images">
+                            <img src="https://core-docs.s3.amazonaws.com/springfield_city_school_district_ar/article/image/large_348be9a3-a7c4-44de-80c9-566093417ca6.jpeg" alt="High school graduation ceremony caps and gowns celebration 1990s style" onclick="openLightbox(this)">
+                            <img src="https://i0.wp.com/thesuitcasedetective.com/wp-content/uploads/2023/08/Springfield-Three-2.webp" alt="Teenage girls celebrating at house party in 1990s with colorful lights" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 7, 1992 — 2:00 AM</div>
+                        <div class="timeline-title">The Last Known Moments</div>
+                        <p>After leaving Janelle Kirby\'s house in Battlefield, Suzie and Stacy decide to spend the night at Suzie\'s home at 1717 East Delmar Street instead of going to a hotel in Branson. Sherrill Levitt is already home. This is the last time anyone sees the three women alive.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 7, 1992 — 9:00 AM</div>
+                        <div class="timeline-title">Discovery</div>
+                        <p>Janelle Kirby and her boyfriend Mike Henson arrive at the house. They find the front door unlocked, the porch light globe shattered, and no sign of the three women. Cinnamon the Yorkshire terrier is agitated. Mike sweeps up the broken glass. Janelle answers two obscene phone calls from an unidentified male.</p>
+                        <div class="timeline-images">
+                            <img src="https://commons.wikimedia.org/wiki/File:Shattered_light_fixture_8.jpg" alt="Broken porch light glass globe shattered on wooden steps" onclick="openLightbox(this)">
+                            <img src="https://images.pond5.com/old-school-answering-machine-blinking-108515155_prevstill.jpeg" alt="Vintage answering machine with blinking message light" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 7, 1992 — Afternoon</div>
+                        <div class="timeline-title">The Search Begins</div>
+                        <p>Stacy\'s mother Janis McCall arrives at the house and finds the women\'s purses on the floor, clothing neatly folded, and an unfinished can of Coke. She discovers a strange message on the answering machine but accidentally erases it. Police are called but do not arrive for at least a day. Friends and family contaminate the scene.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 9, 1992</div>
+                        <div class="timeline-title">FBI Joins Investigation</div>
+                        <p>The Federal Bureau of Investigation joins the Springfield Police Department and Missouri State Highway Patrol in the search. Massive searches begin in rural and suburban areas around Springfield, including Lake Springfield, Forsyth, Joplin, and Stockton. No trace of the women is found.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1993</div>
+                        <div class="timeline-title">Serial Killer Theory</div>
+                        <p>Investigators announce they are exploring the possibility that the three women fell victim to a serial killer. Searches of farms and rural properties yield items of interest but no definitive evidence. The case begins to go cold as leads dry up.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1996</div>
+                        <div class="timeline-title">Cox Interview</div>
+                        <p>Convicted criminal Robert Craig Cox, who had been living in Springfield at the time of the disappearance, tells a reporter that he believes the three women are dead and buried in Springfield. He refuses to implicate himself directly but hints at knowledge of their fate. Police reinvestigate him but cannot build a case.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1997</div>
+                        <div class="timeline-title">Declared Dead</div>
+                        <p>Sherrill Levitt and Suzie Streeter are legally declared dead. Stacy McCall is also declared dead. Despite no bodies being found, the legal designation reflects the reality that after five years, hope of finding them alive has vanished.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2007</div>
+                        <div class="timeline-title">Cox Hospital Parking Lot</div>
+                        <p>A local reporter suggests the trio might be buried beneath the parking lot at Cox Hospital. Ground-penetrating radar identifies three anomalies in the area. However, police determine there is insufficient evidence to justify excavation. The theory remains unproven.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2025-Present</div>
+                        <div class="timeline-title">34 Years of Questions</div>
+                        <p>The case remains actively investigated by the Springfield Police Department. New tips continue to come in, but no breakthrough has occurred. The families of Sherrill, Suzie, and Stacy continue to seek answers. The broken porch light still burns in the memories of those who knew them.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence Room</h1>
+                <p class="hero-subtitle">Every artifact, every photograph, every fragment of glass. The physical remnants of a case that defies explanation.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('porch-light')">
+                    <img src="https://thumbs.dreamstime.com/b/weathered-worn-interior-light-fixture-21426171.jpg" alt="Close up photograph of a broken glass porch light fixture with shattered globe pieces scattered on wooden porch steps at night with warm glowing light bulb still intact and burning inside damaged fixture" class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Physical Evidence</span>
+                        <h3 class="evidence-title">The Shattered Globe</h3>
+                        <p class="evidence-desc">The glass porch light globe at 1717 East Delmar Street was found shattered on the morning of June 7, 1992. Mike Henson, Janelle Kirby's boyfriend, swept up the broken glass before police arrived — a well-meaning act that may have destroyed the only physical evidence left at the scene. The bulb remained intact and burning.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('purses')">
+                    <img src="https://m.media-amazon.com/images/I/61vY4dLQMcL.jpg" alt="Three vintage 1990s style women's purses and handbags stacked on bedroom floor with contents including cash wallet keys and personal items scattered around on carpet" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Personal Effects</span>
+                        <h3 class="evidence-title">Three Purses, Three Lives</h3>
+                        <p class="evidence-desc">All three women's purses were found on the floor of Suzie's bedroom. Sherrill's contained nearly $900 in cash from her salon work. Their keys, jewelry, driver's licenses, and cigarettes were all present. Nothing was stolen. The only thing missing was the women themselves.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('cinnamon')">
+                    <img src="https://c8.alamy.com/comp/2EA3T0X/adorable-little-yorkshire-terrier-looking-curiously-away-funny-facial-expression-selective-focus-blurred-background-2EA3T0X.jpg" alt="Small Yorkshire terrier dog looking anxious and distressed standing in doorway of house with worried expression on face indoor setting with warm lighting" class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witness</span>
+                        <h3 class="evidence-title">Cinnamon: The Only Witness</h3>
+                        <p class="evidence-desc">Sherrill and Suzie's Yorkshire terrier, Cinnamon, was found frantic and agitated when Janelle Kirby arrived. The dog was "barreling through the house" and "yipping and crying" according to Janis McCall. Dogs are notoriously unreliable witnesses — but Cinnamon was the only living being present when three women vanished.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('answering-machine')">
+                    <img src="https://www.shutterstock.com/image-photo/old-vintage-answering-machine-two-260nw-1485296993.jpg" alt="Vintage 1990s telephone answering machine with cassette tape blinking red message light and digital display sitting on wooden table in dimly lit room" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Communication</span>
+                        <h3 class="evidence-title">The Erased Message</h3>
+                        <p class="evidence-desc">Janis McCall discovered a "strange message" on the answering machine while searching for clues. In her panic and grief, the message was accidentally erased. Police believed it "may have contained a clue" and were "very interested" in its contents. It was not connected to the prank calls Janelle received. The message is lost forever.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('cars')">
+                    <img src="https://puzzlesandmysteries.wordpress.com/wp-content/uploads/2022/01/capture3missing19b.png" alt="Two vintage 1990s cars parked in residential driveway at suburban home during daytime one car slightly out of usual parking position suggesting unusual activity" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Vehicles</span>
+                        <h3 class="evidence-title">The Misplaced Cars</h3>
+                        <p class="evidence-desc">Suzie's car was not parked in her usual spot — a detail noted by her coworker Nigel Kenney, who described her as a "creature of habit." This suggests someone else may have been parked in her spot when she and Stacy arrived home around 2:15 AM. Both cars were locked and contained no evidence.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('bedroom')">
+                    <img src="https://i.ytimg.com/vi/Sl0Ol2Hqhmw/hq720.jpg" alt="Unmade teenage bedroom with bed sheets rumpled television showing static snow makeup wipes on dresser and personal items scattered suggesting occupants left in hurry" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">Suzie's Bedroom</h3>
+                        <p class="evidence-desc">The bed appeared slept-in. The TV showed static snow, as if a movie had ended. Makeup wipes in the bathroom trash indicated Suzie and Stacy had cleaned up before bed. Stacy's clothes were neatly folded. An unfinished can of Coke sat beside cigarettes. The scene suggested they had settled in for the night — then disappeared.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 2rem;">
+                <h3 style="font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 1.5rem; color: var(--accent-ember);">Forensic Analysis</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div style="border-left: 2px solid var(--accent-gold); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"When I arrived the first thing I noticed were several people in the yard, the door was open and people were coming and going from inside the house."</p>
+                        <p style="margin-top: 0.8rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">— Officer Rick Bookout, Springfield PD</p>
+                    </div>
+                    <div style="border-left: 2px solid var(--accent-ember); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"She'd leave her house without a lot of things, but a smoker wouldn't leave without her cigarettes and lighter. I'm thinking, 'Yeah, this probably isn't a good situation.'"</p>
+                        <p style="margin-top: 0.8rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">— Officer Rick Bookout</p>
+                    </div>
+                    <div style="border-left: 2px solid var(--accent-frost); padding-left: 1rem;">
+                        <p style="font-style: italic; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">"The only thing unusual about this house was that three women were missing from it. You had this feeling as you looked around that something was missing, that something had to be missing. But there wasn't. Just them."</p>
+                        <p style="margin-top: 0.8rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--text-dim);">— Captain Tony Glenn, Springfield PD</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video & Media Archive</h1>
+                <p class="hero-subtitle">Documentaries, news coverage, and investigative reports spanning three decades of the Springfield Three mystery.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/uDsBhl7R7lM" title="MISSING The Springfield Three documentary by Detective Perspective Podcast" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ember">Documentary</span>
+                        <span class="badge badge-gold">2025</span>
+                        <h3 class="video-title">MISSING: The Springfield Three</h3>
+                        <p class="video-desc">Comprehensive documentary from Detective Perspective Podcast covering the full case history, evidence analysis, and current investigation status. Features interviews with family members and law enforcement.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/uDsBhl7R7lM" title="48 Hours documentary special on Springfield Three disappearance case from 1992" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ember">News</span>
+                        <span class="badge badge-frost">48 Hours</span>
+                        <h3 class="video-title">48 Hours: The Springfield Three</h3>
+                        <p class="video-desc">Original CBS 48 Hours special that aired within a week of the disappearance, bringing national attention to the case. One of the earliest and most comprehensive news investigations of the mystery.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/uDsBhl7R7lM" title="Americas Most Wanted segment on Springfield Three cold case missing persons" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ember">TV</span>
+                        <span class="badge badge-gold">AMW</span>
+                        <h3 class="video-title">America's Most Wanted Feature</h3>
+                        <p class="video-desc">Fox's America's Most Wanted broadcast on the Springfield Three case. On December 31, 1992, a man called the AMW hotline with "prime knowledge of the abductions" but the call was disconnected and he never called back.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem;">
+                <h4 style="font-family: 'Cinzel', serif; font-size: 1rem; margin-bottom: 1rem; color: var(--accent-gold);">Media Coverage Timeline</h4>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--text-secondary); line-height: 2;">
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                        <span>June 1992</span><span style="color: var(--accent-ember);">48 Hours (CBS) — First national coverage</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                        <span>1992-1993</span><span style="color: var(--accent-ember);">America's Most Wanted (Fox) — Multiple segments</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                        <span>1993</span><span style="color: var(--accent-ember);">The Oprah Winfrey Show — National interview</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                        <span>2017</span><span style="color: var(--accent-ember);">KY3 — 25 Years of Questions special</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                        <span>2022</span><span style="color: var(--accent-ember);">Springfield News-Leader — 30-year retrospective</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                        <span>2025</span><span style="color: var(--accent-ember);">Detective Perspective Podcast — Full documentary</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Suspects</h1>
+                <p class="hero-subtitle">Every explanation ever proposed for how three women vanished from a locked house. The evidence supports all of them — and none of them.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">👤</div>
+                        <div>
+                            <div class="theory-name">Robert Craig Cox</div>
+                            <div class="theory-probability">Prime Suspect — Convicted Kidnapper</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Former Army Ranger with history of violence against women</li>
+                        <li>Living in Springfield, Missouri at time of disappearance</li>
+                        <li>Claimed in 1997 he knew the women were dead and buried in Springfield</li>
+                        <li>Refused to provide details but hinted at knowledge only killer would have</li>
+                        <li>Convicted of kidnapping and robbery in other cases</li>
+                        <li>Police reinvestigated but could not build sufficient case</li>
+                        <li>No investigators believe Cox has credibility, yet he remains person of interest</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔪</div>
+                        <div>
+                            <div class="theory-name">Dustin Recla & Michael Clay</div>
+                            <div class="theory-probability">Persons of Interest — Ex-Boyfriend Connection</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Dustin Recla was Suzie Streeter's ex-boyfriend with motive for revenge</li>
+                        <li>Recla and Clay facing vandalism and theft charges from mausoleum incident</li>
+                        <li>Suzie was scheduled to testify against them in upcoming trial</li>
+                        <li>Both provided alibis and were cooperative with investigators</li>
+                        <li>Clay reportedly made some incriminating statements during questioning</li>
+                        <li>Eventually pleaded guilty to original charges, sentenced to probation</li>
+                        <li>Still considered persons of interest but never charged</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🚐</div>
+                        <div>
+                            <div class="theory-name">The Van Sighting</div>
+                            <div class="theory-probability">Witness Report — Unverified Lead</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Witness reported seeing Suzie driving silver-green Dodge Panel Van at 6:30 AM</li>
+                        <li>Suzie appeared "very distressed" taking orders from man in backseat</li>
+                        <li>Vehicle was 1964-1970 model, over a mile from crime scene</li>
+                        <li>Additional witnesses reported seeing similar van in different Springfield areas</li>
+                        <li>One witness wrote down partial license plate but discarded the paper</li>
+                        <li>Under hypnosis, witness could only recall three digits of plate</li>
+                        <li>Police parked similar van at station seeking tips but no definitive leads emerged</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card speculative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🏥</div>
+                        <div>
+                            <div class="theory-name">Cox Hospital Parking Garage</div>
+                            <div class="theory-probability">Location Theory — GPR Anomalies Found</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Local reporter suggested bodies buried beneath Cox South Hospital parking lot</li>
+                        <li>Ground-penetrating radar scan conducted in 2007 by engineer Rick Norland</li>
+                        <li>Three anomalies found "roughly the same size" consistent with grave sites</li>
+                        <li>Two anomalies parallel, one perpendicular — unusual pattern</li>
+                        <li>Garage construction began September 1993, over a year after disappearances</li>
+                        <li>SPD determined insufficient evidence to justify costly excavation</li>
+                        <li>Tip reportedly came from psychic or someone claiming dream/vision</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">☎️</div>
+                        <div>
+                            <div class="theory-name">The Prank Caller</div>
+                            <div class="theory-probability">Obscene Phone Calls — Unrelated per Police</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Janelle Kirby received two obscene calls from unidentified male at the house</li>
+                        <li>Caller used sexual innuendos and "F-word," sounded "teenish"</li>
+                        <li>Suzie had complained about similar prank calls since moving in with Sherrill</li>
+                        <li>Calls began after they moved into 1717 East Delmar in Spring 1992</li>
+                        <li>Police do not believe calls were related to disappearance</li>
+                        <li>Caller never identified despite investigation</li>
+                        <li>Some theorists connect calls to stalker or potential abductor</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🌲</div>
+                        <div>
+                            <div class="theory-name">Serial Killer Theory</div>
+                            <div class="theory-probability">FBI Investigation — February 1993</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Police announced in February 1993 they were exploring serial killer possibility</li>
+                        <li>Three women abducted simultaneously suggests organized, experienced perpetrator</li>
+                        <li>Searches of farms and rural properties yielded "items of interest" but no bodies</li>
+                        <li>No other similar disappearances in Springfield area around same time</li>
+                        <li>Case remains unique in American criminal history for scale of simultaneous abduction</li>
+                        <li>FBI psychological profiling provided but did not identify specific suspect</li>
+                        <li>Theory remains plausible but unproven after three decades</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 3rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 2rem;">
+                <h3 style="font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 1.5rem; color: var(--accent-ember);">The Unexplained Details</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                    <div style="background: var(--bg-elevated); border-radius: 6px; padding: 1.2rem; border-left: 3px solid var(--accent-ember);">
+                        <h4 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--accent-gold); margin-bottom: 0.6rem;">The Answering Machine</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">Janis McCall heard a "strange message" that alarmed her, but it was erased. Police believed it "may have contained a clue." What was on that tape? A threat? A confession? A wrong number? The only person who heard it was a mother searching for her daughter.</p>
+                    </div>
+                    <div style="background: var(--bg-elevated); border-radius: 6px; padding: 1.2rem; border-left: 3px solid var(--accent-gold);">
+                        <h4 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--accent-gold); margin-bottom: 0.6rem;">The Sealed Map</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">An envelope containing a hand-drawn map was found in a Springfield News-Leader rack. It directed investigators to a northwest Springfield apartment complex with the phrase "use Ruse of Gas Man checking for Leak." Weekend search found nothing. Who left it?</p>
+                    </div>
+                    <div style="background: var(--bg-elevated); border-radius: 6px; padding: 1.2rem; border-left: 3px solid var(--accent-frost);">
+                        <h4 style="font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--accent-gold); margin-bottom: 0.6rem;">The AMW Caller</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">On December 31, 1992, a man called America's Most Wanted hotline with "prime knowledge of the abductions." The call disconnected when the operator tried to link with Springfield investigators. He never called back. Police publicly appealed for him to contact them.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Official reports, police records, and evidence files from the Springfield Police Department and FBI investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">CASE FILE</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem; letter-spacing: 3px;">SPRINGFIELD POLICE DEPARTMENT</h2>
+                    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--text-dim); letter-spacing: 2px;">COLD CASE DIVISION — CASE #92-06207</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Classification</div>
+                    <div class="document-value">Endangered Missing — Possible Abduction / Homicide</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Victims</div>
+                    <div class="document-value">
+                        Sherrill Elizabeth Levitt, 47 — DOB: November 1, 1944<br>
+                        Suzanne Elizabeth "Suzie" Streeter, 19 — DOB: March 9, 1973<br>
+                        Stacy Kathleen McCall, 18 — DOB: April 23, 1974
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Disappearance</div>
+                    <div class="document-value">June 7, 1992 — Between 2:15 AM and 7:30 AM</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location</div>
+                    <div class="document-value">1717 East Delmar Street, Springfield, Missouri 65804</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Scene Condition</div>
+                    <div class="document-value">
+                        • Front door found unlocked<br>
+                        • Glass porch light globe shattered, bulb intact and burning<br>
+                        • No signs of forced entry on doors or windows<br>
+                        • No blood or signs of struggle (except shattered light)<br>
+                        • Scene contaminated by 10-20 civilians before police arrival<br>
+                        • Coffee cups cleaned, ashtrays emptied by friends/family<br>
+                        • Evidence potentially destroyed by well-meaning visitors
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Items Left Behind</div>
+                    <div class="document-value">
+                        • Three purses with cash ($900 in Sherrill's purse)<br>
+                        • All three vehicles (locked, no evidence inside)<br>
+                        • Keys, jewelry, driver's licenses<br>
+                        • Cigarettes and lighters (Sherrill was chain smoker)<br>
+                        • Stacy's migraine medication<br>
+                        • Makeup wipes in bathroom trash<br>
+                        • Unfinished can of Coca-Cola<br>
+                        • Book "Oh, the Places You'll Go!" on Suzie's headboard<br>
+                        • Yorkshire terrier "Cinnamon" — frantic and agitated
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Evidence</div>
+                    <div class="document-value">
+                        • Shattered porch light globe (swept up by Mike Henson before police arrival)<br>
+                        • Erased answering machine message (accidentally deleted by Janis McCall)<br>
+                        • Two obscene phone calls received by Janelle Kirby (unrelated per police)<br>
+                        • Misplaced vehicle positioning (Suzie's car not in usual spot)<br>
+                        • "Strange message" on answering machine — contents unknown, erased<br>
+                        • Hand-drawn map in News-Leader rack — apartment complex search, no results<br>
+                        • Witness report of silver-green Dodge Panel Van with Suzie driving at 6:30 AM<br>
+                        • Partial license plate (3 digits only, from witness under hypnosis)
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Suspects & Persons of Interest</div>
+                    <div class="document-value">
+                        <strong>Robert Craig Cox</strong> — Convicted kidnapper/robber, claimed knowledge of bodies. No charges filed.<br>
+                        <strong>Dustin Recla</strong> — Suzie's ex-boyfriend, facing charges she was to testify about. Alibi confirmed.<br>
+                        <strong>Michael Clay</strong> — Recla's associate in vandalism/theft case. Cooperative, alibi confirmed.<br>
+                        <strong>Bartt Streeter</strong> — Sherrill's son/Suzie's brother. Estranged. Passed polygraph, alibi confirmed.<br>
+                        <strong>Unknown Transient</strong> — Seen in neighborhood days before. Sketch made, never identified.<br>
+                        <strong>Obscene Caller</strong> — Never identified. Police do not believe connected to disappearance.
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Investigation Agencies</div>
+                    <div class="document-value">
+                        Springfield Police Department (Lead)<br>
+                        Federal Bureau of Investigation (Joined June 9, 1992)<br>
+                        Missouri State Highway Patrol<br>
+                        Greene County Prosecutor's Office
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Searches Conducted</div>
+                    <div class="document-value">
+                        • Lake Springfield — Divers searched, no results<br>
+                        • James River — Extensive search, no results<br>
+                        • Forsyth, Joplin, Stockton areas — Searched, no results<br>
+                        • Webster County farmland — Items of interest found, sealed results<br>
+                        • Northwest Springfield apartment complex — Map tip, no results<br>
+                        • Cox South Hospital parking garage — GPR anomalies, no excavation<br>
+                        • Rural and wooded areas around Springfield — Community search, no results
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-ember); font-weight: bold;">ACTIVE COLD CASE — 34 YEARS UNSOLVED</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Contact Information</div>
+                    <div class="document-value">
+                        Springfield Police Department: 417-864-1810<br>
+                        Crime Stoppers: 417-869-TIPS (8477)<br>
+                        P3tips.com (Anonymous online tips)<br>
+                        Reward: $43,000 for information leading to resolution
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.7rem; color: var(--text-dim); text-align: center; font-family: 'IBM Plex Mono', monospace;">
+                    THIS DOCUMENT IS A RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    ORIGINAL FILES AVAILABLE VIA SPRINGFIELD POLICE DEPARTMENT RECORDS REQUEST.<br>
+                    CASE REMAINS ACTIVE AND UNDER INVESTIGATION.
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.2rem;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem;">
+                    <h4 style="font-family: 'Cinzel', serif; font-size: 1rem; margin-bottom: 0.8rem; color: var(--accent-gold);">Case Statistics</h4>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.8;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Years Unsolved</span><span style="color: var(--accent-ember);">34</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Tips Received</span><span style="color: var(--accent-ember);">5,000+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Named Suspects</span><span style="color: var(--accent-ember);">5+</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Agencies Involved</span><span style="color: var(--accent-ember);">4</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                            <span>Bodies Found</span><span style="color: var(--danger);">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1.5rem;">
+                    <h4 style="font-family: 'Cinzel', serif; font-size: 1rem; margin-bottom: 0.8rem; color: var(--accent-gold);">Victim Profiles</h4>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.8;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Sherrill Levitt</span><span style="color: var(--accent-frost);">5'0" / 110 lbs</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Suzie Streeter</span><span style="color: var(--accent-frost);">5'2" / 102 lbs</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Stacy McCall</span><span style="color: var(--accent-frost);">5'3" / 120 lbs</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding: 0.3rem 0;">
+                            <span>Time Window</span><span style="color: var(--accent-frost);">2:15 AM - 7:30 AM</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.3rem 0;">
+                            <span>Reward</span><span style="color: var(--success);">$43,000</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // ===== NAVIGATION =====
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // Show target section
+            const target = document.getElementById(sectionId);
+            if (target) target.classList.add('active');
+
+            // Update nav-tab active states
+            document.querySelectorAll('.nav-tab').forEach(t => {
+                t.classList.remove('active');
+                // Match by onclick attribute content
+                if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + sectionId + "'")) {
+                    t.classList.add('active');
+                }
+            });
+
+            // Toggle story background visibility
+            if (sectionId === 'story') {
+                document.body.classList.add('story-active');
+            } else {
+                document.body.classList.remove('story-active');
+            }
+
+            // Close mobile menu if open
+            const navTabs = document.getElementById('navTabs');
+            const hamburger = document.getElementById('hamburger');
+            if (navTabs) navTabs.classList.remove('mobile-open');
+            if (hamburger) hamburger.classList.remove('active');
+
+            window.scrollTo(0, 0);
+        }
+
+        // ===== MOBILE MENU TOGGLE =====
+        function toggleMenu() {
+            const navTabs = document.getElementById('navTabs');
+            const hamburger = document.getElementById('hamburger');
+            if (navTabs && hamburger) {
+                navTabs.classList.toggle('mobile-open');
+                hamburger.classList.toggle('active');
+            }
+        }
+
+        // ===== LIGHTBOX =====
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            if (lightboxImg) lightboxImg.src = img.src;
+            if (caption) caption.textContent = img.alt || '';
+            if (lightbox) lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            if (lightbox) lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ===== MODAL =====
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            if (!modal || !body) return;
+
+            const content = {
+                'crime-scene': `
+                    <img src="https://media-cldnry.s-nbcnews.com/image/upload/t_nbcnews-fp-1024-512,f_auto,q_auto:best/newscms/2022_23/3556882/springfield_3_wide_social_1.jpg" class="modal-image" alt="Springfield Three 1992 missing persons flyer showing photographs of Sherrill Levitt Suzie Streeter and Stacy McCall with physical descriptions and contact information">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">1717 East Delmar Street</h2>
+                    <p>The modest home at 1717 East Delmar Street in Springfield, Missouri, was where Sherrill Levitt lived with her daughter Suzie Streeter and their Yorkshire terrier, Cinnamon. Sherrill had been renovating the small house, working to make it a comfortable home for herself and her daughter after her divorce from Don Levitt.</p>
+                    <p>On the morning of June 7, 1992, the house became the center of one of America's most confounding mysteries. When Janelle Kirby arrived around 9:00 AM, she found the front door unlocked — not unusual for Springfield in 1992. The porch light globe was shattered, but the bulb still burned. Inside, the house appeared normal except for one critical detail: three women had vanished without a trace.</p>
+                    <p>The house was later found to have been compromised by as many as 20 people who entered before police arrived. Friends and family had cleaned coffee cups, emptied ashtrays, and moved items while searching for clues. This contamination may have destroyed the case.</p>
+                `,
+                'broken-light': `
+                    <img src="https://thumbs.dreamstime.com/b/weathered-worn-interior-light-fixture-21426171.jpg" class="modal-image" alt="Close up photograph of a broken glass porch light fixture with shattered globe pieces on wooden porch steps at night with warm bulb glow" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">The Broken Porch Light</h2>
+                    <p>The shattered glass globe on the front porch light remains the most perplexing physical clue in the case. When Janelle Kirby and Mike Henson arrived at the house on the morning of June 7, 1992, they found the glass covering the porch light had been broken, though the bulb itself remained intact and still burning.</p>
+                    <p>Mike Henson, concerned that Janelle was barefoot, swept up the broken glass before police arrived. This well-meaning act may have destroyed crucial forensic evidence. Police later determined that the globe could have been broken from outside during a struggle, or shattered during the abduction itself.</p>
+                    <p>The fact that the bulb remained intact suggests the globe was broken by impact rather than by unscrewing or careful removal. Whether this occurred during a confrontation at the door, or was done deliberately to create darkness, remains unknown. The broken porch light has become the enduring symbol of the case — a small fracture that hints at violence, but reveals nothing.</p>
+                `,
+                'answering-machine': `
+                    <img src="https://www.shutterstock.com/image-photo/old-vintage-answering-machine-two-260nw-1485296993.jpg" class="modal-image" alt="Vintage 1990s answering machine with cassette tape and blinking red message light on wooden table">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">The Erased Message</h2>
+                    <p>When Janis McCall arrived at 1717 East Delmar Street searching for her daughter Stacy, she checked the answering machine hoping to find a message from one of the missing women. What she heard alarmed her — a "strange message" that she later described as deeply unsettling.</p>
+                    <p>In her panic and grief, Janis accidentally erased the message. This was common with 1990s answering machines, which typically recorded messages on cassette tapes that could be recorded over. Police were "very interested" in the message and believed it "may have contained a clue" about the disappearances.</p>
+                    <p>Crucially, investigators determined that the erased message was not connected to the obscene prank calls that Janelle Kirby had received earlier that day. The content of the message remains one of the case's most agonizing mysteries. Was it a threat? A cry for help? A wrong number that meant nothing? Only Janis McCall knows what she heard, and even she may not fully understand its significance.</p>
+                `,
+                'suspects': `
+                    <img src="https://militaryjusticeforall.com/wp-content/uploads/2013/11/robert-cox.jpg" class="modal-image" alt="Mugshot photograph of Robert Craig Cox convicted criminal and primary suspect in Springfield Three disappearance case" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">Robert Craig Cox</h2>
+                    <p>Robert Craig Cox is the most notorious person of interest in the Springfield Three case. A former Army Ranger with a history of violence against women, Cox was living in the Springfield area at the time of the disappearances. He had previously been convicted of kidnapping and robbery in other cases.</p>
+                    <p>In 1997, five years after the disappearance, Cox told a reporter that he believed the three women were dead and buried in Springfield. He refused to implicate himself directly but hinted at knowledge that only the killer would possess. His statements were chillingly specific enough to prompt police to reinvestigate him, but not specific enough to build a case.</p>
+                    <p>Cox has refused to provide details about what he claims to know, and no investigators believe he has any credibility. Yet he remains the case's most compelling suspect — a convicted violent criminal who was in the right place at the right time and who has made statements suggesting knowledge of the women's fate. Without a body or physical evidence, however, he has never been charged.</p>
+                `,
+                'prank-calls': `
+                    <img src="https://png.pngtree.com/png-clipart/20250427/original/pngtree-a-vintage-black-rotary-telephone-with-brass-accents-and-coiled-cord-png-image_20849149.png" class="modal-image" alt="Vintage black rotary telephone with coiled cord on dark wooden surface dramatic lighting">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">The Prank Caller</h2>
+                    <p>When Janelle Kirby answered the phone at 1717 East Delmar Street on the morning of June 7, 1992, an unidentified male made sexual innuendos using obscene language. She hung up, but he called back immediately with another similar call. Janelle described the caller as sounding "teenish."</p>
+                    <p>Suzie Streeter had complained about receiving similar prank calls since she and her mother moved into the home in the spring of 1992. The calls were disturbing but not initially seen as connected to the disappearance. Springfield Police Department investigator David Asher described the calls as "obscene... The individual would not identify himself... They were using the F-word and several other words."</p>
+                    <p>Police do not believe the prank calls were related to the disappearance. However, some theorists have speculated that the caller could have been a stalker who escalated from harassment to abduction. The caller was never identified, and the phone records from 1992 did not provide enough information to trace the source.</p>
+                `,
+                'contamination': `
+                    <img src="https://m.media-amazon.com/images/I/71gc63+Kn6L._AC_UF1000,1000_QL80_.jpg" class="modal-image" alt="Crime scene tape yellow and black police line do not cross cordoning off residential area">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">Scene Contamination</h2>
+                    <p>Police estimated that between 10 and 20 people entered 1717 East Delmar Street before officers arrived. In 1992, the concept of crime scene contamination was not as widely understood as it is today. Friends and family who entered the house were not trying to interfere with an investigation — they were trying to find three missing women.</p>
+                    <p>Officer Rick Bookout, the first police officer to arrive at the scene, later recalled: "When I arrived the first thing I noticed were several people in the yard, the door was open and people were coming and going from inside the house." Visitors had cleaned coffee cups, emptied ashtrays, and moved items while searching for clues. Mike Henson had swept up the broken porch light glass.</p>
+                    <p>The contamination may have destroyed the case. In an era before DNA testing was commonplace, physical evidence like fingerprints, hair, and fibers could have identified a perpetrator. But with dozens of people passing through the scene, any evidence left by the abductor was likely compromised or destroyed. The Springfield Three case stands as a tragic lesson in the importance of securing crime scenes immediately.</p>
+                `,
+                'porch-light': `
+                    <img src="https://thumbs.dreamstime.com/b/weathered-worn-interior-light-fixture-21426171.jpg" class="modal-image" alt="Close up photograph of a broken glass porch light fixture with shattered globe pieces scattered on wooden porch steps at night with warm glowing light bulb still intact and burning inside damaged fixture" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">The Shattered Globe</h2>
+                    <p>The glass porch light globe at 1717 East Delmar Street was found shattered on the morning of June 7, 1992. Mike Henson, Janelle Kirby's boyfriend, swept up the broken glass before police arrived — a well-meaning act that may have destroyed the only physical evidence left at the scene. The bulb remained intact and burning, suggesting the globe was broken by impact from outside or during a struggle.</p>
+                `,
+                'purses': `
+                    <img src="https://m.media-amazon.com/images/I/61vY4dLQMcL.jpg" class="modal-image" alt="Three vintage 1990s style women's purses and handbags stacked on bedroom floor with contents including cash wallet keys and personal items scattered around on carpet">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">Three Purses, Three Lives</h2>
+                    <p>All three women's purses were found on the floor of Suzie's bedroom. Sherrill's contained nearly $900 in cash from her salon work. Their keys, jewelry, driver's licenses, and cigarettes were all present. Nothing was stolen. The only thing missing was the women themselves. This detail rules out robbery as a motive and suggests the abductor was motivated by something else entirely.</p>
+                `,
+                'cinnamon': `
+                    <img src="https://c8.alamy.com/comp/2EA3T0X/adorable-little-yorkshire-terrier-looking-curiously-away-funny-facial-expression-selective-focus-blurred-background-2EA3T0X.jpg" class="modal-image" alt="Small Yorkshire terrier dog looking anxious and distressed standing in doorway of house with worried expression on face indoor setting with warm lighting" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">Cinnamon: The Only Witness</h2>
+                    <p>Sherrill and Suzie's Yorkshire terrier, Cinnamon, was found frantic and agitated when Janelle Kirby arrived. The dog was "barreling through the house" and "yipping and crying" according to Janis McCall. Dogs are notoriously unreliable witnesses — but Cinnamon was the only living being present when three women vanished. Her distress suggests she witnessed something traumatic, but she can never tell us what.</p>
+                `,
+                'cars': `
+                    <img src="https://puzzlesandmysteries.wordpress.com/wp-content/uploads/2022/01/capture3missing19b.png" class="modal-image" alt="Two vintage 1990s cars parked in residential driveway at suburban home during daytime one car slightly out of usual parking position suggesting unusual activity">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">The Misplaced Cars</h2>
+                    <p>Suzie's car was not parked in her usual spot — a detail noted by her coworker Nigel Kenney, who described her as a "creature of habit." This suggests someone else may have been parked in her spot when she and Stacy arrived home around 2:15 AM. Both cars were locked and contained no evidence. The positioning of the vehicles may be the only clue that someone unexpected was at the house that night.</p>
+                `,
+                'bedroom': `
+                    <img src="https://i.ytimg.com/vi/Sl0Ol2Hqhmw/hq720.jpg" class="modal-image" alt="Unmade teenage bedroom with bed sheets rumpled television showing static snow makeup wipes on dresser and personal items scattered suggesting occupants left in hurry">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; letter-spacing: 2px;">Suzie's Bedroom</h2>
+                    <p>The bed appeared slept-in. The TV showed static snow, as if a movie had ended. Makeup wipes in the bathroom trash indicated Suzie and Stacy had cleaned up before bed. Stacy's clothes were neatly folded. An unfinished can of Coke sat beside cigarettes. The scene suggested they had settled in for the night — then disappeared. The normalcy of the room makes the absence of its occupants even more chilling.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking overlay background
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ===== KEYBOARD NAVIGATION =====
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                closeModal();
+            }
+        });
+
+        // ===== SMOOTH SCROLL =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // ===== INIT: Set story background on load =====
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('story-active');
+        });
+    </script>
+
+</body>
+</html>

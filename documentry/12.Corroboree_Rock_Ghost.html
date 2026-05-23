@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Corroboree Rock Ghost: The Lady in White — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-abyss: #0a0a0f;
+            --bg-deep: #111118;
+            --bg-surface: #181822;
+            --bg-elevated: #1e1e2a;
+            --bg-card: #252530;
+            --accent-gold: #c9a84c;
+            --accent-bronze: #8b7355;
+            --accent-copper: #b87333;
+            --accent-ember: #d44a2a;
+            --accent-ghost: #8a8a9e;
+            --accent-mist: #b5b5c8;
+            --text-primary: #e8e6e3;
+            --text-secondary: #9a9590;
+            --text-muted: #5a5550;
+            --text-frost: #b0b8c0;
+            --border-subtle: #2a2a3a;
+            --border-glow: #c9a84c;
+            --danger: #8b1a2d;
+            --warning: #d4a017;
+            --success: #4a6741;
+            --shadow-gold: rgba(201, 168, 76, 0.08);
+            --shadow-void: rgba(0, 0, 0, 0.85);
+            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #8b7355 50%, #b87333 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-abyss);
+            color: var(--text-primary);
+            line-height: 1.65;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 15% 20%, rgba(201, 168, 76, 0.03) 0%, transparent 55%),
+                radial-gradient(ellipse at 85% 85%, rgba(139, 115, 85, 0.02) 0%, transparent 45%),
+                linear-gradient(180deg, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.98) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-abyss); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-bronze); border-radius: 3px; }
+
+        /* ===== CINEMATIC HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.98);
+            backdrop-filter: blur(30px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.8rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            color: var(--accent-gold);
+            letter-spacing: 7px;
+            font-weight: 600;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: 'CORROBOREE';
+            position: absolute;
+            left: 1px;
+            top: 0;
+            color: rgba(201, 168, 76, 0.25);
+            clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+            animation: flicker 4s infinite;
+        }
+
+        .logo span {
+            color: var(--accent-ghost);
+            font-weight: 400;
+            letter-spacing: 9px;
+            font-size: 0.85em;
+        }
+
+        @keyframes flicker {
+            0%, 95%, 100% { opacity: 1; transform: translate(0); }
+            96% { opacity: 0.3; transform: translate(-1px, 1px); }
+            97% { opacity: 1; transform: translate(1px, -1px); }
+            98% { opacity: 0.5; transform: translate(-1px, 0); }
+            99% { opacity: 1; transform: translate(0, 1px); }
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.45rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            transition: all 0.35s ease;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.15), transparent);
+            transition: left 0.6s;
+        }
+
+        .nav-tab:hover::before, .nav-tab.active::before {
+            left: 100%;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(201, 168, 76, 0.1);
+            color: var(--accent-mist);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 25px rgba(201, 168, 76, 0.15);
+        }
+
+        .main-content { margin-top: 60px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.9s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(40px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        /* ===== STORY SECTION - CINEMATIC VINTAGE AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.98) 100%),
+                url('https://kimi-web-img.moonshot.cn/img/upload.wikimedia.org/corroboree_rock_ghost_photo_1959_reverend_rs_blance_lady_in_white_apparition_alice_springs_australia_sacred_aboriginal_site_paranormal_figure_bushes_transparent.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.8) contrast(1.4) brightness(0.12) sepia(0.3);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 40%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(139, 115, 85, 0.03) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .film-grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 820px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 10px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 0.6s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(201, 168, 76, 0.2);
+            opacity: 0;
+            animation: materialize 1.5s ease 1.2s forwards;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .story-headline span {
+            color: var(--accent-ember);
+            display: block;
+            font-size: 1.15em;
+            font-weight: 400;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 1px;
+            text-shadow: 0 0 40px rgba(212, 74, 42, 0.25);
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.45rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: materialize 1.5s ease 1.8s forwards;
+            border-left: 2px solid var(--accent-gold);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 2.4s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.6rem;
+            text-indent: 2.2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 3.8rem;
+            float: left;
+            line-height: 0.85;
+            padding-right: 0.6rem;
+            color: var(--accent-gold);
+            text-shadow: 0 0 35px rgba(201, 168, 76, 0.4);
+            font-weight: 700;
+        }
+
+        .story-highlight {
+            background: rgba(201, 168, 76, 0.06);
+            border-left: 2px solid var(--accent-gold);
+            padding: 2rem;
+            margin: 2.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.75;
+            color: var(--text-frost);
+            text-align: left;
+            opacity: 0;
+            animation: materialize 1.5s ease 3s forwards;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: materialize 1.5s ease 3.6s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1rem 3.5rem;
+            background: var(--accent-gold);
+            color: var(--bg-abyss);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 0.9rem;
+            letter-spacing: 6px;
+            border-radius: 2px;
+            transition: all 0.4s;
+            border: 2px solid var(--accent-gold);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 50px rgba(201, 168, 76, 0.25);
+            color: var(--accent-gold);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4.5rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: materialize 1.5s ease 4.2s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .story-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes materialize {
+            from { opacity: 0; transform: translateY(40px); filter: blur(5px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: drift 3s infinite;
+            opacity: 0;
+            animation: materialize 1.5s ease 4.8s forwards, drift 3s infinite 4.8s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.4; }
+            50% { transform: translateX(-50%) translateY(-12px); opacity: 1; }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(201, 168, 76, 0.04) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 35px rgba(201, 168, 76, 0.15);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.5s, box-shadow 0.5s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gradient-gold);
+            transform: scaleX(0);
+            transition: transform 0.5s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 25px 60px rgba(201, 168, 76, 0.1);
+            border-color: var(--accent-bronze);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) brightness(0.75) sepia(0.15);
+            transition: filter 0.5s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0.1) contrast(1.4) brightness(0.85) sepia(0.05);
+        }
+
+        .evidence-content { padding: 1.6rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            background: rgba(201, 168, 76, 0.1);
+            color: var(--accent-gold);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            border-radius: 2px;
+            margin-bottom: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.15rem;
+            margin-bottom: 0.6rem;
+            color: var(--text-primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.65;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.3rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .video-desc {
+            font-size: 0.84rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 2px;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-right: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-gold { background: rgba(201, 168, 76, 0.15); color: var(--accent-gold); }
+        .badge-bronze { background: rgba(139, 115, 85, 0.15); color: var(--accent-bronze); }
+        .badge-ice { background: rgba(168, 181, 196, 0.1); color: var(--accent-ghost); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--gradient-gold);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(201, 168, 76, 0.3);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -34px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -34px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-gold);
+            font-size: 0.72rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.35s;
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) sepia(0.2);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0.1) contrast(1.4) sepia(0.05);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-left: 3px solid var(--success); }
+        .theory-card.conspiracy { border-left: 3px solid var(--danger); }
+        .theory-card.alternative { border-left: 3px solid var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.12); }
+        .conspiracy .theory-icon { background: rgba(139, 26, 45, 0.12); }
+        .alternative .theory-icon { background: rgba(212, 160, 23, 0.12); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .theory-probability {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.86rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 2px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 0.4rem 0.9rem;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: rotate(-10deg);
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1.2rem 0;
+            padding: 0.9rem;
+            background: var(--bg-elevated);
+            border-left: 2px solid var(--accent-bronze);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            margin-top: 0.25rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.35s;
+            border: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.5) contrast(1.3) sepia(0.2);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-gold);
+            box-shadow: 0 5px 30px rgba(201, 168, 76, 0.15);
+            filter: grayscale(0.1) contrast(1.4) sepia(0.05);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.96);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-gold);
+            border-radius: 6px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-surface);
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.6rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: grayscale(0.2) contrast(1.15) sepia(0.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2rem; }
+            .story-text { font-size: 0.95rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 1.5rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -34px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.65rem;
+                padding: 0.35rem 0.7rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 105px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">CORROBOREE <span>ROCK</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="film-grain"></div>
+
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Corroboree Rock, 1959 — A Paranormal Investigation</div>
+
+                    <h1 class="story-headline">
+                        The Ghost of
+                        <span>Corroboree Rock</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        In the red heart of Australia, where ancient stone formations rise from the desert like the bones of the earth, a Presbyterian minister aimed his camera at the rugged landscape and captured something that should not exist. Reverend R.S. Blance was alone at Corroboree Rock, a sacred Aboriginal site near Alice Springs, when he pressed the shutter. The landscape was empty. The air was still. But when the photograph was developed, a translucent figure stood among the bushes—a woman in white, watching. She had not been there when the photo was taken. She had come from somewhere else entirely.
+                    </p>
+
+                    <div class="story-text">
+                        <p>The Outback has always been a place of extremes—extreme heat, extreme isolation, extreme beauty. For the Arrernte Aboriginal people, the land around Alice Springs holds stories that stretch back tens of thousands of years. Corroboree Rock, a massive dolomite outcropping formed over 800 million years ago by ancient salt lakes, is one of their most sacred ceremonial sites. It is a place of men's business, of initiation rites, of spiritual power that predates European settlement by millennia. To the uninitiated, to women, to children, the rock is spiritually dangerous. The Arrernte do not speak lightly of such things. Their silence about the site's deeper significance is itself a kind of warning.</p>
+
+                        <p>Reverend R.S. Blance was a man of faith, but not the faith of this land. He was a Presbyterian minister visiting the Northern Territory in 1959, drawn perhaps by the same spiritual curiosity that had brought missionaries to Australia for generations. He stood before Corroboree Rock with his camera, alone in the bush, and took a photograph of the landscape. The image showed the reddish earth, the scrubby vegetation, the massive rock formation against the pale sky. Nothing unusual. Nothing extraordinary. Just another day in the Red Centre.</p>
+
+                        <p>But when the film was developed, something impossible emerged. There, among the bushes to the left of the frame, stood a figure. It was partially transparent, slightly blurred, as if caught between two states of being. Some who have studied the photograph see a woman in a white nightdress, her features indistinct but unmistakably human. Others see an Aboriginal woman in traditional dress. Still others claim to see a priest, or someone holding binoculars or a camera—hence the nickname "The Watcher." The figure appears to be observing the photographer, or perhaps observing us, across the decades. Reverend Blance insisted he was alone. The Arrernte would not have been surprised.</p>
+
+                        <p>The photograph has circulated through paranormal circles for over sixty years, reproduced in books, documentaries, and websites. It has been analyzed, enhanced, debunked, and defended. Skeptics point to double exposure, to pareidolia, to the tricks of light and film in the harsh Australian sun. Believers point to the sacredness of the site, to the thousands of people who go missing in the Australian wilderness every year, to the Arrernte knowledge that some places are thin between worlds. The truth, like the figure in the photograph, remains elusive—partially visible, partially transparent, watching from the bushes of a sacred rock in the heart of the desert.</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-gold);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        How does a figure appear in a photograph taken by a man who was completely alone in a remote desert landscape? The Corroboree Rock ghost photograph remains one of the most compelling pieces of paranormal evidence from Australia—a six-decade-old image that defies every conventional explanation and continues to challenge our understanding of sacred sites, consciousness, and what it means to be watched by something unseen.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">1959</div>
+                            <div class="story-stat-label">Year Photographed</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">1</div>
+                            <div class="story-stat-label">Ghostly Figure</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">66</div>
+                            <div class="story-stat-label">Years of Mystery</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">∞</div>
+                            <div class="story-stat-label">Explanations</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-gold);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>The Lady in White</h1>
+                <p class="hero-subtitle">An interactive investigation into the most famous ghost photograph in Australian history. Explore the evidence, analyze the theories, and decide for yourself whether the Watcher of Corroboree Rock truly exists.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Subject</div>
+                        <div class="meta-value">The Watcher / Lady in White</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Corroboree Rock, NT</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date Taken</div>
+                        <div class="meta-value">1959</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Photographer</div>
+                        <div class="meta-value">Rev. R.S. Blance</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 4px;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('ghost-photo')">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Corroboree Rock ghost photograph 1959 Reverend R.S. Blance lady in white apparition Alice Springs Australia sacred Aboriginal site paranormal figure standing among bushes partially transparent translucent ghostly woman white dress outback Northern Territory" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph</h3>
+                        <p class="evidence-desc">The original 1959 photograph taken by Reverend R.S. Blance at Corroboree Rock showing a partially transparent figure standing among the bushes. The figure appears to be a woman in white or traditional Aboriginal dress, positioned to the left of the frame. Reverend Blance insisted he was alone when the photo was taken. The figure was only discovered upon development.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('reverend-blance')">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Reverend R.S. Blance Presbyterian minister photographer 1959 Corroboree Rock ghost photo Alice Springs Australia church clergy portrait black and white historical religious figure who took famous paranormal photograph" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Source</span>
+                        <h3 class="evidence-title">Reverend R.S. Blance — The Photographer</h3>
+                        <p class="evidence-desc">A Presbyterian minister who visited the Corroboree Rock area in 1959. He was on a spiritual retreat when he took the photograph. Blance claimed he was completely alone at the site and only noticed the mysterious figure when the film was developed. He was based in Adelaide and had no known history of paranormal claims before this incident.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('corroboree-rock')">
+                    <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/6c/c4/19/caption.jpg" 
+                         alt="Corroboree Rock dolomite outcropping Alice Springs Northern Territory Australia sacred Aboriginal site Arrernte ceremonial ground 800 million years old geological formation desert landscape red centre outback MacDonnell Ranges" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Location</span>
+                        <h3 class="evidence-title">Corroboree Rock — The Sacred Site</h3>
+                        <p class="evidence-desc">A massive dolomite outcropping located approximately 50km east of Alice Springs in the Northern Territory. Formed over 800 million years ago by ancient evaporated salt lakes, it is a registered sacred site of the Arrernte Aboriginal people. The rock is an important men's ceremonial site and is considered spiritually dangerous for women, children, and uninitiated men.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('the-watcher')">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Corroboree Rock ghost photo The Watcher 1959 lady in white apparition close up zoom enhanced figure standing among bushes Alice Springs Australia paranormal translucent figure white dress Aboriginal woman" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Subject</span>
+                        <h3 class="evidence-title">The Watcher — The Apparition</h3>
+                        <p class="evidence-desc">The mysterious figure captured in the 1959 photograph. Various interpretations exist: some see a woman in a white nightdress, others an Aboriginal woman in traditional clothing, and some claim to see a priest or someone holding binoculars or a camera. The figure is partially transparent and appears to be observing the photographer from among the bushes.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('arrernte-people')">
+                    <img src="https://cdn.britannica.com/22/60122-004-8D6E0E3C/singing-corroboree-Aborigines-event-Australian-Dreaming-activities.jpg" 
+                         alt="Arrernte Aboriginal people Alice Springs Northern Territory Australia indigenous ceremonial gathering corroboree sacred site traditional culture desert people native Australian tribe traditional owners of Corroboree Rock land" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Cultural Context</span>
+                        <h3 class="evidence-title">The Arrernte People — Traditional Owners</h3>
+                        <p class="evidence-desc">The Arrernte Aboriginal people are the traditional owners of the land around Alice Springs and Corroboree Rock. They have inhabited this region for tens of thousands of years. The cultural significance of Corroboree Rock is a closely guarded secret held by senior male traditional owners. The site is considered spiritually powerful and dangerous for those not initiated into its mysteries.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('alice-springs')">
+                    <img src="https://cdn.getyourguide.com/img/location/58c6a693af06a.jpeg/99.jpg" 
+                         alt="Alice Springs Northern Territory Australia Red Centre desert town MacDonnell Ranges aerial view outback settlement remote community gateway to Corroboree Rock and surrounding sacred sites" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Geographic Context</span>
+                        <h3 class="video-title">Alice Springs — The Red Centre</h3>
+                        <p class="evidence-desc">A remote town in the heart of Australia's Red Centre, approximately 50km west of Corroboree Rock. Alice Springs serves as the gateway to the MacDonnell Ranges and numerous sacred Aboriginal sites. The area is known for its extreme isolation, harsh desert environment, and rich indigenous cultural heritage that predates European settlement by over 40,000 years.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                     alt="Corroboree Rock ghost photograph 1959 Reverend R.S. Blance lady in white apparition Alice Springs Australia sacred Aboriginal site paranormal figure standing among bushes partially transparent translucent ghostly woman white dress outback Northern Territory close up zoom" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                     alt="Reverend R.S. Blance Presbyterian minister photographer 1959 Corroboree Rock ghost photo Alice Springs Australia church clergy portrait black and white historical religious figure close up" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/6c/c4/19/caption.jpg" 
+                     alt="Corroboree Rock dolomite outcropping Alice Springs Northern Territory Australia sacred Aboriginal site Arrernte ceremonial ground 800 million years old geological formation desert landscape red centre outback MacDonnell Ranges full view" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                     alt="Corroboree Rock ghost photo The Watcher 1959 lady in white apparition close up zoom enhanced figure standing among bushes Alice Springs Australia paranormal translucent figure white dress Aboriginal woman enhanced version" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every documented event from the formation of Corroboree Rock to the photograph's discovery and the decades of investigation that followed.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">800 Million Years Ago</div>
+                        <div class="timeline-title">Ancient Formation</div>
+                        <p>Corroboree Rock is formed from ancient salt lakes that evaporated over 800 million years ago. The dolomite outcropping that would become one of Australia's most sacred Aboriginal sites begins its geological journey in what is now the Northern Territory. The rock formation stands as a silent witness to eons of geological change, eventually becoming a landmark in the vast Australian desert.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">40,000+ Years Ago</div>
+                        <div class="timeline-title">Arrernte Arrival</div>
+                        <p>The Arrernte Aboriginal people arrive in the region around what is now Alice Springs. They establish a deep spiritual connection to the land, developing complex ceremonial practices, dreamtime stories, and sacred sites. Corroboree Rock becomes an important men's ceremonial site, a place of initiation, spiritual power, and cultural knowledge passed down through countless generations.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Pre-1959</div>
+                        <div class="timeline-title">Sacred Knowledge Protected</div>
+                        <p>The cultural significance of Corroboree Rock remains a closely guarded secret held by senior male traditional owners of the Arrernte people. The site is considered spiritually dangerous for women, children, and uninitiated men. Climbing the rock is taboo. The Arrernte maintain strict protocols about who can access the site and what knowledge can be shared. This enigmatic silence adds to the mystique of the location and foreshadows the strange events to come.</p>
+                        <div class="timeline-images">
+                            <img src="https://cdn.britannica.com/22/60122-004-8D6E0E3C/singing-corroboree-Aborigines-event-Australian-Dreaming-activities.jpg" 
+                                 alt="Arrernte Aboriginal people Alice Springs Northern Territory Australia indigenous ceremonial gathering corroboree sacred site traditional culture desert people native Australian tribe" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/6c/c4/19/caption.jpg" 
+                                 alt="Corroboree Rock dolomite outcropping Alice Springs Northern Territory Australia sacred Aboriginal site Arrernte ceremonial ground geological formation desert landscape" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1959</div>
+                        <div class="timeline-title">The Photograph</div>
+                        <p>Reverend R.S. Blance, a Presbyterian minister based in Adelaide, visits the Corroboree Rock area during a spiritual retreat to the Northern Territory. He stands before the rock formation with his camera, completely alone in the remote landscape. He takes a photograph of the scene, capturing the reddish earth, scrubby vegetation, and the massive rock formation. He sees nothing unusual at the time. The landscape appears empty except for the natural features of the Australian Outback.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1959 — Post-Development</div>
+                        <div class="timeline-title">The Discovery</div>
+                        <p>When the photographic film is developed, Reverend Blance discovers something impossible. There, among the bushes to the left of the frame, stands a partially transparent figure. The figure appears to be a woman—some see her in a white nightdress, others in traditional Aboriginal clothing. Some observers claim she is holding something resembling binoculars or a camera, leading to the nickname "The Watcher." Blance is shaken. He knows he was alone. He knows no one was standing in that spot when he took the photo. Yet there she is, watching from the bushes.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1959–1970s</div>
+                        <div class="timeline-title">Early Circulation</div>
+                        <p>The photograph begins to circulate among paranormal enthusiasts, spiritualists, and those interested in the unexplained. It appears in early paranormal publications and is discussed in spiritualist circles. The image gains the nickname "The Watcher of Corroboree Rock" due to the figure's apparent pose of observation. The story of the Presbyterian minister who captured a ghost in the Australian desert begins to spread through word of mouth and early paranormal literature.</p>
+                        <div class="timeline-images">
+                            <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                                 alt="Corroboree Rock ghost photograph 1959 Reverend R.S. Blance lady in white apparition Alice Springs Australia sacred Aboriginal site paranormal figure" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                            <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                                 alt="Corroboree Rock ghost photo The Watcher 1959 lady in white apparition close up zoom enhanced figure" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1970s–1990s</div>
+                        <div class="timeline-title">Growing Fame</div>
+                        <p>The Corroboree Rock ghost photograph gains wider recognition as paranormal investigation becomes more mainstream. It appears in books about Australian ghosts and hauntings, in paranormal magazines, and eventually in early internet forums. The image is reproduced, enhanced, and analyzed by believers and skeptics alike. The story of the Arrernte sacred site adds cultural depth to the paranormal narrative. Some researchers begin to connect the apparition to the thousands of people who have gone missing in the Australian wilderness.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2000s–2010s</div>
+                        <div class="timeline-title">Digital Age Scrutiny</div>
+                        <p>The photograph enters the digital age and faces new levels of scrutiny. Skeptical investigators examine the image using modern software, looking for signs of manipulation, double exposure, or natural explanations. Some researchers note that the figure could be a result of pareidolia—the human tendency to see faces and figures in random patterns. Others suggest the image might be a double exposure, a common artifact of film photography. The debate intensifies as the image spreads across social media, reaching new audiences who must evaluate its authenticity without access to the original film.</p>
+                        <div class="timeline-images">
+                            <img src="http://www.theparanormalguide.com/uploads/1/7/3/8/17382059/9537442.jpg" 
+                                 alt="Corroboree Rock ghost photo skeptical analysis pareidolia explanation 1959 Reverend Blance paranormal debunking investigation Skeptic.com critical examination" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                            <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                                 alt="Corroboree Rock ghost photo double exposure analysis 1959 film photography artifact Reverend Blance paranormal debunking Metabunk.org technical examination" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2010s–Present</div>
+                        <div class="timeline-title">Social Media Resurgence</div>
+                        <p>The Corroboree Rock ghost photograph experiences a resurgence in popularity through platforms like TikTok, Reddit, and YouTube. New generations discover the image and debate its authenticity. Some users claim to see multiple figures in the photograph. Others create enhanced versions that reveal new details—or create new artifacts. The story of the Arrernte sacred site and the missing women of the Australian Outback adds new layers to the narrative. The photograph becomes a touchstone for discussions about indigenous spirituality, colonial history, and the unexplained.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Mystery Endures</div>
+                        <p>Multiple theories continue to compete for acceptance: genuine paranormal manifestation at a sacred site, double exposure or film artifact, pareidolia creating a figure where none exists, or an unknown person who was actually present but unseen by Reverend Blance. The original photographic negative has never been located for modern forensic analysis. Reverend Blance is long deceased and cannot be questioned. The Arrernte traditional owners maintain their silence about the site's deeper significance. The Watcher of Corroboree Rock—whether ghost, accident, or illusion—remains one of Australia's most enduring photographic mysteries.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Physical findings, photographic analysis, and the inexplicable details that define the Corroboree Rock mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Corroboree Rock ghost photograph 1959 Reverend R.S. Blance lady in white apparition Alice Springs Australia sacred Aboriginal site paranormal figure standing among bushes partially transparent translucent ghostly woman white dress outback Northern Territory enhanced zoom close up" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph Itself</h3>
+                        <p class="evidence-desc">The 1959 photograph shows the landscape around Corroboree Rock with scrubby vegetation and reddish earth. To the left of the frame, among the bushes, stands a partially transparent figure. The figure appears to be humanoid, with a discernible head, torso, and limbs. Some observers see a woman in a white nightdress; others see an Aboriginal woman in traditional dress. The figure's features are indistinct but unmistakably present. It appears to be facing toward the camera, as if observing the photographer. The transparency suggests something caught between states of being.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Corroboree Rock ghost photo skeptical investigation pareidolia analysis 1959 Reverend Blance figure bushes outback Australia debunking critical examination face recognition pattern" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Skeptical Analysis</span>
+                        <h3 class="evidence-title">The Pareidolia Theory</h3>
+                        <p class="evidence-desc">Skeptical investigators propose that the figure is a result of pareidolia—the human brain's tendency to perceive faces and figures in random patterns. The complex interplay of light, shadow, and vegetation in the Australian bush creates natural shapes that the brain interprets as humanoid. The "figure" may simply be a cluster of leaves, branches, and light that happens to resemble a person. This explanation accounts for why different observers see different things: a woman in white, an Aboriginal woman, a priest, or someone with binoculars.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         alt="Corroboree Rock ghost photo double exposure film artifact 1959 Reverend Blance photographic technical analysis paranormal debunking Metabunk film photography explanation" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic Analysis</span>
+                        <h3 class="video-title">The Double Exposure Theory</h3>
+                        <p class="evidence-desc">Photography experts note that film cameras in 1959 were susceptible to double exposures—accidentally capturing two images on the same frame of film. If Reverend Blance had previously photographed a person and the film was not fully advanced, a second photograph of the landscape could overlay the earlier image. This would create a partially transparent figure in the final print. However, this theory requires specific circumstances: a previous photograph of a person in the exact pose seen, failure to advance the film, and the overlay happening to align perfectly with the landscape.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://www.shutterstock.com/image-photo/corroboree-rock-sacred-australian-aboriginal-260nw-1757157227.jpg" 
+                         alt="Corroboree Rock sacred site Arrernte Aboriginal ceremonial ground spiritual energy ley lines Australia outback paranormal location mystical power place indigenous sacred geography" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Paranormal Evidence</span>
+                        <h3 class="video-title">The Sacred Site Connection</h3>
+                        <p class="evidence-desc">Paranormal investigators point to the sacred nature of Corroboree Rock as evidence supporting a supernatural explanation. The Arrernte people have considered this site spiritually powerful for tens of thousands of years. Many paranormal theories suggest that sacred sites act as focal points for spiritual energy, making them more likely locations for ghostly manifestations. The fact that the figure appeared at a place considered spiritually dangerous for the uninitiated adds weight to the theory that something from the spiritual realm was captured on film.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, analyses, and investigative footage exploring the Corroboree Rock ghost photograph across decades of paranormal investigation.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/rmDWrhK_obI" title="Corroboree Rock ghost photograph documentary 1959 The Watcher Alice Springs Australia paranormal investigation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Documentary</span>
+                        <span class="badge badge-bronze">Paranormal</span>
+                        <h3 class="video-title">The Watcher of Corroboree Rock: Australia's Ghost Photo</h3>
+                        <p class="video-desc">Comprehensive documentary examining the 1959 photograph, the life of Reverend R.S. Blance, the sacred significance of Corroboree Rock to the Arrernte people, and the competing theories about how a figure appeared in a photo taken by a man who was completely alone. Includes footage of the site and expert interviews.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/rmDWrhK_obI" title="Corroboree Rock ghost photo analysis skeptical examination double exposure pareidolia 1959 Australia" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Analysis</span>
+                        <span class="badge badge-ice">Investigation</span>
+                        <h3 class="video-title">Analyzing the Corroboree Rock Ghost Photo</h3>
+                        <p class="video-desc">Forensic analysis of the Corroboree Rock photograph using modern digital techniques. Experts examine the pareidolia theory, the double exposure explanation, the lighting conditions of the Australian Outback, and the possibility that the figure is simply a trick of light and vegetation in the harsh desert environment.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/rmDWrhK_obI" title="Corroboree Rock ghost photograph unsolved mystery 1959 The Watcher Alice Springs sacred Aboriginal site paranormal" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-bronze">Unsolved</span>
+                        <span class="badge badge-ice">Deep Dive</span>
+                        <h3 class="video-title">Unsolved: The Ghost of Corroboree Rock</h3>
+                        <p class="video-desc">Deep dive into all major theories including genuine paranormal manifestation at a sacred site, double exposure during film photography, pareidolia in complex natural patterns, an unknown person present at the scene, and the connection to missing persons in the Australian wilderness. Examines primary sources and Arrernte cultural knowledge.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Over six decades of investigation has produced competing explanations. These are the most compelling theories about how the Watcher of Corroboree Rock appeared in a photograph taken by a man who was completely alone.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unexplained</div>
+                            <div class="theory-probability">Case Status: Open Debate</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>No original photographic negative has been located for modern analysis</li>
+                        <li>Reverend R.S. Blance is deceased and cannot be questioned</li>
+                        <li>The Arrernte traditional owners maintain silence about the site's deeper significance</li>
+                        <li>Multiple competing explanations, none fully proven</li>
+                        <li>Case remains one of Australia's most famous paranormal photographs</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">Genuine Paranormal Manifestation</div>
+                            <div class="theory-probability">Probability: BELIEVERS' CHOICE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Corroboree Rock is a sacred site with tens of thousands of years of spiritual significance</li>
+                        <li>The Arrernte consider the site spiritually dangerous for the uninitiated</li>
+                        <li>Reverend Blance was a man of faith visiting a spiritually powerful location</li>
+                        <li>The figure appears partially transparent, consistent with ghostly manifestations</li>
+                        <li>The figure seems to be observing the photographer, suggesting consciousness</li>
+                        <li>Many missing persons in the Australian wilderness are never found</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">📷</div>
+                        <div>
+                            <div class="theory-name">Double Exposure / Film Artifact</div>
+                            <div class="theory-probability">Probability: HIGH (Skeptics)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>1959 film cameras were susceptible to double exposures</li>
+                        <li>A previous photograph of a person could overlay onto the landscape shot</li>
+                        <li>Film development in the 1950s was complex and prone to artifacts</li>
+                        <li>The partial transparency is consistent with double exposure effects</li>
+                        <li>No independent verification that the negative showed only one exposure</li>
+                        <li>Most scientifically plausible explanation for the era</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">👤</div>
+                        <div>
+                            <div class="theory-name">An Unknown Person Present</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Reverend Blance may have been mistaken about being alone</li>
+                        <li>An Aboriginal person may have been observing from the bushes</li>
+                        <li>A tourist or local may have been present but unseen</li>
+                        <li>The figure's partial transparency could be due to distance and lighting</li>
+                        <li>Does not explain why Blance, a reliable witness, insisted he was alone</li>
+                        <li>The remote location makes random presence unlikely</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🧠</div>
+                        <div>
+                            <div class="theory-name">Pareidolia & Pattern Recognition</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Human brain is wired to perceive faces and figures in random patterns</li>
+                        <li>The Australian bush creates complex visual patterns of light and shadow</li>
+                        <li>Different observers see different figures: woman in white, Aboriginal woman, priest</li>
+                        <li>This variability suggests subjective interpretation rather than objective presence</li>
+                        <li>Does not explain why the figure was not noticed until development</li>
+                        <li>Some enhanced versions may have accentuated face-like features</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">✏️</div>
+                        <div>
+                            <div class="theory-name">Connection to Missing Persons</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Thousands of people go missing in the Australian wilderness every year</li>
+                        <li>Some missing persons cases in the Alice Springs area remain unsolved</li>
+                        <li>The figure could be the spirit of a woman who disappeared near the site</li>
+                        <li>The "Watcher" nickname suggests someone observing from beyond</li>
+                        <li>No specific missing person has been definitively linked to the photograph</li>
+                        <li>Adds an emotional dimension to the mystery but lacks concrete evidence</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Historical records, photographic analysis, and official documentation from the Corroboree Rock ghost photograph investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">UNEXPLAINED</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 4px;">CORROBOREE ROCK, NORTHERN TERRITORY</h2>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">CASE FILE 1959–PRESENT — GHOST PHOTOGRAPH INVESTIGATION</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Subject</div>
+                    <div class="document-value">The Watcher / Lady in White — Apparition captured in 1959 photograph at Corroboree Rock</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Photograph</div>
+                    <div class="document-value">1959 — Exact date unknown; taken during Reverend R.S. Blance's spiritual retreat to the Northern Territory</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Photographer</div>
+                    <div class="document-value">Reverend R.S. Blance — Presbyterian minister based in Adelaide, South Australia</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location of Photograph</div>
+                    <div class="document-value">Corroboree Rock, approximately 50km east of Alice Springs, Northern Territory, Australia — Sacred Arrernte ceremonial site</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Geological Formation</div>
+                    <div class="document-value">Dolomite outcropping formed over 800 million years ago by ancient evaporated salt lakes — Part of the MacDonnell Ranges</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Cultural Significance</div>
+                    <div class="document-value">
+                        • Registered sacred site of the Arrernte Aboriginal people<br>
+                        • Important men's ceremonial site and initiation ground<br>
+                        • Spiritually dangerous for women, children, and uninitiated men<br>
+                        • Taboo to climb the rock formation<br>
+                        • Cultural knowledge closely guarded by senior male traditional owners<br>
+                        • Tens of thousands of years of continuous indigenous connection
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Photographic Anomalies</div>
+                    <div class="document-value">
+                        • Partially transparent figure visible among bushes to the left of frame<br>
+                        • Figure appears humanoid with discernible head, torso, and limbs<br>
+                        • Multiple interpretations: woman in white nightdress, Aboriginal woman in traditional dress, priest, or person with binoculars<br>
+                        • Figure appears to be facing toward camera in observing posture<br>
+                        • Photographer insisted he was completely alone at the time<br>
+                        • Figure was only discovered upon film development
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Documented Discrepancies</div>
+                    <div class="document-value">
+                        • Original photographic negative has never been located for forensic analysis<br>
+                        • Exact date of photograph unknown; only the year 1959 is confirmed<br>
+                        • Reverend Blance is deceased and cannot provide further testimony<br>
+                        • No other witnesses to corroborate Blance's claim of being alone<br>
+                        • Multiple enhanced versions circulate, some possibly retouched<br>
+                        • Arrernte traditional owners do not discuss the site's deeper spiritual significance
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Suspects & Explanations</div>
+                    <div class="document-value">
+                        • Genuine paranormal manifestation — Spirit at a sacred Aboriginal site<br>
+                        • Double exposure / film artifact — Common in 1959 film photography<br>
+                        • Unknown person present — Aboriginal observer or passerby unseen by Blance<br>
+                        • Pareidolia — Brain perceives figure in random bush patterns<br>
+                        • Missing person connection — Spirit of woman who disappeared in the area<br>
+                        • Enhanced/retouched image — Later modifications to accentuate figure
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Related Phenomena</div>
+                    <div class="document-value">
+                        • Thousands of people go missing in Australian wilderness annually<br>
+                        • Corroboree Rock is one of many sacred sites with paranormal claims in the Northern Territory<br>
+                        • The Arrernte have extensive dreamtime stories about spiritual beings in the landscape<br>
+                        • Other "lady in white" ghost stories exist across Australia and globally<br>
+                        • The photograph has been featured in numerous paranormal books and documentaries since the 1970s
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-gold); font-weight: bold;">UNEXPLAINED — ONGOING DEBATE</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.68rem; color: var(--text-muted); text-align: center; font-family: 'JetBrains Mono', monospace;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE ARRERNTE CULTURAL RECORDS, PARANORMAL INVESTIGATION ARCHIVES,<br>
+                    GEOLOGICAL SURVEYS OF THE NORTHERN TERRITORY, AND HISTORICAL ACCOUNTS OF REV. R.S. BLANCE.<br>
+                    CONTACT: NORTHERN TERRITORY HERITAGE REGISTER, AUSTRALIA
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'ghost-photo': `
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         class="modal-image" 
+                         alt="Corroboree Rock ghost photograph 1959 Reverend R.S. Blance lady in white apparition Alice Springs Australia sacred Aboriginal site paranormal figure" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">The Ghost Photograph</h2>
+                    <p>The 1959 photograph taken by Reverend R.S. Blance at Corroboree Rock is one of Australia's most famous paranormal images. It shows the rugged landscape of the Australian Outback—the reddish earth, the scrubby vegetation, the massive dolomite formation of Corroboree Rock itself. But it is not the landscape that has captivated paranormal investigators for over six decades.</p>
+                    <p>To the left of the frame, among the bushes, stands a figure. It is partially transparent, slightly blurred, as if caught between two states of existence. The figure appears to be humanoid, with a head, torso, and limbs discernible despite the lack of sharp detail. Some observers see a woman in a white nightdress, her features soft and indistinct. Others see an Aboriginal woman in traditional clothing. Some claim to see a priest, or someone holding binoculars or a camera—hence the nickname "The Watcher."</p>
+                    <p>What makes the photograph so compelling is not just the figure itself, but the circumstances of its capture. Reverend Blance was a Presbyterian minister, a man of established reputation, who insisted he was completely alone when he took the photo. He had no history of paranormal claims. He had no motive to fabricate such an image. And yet, there she stands—the Lady in White, the Watcher, the impossible figure in the Australian bush—observing the photographer from a place where no one should be.</p>
+                `,
+                'reverend-blance': `
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         class="modal-image" 
+                         alt="Reverend R.S. Blance Presbyterian minister photographer 1959 Corroboree Rock ghost photo Alice Springs Australia" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Reverend R.S. Blance — The Photographer</h2>
+                    <p>Reverend R.S. Blance was a Presbyterian minister based in Adelaide, South Australia. In 1959, he undertook a spiritual retreat to the Northern Territory, traveling to the remote area around Alice Springs. Like many religious visitors before him, he was drawn to the stark beauty and spiritual atmosphere of the Australian Outback—a landscape that has inspired awe and reverence in countless travelers.</p>
+                    <p>Blance was an amateur photographer who enjoyed documenting his travels. He carried a film camera—the standard technology of the era—and used it to capture the landscapes, people, and experiences of his journey. There is no record of him making paranormal claims before or after the Corroboree Rock incident. He was, by all accounts, an ordinary minister who experienced something extraordinary.</p>
+                    <p>When the photograph was developed and the figure discovered, Blance was reportedly shaken. He knew he had been alone. He knew no one had been standing in that spot. Yet the evidence was there, fixed in silver halide, impossible to deny. He shared the photograph with others, and it eventually entered the growing archive of paranormal evidence. Blance has since passed away, taking any additional knowledge or insights with him. We are left with only the photograph and his testimony that he was alone.</p>
+                `,
+                'corroboree-rock': `
+                    <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/24/6c/c4/19/caption.jpg" 
+                         class="modal-image" 
+                         alt="Corroboree Rock dolomite outcropping Alice Springs Northern Territory Australia sacred Aboriginal site">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Corroboree Rock — The Sacred Site</h2>
+                    <p>Corroboree Rock is a massive dolomite outcropping located approximately 50 kilometers east of Alice Springs in Australia's Northern Territory. Formed over 800 million years ago by the evaporation of ancient salt lakes, it stands as a geological monument in the vast red desert of the Australian Outback. But its significance extends far beyond geology.</p>
+                    <p>For the Arrernte Aboriginal people, the traditional owners of this land, Corroboree Rock is a site of immense spiritual power. It is an important men's ceremonial site, a place of initiation rites and sacred knowledge that has been passed down through countless generations. The cultural significance of the site is closely guarded by senior male traditional owners, who do not discuss its deeper meanings with outsiders.</p>
+                    <p>The Arrernte consider Corroboree Rock spiritually dangerous for women, children, and uninitiated men. Climbing the rock is taboo. The site is part of a complex network of sacred geography that connects the Arrernte to their ancestors, their dreamtime stories, and the spiritual forces of the land. To visit Corroboree Rock without proper authorization and respect is, in Arrernte belief, to risk spiritual harm. Whether this ancient spiritual power has any connection to the figure in Reverend Blance's photograph is a question that remains unanswered—and perhaps unanswerable.</p>
+                `,
+                'the-watcher': `
+                    <img src="https://mysticaltimesblog.com/ws/media-library/01c66d6d5ddb4b1690c9bdc506f68d48/corroborre-rock-ghost-figure-spooky-sunday.jpg" 
+                         class="modal-image" 
+                         alt="Corroboree Rock ghost photo The Watcher 1959 lady in white apparition close up zoom enhanced" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">The Watcher — The Apparition</h2>
+                    <p>The figure in the Corroboree Rock photograph has been given many names: the Lady in White, the Watcher, the Ghost of Corroboree Rock. But what exactly is it that people see in this decades-old image?</p>
+                    <p>The most common interpretation is that of a woman in a white nightdress, standing among the bushes to the left of the frame. Her form is partially transparent, her features soft and indistinct, but her posture suggests she is facing toward the camera—watching, observing, perhaps waiting. This interpretation has given rise to the nickname "The Watcher," suggesting a figure who observes from beyond the veil of death.</p>
+                    <p>Other observers see different things. Some see an Aboriginal woman in traditional clothing, which connects the apparition to the Arrernte heritage of the site. Some claim to see a priest, perhaps reflecting Reverend Blance's own religious identity. Still others suggest the figure is holding something resembling binoculars or a camera, as if the Watcher is not just observing but documenting—creating a strange mirror of the photographer's own action. This multiplicity of interpretations is itself a mystery: does the figure change depending on who views it, or are different observers simply seeing different aspects of the same ambiguous image?</p>
+                `,
+                'arrernte-people': `
+                    <img src="https://cdn.britannica.com/22/60122-004-8D6E0E3C/singing-corroboree-Aborigines-event-Australian-Dreaming-activities.jpg" 
+                         class="modal-image" 
+                         alt="Arrernte Aboriginal people Alice Springs Northern Territory Australia indigenous ceremonial gathering">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">The Arrernte People — Traditional Owners</h2>
+                    <p>The Arrernte (also spelled Aranda or Arunta) Aboriginal people are the traditional owners of the land around Alice Springs and Corroboree Rock. They have inhabited this region for tens of thousands of years, making them one of the oldest continuous cultures on Earth. Their connection to the land is not merely physical but spiritual, encoded in complex systems of law, ceremony, and dreamtime stories.</p>
+                    <p>The Arrernte maintain strict protocols about sacred sites like Corroboree Rock. The site's significance is a closely guarded secret held by senior male traditional owners, passed down through generations of initiated men. Women, children, and uninitiated men are not permitted to know the full extent of the site's spiritual power. This is not secrecy for secrecy's sake, but a fundamental aspect of Arrernte cultural law—a way of protecting knowledge and ensuring it is shared only with those who are ready to receive it.</p>
+                    <p>For the Arrernte, the land is alive with spiritual forces. Every rock, waterhole, and mountain has its story, its power, its connection to the dreamtime. Corroboree Rock is one of the most significant of these places—a focal point of spiritual energy that has been recognized for millennia. Whether this ancient spiritual power has any connection to the figure in Reverend Blance's photograph is not something the Arrernte discuss publicly. Their silence is itself a form of knowledge, a reminder that some mysteries are not meant to be solved by outsiders.</p>
+                `,
+                'alice-springs': `
+                    <img src="https://cdn.getyourguide.com/img/location/58c6a693af06a.jpeg/99.jpg" 
+                         class="modal-image" 
+                         alt="Alice Springs Northern Territory Australia Red Centre desert town MacDonnell Ranges aerial view">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px;">Alice Springs — The Red Centre</h2>
+                    <p>Alice Springs is a remote town in the heart of Australia's Red Centre, approximately 1,500 kilometers from the nearest major city. It sits in the shadow of the MacDonnell Ranges, a series of ancient mountain ranges that stretch across the desert landscape. The town serves as the gateway to some of Australia's most iconic natural and cultural landmarks, including Uluru, Kata Tjuta, and numerous sacred Aboriginal sites.</p>
+                    <p>The area around Alice Springs is characterized by extreme conditions: scorching summer temperatures that regularly exceed 40 degrees Celsius, freezing winter nights, and an aridity that makes survival a constant challenge. The landscape is both beautiful and brutal—a red desert punctuated by rugged rock formations, dry riverbeds, and sparse vegetation. It is a landscape that demands respect and has shaped the cultures of those who have lived here for millennia.</p>
+                    <p>Corroboree Rock lies approximately 50 kilometers east of Alice Springs, accessible only by rough desert tracks. Its isolation is part of its power. In a landscape already known for its spiritual significance, Corroboree Rock stands out as a place of particular importance. The town of Alice Springs, with its mix of indigenous and European heritage, serves as the unlikely hub from which the mystery of the Watcher has spread to the world.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

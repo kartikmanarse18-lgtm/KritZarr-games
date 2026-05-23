@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Jamison Family: The Zombie Walk — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #050508;
+            --bg-surface: #0c0c10;
+            --bg-elevated: #121218;
+            --bg-card: #181820;
+            --accent-crimson: #8b1a2d;
+            --accent-rust: #a0522d;
+            --accent-amber: #d4a017;
+            --accent-ice: #a8b5c4;
+            --accent-ghost: #c8cdd0;
+            --text-primary: #e8e6e3;
+            --text-secondary: #9a9590;
+            --text-muted: #5a5550;
+            --text-frost: #b0b8c0;
+            --border-subtle: #1e1e28;
+            --border-glow: #8b1a2d;
+            --danger: #8b1a2d;
+            --warning: #d4a017;
+            --success: #4a6741;
+            --shadow-crimson: rgba(139, 26, 45, 0.12);
+            --shadow-void: rgba(0, 0, 0, 0.8);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            line-height: 1.65;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 20% 30%, rgba(139, 26, 45, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(212, 160, 23, 0.02) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(5,5,8,0.2) 0%, rgba(5,5,8,0.98) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-void); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-crimson); border-radius: 3px; }
+
+        /* ===== GLITCH HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(5, 5, 8, 0.97);
+            backdrop-filter: blur(24px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.3rem;
+            color: var(--accent-crimson);
+            letter-spacing: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .logo::after {
+            content: 'JAMISON';
+            position: absolute;
+            left: 2px;
+            top: 0;
+            color: rgba(139, 26, 45, 0.3);
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+            animation: glitch 3s infinite;
+        }
+
+        .logo span {
+            color: var(--accent-ice);
+            font-weight: 300;
+            letter-spacing: 8px;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            92% { transform: translate(-2px, 1px); }
+            94% { transform: translate(2px, -1px); }
+            96% { transform: translate(-1px, 2px); }
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.1rem;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 2px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 26, 45, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-tab:hover::before, .nav-tab.active::before {
+            left: 100%;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: rgba(139, 26, 45, 0.15);
+            color: var(--accent-ghost);
+            border-color: var(--accent-crimson);
+            box-shadow: 0 0 20px rgba(139, 26, 45, 0.2);
+        }
+
+        .main-content { margin-top: 65px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION - DARK FORENSIC AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(5,5,8,0.6) 0%, rgba(5,5,8,0.98) 100%),
+                url('https://kimi-web-img.moonshot.cn/img/www.wildlifedepartment.com/e98a3466e47335b7700d53e2e133ee5a78798229.webp') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.7) contrast(1.3) brightness(0.15) sepia(0.2);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 50%, rgba(139, 26, 45, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(212, 160, 23, 0.04) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .static-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 800px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-crimson);
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Oswald', sans-serif;
+            font-size: 4.2rem;
+            line-height: 1.05;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 50px rgba(139, 26, 45, 0.3);
+            opacity: 0;
+            animation: emerge 1.2s ease 1s forwards;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .story-headline span {
+            color: var(--accent-amber);
+            display: block;
+            font-size: 1.2em;
+            font-weight: 300;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 1px;
+        }
+
+        .story-prologue {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: emerge 1.2s ease 1.5s forwards;
+            border-left: 2px solid var(--accent-crimson);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            line-height: 1.85;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.6rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Oswald', sans-serif;
+            font-size: 4rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.5rem;
+            color: var(--accent-crimson);
+            text-shadow: 0 0 30px rgba(139, 26, 45, 0.4);
+            font-weight: 700;
+        }
+
+        .story-highlight {
+            background: rgba(139, 26, 45, 0.08);
+            border-left: 2px solid var(--accent-crimson);
+            padding: 1.8rem;
+            margin: 2.5rem 0;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: var(--text-frost);
+            text-align: left;
+            opacity: 0;
+            animation: emerge 1.2s ease 2.5s forwards;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.1rem 3rem;
+            background: var(--accent-crimson);
+            color: var(--accent-ghost);
+            text-decoration: none;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 5px;
+            border-radius: 2px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-crimson);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 40px rgba(139, 26, 45, 0.3);
+            color: var(--accent-amber);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: emerge 1.2s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2.8rem;
+            color: var(--accent-amber);
+            font-weight: 700;
+        }
+
+        .story-stat-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes emerge {
+            from { opacity: 0; transform: translateY(30px); filter: blur(3px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: drift 3s infinite;
+            opacity: 0;
+            animation: emerge 1.2s ease 4s forwards, drift 3s infinite 4s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.5; }
+            50% { transform: translateX(-50%) translateY(-10px); opacity: 1; }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(139, 26, 45, 0.05) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-crimson), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 3rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(139, 26, 45, 0.2);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-amber);
+            font-size: 1rem;
+            margin-top: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.4s, box-shadow 0.4s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-crimson), var(--accent-amber));
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(139, 26, 45, 0.15);
+            border-color: var(--accent-crimson);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.4) contrast(1.2) brightness(0.8);
+            transition: filter 0.4s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0.1) contrast(1.3) brightness(0.9);
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(139, 26, 45, 0.12);
+            color: var(--accent-crimson);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            margin-bottom: 0.8rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.2rem; }
+
+        .video-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .badge-crimson { background: rgba(139, 26, 45, 0.2); color: var(--accent-crimson); }
+        .badge-amber { background: rgba(212, 160, 23, 0.15); color: var(--accent-amber); }
+        .badge-ice { background: rgba(168, 181, 196, 0.1); color: var(--accent-ice); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(180deg, var(--accent-crimson), var(--accent-amber));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-crimson);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(139, 26, 45, 0.4);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -34px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -34px; }
+
+        .timeline-date {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-amber);
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.15rem;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: grayscale(0.5) contrast(1.2);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0.1) contrast(1.3);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-left: 3px solid var(--success); }
+        .theory-card.conspiracy { border-left: 3px solid var(--danger); }
+        .theory-card.alternative { border-left: 3px solid var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.15); }
+        .conspiracy .theory-icon { background: rgba(139, 26, 45, 0.15); }
+        .alternative .theory-icon { background: rgba(212, 160, 23, 0.15); }
+
+        .theory-name {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .theory-probability {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.88rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-crimson);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            padding: 2rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 2px solid var(--accent-crimson);
+            color: var(--accent-crimson);
+            padding: 0.4rem 0.8rem;
+            font-size: 1rem;
+            font-weight: bold;
+            transform: rotate(-12deg);
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background: var(--bg-surface);
+            border-left: 2px solid var(--accent-amber);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border-subtle);
+            display: block;
+            filter: grayscale(0.5) contrast(1.2);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-crimson);
+            box-shadow: 0 5px 25px rgba(139, 26, 45, 0.2);
+            filter: grayscale(0.1) contrast(1.3);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-crimson);
+            border-radius: 4px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: grayscale(0.2) contrast(1.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.2rem; }
+            .story-text { font-size: 1rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 1.6rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -34px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.4rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">JAMISON <span>FAMILY</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="static-layer"></div>
+
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Eufaula, Oklahoma, 2009 — A True Crime Investigation</div>
+
+                    <h1 class="story-headline">
+                        The Zombie
+                        <span>Walk</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        They moved like sleepwalkers through their own driveway—back and forth, back and forth, twenty times in silence, loading their truck with methodical precision yet carrying nothing at all. On October 8, 2009, Bobby Jamison, his wife Sherilynn, and their six-year-old daughter Madyson drove into the Sans Bois Mountains to look at a piece of land. They were never seen alive again. Four years later, hunters found their skeletal remains lying face-down, side by side, less than three miles from their abandoned truck. The cause of death: undetermined. The $32,000 in cash left behind: untouched. The questions: endless.
+                    </p>
+
+                    <div class="story-text">
+                        <p>It began with ghosts. In the months before their disappearance, the Jamison family was unraveling. Bobby, a 44-year-old man with chronic back pain from a 2003 car accident, and Sherilynn, a 40-year-old woman battling bipolar disorder, had become convinced their Eufaula lake house was haunted. Their daughter Madyson spoke to an imaginary friend named Emily—whom Sherilynn believed was a demonic entity. Bobby asked their pastor if he knew where to buy "special bullets" to shoot the spirits he claimed were living on their roof. He purchased a copy of The Satanic Bible, hoping to perform his own exorcism. Sherilynn conducted seances and wrote ominous messages on their storage container: "3 cats killed to date by people in this area... Witches don't like their black cats killed."</p>
+
+                        <p>The family's surveillance camera captured their final hours in what investigators would later call "the zombie walk." Bobby and Sherilynn moved in a trance-like state, walking silently between their house and truck, sometimes carrying items, sometimes carrying nothing, their faces vacant and pale. They had lost significant weight. They looked, as one investigator noted, like people who had already left their bodies behind. The footage timestamped October 8, 2009, would become the last known images of them alive.</p>
+
+                        <p>They drove thirty miles to Red Oak in the Sans Bois Mountains to inspect a forty-acre plot of land they planned to buy. They had already purchased a large storage container to live in. Their truck was found eight days later, locked, with $32,000 in cash hidden beneath the driver's seat, their wallets, IDs, phones, GPS, and their malnourished dog Maisie still inside. There was no sign of struggle. No blood. No broken glass. Just an empty truck in the middle of a dirt road, as if the family had stepped out and vanished into the Oklahoma wilderness.</p>
+
+                        <p>On November 16, 2013, deer hunters stumbled upon three skulls in the Smokestack Hollow area of Panola Mountain. The remains were confirmed as Bobby, Sherilynn, and Madyson—lying face-down, side by side, their bodies so decomposed that no cause of death could ever be determined. One skull had a small hole that might have been a gunshot wound, but the theory was abandoned. The case remains open, the theories multiplying like the mountain shadows: murder by Bobby's estranged father, a drug deal gone wrong, a satanic cult hit list, mass suicide, or something even darker that walked them into those woods and never let them leave.</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-crimson);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        What force—human or otherwise—could make three people walk into the wilderness and die together, face-down in the dirt, leaving behind a fortune in cash, their vehicle, and their faithful dog? The Jamison family disappearance remains one of America's most chilling unsolved mysteries, a case where every theory seems possible and none can be proven.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">4</div>
+                            <div class="story-stat-label">Years Missing</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">3</div>
+                            <div class="story-stat-label">Family Members Lost</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">$32K</div>
+                            <div class="story-stat-label">Cash Left Behind</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">0</div>
+                            <div class="story-stat-label">Cause of Death Found</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-crimson);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>THE ZOMBIE WALK</h1>
+                <p class="hero-subtitle">An interactive investigation into the most disturbing unsolved family disappearance in modern American history. Explore the evidence, analyze the theories, and decide for yourself what happened in the Sans Bois Mountains.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victims</div>
+                        <div class="meta-value">Bobby, Sherilynn, Madyson</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Red Oak, Oklahoma</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Disappeared</div>
+                        <div class="meta-value">October 8, 2009</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Unsolved</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Oswald', sans-serif; text-align: center; margin-bottom: 2rem; font-size: 1.8rem; text-transform: uppercase; letter-spacing: 3px;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('zombie-walk')">
+                    <img src="https://i.ytimg.com/vi/G_1u1nMOveY/mqdefault.jpg" 
+                         alt="Jamison family zombie walk CCTV surveillance footage October 8 2009 Bobby and Sherilynn Jamison walking in trance-like state between house and truck Eufaula Oklahoma eerie silent movements" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Zombie Walk Footage</h3>
+                        <p class="evidence-desc">The family's surveillance camera captured Bobby and Sherilynn making twenty silent trips between their house and truck in a trance-like state. They moved with vacant expressions, sometimes carrying nothing at all. The footage has been analyzed by experts who describe their movements as drug-like or dissociative.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('abandoned-truck')">
+                    <img src="https://miro.medium.com/v2/resize:fit:1200/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                         alt="Jamison family abandoned white pickup truck found locked in Latimer County Oklahoma remote dirt road with personal belongings inside October 2009" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Abandoned Truck</h3>
+                        <p class="evidence-desc">The Jamisons' locked pickup was discovered on a remote dirt road in Latimer County with $32,000 in cash under the driver's seat, their wallets, IDs, cell phones, GPS unit, and their malnourished dog Maisie. The vehicle was in working order with fuel. No signs of struggle were found.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('bobby-jamison')">
+                    <img src="https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2018/09/1200/675/okla-family.jpg" 
+                         alt="Bobby Jamison mugshot style photo 44 year old Oklahoma man with short brown hair and goatee missing person victim Sans Bois Mountains 2009" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Victim</span>
+                        <h3 class="evidence-title">Bobby Jamison — The Father</h3>
+                        <p class="evidence-desc">A 44-year-old man with chronic back pain from a 2003 car accident. He was suing his father Bob Dean Jamison at the time of disappearance, claiming his father threatened to kill the family. Bobby believed their home was haunted and asked his pastor about "special bullets" to shoot spirits.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('sherilynn-jamison')">
+                    <img src="https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2018/09/1200/675/okla-family.jpg" 
+                         alt="Sherilynn Jamison photo 40 year old Oklahoma woman with brown hair missing person victim bipolar disorder seances Satanic Bible" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Victim</span>
+                        <h3 class="evidence-title">Sherilynn Jamison — The Mother</h3>
+                        <p class="evidence-desc">A 40-year-old woman suffering from bipolar disorder who had attempted suicide in September 2009. She conducted seances, believed in witchcraft, and wrote threatening messages about their cats being killed. She owned a .22 caliber pistol that was never recovered. An 11-page "hate letter" to Bobby was found in the truck.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('madyson-jamison')">
+                    <img src="https://images.squarespace-cdn.com/content/v1/59eb601f2aeba56e54f2636a/1621188584093-TYZQE6HYJVV9F4OYSQ5C/The%2BJamison%2Bhome%2Bin%2BEufaula%2C%2BOklahoma.jpg" 
+                         alt="Madyson Jamison six year old blonde girl missing child victim last photo red hooded jacket Sans Bois Mountains Oklahoma 2009" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Child Victim</span>
+                        <h3 class="evidence-title">Madyson Jamison — The Daughter</h3>
+                        <p class="evidence-desc">Six years old. The last known photo of her was found on Bobby's phone, taken in the mountains. She appears unhappy with arms crossed, leading some to believe someone other than her parents took the picture. She had been pulled out of school before the disappearance.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('sans-bois')">
+                    <img src="https://static.foxnews.com/foxnews.com/content/uploads/2018/09/okla-family.jpg" 
+                         alt="Sans Bois Mountains Red Oak Oklahoma dense forest wilderness remote area where Jamison family disappeared 2009 aerial view" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Location</span>
+                        <h3 class="video-title">The Sans Bois Mountains</h3>
+                        <p class="evidence-desc">A remote, densely wooded mountain range in southeastern Oklahoma known for drug activity and isolation. The Jamisons' remains were found 2.7 miles from their truck in an area with no paved roads for miles. The terrain is rugged, with oak-pine-hickory forest covering steep slopes.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://i.ytimg.com/vi/G_1u1nMOveY/mqdefault.jpg" 
+                     alt="Jamison family zombie walk CCTV footage October 8 2009 Bobby Sherilynn trance-like state Eufaula Oklahoma surveillance" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://miro.medium.com/v2/resize:fit:1200/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                     alt="Jamison family abandoned truck Latimer County Oklahoma remote dirt road crime scene 2009" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://kubrick.htvapps.com/htv-prod-media.s3.amazonaws.com/ibmig/cms/image/koco/23041594-23041594.jpg" 
+                     alt="Jamison family portrait Bobby Sherilynn Madyson Eufaula Oklahoma happy family photo before disappearance 2009" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://static.foxnews.com/foxnews.com/content/uploads/2018/09/okla-family.jpg" 
+                     alt="Sans Bois Mountains Oklahoma wilderness dense forest remote area where Jamison family remains found 2013" 
+                     class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every documented event from the family's psychological unraveling to the discovery of their remains and the theories that followed.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2003</div>
+                        <div class="timeline-title">The Car Accident</div>
+                        <p>Bobby Jamison is involved in a serious car accident that leaves him with chronic back pain. This event marks the beginning of the family's physical and psychological decline. The injuries would later make it unlikely that Bobby could have hiked deep into the mountains on foot.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">November 2008</div>
+                        <div class="timeline-title">The Father's Threat</div>
+                        <p>Bobby's father, Bob Dean Jamison, allegedly hits Bobby with his vehicle and threatens to kill the entire family. Bobby files a protective order describing his father as a "very dangerous man who thinks he is above the law" and involved in "prostitutes, gangs, and meth." The order is dismissed in May 2009.</p>
+                        <div class="timeline-images">
+                            <img src="https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2018/09/1200/675/okla-family.jpg" 
+                                 alt="Bobby Jamison photo 44 year old Oklahoma man victim of family disappearance 2009" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://miro.medium.com/v2/resize:fit:1200/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                                 alt="Jamison family abandoned truck Latimer County Oklahoma remote dirt road 2009" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">July 2009</div>
+                        <div class="timeline-title">Custody Battle & Suicide Attempt</div>
+                        <p>Sherilynn's ex-husband gains custody of their son Colton. During the hearing, 12-year-old Colton testifies that his mother seemed "very depressed" and "acted strangely." In September 2009, Sherilynn is hospitalized after a failed suicide attempt. The family's mental health crisis deepens.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">August 2009</div>
+                        <div class="timeline-title">The Handyman Incident</div>
+                        <p>Family friend Kenneth Bellows, a handyman with white supremacist leanings, is forced to leave the Jamison home at gunpoint after Sherilynn discovers his racist views and her Native American heritage becomes an issue. Sherilynn fires a .22 caliber pistol into the ground by his feet and points it at him.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">September 2009</div>
+                        <div class="timeline-title">Spiritual Warfare</div>
+                        <p>The family tells their pastor, Gary Brandon, that they are experiencing "spiritual warfare." Bobby asks about purchasing "special bullets" to shoot spirits on their roof. Sherilynn believes their daughter Madyson's imaginary friend Emily is a demonic entity. Bobby buys The Satanic Bible to perform an exorcism.</p>
+                        <div class="timeline-images">
+                            <img src="https://images.squarespace-cdn.com/content/v1/59eb601f2aeba56e54f2636a/1621188584093-TYZQE6HYJVV9F4OYSQ5C/The%2BJamison%2Bhome%2Bin%2BEufaula%2C%2BOklahoma.jpg" 
+                                 alt="Jamison family Eufaula Oklahoma house haunted spirits paranormal activity storage container" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://miro.medium.com/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                                 alt="Jamison family collage portrait Bobby Sherilynn Madyson Eufaula Oklahoma before disappearance" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">October 8, 2009</div>
+                        <div class="timeline-title">The Zombie Walk & Disappearance</div>
+                        <p>Surveillance footage captures Bobby and Sherilynn walking back and forth between their house and truck in a trance-like state, making approximately twenty trips. They appear gaunt and vacant. The family then drives to Red Oak in the Sans Bois Mountains to inspect a 40-acre property. They are never seen alive again.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">October 16, 2009</div>
+                        <div class="timeline-title">The Truck Is Found</div>
+                        <p>Hunters on dirt bikes discover the Jamisons' abandoned, locked truck on a remote dirt road in Latimer County. Inside: $32,000 in cash, wallets, IDs, cell phones, GPS unit, maps, and the family's malnourished dog Maisie. An 11-page "hate letter" from Sherilynn to Bobby is also found. A 300-person search finds nothing.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">November 12, 2009</div>
+                        <div class="timeline-title">The Mysterious Phone Call</div>
+                        <p>Phone records show an outgoing call to voicemail was made from one of the cell phones left inside the locked, abandoned truck. This impossible detail deepens the mystery—who made the call, and how? The phone had been locked inside the vehicle since October 8.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">December 2009</div>
+                        <div class="timeline-title">Bobby's Father Dies</div>
+                        <p>Bob Dean Jamison, Bobby's estranged father and primary suspect, dies of natural causes at age 64. He had been in a hospital or rest home at the time of the disappearance, giving him a solid alibi. The FBI had cleared him as a person of interest, but questions about his possible involvement through associates remain.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">November 16, 2013</div>
+                        <div class="timeline-title">The Remains Are Discovered</div>
+                        <p>Two deer hunters in the Smokestack Hollow area of Panola Mountain discover three human skulls and skeletal remains. The location is 2.7 miles from where the truck was found, in extremely remote terrain. The bodies are lying face-down, side by side. Shoes, clothing fragments, and bone fragments are scattered nearby.</p>
+                        <div class="timeline-images">
+                            <img src="https://images.squarespace-cdn.com/content/v1/59eb601f2aeba56e54f2636a/1621188584093-TYZQE6HYJVV9F4OYSQ5C/The%2BJamison%2Bhome%2Bin%2BEufaula%2C%2BOklahoma.jpg" 
+                                 alt="Sans Bois Mountains Smokestack Hollow Panola Mountain remote wilderness area where Jamison remains found 2013" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://static.foxnews.com/foxnews.com/content/uploads/2018/09/okla-family.jpg" 
+                                 alt="Latimer County Oklahoma remote mountain terrain dense forest where Jamison family disappeared" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">July 3, 2014</div>
+                        <div class="timeline-title">Official Identification</div>
+                        <p>After eight months of anthropological and forensic pathological testing, the Oklahoma Medical Examiner's Office officially confirms the remains belong to Bobby, Sherilynn, and Madyson Jamison. Due to extensive decomposition and animal predation, no cause of death can be determined. The case remains officially unsolved.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Mystery Endures</div>
+                        <p>Multiple theories continue to circulate: murder by Bobby's father or his associates, a drug deal gone wrong, involvement with a satanic cult, mass suicide, or something supernatural. The $32,000 in cash, the zombie walk footage, the locked truck, and the face-down positioning of the bodies remain unexplained. No one has ever been charged.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Physical findings, documented testimonies, and the inexplicable details that define the Jamison family mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://i.ytimg.com/vi/G_1u1nMOveY/mqdefault.jpg" 
+                         alt="Jamison family zombie walk CCTV surveillance footage October 8 2009 Eufaula Oklahoma Bobby Sherilynn trance-like dissociative state walking" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Zombie Walk Surveillance</h3>
+                        <p class="evidence-desc">Home security footage shows Bobby and Sherilynn making approximately twenty silent trips between their house and truck on the morning of October 8, 2009. They move with vacant expressions, methodical precision, and trance-like dissociation. Sometimes they carry items; sometimes they carry nothing. Their gaunt appearance and strange behavior have led experts to suggest drug influence, severe depression, or something more sinister.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://miro.medium.com/v2/resize:fit:1200/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                         alt="Jamison family abandoned white pickup truck locked Latimer County Oklahoma dirt road crime scene $32000 cash inside" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">$32,000 in Untouched Cash</h3>
+                        <p class="evidence-desc">Inside the locked truck, investigators found $32,000 in cash stuffed in a bank bag beneath the driver's seat. The family was on disability benefits at the time. The money was untouched, ruling out simple robbery. Theories about the cash include: funds for the land purchase, drug money, or savings from years of work at Bobby's father's gas station.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://miro.medium.com/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                         alt="Jamison family collage Bobby Sherilynn Madyson Eufaula Oklahoma haunted house spiritual warfare Satanic Bible seances" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Behavioral Evidence</span>
+                        <h3 class="evidence-title">Spiritual Warfare & The Satanic Bible</h3>
+                        <p class="evidence-desc">The family told their pastor they were engaged in "spiritual warfare" with entities in their home. Bobby asked about "special bullets" to shoot spirits. Sherilynn conducted seances and wrote messages about witches and poisoned cats on their storage container. A copy of The Satanic Bible and a "witch's bible" were found in their home after the disappearance.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://kubrick.htvapps.com/htv-prod-media.s3.amazonaws.com/ibmig/cms/image/koco/23041594-23041594.jpg" 
+                         alt="Jamison family remains discovered November 2013 Smokestack Hollow Panola Mountain Latimer County Oklahoma skeletal remains face down" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic Evidence</span>
+                        <h3 class="video-title">The Face-Down Positioning</h3>
+                        <p class="evidence-desc">The three bodies were found lying face-down, side by side, less than three miles from their truck. This positioning suggests execution-style placement rather than natural death from exposure or getting lost. One skull had a small hole initially suspected to be from a gunshot, though this theory was later abandoned by investigators.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, news reports, and investigative footage exploring the Jamison family mystery across fifteen years.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/4Q1FzhMY8FQ" title="Jamison family disappearance documentary zombie walk Oklahoma unsolved mystery" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-crimson">Documentary</span>
+                        <span class="badge badge-amber">True Crime</span>
+                        <h3 class="video-title">The Jamison Family Disappearance: The Zombie Walk</h3>
+                        <p class="video-desc">Comprehensive documentary examining the 2009 disappearance, the zombie walk footage, the discovery of remains in 2013, and the competing theories about what happened to the family in the Sans Bois Mountains.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/4Q1FzhMY8FQ" title="Jamison family case analysis zombie walk footage trance state Oklahoma mountains" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-crimson">Analysis</span>
+                        <span class="badge badge-ice">Investigation</span>
+                        <h3 class="video-title">Analyzing the Zombie Walk Footage</h3>
+                        <p class="video-desc">Forensic analysis of the surveillance video showing Bobby and Sherilynn's trance-like behavior. Experts discuss drug influence, dissociative states, and whether the footage shows coercion, mental illness, or something else entirely.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/4Q1FzhMY8FQ" title="Jamison family unsolved mystery Oklahoma mountains remains found 2013 true crime" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-amber">Unsolved</span>
+                        <span class="badge badge-ice">Deep Dive</span>
+                        <h3 class="video-title">Unsolved: The Jamison Family Mystery</h3>
+                        <p class="video-desc">Deep dive into all major theories including the father's threats, drug connections, cult involvement, and the supernatural elements. Examines primary sources including police reports and witness interviews.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Fifteen years of investigation have produced competing explanations. These are the most compelling theories about what happened to the Jamison family.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unsolved</div>
+                            <div class="theory-probability">Case Status: Open Investigation</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>No cause of death could be determined</li>
+                        <li>Remains too decomposed for forensic analysis</li>
+                        <li>No suspects ever charged</li>
+                        <li>Multiple leads investigated, all inconclusive</li>
+                        <li>Case remains active with Latimer County Sheriff</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">Murder by Bobby's Father</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Bob Dean Jamison threatened to kill the family multiple times</li>
+                        <li>Bobby was suing his father over unpaid gas station earnings</li>
+                        <li>Bobby described his father as involved in "gangs and meth"</li>
+                        <li>Father died two months after disappearance (solid alibi)</li>
+                        <li>Could have hired associates to carry out the murder</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Drug Deal Gone Wrong</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>$32,000 in cash suggests drug transaction</li>
+                        <li>Area known for methamphetamine production</li>
+                        <li>Bobby had recently reported a local meth lab</li>
+                        <li>Family's gaunt appearance consistent with drug use</li>
+                        <li>No drug paraphernalia found in home</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Satanic Cult Hit List</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Sherilynn's mother claimed they were on a cult "hit list"</li>
+                        <li>Family was involved in occult practices and seances</li>
+                        <li>Area known for cult activity according to locals</li>
+                        <li>No evidence linking any specific cult to the case</li>
+                        <li>Mother never named the alleged cult</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">Murder-Suicide</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Sherilynn had attempted suicide in September 2009</li>
+                        <li>11-page "hate letter" found in truck detailing marital problems</li>
+                        <li>Sherilynn owned a .22 pistol that was never recovered</li>
+                        <li>Only one skull had a possible gunshot hole</li>
+                        <li>Doesn't explain the face-down positioning or the dog</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">The Supernatural Theory</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Family believed they were haunted by demonic entities</li>
+                        <li>Zombie walk footage shows dissociative, non-human behavior</li>
+                        <li>Impossible phone call from locked truck after disappearance</li>
+                        <li>Bodies found in ritualistic face-down positioning</li>
+                        <li>Consistent with possession or supernatural coercion accounts</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Historical records, eyewitness accounts, and official documentation from the Jamison family investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">UNSOLVED</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Oswald', sans-serif; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 3px;">LATIMER COUNTY, OKLAHOMA</h2>
+                    <p style="font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: var(--text-muted);">CASE FILE 2009-2014 — UNSOLVED DISAPPEARANCE & DEATH</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Victims</div>
+                    <div class="document-value">Bobby Jamison (44), Sherilynn Jamison (40), Madyson Jamison (6)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Disappearance</div>
+                    <div class="document-value">October 8, 2009</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location of Disappearance</div>
+                    <div class="document-value">Red Oak, Sans Bois Mountains, Latimer County, Oklahoma</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date Remains Discovered</div>
+                    <div class="document-value">November 16, 2013 — Smokestack Hollow, Panola Mountain</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Cause of Death</div>
+                    <div class="document-value" style="color: var(--accent-crimson);">UNDETERMINED — Extensive decomposition and animal predation prevented forensic determination</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Physical Evidence</div>
+                    <div class="document-value">
+                        • $32,000 cash in bank bag under driver's seat (untouched)<br>
+                        • Locked truck with wallets, IDs, phones, GPS, and dog inside<br>
+                        • 11-page "hate letter" from Sherilynn to Bobby<br>
+                        • Zombie walk surveillance footage (October 8, 2009)<br>
+                        • Last photo of Madyson on Bobby's phone (mountain location)<br>
+                        • Brown briefcase and .22 caliber pistol (never recovered)
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Documented Behavioral Anomalies</div>
+                    <div class="document-value">
+                        • Family reported "spiritual warfare" and haunted house to pastor<br>
+                        • Bobby asked about "special bullets" to shoot spirits<br>
+                        • Sherilynn conducted seances and wrote witchcraft messages<br>
+                        • Copy of The Satanic Bible found in home<br>
+                        • Surveillance footage shows trance-like "zombie walk" behavior<br>
+                        • Sherilynn's September 2009 suicide attempt<br>
+                        • Family dog Maisie found malnourished but alive in locked truck
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Suspects & Persons of Interest</div>
+                    <div class="document-value">
+                        • Bob Dean Jamison (Bobby's father) — Threatened family, died Dec 2009, alibi confirmed<br>
+                        • Kenneth Bellows (handyman) — White supremacist, forced out at gunpoint, alibi confirmed<br>
+                        • Unidentified drug associates — Area known for meth production<br>
+                        • Unidentified cult members — Sherilynn's mother's theory, no evidence
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-crimson); font-weight: bold;">UNSOLVED — ACTIVE INVESTIGATION</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle); font-size: 0.7rem; color: var(--text-muted); text-align: center; font-family: 'Roboto Mono', monospace;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE POLICE REPORTS, MEDICAL EXAMINER RECORDS, AND NEWS ACCOUNTS.<br>
+                    CONTACT: LATIMER COUNTY SHERIFF (918) 465-2161
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'zombie-walk': `
+                    <img src="https://i.ytimg.com/vi/G_1u1nMOveY/mqdefault.jpg" 
+                         class="modal-image" 
+                         alt="Jamison family zombie walk CCTV footage October 8 2009 Eufaula Oklahoma Bobby Sherilynn trance-like state">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Zombie Walk Footage</h2>
+                    <p>On October 8, 2009, the Jamison family's home surveillance system captured footage that would become one of the most disturbing pieces of evidence in modern true crime history. Bobby and Sherilynn are seen making approximately twenty silent trips between their house and their truck, moving with methodical precision yet vacant expressions.</p>
+                    <p>Experts who have analyzed the footage describe their movements as "trance-like," "dissociative," and "zombie-like." The couple appears gaunt and pale, having lost significant weight in the months prior. Sometimes they carry items to the truck; other times they walk back and forth carrying nothing at all, their faces blank and staring.</p>
+                    <p>The footage raises more questions than answers. Were they under the influence of drugs? Suffering from severe mental illness? Coerced by someone off-camera? Or was something supernatural at work? The timestamp on the footage represents the last known images of Bobby and Sherilynn Jamison alive.</p>
+                `,
+                'abandoned-truck': `
+                    <img src="https://miro.medium.com/v2/resize:fit:1200/1*SP3IlV-p8vLYcWSQSEj7Aw.jpeg" 
+                         class="modal-image" 
+                         alt="Jamison family abandoned truck Latimer County Oklahoma remote dirt road locked vehicle">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Abandoned Truck</h2>
+                    <p>On October 16, 2009, hunters on dirt bikes discovered the Jamisons' white pickup truck abandoned on a remote dirt road in Latimer County, Oklahoma. The truck was locked, in working condition, with fuel in the tank. Inside, investigators found a collection of items that deepened the mystery rather than solving it.</p>
+                    <p>The most puzzling discovery was $32,000 in cash stuffed in a bank bag beneath the driver's seat. The family was on disability benefits and had no known source of such wealth. Also found were both parents' wallets and IDs, their cell phones, a GPS unit, maps, and Sherilynn's purse. Their dog Maisie was inside, malnourished but alive.</p>
+                    <p>An 11-page letter from Sherilynn to Bobby was also recovered, detailing her hatred for him and calling him a "hermit." The letter discussed death and divorce. The truck's positioning suggested the family had been leaving when they were stopped—or had stopped voluntarily to meet someone they recognized.</p>
+                `,
+                'bobby-jamison': `
+                    <img src="https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2018/09/1200/675/okla-family.jpg" 
+                         class="modal-image" 
+                         alt="Bobby Jamison photo 44 year old Oklahoma man victim missing person 2009">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Bobby Jamison — The Father</h2>
+                    <p>Bobby Jamison was a 44-year-old man living in Eufaula, Oklahoma, with chronic back pain from a 2003 car accident. He was married to Sherilynn and father to six-year-old Madyson. In the months before his disappearance, Bobby's life was unraveling on multiple fronts.</p>
+                    <p>He was engaged in a bitter legal battle with his father, Bob Dean Jamison, over unpaid earnings from a gas station where Bobby had worked for years. Bobby had filed a protective order against his father, claiming Bob Dean threatened to kill the family and was involved in "prostitutes, gangs, and meth." The order was dismissed in May 2009.</p>
+                    <p>Bobby also became convinced that their home was haunted. He told their pastor about spirits on the roof and asked about obtaining "special bullets" to shoot them. He purchased The Satanic Bible, intending to perform an exorcism. Friends noted that both Bobby and Sherilynn had lost significant weight and appeared increasingly paranoid in the weeks before their disappearance.</p>
+                `,
+                'sherilynn-jamison': `
+                    <img src="https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2018/09/1200/675/okla-family.jpg" 
+                         class="modal-image" 
+                         alt="Sherilynn Jamison photo 40 year old Oklahoma woman victim bipolar disorder missing 2009">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Sherilynn Jamison — The Mother</h2>
+                    <p>Sherilynn Jamison was a 40-year-old woman struggling with bipolar disorder and severe depression. In July 2009, her ex-husband gained custody of their son Colton, with the boy testifying that his mother seemed "very depressed" and "acted strangely." In September 2009, Sherilynn was hospitalized after a failed suicide attempt.</p>
+                    <p>Her mental health crisis coincided with an increasing obsession with the supernatural. She conducted seances with a friend, believing she could communicate with spirits. She became convinced that their daughter Madyson's imaginary friend Emily was a demonic entity. She wrote ominous messages on the family's storage container about their cats being poisoned by neighbors and witches seeking revenge.</p>
+                    <p>Sherilynn owned a .22 caliber pistol that she had used to force a handyman out of their home. The gun was never recovered after the disappearance. An 11-page letter found in the truck revealed deep marital resentment, with Sherilynn describing Bobby as a "hermit" and expressing desires for divorce and death.</p>
+                `,
+                'madyson-jamison': `
+                    <img src="https://images.squarespace-cdn.com/content/v1/59eb601f2aeba56e54f2636a/1621188584093-TYZQE6HYJVV9F4OYSQ5C/The%2BJamison%2Bhome%2Bin%2BEufaula%2C%2BOklahoma.jpg" 
+                         class="modal-image" 
+                         alt="Madyson Jamison six year old blonde girl last photo red hooded jacket mountain">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">Madyson Jamison — The Daughter</h2>
+                    <p>Madyson Jamison was six years old when she disappeared with her parents on October 8, 2009. She had been pulled out of school before the family's final trip, and her life was increasingly isolated as her parents' mental health deteriorated.</p>
+                    <p>The last known photo of Madyson was discovered on Bobby's cell phone, taken in the Sans Bois Mountains. In the picture, she wears a red hooded jacket she didn't have with her when she left home. She appears unhappy, with her arms crossed, looking away from the camera. Friends and family believe that if her parents had taken the photo, she would have looked happier and more engaged.</p>
+                    <p>This detail has led to speculation that someone else was present in the mountains—someone who took the photo and possibly someone who was involved in the family's disappearance. Madyson's remains were found face-down beside her parents, less than three miles from their abandoned truck, four years after they vanished.</p>
+                `,
+                'sans-bois': `
+                    <img src="https://static.foxnews.com/foxnews.com/content/uploads/2018/09/okla-family.jpg" 
+                         class="modal-image" 
+                         alt="Sans Bois Mountains Oklahoma wilderness dense forest remote area">
+                    <h2 style="font-family: 'Oswald', sans-serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 2px;">The Sans Bois Mountains</h2>
+                    <p>The Sans Bois Mountains are a rugged, densely forested range in southeastern Oklahoma, part of the Ouachita Mountains. The name comes from French, meaning "without wood," though today the slopes are covered in oak-pine-hickory forest. The highest peaks reach over 1,800 feet, with steep, rocky terrain and few paved roads.</p>
+                    <p>The area has a dark history. Indigenous groups including the Wichita and Choctaw once inhabited the region. In the 19th and early 20th centuries, coal mining and natural gas extraction created a unique and sometimes dangerous landscape. Today, the area is known for isolation, poverty, and drug activity—particularly methamphetamine production.</p>
+                    <p>The Jamisons' remains were found in Smokestack Hollow on Panola Mountain, 2.7 miles from their abandoned truck, in terrain so remote that initial searches with 400 volunteers, cadaver dogs, and drones found nothing. The location suggests whoever placed the bodies there knew the terrain intimately—or the family was led there under duress.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

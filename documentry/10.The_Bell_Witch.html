@@ -1,0 +1,1626 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bell Witch: The Spirit That Killed a Man — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=IM+Fell+English:ital@0;1&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-card: #16161a;
+            --accent-ember: #8b4513;
+            --accent-gold: #b8860b;
+            --accent-mist: #c0b283;
+            --accent-ghost: #d4c5a9;
+            --text-primary: #e8e0d0;
+            --text-secondary: #9e9688;
+            --text-muted: #5a554e;
+            --border: #2a2824;
+            --danger: #8b0000;
+            --success: #4a6741;
+            --shadow-ember: rgba(139, 69, 19, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 40%, rgba(139, 69, 19, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 85% 70%, rgba(184, 134, 11, 0.04) 0%, transparent 50%),
+                linear-gradient(180deg, rgba(10,10,11,0.3) 0%, rgba(10,10,11,0.95) 100%);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-ember); border-radius: 4px; }
+
+        /* ===== FOLKLORE HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 11, 0.96);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--accent-ember);
+            letter-spacing: 4px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(139, 69, 19, 0.4);
+        }
+
+        .logo span {
+            color: var(--accent-gold);
+            font-weight: 400;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--accent-ember);
+            color: var(--accent-ghost);
+            border-color: var(--accent-ember);
+            box-shadow: 0 0 15px rgba(139, 69, 19, 0.3);
+        }
+
+        .main-content { margin-top: 70px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION - FOLKLORE AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(10,10,11,0.5) 0%, rgba(10,10,11,0.95) 100%),
+                url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Bell_Witch_Cave_Adams_Tennessee.jpg/640px-Bell_Witch_Cave_Adams_Tennessee.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.5) sepia(0.3) contrast(1.2) brightness(0.25);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 45%, rgba(139, 69, 19, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(184, 134, 11, 0.06) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .mist-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+
+        .story-content {
+            max-width: 850px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'IM Fell English', serif;
+            font-size: 0.85rem;
+            color: var(--accent-ember);
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(139, 69, 19, 0.4);
+            opacity: 0;
+            animation: emerge 1.2s ease 1s forwards;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .story-headline span {
+            color: var(--accent-gold);
+            display: block;
+            font-size: 1.15em;
+            font-weight: 400;
+            font-style: italic;
+            font-family: 'IM Fell English', serif;
+        }
+
+        .story-prologue {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: emerge 1.2s ease 1.5s forwards;
+            border-left: 3px solid var(--accent-ember);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.25rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.8rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 4.5rem;
+            float: left;
+            line-height: 0.75;
+            padding-right: 0.6rem;
+            color: var(--accent-ember);
+            text-shadow: 0 0 25px rgba(139, 69, 19, 0.5);
+            font-weight: 900;
+        }
+
+        .story-highlight {
+            background: rgba(139, 69, 19, 0.1);
+            border-left: 3px solid var(--accent-ember);
+            padding: 2rem;
+            margin: 2.5rem 0;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: emerge 1.2s ease 2.5s forwards;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: emerge 1.2s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.2rem 3.5rem;
+            background: var(--accent-ember);
+            color: var(--accent-ghost);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            border-radius: 3px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-ember);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 40px rgba(139, 69, 19, 0.4);
+            color: var(--accent-gold);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: emerge 1.2s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.6rem;
+            color: var(--accent-gold);
+            font-weight: 900;
+        }
+
+        .story-stat-label {
+            font-family: 'IM Fell English', serif;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes emerge {
+            from { opacity: 0; transform: translateY(35px); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: drift 3s infinite;
+            opacity: 0;
+            animation: emerge 1.2s ease 4s forwards, drift 3s infinite 4s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.6; }
+            50% { transform: translateX(-50%) translateY(-12px); opacity: 1; }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(139, 69, 19, 0.06) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-ember), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.2rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(139, 69, 19, 0.3);
+            font-weight: 900;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'IM Fell English', serif;
+            font-size: 0.85rem;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-gold);
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.4s, box-shadow 0.4s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-ember), var(--accent-gold));
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(139, 69, 19, 0.2);
+            border-color: var(--accent-ember);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: sepia(0.3) contrast(1.1) brightness(0.85);
+            transition: filter 0.4s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: sepia(0.1) contrast(1.2) brightness(0.95);
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(139, 69, 19, 0.15);
+            color: var(--accent-ember);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 3px;
+            margin-bottom: 0.8rem;
+            font-family: 'IM Fell English', serif;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.2rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+            font-family: 'IM Fell English', serif;
+        }
+
+        .badge-ember { background: rgba(139, 69, 19, 0.2); color: var(--accent-ember); }
+        .badge-gold { background: rgba(184, 134, 11, 0.2); color: var(--accent-gold); }
+        .badge-ghost { background: rgba(212, 197, 169, 0.1); color: var(--accent-ghost); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-ember), var(--accent-gold));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 15px;
+            height: 15px;
+            background: var(--accent-ember);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -37px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'IM Fell English', serif;
+            color: var(--accent-gold);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: sepia(0.4) contrast(1.1);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: sepia(0.1) contrast(1.2);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-color: var(--success); }
+        .theory-card.conspiracy { border-color: var(--danger); }
+        .theory-card.alternative { border-color: var(--accent-gold); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .official .theory-icon { background: rgba(74, 124, 89, 0.2); }
+        .conspiracy .theory-icon { background: rgba(139, 0, 0, 0.2); }
+        .alternative .theory-icon { background: rgba(184, 134, 11, 0.2); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .theory-probability {
+            font-family: 'IM Fell English', serif;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .theory-points li::before {
+            content: '◆';
+            color: var(--accent-ember);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2rem;
+            font-family: 'IM Fell English', serif;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 3px solid var(--accent-ember);
+            color: var(--accent-ember);
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-gold);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+            filter: sepia(0.4) contrast(1.1);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-ember);
+            box-shadow: 0 5px 25px rgba(139, 69, 19, 0.3);
+            filter: sepia(0.1) contrast(1.2);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-ember);
+            border-radius: 6px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            font-family: 'IM Fell English', serif;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            display: block;
+            filter: sepia(0.2) contrast(1.1);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.4rem; }
+            .story-text { font-size: 1.1rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 1.8rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -37px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.4rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                padding: 0.4rem 0.85rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">BELL <span>WITCH</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="mist-layer"></div>
+            
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Adams, Tennessee, 1817-1821 — A True Haunting Investigation</div>
+                    
+                    <h1 class="story-headline">
+                        The Spirit That
+                        <span>Killed a Man</span>
+                    </h1>
+                    
+                    <p class="story-prologue">
+                        "I am a spirit; I was once very happy but have been disturbed," the voice whispered through the darkness. It began with knocking at the door—sharp, insistent raps that echoed through the Bell family farmhouse. Then came the gnawing on bedposts, the pulling of hair, the suffocating of children in their sleep. By the time it was finished, John Bell would be dead, and the legend of the Bell Witch would become the most documented haunting in American history.
+                    </p>
+                    
+                    <div class="story-text">
+                        <p>It began with a creature in the cornfield. In 1817, John Bell, a prosperous farmer in Robertson County, Tennessee, encountered a strange animal with the body of a dog and the head of a rabbit lurking among his crops. He fired at it, but the creature vanished. That night, the knocking began—loud, rhythmic pounding on the doors and walls of the Bell homestead that grew louder with each passing evening.</p>
+                        
+                        <p>The entity that would come to be known as the Bell Witch quickly escalated its torment. It pulled the hair of Betsy Bell, the family's youngest daughter, leaving her screaming in terror. It slapped and pinched the children, leaving visible bruises. It sang hymns in perfect pitch, quoted Scripture verbatim, and engaged in intelligent conversation with anyone who dared speak to it. The voice claimed to be "Old Kate Batts' witch," a neighbor woman who had quarreled with John Bell over a slave transaction. But Kate Batts was alive, and the spirit's knowledge extended far beyond any mortal's.</p>
+                        
+                        <p>By 1820, the haunting had drawn hundreds of visitors to the Bell farm, including General Andrew Jackson, who reportedly fled after his wagon became mysteriously immobilized on the property. The spirit developed a particular fondness for Betsy Bell, whom it both tormented and protected, and an equally particular hatred for John Bell. It poisoned him slowly, slipping a mysterious liquid into his food that left him writhing in agony. On December 19, 1820, John Bell died. The witch claimed responsibility, singing drinking songs and mocking the family as they buried him. "I fixed him," the voice cackled from the empty air. "He will never rise again."</p>
+                        
+                        <p>The haunting continued for another year, gradually fading until the spirit announced it would return in seven years. It did, appearing to John Bell Jr. in 1828 to deliver cryptic prophecies. Then it promised to return in 107 years—to a descendant. The legend has persisted for two centuries, passed down through generations, documented in written accounts, and debated by skeptics and believers alike. No other American haunting has produced so many witnesses, so much physical evidence, and so enduring a mystery.</p>
+                    </div>
+                    
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-ember);">THE QUESTION THAT HAUNTS EVERYONE:</strong><br>
+                        Was this truly a supernatural entity, or the most elaborate and sustained hoax in American history? How could a voice speak from thin air, know secrets no one could know, and physically assault eleven people across four years? The Bell Witch remains the only case in American history where a spirit was officially blamed for a man's death—and no one was ever charged because no one could be found to charge.
+                    </div>
+                    
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+                    
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">4</div>
+                            <div class="story-stat-label">Years of Terror</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">11</div>
+                            <div class="story-stat-label">Family Members Tormented</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">200+</div>
+                            <div class="story-stat-label">Years Unsolved</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">1</div>
+                            <div class="story-stat-label">Confirmed Death</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-ember);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>THE SPIRIT THAT KILLED A MAN</h1>
+                <p class="hero-subtitle">An interactive investigation into America's most documented supernatural haunting. Explore the evidence, analyze the theories, and decide for yourself what tormented the Bell family.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Victim</div>
+                        <div class="meta-value">John Bell, Sr.</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Adams, Tennessee</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Period</div>
+                        <div class="meta-value">1817-1821</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Unexplained</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem; font-size: 2rem;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('bell-home')">
+                    <img src="https://admin.onlyinyourstate.com/wp-content/uploads/sites/2/2018/02/Bell-Witch-Cave-3-AAA.jpg" 
+                         alt="Bell Witch Cave entrance in Adams Tennessee haunted location dark rocky cave mouth with moss and trees surrounding the entrance to the Bell family property where supernatural events occurred" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Haunted Location</span>
+                        <h3 class="evidence-title">The Bell Witch Cave & Homestead</h3>
+                        <p class="evidence-desc">The original Bell family farm and the nearby cave where the spirit was said to dwell. Visitors today report strange phenomena, cold spots, and unexplained sounds. The cave remains a pilgrimage site for paranormal investigators.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('john-bell')">
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/ProfPowell.jpg" 
+                         alt="Portrait painting of John Bell Sr farmer victim of Bell Witch haunting 19th century Tennessee gentleman with white hair and dark coat" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Victim</span>
+                        <h3 class="evidence-title">John Bell, Sr. — The Man Who Died</h3>
+                        <p class="evidence-desc">The prosperous farmer who first encountered the entity in his cornfield. The spirit developed an intense hatred for him, poisoning his food and tormenting him until his death on December 19, 1820. The only officially documented death attributed to a spirit in American history.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('betsy-bell')">
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                         alt="Historical portrait of Betsy Bell young woman victim of Bell Witch haunting 19th century Tennessee daughter who was physically assaulted by the spirit" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Secondary Victim</span>
+                        <h3 class="evidence-title">Betsy Bell — The Favorite Target</h3>
+                        <p class="evidence-desc">The youngest daughter who suffered the worst physical attacks—hair pulling, slapping, pinching, and being thrown from her bed. The spirit claimed to love her while simultaneously tormenting her, creating a disturbing duality in its behavior.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('richard-powell')">
+                    <img src="http://www.bellwitch.org/biographies/richar3.jpg" 
+                         alt="Portrait of Richard Powell schoolteacher suspected Bell Witch hoaxer 19th century Tennessee educator and possible perpetrator of the haunting" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Suspect</span>
+                        <h3 class="evidence-title">Richard Powell — The Schoolteacher</h3>
+                        <p class="evidence-desc">The local schoolteacher who courted Betsy Bell and was suspected by some of orchestrating the haunting through ventriloquism and elaborate tricks. He married Betsy after the haunting ended, raising questions about his motives and methods.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('kate-batts')">
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                         alt="Historical portrait of Kate Batts neighbor woman accused of being the Bell Witch 19th century Tennessee woman with stern expression dark clothing" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Named Entity</span>
+                        <h3 class="evidence-title">Kate Batts — The Witch's Namesake</h3>
+                        <p class="evidence-desc">The neighbor woman with whom John Bell had a dispute over a slave sale. The spirit claimed to be her witch, though Kate Batts was alive and never confessed. She became the namesake of the entity: "Kate," the Bell Witch.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('andrew-jackson')">
+                    <img src="https://miro.medium.com/0*7d0OZXs-z0uIemzx.jpg" 
+                         alt="Portrait of President Andrew Jackson who visited Bell Witch haunting site 7th US president famous visitor to the Bell family farm in Tennessee" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Famous Witness</span>
+                        <h3 class="video-title">General Andrew Jackson's Visit</h3>
+                        <p class="evidence-desc">The future president reportedly visited the Bell farm to investigate the haunting. His wagon became mysteriously stuck on the property, and his men fled in terror after the spirit predicted events no one could know. Jackson allegedly called it the only thing he ever feared.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://admin.onlyinyourstate.com/wp-content/uploads/sites/2/2018/02/Bell-Witch-Cave-3-AAA.jpg" 
+                     alt="Bell Witch Cave entrance dark rocky cave mouth with moss and trees in Adams Tennessee haunted location" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/ProfPowell.jpg" 
+                     alt="John Bell Sr portrait 19th century Tennessee farmer victim of Bell Witch supernatural haunting" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                     alt="Betsy Bell portrait young woman victim of Bell Witch physical attacks and hair pulling" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                <img src="http://www.bellwitch.org/biographies/richar3.jpg" 
+                     alt="Richard Powell schoolteacher suspected of Bell Witch hoax through ventriloquism tricks" 
+                     class="gallery-img" onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+            </div>
+        </section>
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every documented event from the first encounter to the spirit's final prophecy and beyond.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1750</div>
+                        <div class="timeline-title">John Bell's Birth</div>
+                        <p>John Bell is born in North Carolina. He would later move to Tennessee, build a prosperous farm, and become the central figure in America's most famous haunting. A devout Methodist and respected community member, no one could have predicted his fate.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1817</div>
+                        <div class="timeline-title">The First Encounter</div>
+                        <p>John Bell encounters a bizarre creature in his cornfield—described as having the body of a dog and the head of a rabbit. He fires at it, but it vanishes. That night, loud knocking begins on the doors and walls of the Bell homestead. The family assumes it's a wolf or wild animal.</p>
+                        <div class="timeline-images">
+                            <img src="https://admin.onlyinyourstate.com/wp-content/uploads/sites/2/2018/02/Bell-Witch-Cave-3-AAA.jpg" 
+                                 alt="Bell Witch Cave entrance dark rocky cave where the supernatural entity was said to dwell in Adams Tennessee" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/ProfPowell.jpg" 
+                                 alt="John Bell Sr portrait 19th century Tennessee farmer who first encountered the Bell Witch entity in his cornfield" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1818</div>
+                        <div class="timeline-title">The Escalation</div>
+                        <p>The entity begins speaking in a voice described as weak at first, then growing stronger. It identifies itself as "Old Kate Batts' witch." It begins physically attacking Betsy Bell—pulling her hair, slapping her face, and pinching her skin. It also torments John Bell Sr., causing him severe facial seizures and physical distress. The voice demonstrates impossible knowledge of distant events and private family secrets.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1819</div>
+                        <div class="timeline-title">Public Spectacle</div>
+                        <p>Word spreads throughout Tennessee and beyond. Hundreds of visitors come to the Bell farm to witness the phenomenon. The spirit engages in lengthy theological debates, sings hymns in multiple voices simultaneously, and predicts future events with uncanny accuracy. It develops a split personality—sometimes kind and protective of Betsy, other times violent and hateful toward John Bell.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1820</div>
+                        <div class="timeline-title">The Death of John Bell</div>
+                        <p>The spirit intensifies its attacks on John Bell, claiming to poison his food with a mysterious liquid. On December 19, 1820, John Bell is found dead in his bed, his body contorted in agony. The witch claims responsibility, singing drinking songs and mocking the grieving family. "I fixed him," the voice cackles. "He will never rise again." It is the only case in American history where a death is officially attributed to supernatural causes.</p>
+                        <div class="timeline-images">
+                            <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                                 alt="Kate Batts neighbor woman whose name the Bell Witch spirit claimed in 19th century Tennessee" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                            <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                                 alt="Betsy Bell daughter who suffered worst physical attacks from the Bell Witch spirit" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1821</div>
+                        <div class="timeline-title">The Departure</div>
+                        <p>After John Bell's death, the haunting gradually subsides. The spirit announces it will leave but promises to return in seven years. It says goodbye to Betsy Bell, expressing affection for her while maintaining its hatred for her father. The family experiences a final burst of activity—objects moving, voices in the night—before silence finally falls over the farm.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1828</div>
+                        <div class="timeline-title">The Seven-Year Return</div>
+                        <p>True to its word, the spirit returns after exactly seven years. It appears to John Bell Jr. and delivers a series of cryptic prophecies about the future of the United States, including predictions about the Civil War. After this brief visitation, it departs again, promising to return in 107 years to a direct descendant of the Bell family.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1894</div>
+                        <div class="timeline-title">The Red River Baptist Church Account</div>
+                        <p>M. V. Ingram, a local newspaper editor, publishes "An Authenticated History of the Bell Witch," based on interviews with surviving witnesses and the diary of Richard Bell, John Bell's son. The book becomes the definitive account of the haunting and establishes the Bell Witch as a permanent part of American folklore.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1935</div>
+                        <div class="timeline-title">The 107-Year Prophecy</div>
+                        <p>The year the spirit promised to return to a descendant. While no major documented haunting occurs, the date fuels renewed interest in the legend. Paranormal investigators and curiosity seekers flock to Adams, Tennessee, hoping to witness the promised return. The Bell Witch Cave becomes a commercial attraction.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Legend Endures</div>
+                        <p>The Bell Witch Cave and the original Bell farm property remain active sites for paranormal investigation. Visitors report hearing voices, seeing apparitions, and experiencing physical sensations. The legend has inspired films, books, and countless investigations. The question remains unanswered: was it a spirit, a hoax, or something else entirely?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Physical manifestations, documented testimonies, and the inexplicable phenomena that defined the Bell Witch haunting.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://admin.onlyinyourstate.com/wp-content/uploads/sites/2/2018/02/Bell-Witch-Cave-3-AAA.jpg" 
+                         alt="Bell Witch Cave interior dark rocky cave formations in Adams Tennessee where the supernatural entity was said to reside and manifest" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Physical Manifestation</span>
+                        <h3 class="evidence-title">The Disembodied Voice</h3>
+                        <p class="evidence-desc">Hundreds of witnesses reported hearing a voice speak from thin air. The voice could whisper, shout, sing in multiple parts simultaneously, and mimic the voices of deceased people. It engaged in intelligent conversation, answered questions before they were asked, and demonstrated knowledge of events happening miles away.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                         alt="Betsy Bell portrait showing young woman who suffered physical attacks from Bell Witch including hair pulling and pinching" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Physical Evidence</span>
+                        <h3 class="evidence-title">Physical Assaults on Betsy Bell</h3>
+                        <p class="evidence-desc">Betsy Bell suffered visible physical attacks documented by multiple witnesses. Her hair was pulled out in clumps, her face was slapped leaving red marks, and her body was pinched and bruised. These injuries were examined by neighbors and doctors who could find no natural explanation for their cause.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/ProfPowell.jpg" 
+                         alt="John Bell Sr portrait showing the Tennessee farmer who died from mysterious poisoning attributed to the Bell Witch spirit" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Medical Evidence</span>
+                        <h3 class="evidence-title">John Bell's Mysterious Death</h3>
+                        <p class="evidence-desc">John Bell died on December 19, 1820, after the spirit claimed to have poisoned his food with a mysterious liquid. His body was found contorted in agony. A vial of strange liquid was discovered near his bed. The family doctor could not identify the substance or the cause of death. The spirit claimed responsibility.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://miro.medium.com/0*7d0OZXs-z0uIemzx.jpg" 
+                         alt="Andrew Jackson portrait 7th US president who visited Bell Witch site and reportedly said it was the only thing he ever feared" 
+                         class="evidence-image" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Witness Testimony</span>
+                        <h3 class="video-title">Hundreds of Documented Witnesses</h3>
+                        <p class="evidence-desc">Over the four-year haunting, hundreds of people visited the Bell farm and witnessed phenomena firsthand. General Andrew Jackson and his men reportedly experienced the entity's power when their wagon became immobilized. Religious leaders, neighbors, and strangers all left written accounts of what they saw and heard.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, paranormal investigations, and historical footage exploring the Bell Witch legend across two centuries.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/GMTRVQi3cM0" title="Bell Witch documentary haunted history Adams Tennessee cave supernatural investigation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ember">Documentary</span>
+                        <span class="badge badge-gold">History</span>
+                        <h3 class="video-title">The Bell Witch: America's Greatest Haunting</h3>
+                        <p class="video-desc">Comprehensive documentary examining the original 1817-1821 haunting, witness testimonies, and modern paranormal investigations at the Bell Witch Cave in Adams Tennessee.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/GMTRVQi3cM0" title="Bell Witch Cave paranormal investigation ghost hunting EVP recording Adams Tennessee" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-ember">Investigation</span>
+                        <span class="badge badge-ghost">Paranormal</span>
+                        <h3 class="video-title">Ghost Hunting at the Bell Witch Cave</h3>
+                        <p class="video-desc">Modern paranormal investigators explore the Bell Witch Cave using EMF detectors, EVP recorders, and thermal cameras. Captured audio and visual anomalies suggest ongoing supernatural activity.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/GMTRVQi3cM0" title="Bell Witch legend explained historical account John Bell Betsy Bell Tennessee haunting" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Historical</span>
+                        <span class="badge badge-ghost">Analysis</span>
+                        <h3 class="video-title">The True Story of the Bell Witch</h3>
+                        <p class="video-desc">Historical analysis separating fact from folklore, examining primary sources including Richard Bell's diary and M. V. Ingram's 1894 authenticated history of the haunting.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Two centuries of investigation have produced competing explanations. These are the most compelling theories about what tormented the Bell family.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unexplained</div>
+                            <div class="theory-probability">Historical Status: Unsolved Mystery</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Hundreds of documented witnesses across four years</li>
+                        <li>Physical injuries verified by multiple observers</li>
+                        <li>John Bell's death officially attributed to the entity</li>
+                        <li>No natural explanation ever proven</li>
+                        <li>Case remains open in historical record</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">The Supernatural Theory</div>
+                            <div class="theory-probability">Probability: HIGH (per believers)</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Disembodied voice spoke intelligently from thin air</li>
+                        <li>Demonstrated impossible knowledge of distant events</li>
+                        <li>Physical manifestations beyond human capability</li>
+                        <li>Predicted future events with accuracy</li>
+                        <li>Only explanation for the death of John Bell</li>
+                        <li>Consistent with poltergeist and demonology accounts</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">The Richard Powell Hoax</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Schoolteacher with knowledge of ventriloquism</li>
+                        <li>Courted Betsy Bell; married her after haunting ended</li>
+                        <li>Motive to drive away Betsy's other suitors</li>
+                        <li>Could have orchestrated elaborate tricks</li>
+                        <li>Doesn't explain all physical phenomena or witnesses</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">The Kate Batts Curse</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Neighbor woman with known grudge against John Bell</li>
+                        <li>Spirit explicitly named itself "Old Kate Batts' witch"</li>
+                        <li>Could have used folk magic or psychological warfare</li>
+                        <li>Known in community as eccentric and possibly practicing witchcraft</li>
+                        <li>Never confessed; died maintaining innocence</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔵</div>
+                        <div>
+                            <div class="theory-name">The Mass Hysteria Theory</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Explains group sightings and shared delusions</li>
+                        <li>Common in isolated rural communities under stress</li>
+                        <li>Doesn't explain physical injuries to Betsy Bell</li>
+                        <li>Cannot account for the death of John Bell</li>
+                        <li>Hundreds of independent witnesses make this unlikely</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">The Poltergeist Theory</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Betsy Bell was adolescent female—classic poltergeist focus</li>
+                        <li>Physical manifestations centered around her presence</li>
+                        <li>Emotional stress in family may have triggered psychokinesis</li>
+                        <li>Explains the duality—protective yet destructive</li>
+                        <li>Doesn't explain the intelligent voice or predictions</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Historical records, eyewitness accounts, and official documentation from the original Bell Witch investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">ARCHIVED</div>
+                
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem;">ROBERTSON COUNTY, TENNESSEE</h2>
+                    <p style="font-family: 'IM Fell English', serif; font-size: 0.8rem; color: var(--text-muted);">HISTORICAL RECORDS — CASE FILE 1817-1821</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Victim</div>
+                    <div class="document-value">John Bell, Sr. (1750-1820)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Period of Haunting</div>
+                    <div class="document-value">1817-1821 (Four Years)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location</div>
+                    <div class="document-value">Bell Family Farm, Adams, Robertson County, Tennessee</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Cause of Death</div>
+                    <div class="document-value">Unknown poisoning; attributed to supernatural entity</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Witnesses</div>
+                    <div class="document-value">
+                        • Lucy Bell (wife) — Primary witness to nightly phenomena<br>
+                        • Betsy Bell (daughter) — Primary target of physical attacks<br>
+                        • John Bell Jr. — Witnessed 1828 return visitation<br>
+                        • General Andrew Jackson — Future president, visited 1819<br>
+                        • James Johnston — neighbor, first to hear the voice<br>
+                        • Reverend James Gunn — religious witness and chronicler
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Documented Phenomena</div>
+                    <div class="document-value">
+                        • Disembodied voice speaking intelligently from thin air<br>
+                        • Physical assaults: hair pulling, slapping, pinching, throwing<br>
+                        • Objects moving without human contact<br>
+                        • Mysterious liquids appearing in food and medicine<br>
+                        • Predictions of future events with documented accuracy<br>
+                        • Religious hymns sung in multiple simultaneous voices<br>
+                        • Knowledge of private family secrets and distant events
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Source Documents</div>
+                    <div class="document-value">
+                        • "An Authenticated History of the Bell Witch" by M. V. Ingram (1894)<br>
+                        • Richard Bell's personal diary (1817-1821)<br>
+                        • James Johnston's sworn testimony<br>
+                        • Reverend James Gunn's religious chronicle<br>
+                        • Multiple newspaper accounts from 1818-1821
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-ember); font-weight: bold;">UNEXPLAINED — AMERICA'S MOST DOCUMENTED HAUNTING</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES ARE FRAGMENTARY; SOME ACCOUNTS MAY BE APOSTROPHIC.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+            
+            const content = {
+                'bell-home': `
+                    <img src="https://admin.onlyinyourstate.com/wp-content/uploads/sites/2/2018/02/Bell-Witch-Cave-3-AAA.jpg" 
+                         class="modal-image" 
+                         alt="Bell Witch Cave entrance dark rocky cave with moss and trees in Adams Tennessee haunted location">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Bell Witch Cave & Homestead</h2>
+                    <p>The original Bell family farm sat on fertile land in Robertson County, Tennessee. Nearby, a small cave became associated with the entity—visitors reported hearing voices from within, feeling cold spots, and experiencing an oppressive atmosphere. Today, the cave is privately owned but open for tours, and remains one of the most active paranormal sites in the United States.</p>
+                    <p>The homestead itself no longer stands, but the foundation markers remain. Paranormal investigators have recorded EVPs, captured anomalous photographs, and documented temperature fluctuations that defy natural explanation.</p>
+                `,
+                'john-bell': `
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/ProfPowell.jpg" 
+                         class="modal-image" 
+                         alt="John Bell Sr portrait 19th century Tennessee farmer victim of Bell Witch supernatural haunting" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">John Bell, Sr. — The Man Who Died</h2>
+                    <p>John Bell was a prosperous farmer, a devout Methodist, and a respected member of the Robertson County community. His dispute with Kate Batts over a slave transaction is often cited as the catalyst for the haunting. The spirit focused its hatred almost exclusively on him, tormenting him with physical ailments, disturbing his sleep, and eventually claiming to poison him.</p>
+                    <p>His death on December 19, 1820, remains the only case in American legal history where a supernatural entity was officially blamed for a person's death. The family doctor could not determine the cause, and the spirit openly claimed responsibility.</p>
+                `,
+                'betsy-bell': `
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                         class="modal-image" 
+                         alt="Betsy Bell portrait young woman victim of Bell Witch physical attacks hair pulling and pinching" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Betsy Bell — The Favorite Target</h2>
+                    <p>Betsy Bell, the youngest daughter, suffered the most intense physical attacks. The spirit pulled her hair with such force that clumps came out, slapped her face leaving visible handprints, and pinched her body until she screamed. Yet the entity also claimed to love her, protecting her from other suitors and speaking to her in gentle tones.</p>
+                    <p>This duality—violent torment paired with apparent affection—has led some researchers to suggest the entity was obsessed with Betsy, or that Betsy herself was an unwitting focus of psychokinetic energy. After the haunting ended, she married Richard Powell, the schoolteacher some suspected of orchestrating the entire affair.</p>
+                `,
+                'richard-powell': `
+                    <img src="http://www.bellwitch.org/biographies/richar3.jpg" 
+                         class="modal-image" 
+                         alt="Richard Powell schoolteacher suspected Bell Witch hoaxer ventriloquism tricks" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Richard Powell — The Schoolteacher</h2>
+                    <p>Richard Powell was the local schoolteacher who boarded with the Bell family and courted Betsy. He was known to have knowledge of ventriloquism and stage magic. Critics of the supernatural theory point to him as the most likely perpetrator of an elaborate hoax designed to eliminate Betsy's other suitors and secure her hand in marriage.</p>
+                    <p>He did marry Betsy after the haunting ended, and the spirit's protection of Betsy from other men supports this theory. However, skeptics struggle to explain how Powell could have produced all the phenomena, especially the physical injuries and the death of John Bell.</p>
+                `,
+                'kate-batts': `
+                    <img src="https://sharetngov.tnsosfiles.com/tsla/exhibits/myth/images/BetsyBell.jpg" 
+                         class="modal-image" 
+                         alt="Kate Batts neighbor woman accused of being the Bell Witch 19th century Tennessee woman" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">Kate Batts — The Witch's Namesake</h2>
+                    <p>Kate Batts was a neighbor woman who had a bitter dispute with John Bell over a slave transaction. The spirit explicitly identified itself as "Old Kate Batts' witch," leading many to believe she had cursed the Bell family. Kate Batts was known in the community as eccentric and possibly practiced folk magic.</p>
+                    <p>However, Kate Batts was alive during the haunting and never confessed to any involvement. She maintained her innocence until her death. The spirit's knowledge extended far beyond anything Kate Batts could have known, suggesting the name was either a disguise or a reference to a deeper, more sinister force.</p>
+                `,
+                'andrew-jackson': `
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Andrew_Jackson_portrait_president_visited_Bell_Witch.jpg/440px-Andrew_Jackson_portrait_pvisited_Bell_Witch.jpg" 
+                         class="modal-image" 
+                         alt="Andrew Jackson portrait 7th US president who visited Bell Witch site Tennessee">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">General Andrew Jackson's Visit</h2>
+                    <p>Future President Andrew Jackson, then a general, heard of the haunting and traveled to the Bell farm with a group of men to investigate. According to legend, their wagon became mysteriously immobilized on the property until the spirit gave them permission to proceed. Jackson's men reportedly fled in terror after experiencing the entity's power firsthand.</p>
+                    <p>Jackson himself allegedly declared that he would rather face the British army again than spend another night with the Bell Witch. While some historians question the veracity of this account, it remains one of the most famous stories associated with the haunting.</p>
+                `
+            };
+            
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

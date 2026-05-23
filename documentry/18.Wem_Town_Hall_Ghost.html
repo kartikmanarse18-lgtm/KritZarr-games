@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wem Town Hall Ghost: The Girl in the Fire — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Source+Sans+Pro:wght@300;400;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --void: #050508;
+            --abyss: #0a0a12;
+            --deep: #12121c;
+            --surface: #1a1a28;
+            --elevated: #222235;
+            --card: #2a2a40;
+            --flame: #e85d04;
+            --ember: #f48c06;
+            --gold: #d4a017;
+            --ash: #8a8a9e;
+            --smoke: #b5b5c8;
+            --bone: #e8e6e3;
+            --frost: #c0c8d0;
+            --muted: #5a5560;
+            --border: #2a2a3e;
+            --border-glow: rgba(232, 93, 4, 0.3);
+            --danger: #9b2226;
+            --warning: #e9c46a;
+            --success: #2a9d8f;
+            --shadow-fire: rgba(232, 93, 4, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background: var(--void);
+            color: var(--bone);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--void); }
+        ::-webkit-scrollbar-thumb { background: var(--flame); border-radius: 3px; }
+
+        /* ===== PARTICLE CANVAS ===== */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* ===== GLASSMORPHISM HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(5, 5, 8, 0.85);
+            backdrop-filter: blur(20px) saturate(1.2);
+            -webkit-backdrop-filter: blur(20px) saturate(1.2);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--flame);
+            letter-spacing: 6px;
+            font-weight: 700;
+            text-transform: uppercase;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--ember);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--flame);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .logo span {
+            color: var(--ash);
+            font-weight: 400;
+            letter-spacing: 8px;
+            font-size: 0.75em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.1rem;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--ash);
+            cursor: pointer;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--flame);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(-50%);
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            color: var(--ember);
+            background: rgba(232, 93, 4, 0.08);
+            border-color: rgba(232, 93, 4, 0.2);
+        }
+
+        .nav-tab:hover::after, .nav-tab.active::after {
+            width: 60%;
+        }
+
+        .main-content { 
+            margin-top: 65px; 
+            min-height: 100vh; 
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: reveal 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .section.active { display: block; }
+
+        @keyframes reveal {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== CINEMATIC STORY SECTION ===== */
+        .story-hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(232, 93, 4, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(212, 160, 23, 0.04) 0%, transparent 40%),
+                linear-gradient(180deg, rgba(5,5,8,0.3) 0%, rgba(5,5,8,0.98) 100%);
+        }
+
+        .story-content {
+            max-width: 800px;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .story-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--ember);
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: materialize 1.2s ease 0.5s forwards;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .story-eyebrow::before, .story-eyebrow::after {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: var(--flame);
+            opacity: 0.5;
+        }
+
+        .story-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.2rem;
+            line-height: 1.05;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: materialize 1.2s ease 1s forwards;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--bone);
+            text-shadow: 0 0 80px rgba(232, 93, 4, 0.2);
+        }
+
+        .story-headline .accent {
+            color: var(--flame);
+            display: block;
+            font-size: 1.1em;
+            font-weight: 400;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            text-transform: none;
+            letter-spacing: 1px;
+            text-shadow: 0 0 50px rgba(232, 93, 4, 0.3);
+            margin-top: 0.3rem;
+        }
+
+        .story-prologue {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            line-height: 1.9;
+            color: var(--smoke);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: materialize 1.2s ease 1.5s forwards;
+            border-left: 3px solid var(--flame);
+            padding-left: 2rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .story-prologue::before {
+            content: '"';
+            position: absolute;
+            left: -0.8rem;
+            top: -1rem;
+            font-size: 4rem;
+            color: var(--flame);
+            opacity: 0.3;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .story-text {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: var(--bone);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: materialize 1.2s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.8rem;
+            text-indent: 2.5rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.2rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.7rem;
+            color: var(--flame);
+            text-shadow: 0 0 40px rgba(232, 93, 4, 0.4);
+            font-weight: 800;
+            margin-top: 0.1rem;
+        }
+
+        .story-highlight {
+            background: rgba(232, 93, 4, 0.06);
+            border: 1px solid rgba(232, 93, 4, 0.15);
+            border-left: 4px solid var(--flame);
+            padding: 2.2rem;
+            margin: 3rem 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.85;
+            color: var(--frost);
+            text-align: left;
+            opacity: 0;
+            animation: materialize 1.2s ease 2.5s forwards;
+            border-radius: 0 8px 8px 0;
+            position: relative;
+        }
+
+        .story-highlight::before {
+            content: '⚠';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--void);
+            padding: 0 8px;
+            color: var(--flame);
+            font-size: 1.2rem;
+        }
+
+        .story-cta {
+            margin-top: 3.5rem;
+            opacity: 0;
+            animation: materialize 1.2s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 1.1rem 3rem;
+            background: transparent;
+            color: var(--ember);
+            text-decoration: none;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem;
+            letter-spacing: 5px;
+            border-radius: 4px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid var(--flame);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--flame);
+            transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .story-btn:hover {
+            color: var(--void);
+            box-shadow: 0 0 60px rgba(232, 93, 4, 0.3);
+        }
+
+        .story-btn:hover::before {
+            left: 0;
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 5rem;
+            margin-top: 5rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: materialize 1.2s ease 3.5s forwards;
+        }
+
+        .story-stat { 
+            text-align: center; 
+            position: relative;
+            padding: 0 1.5rem;
+        }
+
+        .story-stat:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -2.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 40px;
+            background: var(--border);
+        }
+
+        .story-stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--flame);
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .story-stat-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.6rem;
+        }
+
+        @keyframes materialize {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: drift 3s infinite;
+            opacity: 0;
+            animation: materialize 1.2s ease 4s forwards, drift 3s infinite 4s;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.3; }
+            50% { transform: translateX(-50%) translateY(-15px); opacity: 0.9; }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            background: linear-gradient(180deg, rgba(232, 93, 4, 0.04) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2.5rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--flame), var(--ember), var(--flame), transparent);
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            color: var(--bone);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(232, 93, 4, 0.15);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--ash);
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            line-height: 1.7;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3.5rem;
+            flex-wrap: wrap;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+        }
+
+        .meta-item { 
+            text-align: center; 
+            padding: 0.8rem 1.5rem;
+            background: rgba(232, 93, 4, 0.05);
+            border: 1px solid rgba(232, 93, 4, 0.1);
+            border-radius: 8px;
+        }
+
+        .meta-label {
+            color: var(--muted);
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0.4rem;
+        }
+
+        .meta-value {
+            color: var(--ember);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.8rem;
+            margin: 2.5rem 0;
+        }
+
+        .evidence-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--flame), var(--ember), var(--gold));
+            transform: scaleX(0);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 60px var(--shadow-fire);
+            border-color: rgba(232, 93, 4, 0.2);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.4) contrast(1.25) brightness(0.7) sepia(0.2);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0) contrast(1.15) brightness(0.85) sepia(0.05);
+            transform: scale(1.03);
+        }
+
+        .evidence-content { padding: 1.8rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            background: rgba(232, 93, 4, 0.1);
+            color: var(--ember);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-family: 'IBM Plex Mono', monospace;
+            border: 1px solid rgba(232, 93, 4, 0.15);
+        }
+
+        .evidence-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            color: var(--bone);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .evidence-desc {
+            color: var(--ash);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: var(--abyss);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.8rem;
+            margin: 2.5rem 0;
+        }
+
+        .video-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+
+        .video-card:hover {
+            border-color: rgba(232, 93, 4, 0.2);
+            box-shadow: 0 20px 40px var(--shadow-fire);
+        }
+
+        .video-info { padding: 1.5rem; }
+
+        .video-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            margin-bottom: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .video-desc {
+            font-size: 0.87rem;
+            color: var(--ash);
+            line-height: 1.65;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+            border: 1px solid;
+        }
+
+        .badge-fire { background: rgba(232, 93, 4, 0.12); color: var(--ember); border-color: rgba(232, 93, 4, 0.2); }
+        .badge-ice { background: rgba(138, 138, 158, 0.1); color: var(--ash); border-color: rgba(138, 138, 158, 0.2); }
+        .badge-gold { background: rgba(212, 160, 23, 0.1); color: var(--gold); border-color: rgba(212, 160, 23, 0.2); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--flame), var(--ember), var(--gold), transparent);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 44%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.4s;
+        }
+
+        .timeline-content:hover {
+            border-color: rgba(232, 93, 4, 0.2);
+            box-shadow: 0 15px 40px var(--shadow-fire);
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            width: 14px;
+            height: 14px;
+            background: var(--flame);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(232, 93, 4, 0.4);
+            border: 3px solid var(--void);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -39px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -39px; }
+
+        .timeline-date {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--ember);
+            font-size: 0.72rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .timeline-date::before {
+            content: '◆';
+            color: var(--flame);
+            font-size: 0.6rem;
+        }
+
+        .timeline-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .timeline-text {
+            color: var(--ash);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.4s;
+            display: block;
+            filter: grayscale(0.4) contrast(1.25) sepia(0.15);
+            border: 1px solid var(--border);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0) contrast(1.15) sepia(0);
+            border-color: var(--flame);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.8rem;
+            margin: 2.5rem 0;
+        }
+
+        .theory-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2.2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+
+        .theory-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px var(--shadow-fire);
+        }
+
+        .theory-card.official { border-left: 4px solid var(--success); }
+        .theory-card.conspiracy { border-left: 4px solid var(--danger); }
+        .theory-card.alternative { border-left: 4px solid var(--warning); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .theory-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-family: 'IBM Plex Mono', monospace;
+            background: rgba(232, 93, 4, 0.1);
+            border: 1px solid rgba(232, 93, 4, 0.15);
+        }
+
+        .official .theory-icon { background: rgba(42, 157, 143, 0.1); border-color: rgba(42, 157, 143, 0.2); }
+        .conspiracy .theory-icon { background: rgba(155, 34, 38, 0.1); border-color: rgba(155, 34, 38, 0.2); }
+        .alternative .theory-icon { background: rgba(233, 196, 106, 0.1); border-color: rgba(233, 196, 106, 0.2); }
+
+        .theory-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .theory-probability {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.7rem;
+            font-size: 0.88rem;
+            color: var(--ash);
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--flame);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .theory-points li:last-child { border-bottom: none; }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.84rem;
+            line-height: 1.9;
+            color: var(--ash);
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2.5rem;
+            right: 2.5rem;
+            border: 3px solid var(--danger);
+            color: var(--danger);
+            padding: 0.5rem 1.2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transform: rotate(-12deg);
+            opacity: 0.5;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            border-radius: 4px;
+        }
+
+        .document-field {
+            margin: 1.5rem 0;
+            padding: 1.1rem;
+            background: var(--elevated);
+            border-left: 3px solid var(--flame);
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s;
+        }
+
+        .document-field:hover {
+            background: var(--card);
+            border-left-color: var(--ember);
+        }
+
+        .document-label {
+            color: var(--muted);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 0.3rem;
+        }
+
+        .document-value {
+            color: var(--bone);
+            font-size: 0.85rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.2rem;
+            margin: 2rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.4) contrast(1.25) sepia(0.15);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.04) translateY(-5px);
+            border-color: var(--flame);
+            box-shadow: 0 15px 40px var(--shadow-fire);
+            filter: grayscale(0) contrast(1.1) sepia(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.97);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 88%;
+            max-height: 85%;
+            border: 2px solid var(--flame);
+            border-radius: 8px;
+            box-shadow: 0 0 80px rgba(232, 93, 4, 0.2);
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface);
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--ash);
+            border: 1px solid var(--border);
+            max-width: 80%;
+            text-align: center;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 8, 0.94);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.2rem;
+            background: var(--elevated);
+            border: 1px solid var(--border);
+            color: var(--ash);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: var(--bone);
+            border-color: var(--danger);
+        }
+
+        .modal-body { padding: 2.5rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1.8rem;
+            display: block;
+            filter: grayscale(0.15) contrast(1.1) sepia(0.05);
+            border: 1px solid var(--border);
+        }
+
+        /* ===== SECTION DIVIDERS ===== */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 3rem 0;
+            color: var(--muted);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        .section-divider::before, .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.2rem; }
+            .story-text { font-size: 0.95rem; }
+            .story-stats { gap: 2rem; }
+            .story-stat:not(:last-child)::after { display: none; }
+            .hero h1 { font-size: 1.6rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 55px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -39px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.8rem;
+                padding: 0.8rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.3rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.62rem;
+                padding: 0.4rem 0.8rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1rem; }
+            .video-grid { grid-template-columns: 1fr; }
+            .evidence-grid { grid-template-columns: 1fr; }
+            .document-viewer { padding: 1.5rem; }
+            .document-stamp { display: none; }
+        }
+
+        .hamburger { display: none; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <header class="main-header">
+        <div class="logo">WEM <span>TOWN HALL</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-hero">
+                <div class="story-content">
+                    <div class="story-eyebrow">Wem, Shropshire — 19 November 1995</div>
+
+                    <h1 class="story-headline">
+                        The Girl in
+                        <span class="accent">the Fire</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        On a bitter November night in 1995, the old Victorian town hall in Wem, Shropshire, burned to the ground. Flames consumed the ninety-year-old building as firefighters battled the inferno and crowds gathered in the cold darkness to watch history crumble into ash. Among them was Tony O'Rahilly, an amateur photographer who raised his camera and captured what would become one of the most controversial ghost photographs ever taken. When the film was developed months later, standing in the doorway of the blazing building—unharmed, unafraid, impossibly calm—was the figure of a young girl in old-fashioned clothing, staring directly into the lens. She should not have been there. She could not have survived. Yet there she stood, the girl in the fire, and the town of Wem would never be the same.
+                    </p>
+
+                    <div class="story-text">
+                        <p>The photograph lay dormant through the winter, tucked away in Tony O'Rahilly's darkroom in a shed behind his house. He was a sewage farm worker by trade, a photographer by passion, and a man who would soon find himself at the center of an international mystery. When he finally developed the black-and-white film shot with his 200mm lens that November night, he saw something that made his blood run cold. In the doorway of the burning town hall, behind the railings, stood a young girl in flowing garments. Her face was pale, her expression serene, her clothing from another era entirely. O'Rahilly had not seen her when he took the picture. No one in the crowd had seen her. The fire service's own video footage of the blaze showed no such figure. Yet there she was, as clear as the flames around her, a child standing in the heart of an inferno.</p>
+
+                        <p>The town of Wem knew immediately who she must be. Three hundred and eighteen years earlier, in March 1677, a fourteen-year-old girl named Jane Churm had accidentally started a devastating fire in Wem. She had placed her candle too close to the thatched roof of her cottage while collecting firewood. The flames spread with terrifying speed, consuming buildings across the town, including the old Market House. Jane's guilt was said to have haunted her until her death, and local legend had long held that her tormented spirit lingered in the town hall that had risen from those ashes. Two workmen doing refurbishment in the old hall had previously reported being terrified by a ghostly figure shrouded in swirling mist. Now, it seemed, Jane had returned in the most dramatic way possible—standing in the doorway of the burning building as it collapsed around her.</p>
+
+                        <p>O'Rahilly sent the photograph to the Association for the Scientific Study of Anomalous Phenomena (ASSAP), who forwarded it to Dr. Vernon Harrison, former president of the Royal Photographic Society. Harrison examined both the print and the negative and declared that the image showed no signs of tampering. "The negative is a straightforward piece of black-and-white work," he said, though he remained skeptical, suggesting it might be a trick of light and smoke. The BBC had the image analyzed by experts at the National Museum of Photography, Film, and Television in Bradford, who detected horizontal scan lines across the girl's face—suggesting the image might have been pasted from a television screen. But O'Rahilly maintained his innocence until his sudden death in 2005, never confessing to any manipulation. The mystery deepened, the legend grew, and Wem became known as a "Ghost Town" to visitors from around the world.</p>
+
+                        <p>Then, in May 2010, a retired engineer named Brian Lear made a discovery that would shake the paranormal community. Looking through a nostalgia feature in the Shropshire Star, he spotted a 1922 postcard of Wem High Street. In the doorway on the bottom left stood a little girl bearing a striking resemblance to the "Wem ghost." The folds in her bonnet, the narrow sash around her waist, even the position of her right hand and thumb were identical. The ghost, it seemed, was a copy—a girl from a 1922 postcard superimposed onto the fire photograph. Tony O'Rahilly had died five years earlier, taking any confession with him. The bakery stopped selling ghost-shaped cakes. The road sign lost its "Ghost Town" addendum. But the image refused to die. It continues to circulate in books, documentaries, and online forums, a reminder that sometimes the most compelling ghosts are the ones we create ourselves.</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--ember);">THE QUESTION THAT BURNS STILL:</strong><br>
+                        How does a girl from a 1922 postcard appear in a photograph of a 1995 fire? The Wem Town Hall ghost photograph remains one of the most debated paranormal images in history—a modern mystery that challenges our understanding of photography, deception, and the human need to believe in something beyond the flames.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">
+                            Enter the Investigation
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">1995</div>
+                            <div class="story-stat-label">Year Photographed</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">1</div>
+                            <div class="story-stat-label">Ghostly Figure</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">15</div>
+                            <div class="story-stat-label">Years a Mystery</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">∞</div>
+                            <div class="story-stat-label">Debates</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--flame);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1>The Girl in the Flames</h1>
+                <p class="hero-subtitle">An interactive investigation into the most controversial ghost photograph of the modern era. Explore the evidence, analyze the theories, and decide for yourself whether the Wem Town Hall ghost was real, a hoax, or something else entirely.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Subject</div>
+                        <div class="meta-value">Jane Churm / Unknown Girl</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Wem Town Hall, Shropshire</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date Taken</div>
+                        <div class="meta-value">19 November 1995</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Photographer</div>
+                        <div class="meta-value">Tony O'Rahilly</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Playfair Display', serif; text-align: center; margin-bottom: 2.5rem; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 5px; color: var(--bone);">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('ghost-photo')">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Wem Town Hall ghost girl fire photograph 1995 Tony O'Rahilly burning building doorway young girl flowing garments old fashioned clothing Shropshire England paranormal apparition standing in flames" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph</h3>
+                        <p class="evidence-desc">The original 1995 photograph showing a young girl in old-fashioned clothing standing in the doorway of the burning Wem Town Hall. She appears calm and unharmed amid the inferno, wearing a bonnet and flowing dress from an earlier era. The image was captured on black-and-white film using a 200mm lens from across the road.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('tony-orahilly')">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Tony O'Rahilly photographer Wem Town Hall ghost 1995 amateur photographer sewage farm worker Shropshire England black white film camera 200mm lens darkroom shed behind house" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Primary Source</span>
+                        <h3 class="evidence-title">Tony O'Rahilly — The Photographer</h3>
+                        <p class="evidence-desc">An amateur photographer and sewage farm worker who captured the controversial image on the night of the fire. O'Rahilly maintained until his death in 2005 that he had not manipulated the photograph. He developed the film himself in a darkroom in a shed behind his house and was initially as puzzled as anyone by the girl's appearance.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('wem-town-hall')">
+                    <img src="https://www.thetimes.com/imageserver/image//methode/times/prodmigration/web/bin/531ec0c4-f034-349a-a936-b70710613959.jpg" 
+                         alt="Wem Town Hall Shropshire England Victorian building red brick 1905 architecture market town historical building fire 1995 burned down doorway flames night inferno blaze" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Location</span>
+                        <h3 class="evidence-title">Wem Town Hall — The Burning Building</h3>
+                        <p class="evidence-desc">A Victorian-style red brick building completed in 1905 in the market town of Wem, Shropshire. The town hall housed a cinema operated by the Cheshire Animated Picture Company and later served as a community arts center. Its interior was completely destroyed by fire on November 19, 1995, though the Edwardian façade was later preserved.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('jane-churm')">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Jane Churm Wem fire 1677 young girl candle thatched roof cottage accidental fire Shropshire England historical illustration Victorian engraving market house burned fourteen year old" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Historical Figure</span>
+                        <h3 class="evidence-title">Jane Churm — The 1677 Firestarter</h3>
+                        <p class="evidence-desc">A fourteen-year-old girl who allegedly started a devastating fire in Wem in March 1677 by placing her candle too close to the thatched roof of her cottage while collecting firewood. The fire destroyed many buildings including the Market House. Local legend held that her guilt-ridden ghost haunted the town hall built on the site.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('1922-postcard')">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Wem High Street postcard 1922 vintage nostalgia Shropshire England little girl doorway bottom left bonnet dress sash historical postcard pictures from the past Brian Lear discovery" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Smoking Gun</span>
+                        <h3 class="evidence-title">The 1922 Postcard — The Source</h3>
+                        <p class="evidence-desc">A vintage postcard of Wem High Street from 1922, reproduced in the Shropshire Star's "Pictures from the Past" feature. Retired engineer Brian Lear spotted a little girl in the doorway whose bonnet folds, dress sash, and hand position were identical to the "ghost" in the fire photograph. This discovery in 2010 exposed the image as a likely hoax.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('dr-harrison')">
+                    <img src="https://static01.nyt.com/images/2024/06/14/multimedia/10WHITE-01-mgzt-print1/10WHITE-01-mgzt-mediumSquareAt3X.jpg" 
+                         alt="Dr Vernon Harrison Royal Photographic Society president photographic expert Wem ghost analysis negative examination black white film ASSAP investigator skeptical researcher" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Expert Analysis</span>
+                        <h3 class="evidence-title">Dr. Vernon Harrison — The Examiner</h3>
+                        <p class="evidence-desc">Former president of the Royal Photographic Society and psychical researcher who examined the original negative. He concluded the negative showed no signs of tampering but suggested the figure might be burning debris creating an optical illusion—a classic case of pareidolia. His analysis was both supportive and skeptical.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                     alt="Wem Town Hall ghost girl fire photograph 1995 Tony O'Rahilly burning building doorway young girl flowing garments old fashioned clothing Shropshire England paranormal apparition close up zoom enhanced" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                     alt="Wem High Street postcard 1922 vintage nostalgia Shropshire England little girl doorway bottom left bonnet dress sash historical postcard close up comparison" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://www.thetimes.com/imageserver/image//methode/times/prodmigration/web/bin/531ec0c4-f034-349a-a936-b70710613959.jpg" 
+                     alt="Side by side comparison Wem ghost postcard 1922 fire photo 1995 identical bonnet folds dress sash hand position overlay matching features Brian Lear discovery" 
+                     class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://www.thetimes.com/imageserver/image//methode/times/prodmigration/web/bin/531ec0c4-f034-349a-a936-b70710613959.jpg" 
+                     alt="Wem Town Hall Shropshire England Victorian building red brick 1905 architecture market town historical building fire 1995 burned down doorway flames night inferno" 
+                     class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every documented event from the 1677 fire to the 2010 exposure and the decades of debate that followed.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">March 1677</div>
+                        <div class="timeline-title">The Great Fire of Wem</div>
+                        <p class="timeline-text">Fourteen-year-old Jane Churm accidentally starts a devastating fire in Wem, Shropshire, by placing her candle too close to the thatched roof of her cottage while collecting firewood. The flames spread rapidly, destroying many buildings including the Market House. The fire is said to have been visible for miles around. Jane's guilt becomes local legend.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1905</div>
+                        <div class="timeline-title">Wem Town Hall Built</div>
+                        <p class="timeline-text">A new Victorian-style red brick town hall is completed in Wem, built on the site of the old Market House destroyed in the 1677 fire. The building features an Edwardian façade and houses a cinema operated by the Cheshire Animated Picture Company. An AWH Sound System is installed in 1934. The building becomes the center of community life in the market town.</p>
+                        <div class="timeline-images">
+                            <img src="https://c8.alamy.com/comp/DW4XJ6/a-view-of-the-old-victorian-red-brick-town-hall-clock-tower-of-swindon-DW4XJ6.jpg" 
+                                 alt="Wem Town Hall Shropshire England Victorian building red brick 1905 architecture market town historical building Edwardian facade before fire" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                            <img src="http://www.wemlocal.org.uk/wempast/histcin/pavil2.jpg" 
+                                 alt="Wem Town Hall interior cinema Cheshire Animated Picture Company AWH sound system 1934 historical photograph vintage" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Pre-1995</div>
+                        <div class="timeline-title">The Haunting Legend</div>
+                        <p class="timeline-text">Local legend holds that Jane Churm's guilt-ridden ghost haunts the town hall. Two workmen doing refurbishment in the old hall report being terrified by a ghostly figure shrouded in swirling mist that passes directly in front of them. The town hall fire of 1677 and Jane's alleged spectral presence become part of Wem's folklore, passed down through generations.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">19 November 1995</div>
+                        <div class="timeline-title">The Night of the Fire</div>
+                        <p class="timeline-text">The interior of Wem Town Hall is completely destroyed by fire. Firefighters battle the inferno as crowds gather in the cold November night. Amateur photographer Tony O'Rahilly, stopped by police from approaching the building, takes photographs from across the road using a 200mm lens and black-and-white film. The fire service records video footage of the blaze. No one reports seeing a girl in the doorway.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                                 alt="Wem Town Hall fire 1995 night flames inferno firefighters battling blaze Shropshire England crowds gathering cold November emergency services" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                                 alt="Wem Town Hall fire 1995 burning building doorway railings flames smoke night photograph Tony O'Rahilly location" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Winter 1995–1996</div>
+                        <div class="timeline-title">The Discovery</div>
+                        <p class="timeline-text">Months after the fire, Tony O'Rahilly develops the black-and-white film in his darkroom shed. Examining the prints, he discovers the figure of a young girl standing in the doorway of the burning building. She wears old-fashioned clothing—a bonnet and flowing dress—and appears calm amid the inferno. O'Rahilly is stunned. He does not recall seeing anyone in the doorway when he took the photograph.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1995–1996</div>
+                        <div class="timeline-title">The Investigation Begins</div>
+                        <p class="timeline-text">O'Rahilly sends the photograph to ASSAP (Association for the Scientific Study of Anomalous Phenomena). The image receives extensive media coverage. Parasearch, ASSAP's regional group, is first on the scene to investigate. Experts are called in to examine the photograph and negative. The image quickly becomes linked with the legend of Jane Churm and the 1677 fire. "Ghostbusters" and paranormal investigators visit Wem from around the world.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1995–1996</div>
+                        <div class="timeline-title">Expert Analysis</div>
+                        <p class="timeline-text">Dr. Vernon Harrison of the Royal Photographic Society examines the negative and declares it shows no signs of tampering: "The negative is a straightforward piece of black-and-white work." However, he suggests the figure may be burning debris creating a simulacrum—a classic case of pareidolia. The BBC sends the image to the National Museum of Photography, Film, and Television in Bradford, where Paul Thompson and Will Stapp detect horizontal scan lines across the girl's face, suggesting the image was pasted from a television screen.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                                 alt="Dr Vernon Harrison Royal Photographic Society president photographic expert Wem ghost analysis negative examination" 
+                                 onclick="openLightbox(this)">
+                            <img src="https://www.andrewhomer.co.uk/blog/wp-content/uploads/2020/05/Figure-1-1024x685.jpeg" 
+                                 alt="National Museum Photography Film Television Bradford experts analysis scan lines Wem ghost photo Paul Thompson Will Stapp" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1995–2005</div>
+                        <div class="timeline-title">The Golden Age of the Wem Ghost</div>
+                        <p class="timeline-text">The photograph becomes one of the most famous and widely published ghost images in the world. It appears in books, documentaries, and paranormal television programs. Wem embraces its ghostly fame—the bakery sells ghost-shaped cakes, the road sign carries a "Ghost Town" addendum, and hundreds of extra visitors come to the town each year. Tony O'Rahilly becomes a local celebrity, maintaining his innocence and expressing curiosity about how the girl appeared. He gives interviews and allows continued examination of his work.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2005</div>
+                        <div class="timeline-title">The Photographer's Death</div>
+                        <p class="timeline-text">Tony O'Rahilly dies suddenly, taking any potential confession with him. He had never admitted to doctoring the photograph. Those who met him, including investigator Andrew Homer, believed O'Rahilly genuinely thought he was "acting in the best interests of Wem by bringing the town hall fire and the story of Jane Churm to the attention of the world's media." His death leaves the mystery unresolved but the legend intact.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2007</div>
+                        <div class="timeline-title">Digital Re-examination</div>
+                        <p class="timeline-text">Digital photography specialist Steve Potter examines a high-quality JPEG taken directly from the original negative by the Shropshire Star. He notes a denser area behind the figure that could indicate a thicker area of the original negative, suggesting "a selective enlargement which then was re-touched either on the print or by using an interneg." However, he discounts the television scan line theory, identifying the lines as scratch marks from dust and dirt in the camera's back—a common problem in 35mm cameras.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">17 May 2010</div>
+                        <div class="timeline-title">The Postcard Discovery</div>
+                        <p class="timeline-text">Retired engineer Brian Lear, 77, spots a little girl in a 1922 postcard of Wem High Street reproduced in the Shropshire Star's "Pictures from the Past" feature. The resemblance to the "Wem ghost" is uncanny. Side-by-side comparison reveals identical folds in the bonnet, identical narrow sash around the waist, and the same right hand and thumb position. The ghost, it appears, was copied from a 1922 postcard. The paranormal community is shaken. Wem's ghost tourism industry begins to decline.</p>
+                        <div class="timeline-images">
+                            <img src="https://www.shropshirestar.com/jpim-static/image/2026/03/27/07/cs-d22a6525-a0b4-4734-abd9-925f75ec2d09.jpg" 
+                                 alt="Wem High Street postcard 1922 vintage nostalgia Shropshire England little girl doorway bottom left Brian Lear discovery" 
+                                 onclick="openLightbox(this)" style="height: 400px; width: 250px; margin: 0 auto; display: block;">
+                            <img src="https://www.andrewhomer.co.uk/blog/wp-content/uploads/2020/05/Figure-5.jpg" 
+                                 alt="Side by side comparison Wem ghost postcard 1922 fire photo 1995 identical features bonnet folds dress sash" 
+                                 onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">2010–Present</div>
+                        <div class="timeline-title">The Aftermath</div>
+                        <p class="timeline-text">The "Ghost Town" sign is removed. Ghost-shaped cakes disappear from the bakery. But the image refuses to die. It continues to circulate on social media, Reddit, TikTok, and YouTube, reaching new generations who debate its authenticity. Some argue that the postcard discovery doesn't definitively prove a hoax—perhaps the 1922 girl was also a ghost. Others point to an advertising sticker on the back of one of O'Rahilly's other photographs, suggesting he was more than the "very amateur photographer" he claimed to be, and capable of the techniques needed to create an interneg. The mystery endures, transformed but not extinguished.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Present Day</div>
+                        <div class="timeline-title">The Mystery Transformed</div>
+                        <p class="timeline-text">Multiple theories continue to compete: genuine paranormal manifestation of Jane Churm's ghost, accidental pareidolia in burning debris, deliberate hoax using the 1922 postcard, or a complex darkroom manipulation by O'Rahilly. The original negative has never been subjected to modern forensic analysis. The photographer is dead. The building has been rebuilt. But the girl in the fire—whether ghost, illusion, or fabrication—remains one of the most compelling images in paranormal history, a reminder that sometimes the truth burns brighter than the flames.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Physical findings, photographic analysis, and the inexplicable details that define the Wem Town Hall mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card">
+                    <img src="https://www.bbc.co.uk/staticarchive/f00cede8610e09b48540975b220d5ea71954ca3a.jpg" 
+                         alt="Wem Town Hall ghost girl fire photograph 1995 Tony O'Rahilly burning building doorway young girl flowing garments old fashioned clothing Shropshire England paranormal apparition enhanced close up zoom detail" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Critical Evidence</span>
+                        <h3 class="evidence-title">The Ghost Photograph Itself</h3>
+                        <p class="evidence-desc">The 1995 photograph shows the Wem Town Hall engulfed in flames. In the doorway, behind the railings, stands the figure of a young girl in old-fashioned clothing. She wears a bonnet and flowing dress, her face pale and expression serene. She appears unharmed by the inferno around her. The image was captured on black-and-white film with a 200mm lens from across the road. No one at the scene reported seeing her. The fire service video shows no such figure.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://www.thetimes.com/imageserver/image//methode/times/prodmigration/web/bin/531ec0c4-f034-349a-a936-b70710613959.jpg" 
+                         alt="Wem High Street postcard 1922 vintage nostalgia Shropshire England little girl doorway bottom left bonnet dress sash historical postcard comparison with ghost photo identical features" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Smoking Gun</span>
+                        <h3 class="evidence-title">The 1922 Postcard Source Image</h3>
+                        <p class="evidence-desc">Discovered by Brian Lear in 2010, this 1922 postcard of Wem High Street shows a little girl in a doorway whose features match the "ghost" exactly. The folds in her bonnet, the narrow sash around her waist, and the position of her right hand and thumb are identical. The image appears to be the source material for the ghost photograph, suggesting a deliberate superimposition rather than a paranormal manifestation.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Wem ghost photo negative analysis scan lines scratch marks dust dirt 35mm camera back examination forensic photographic analysis Metabunk skeptical investigation" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Forensic Analysis</span>
+                        <h3 class="evidence-title">The Negative Examination</h3>
+                        <p class="evidence-desc">Multiple experts have examined the original negative. Dr. Vernon Harrison found no signs of tampering. The National Museum in Bradford detected horizontal lines suggesting television scan lines. Digital specialist Steve Potter later identified these as scratch marks from dust and dirt in the camera's back. A denser area behind the figure suggests possible selective enlargement or retouching. The negative remains the subject of conflicting interpretations.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         alt="Wem Town Hall fire 1995 fire service video footage no ghost girl doorway comparison O'Rahilly photograph missing figure Shropshire England emergency services recording" 
+                         class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Contradictory Evidence</span>
+                        <h3 class="evidence-title">The Fire Service Video</h3>
+                        <p class="evidence-desc">The fire service recorded video footage of the Wem Town Hall blaze on the night of November 19, 1995. This footage shows no sign of the little girl in the doorway, nor any burning debris that could have created the illusion described by Dr. Harrison. The absence of the figure in moving footage taken from a similar angle challenges both the paranormal explanation and the pareidolia theory, suggesting the girl exists only in O'Rahilly's still photograph.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, analyses, and investigative footage exploring the Wem Town Hall ghost photograph across decades of paranormal investigation.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/68oMv2f55sY" title="Wem Town Hall ghost girl documentary 1995 fire Shropshire England paranormal investigation Jane Churm" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-fire">Documentary</span>
+                        <span class="badge badge-gold">Paranormal</span>
+                        <h3 class="video-title">The Wem Town Hall Ghost: Girl in the Flames</h3>
+                        <p class="video-desc">Comprehensive documentary examining the 1995 fire, the controversial photograph, the life of Tony O'Rahilly, and the 2010 postcard discovery that exposed the image. Includes archive footage of the fire and expert interviews with paranormal investigators and skeptics.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/68oMv2f55sY" title="Wem ghost photo analysis skeptical examination 1922 postcard hoax exposure Tony O'Rahilly 1995 fire" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-fire">Analysis</span>
+                        <span class="badge badge-ice">Investigation</span>
+                        <h3 class="video-title">Analyzing the Wem Ghost Photograph</h3>
+                        <p class="video-desc">Forensic analysis of the Wem Town Hall photograph using modern digital techniques. Experts examine the 1922 postcard comparison, the negative anomalies, the scan line theories, and the possibility of darkroom manipulation by Tony O'Rahilly using interneg techniques.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/68oMv2f55sY" title="Wem Town Hall ghost unsolved mystery 1995 fire Jane Churm Shropshire England paranormal debunked hoax" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-gold">Unsolved</span>
+                        <span class="badge badge-ice">Deep Dive</span>
+                        <h3 class="video-title">Unsolved: The Ghost of Wem Town Hall</h3>
+                        <p class="video-desc">Deep dive into all major theories including genuine paranormal manifestation of Jane Churm, pareidolia in burning debris, deliberate hoax using a 1922 postcard, and darkroom manipulation. Examines primary sources including death records, O'Rahilly's other photographs, and the advertising sticker that suggested he was more than an amateur.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Over twenty-five years of investigation has produced competing explanations. These are the most compelling theories about how the girl appeared in the fire photograph.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Exposed Hoax</div>
+                            <div class="theory-probability">Case Status: Likely Fabricated</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>1922 postcard discovered in 2010 shows identical figure</li>
+                        <li>Bonnet folds, dress sash, and hand position match exactly</li>
+                        <li>Photographer Tony O'Rahilly died in 2005 without confessing</li>
+                        <li>Advertising sticker suggests he was more than an amateur</li>
+                        <li>Fire service video shows no girl in the doorway</li>
+                        <li>Original negative shows anomalies suggesting manipulation</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">Genuine Paranormal Manifestation</div>
+                            <div class="theory-probability">Probability: BELIEVERS' CHOICE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Jane Churm's ghost was already legend before the photograph</li>
+                        <li>Two workmen previously reported seeing a ghostly figure in mist</li>
+                        <li>The town hall stood on the site of the 1677 fire</li>
+                        <li>Dr. Harrison confirmed the negative showed no tampering</li>
+                        <li>The girl's clothing is from the correct historical period</li>
+                        <li>Some argue the 1922 postcard girl might also be a ghost</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔥</div>
+                        <div>
+                            <div class="theory-name">Pareidolia in Burning Debris</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Dr. Harrison suggested burning wood created the illusion</li>
+                        <li>Human brain naturally perceives faces in random patterns</li>
+                        <li>Smoke, flame, and shadow can create optical illusions</li>
+                        <li>However, fire service video shows no such debris formation</li>
+                        <li>Does not explain the precise historical clothing details</li>
+                        <li>Does not explain the 1922 postcard match</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">📷</div>
+                        <div>
+                            <div class="theory-name">Postcard Superimposition</div>
+                            <div class="theory-probability">Probability: HIGH</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>1922 postcard provides exact source image for the "ghost"</li>
+                        <li>Every fold and feature matches between the two images</li>
+                        <li>O'Rahilly had the technical capability to create an interneg</li>
+                        <li>Advertising sticker on other photos suggests professional skills</li>
+                        <li>Motive: bringing attention to Wem and the town hall fire</li>
+                        <li>Most scientifically supported explanation</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🎬</div>
+                        <div>
+                            <div class="theory-name">Television Screen Pasting</div>
+                            <div class="theory-probability">Probability: LOW-MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>National Museum experts detected horizontal scan lines</li>
+                        <li>Lines suggested image pasted from a television screen</li>
+                        <li>Later analysis identified lines as camera scratch marks</li>
+                        <li>No television footage of the girl exists to serve as source</li>
+                        <li>Does not explain the 1922 postcard connection</li>
+                        <li>Theory largely superseded by postcard discovery</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">✏️</div>
+                        <div>
+                            <div class="theory-name">Darkroom Manipulation</div>
+                            <div class="theory-probability">Probability: HIGH</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>O'Rahilly had a fully equipped darkroom in his shed</li>
+                        <li>Steve Potter identified denser areas suggesting interneg use</li>
+                        <li>Missing negatives from the same film strip are suspicious</li>
+                        <li>Selective enlargement and retouching were possible</li>
+                        <li>O'Rahilly claimed to be "very amateur" but evidence suggests otherwise</li>
+                        <li>Technique would explain perfect integration of the girl into the fire scene</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Historical records, registry entries, and official documentation from the Wem Town Hall ghost photograph investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">EXPOSED</div>
+
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <h2 style="font-family: 'Playfair Display', serif; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 5px; color: var(--bone);">WEM TOWN HALL, SHROPSHIRE</h2>
+                    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 0.5rem;">CASE FILE 1677–PRESENT — GHOST PHOTOGRAPH INVESTIGATION</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Subject</div>
+                    <div class="document-value">Jane Churm (alleged ghost) / Unknown Girl (1922 postcard source)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Historical Event</div>
+                    <div class="document-value">March 1677 — Jane Churm, age 14, accidentally starts fire in Wem by placing candle too close to thatched roof; destroys Market House and many buildings</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Building Constructed</div>
+                    <div class="document-value">1905 — Wem Town Hall built in Victorian style on site of old Market House; red brick with Edwardian façade; houses cinema operated by Cheshire Animated Picture Company</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Fire</div>
+                    <div class="document-value">19 November 1995 — Interior completely destroyed by fire; Edwardian façade later preserved and building rebuilt</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Photographer</div>
+                    <div class="document-value">Tony O'Rahilly — Sewage farm worker and amateur photographer; used 200mm lens and black-and-white film; developed images in shed darkroom behind his house</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date Photograph Taken</div>
+                    <div class="document-value">19 November 1995 — Night of the Wem Town Hall fire; taken from across the road behind police cordon</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Discovery of Anomaly</div>
+                    <div class="document-value">Winter 1995–1996 — O'Rahilly develops film and notices girl in doorway; no one at scene reported seeing her; fire service video shows no such figure</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Expert Analysis (Dr. Harrison)</div>
+                    <div class="document-value">
+                        • Examined by Dr. Vernon Harrison, former president of Royal Photographic Society<br>
+                        • Concluded negative showed no signs of tampering<br>
+                        • Described as "straightforward piece of black-and-white work"<br>
+                        • Suggested figure might be burning debris (pareidolia)<br>
+                        • Remained skeptical despite finding no manipulation evidence
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Expert Analysis (Bradford Museum)</div>
+                    <div class="document-value">
+                        • Analyzed by National Museum of Photography, Film, and Television<br>
+                        • Paul Thompson and Will Stapp detected horizontal scan lines<br>
+                        • Suggested image pasted from television screen<br>
+                        • Later disputed by digital analysis identifying lines as camera scratches
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Digital Analysis (2007)</div>
+                    <div class="document-value">
+                        • Steve Potter examined high-quality JPEG from original negative<br>
+                        • Identified denser area behind figure suggesting selective enlargement<br>
+                        • Concluded possible use of interneg technique<br>
+                        • Discounted television scan line theory; identified dust/dirt scratches in 35mm camera back
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">The 1922 Postcard Discovery</div>
+                    <div class="document-value">
+                        • 17 May 2010: Brian Lear, 77, spots matching girl in 1922 Wem High Street postcard<br>
+                        • Reproduced in Shropshire Star "Pictures from the Past" feature<br>
+                        • Identical bonnet folds, dress sash, and hand position<br>
+                        • Girl stands in doorway on bottom left of postcard<br>
+                        • Conclusive evidence of source material for the "ghost"
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Photographer's Death</div>
+                    <div class="document-value">Tony O'Rahilly died suddenly in 2005 without confessing to manipulation; maintained innocence until death; those who met him believed he thought he was acting in Wem's best interests</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Photographic Anomalies</div>
+                    <div class="document-value">
+                        • Figure wears old-fashioned clothing (bonnet, flowing dress) inconsistent with 1995<br>
+                        • No one at fire scene reported seeing the girl<br>
+                        • Fire service video footage shows no such figure<br>
+                        • Missing negatives from same film strip (preceding and following exposures)<br>
+                        • Advertising sticker on other O'Rahilly photos suggests professional capability<br>
+                        • Denser area behind figure in negative suggests manipulation
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Primary Suspects & Explanations</div>
+                    <div class="document-value">
+                        • Genuine paranormal manifestation — Jane Churm's ghost returning to scene of 1677 fire<br>
+                        • Pareidolia — Burning debris creating face-like illusion in flames and smoke<br>
+                        • Postcard superimposition — 1922 postcard image pasted into fire photograph<br>
+                        • Darkroom manipulation — Use of interneg and retouching techniques<br>
+                        • Television screen pasting — Image copied from TV broadcast (largely discredited)<br>
+                        • Unknown living person — Real girl in doorway who escaped unnoticed (highly improbable)
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Cultural Impact</div>
+                    <div class="document-value">
+                        • Wem marketed as "Ghost Town" with road sign addendum<br>
+                        • Local bakery sold ghost-shaped cakes<br>
+                        • Hundreds of extra visitors came to Wem annually<br>
+                        • Featured in countless books, documentaries, and paranormal TV shows<br>
+                        • German sludge metal band named "Ghost of Wem" formed<br>
+                        • Tourism declined after 2010 postcard exposure
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--danger); font-weight: bold;">LIKELY FABRICATED — 1922 POSTCARD PROVIDES SOURCE IMAGE</div>
+                </div>
+
+                <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 0.68rem; color: var(--muted); text-align: center; font-family: 'IBM Plex Mono', monospace;">
+                    THIS DOCUMENT IS A HISTORICAL RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    PRIMARY SOURCES INCLUDE ASSAP INVESTIGATIONS, SKEPTICAL INQUIRER ARTICLES,<br>
+                    SHROPSHIRE STAR ARCHIVES, ANDREW HOMER'S RESEARCH, AND BBC SHROPSHIRE FEATURES.<br>
+                    CONTACT: SHROPSHIRE ARCHIVES, SHREWSBURY
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Particle Animation
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = canvas.height + Math.random() * 100;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = Math.random() * 0.8 + 0.2;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.life = 0;
+                this.maxLife = Math.random() * 200 + 100;
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.x += this.speedX;
+                this.life++;
+
+                if (this.life > this.maxLife || this.y < -10) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const fadeOut = this.life > this.maxLife - 50 ? (this.maxLife - this.life) / 50 : 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(232, 93, 4, ${this.opacity * fadeOut})`;
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) {
+            particles.push(new Particle());
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'ghost-photo': `
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         class="modal-image" 
+                         alt="Wem Town Hall ghost girl fire photograph 1995 Tony O'Rahilly burning building doorway young girl flowing garments old fashioned clothing Shropshire England paranormal apparition">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">The Ghost Photograph</h2>
+                    <p>The 1995 photograph of the Wem Town Hall fire is one of the most famous and controversial paranormal images of the modern era. Taken by amateur photographer Tony O'Rahilly on the night of November 19, 1995, it shows the old Victorian building engulfed in flames, with firefighters battling the inferno and crowds gathered behind police cordons.</p>
+                    <p>But in the doorway of the burning building, behind the railings, stands a figure that has haunted the paranormal world for decades: a young girl in old-fashioned clothing. She wears a bonnet and flowing dress, her face pale and expression serene, seemingly unharmed by the raging fire around her. The image was captured on black-and-white film using a 200mm lens from across the road.</p>
+                    <p>O'Rahilly claimed he never saw the girl when taking the photograph. No one in the crowd reported seeing her. The fire service's own video footage of the blaze shows no such figure. Yet there she stands, as clear as the flames themselves, a child from another century peering out from the heart of an inferno. The photograph would not be fully explained until 2010, when a retired engineer spotted her double in a 1922 postcard.</p>
+                `,
+                'tony-orahilly': `
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         class="modal-image" 
+                         alt="Tony O'Rahilly photographer Wem Town Hall ghost 1995 amateur photographer sewage farm worker Shropshire England">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">Tony O'Rahilly — The Photographer</h2>
+                    <p>Tony O'Rahilly was, by his own description, a "very amateur photographer." By day, he worked at a sewage farm in Shropshire. By night, he pursued his passion for photography, developing black-and-white film in a small darkroom he had built in a shed behind his house. He was not a professional, not a paranormal investigator, not a man seeking fame. He was simply someone who happened to be in the right place at the right time—or so it seemed.</p>
+                    <p>On the night of November 19, 1995, O'Rahilly joined the crowds watching the Wem Town Hall burn. Stopped by police from getting too close, he raised his camera with its 200mm lens and captured the inferno from across the road. When he developed the film months later, he discovered the girl in the doorway. He was, by all accounts, as puzzled as anyone. He sent the image to ASSAP, allowed experts to examine his negative, and maintained his innocence until his sudden death in 2005.</p>
+                    <p>But investigator Andrew Homer discovered an advertising sticker on the back of another O'Rahilly photograph, suggesting he was more than the amateur he claimed to be—capable of the exact techniques needed to create an interneg and superimpose images. O'Rahilly died without confessing, leaving behind a legacy that transformed a small Shropshire town into a global paranormal destination, and a mystery that may never be fully solved.</p>
+                `,
+                'wem-town-hall': `
+                    <img src="https://www.thetimes.com/imageserver/image//methode/times/prodmigration/web/bin/531ec0c4-f034-349a-a936-b70710613959.jpg" 
+                         class="modal-image" 
+                         alt="Wem Town Hall Shropshire England Victorian building red brick 1905 architecture market town historical building fire 1995 burned down doorway flames">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">Wem Town Hall — The Burning Building</h2>
+                    <p>Wem Town Hall stood in the market town of Wem, Shropshire, as a symbol of Victorian civic pride. Built in 1905 in red brick with an elegant Edwardian façade, it replaced the old Market House that had been destroyed in the great fire of 1677. The building housed a cinema operated by the Cheshire Animated Picture Company, complete with an AWH Sound System installed in 1934, and served as the cultural heart of the community.</p>
+                    <p>On the night of November 19, 1995, that history went up in flames. The interior of the town hall was completely destroyed by fire, reducing decades of memories to ash. Firefighters battled through the night as crowds gathered in the cold November darkness, watching a piece of their town's heritage crumble before their eyes. Among them was Tony O'Rahilly, camera in hand, capturing what he thought was simply a tragic fire.</p>
+                    <p>The building was later rebuilt, preserving the original Edwardian façade but replacing everything else. It reopened as a community arts center in 2000. But the fire photograph ensured that Wem Town Hall would be remembered not for its architecture or its cinema, but for the girl who stood in its doorway as it burned—a ghostly figure who may have been nothing more than a girl from a 1922 postcard, but who will forever be associated with the night Wem burned again.</p>
+                `,
+                'jane-churm': `
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         class="modal-image" 
+                         alt="Jane Churm Wem fire 1677 young girl candle thatched roof cottage accidental fire Shropshire England historical illustration Victorian engraving market house burned">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">Jane Churm — The 1677 Firestarter</h2>
+                    <p>In March 1677, a fourteen-year-old girl named Jane Churm lived in a thatched cottage in Wem, Shropshire. On a routine evening, she placed her candle too close to the thatched roof while collecting stored wood for the fire. The dry straw caught instantly, and within minutes the flames had spread beyond control. The fire raged through Wem with terrifying speed, consuming building after building, including the old Market House. It was said to be visible for miles around.</p>
+                    <p>Jane survived the fire, but the guilt of having destroyed her town haunted her for the rest of her life. Local legend held that her tormented spirit could not rest, that she wandered the streets of Wem in a shroud of mist, forever reliving the moment her candle touched the thatch. By the time the new town hall was built on the site of the old Market House in 1905, Jane's ghost was already part of Wem's folklore.</p>
+                    <p>Two workmen doing refurbishment in the old hall reported being terrified by a ghostly figure shrouded in swirling mist that passed directly in front of them. When Tony O'Rahilly's photograph emerged in 1995, the town needed no convincing: the girl in the fire was Jane Churm, returned to the scene of her greatest tragedy, standing in the doorway of the building that had risen from the ashes she created three centuries earlier. Whether she was a real ghost or a clever fabrication, Jane Churm's legend burns as brightly as the fire that made her famous.</p>
+                `,
+                '1922-postcard': `
+                    <img src="https://www.bbc.co.uk/staticarchive/76e5f9b70abf51b21fc04c3c61a5d68397be630e.jpg" 
+                         class="modal-image" 
+                         alt="Wem High Street postcard 1922 vintage nostalgia Shropshire England little girl doorway bottom left bonnet dress sash historical postcard">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">The 1922 Postcard — The Source</h2>
+                    <p>In May 2010, the paranormal world was shaken by a discovery that seemed to solve the Wem Town Hall mystery once and for all. Brian Lear, a 77-year-old retired engineer, was browsing through the Shropshire Star's "Pictures from the Past" nostalgia feature when he spotted something extraordinary: a 1922 postcard of Wem High Street showing a little girl standing in a doorway on the bottom left.</p>
+                    <p>The resemblance to the "Wem ghost" was uncanny. When Lear compared the two images side by side, the similarities were exact: the folds in the bonnet, the narrow sash around the waist, the position of the right hand and thumb, even the flow of the dress. Every detail matched. The girl in the fire was not Jane Churm's ghost. She was a living girl from 1922, captured on a postcard and somehow transposed into a photograph of a 1995 fire.</p>
+                    <p>The discovery exposed the photograph as almost certainly a hoax—though Tony O'Rahilly had died five years earlier, unable to confirm or deny his role. The postcard remains the most compelling evidence against the paranormal explanation, a smoking gun that transformed the Wem ghost from a mystery into a cautionary tale about the power of belief and the ease with which a single image can deceive millions.</p>
+                `,
+                'dr-harrison': `
+                    <img src="https://static01.nyt.com/images/2024/06/14/multimedia/10WHITE-01-mgzt-print1/10WHITE-01-mgzt-mediumSquareAt3X.jpg" 
+                         class="modal-image" 
+                         alt="Dr Vernon Harrison Royal Photographic Society president photographic expert Wem ghost analysis negative examination">
+                    <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 3px; color: var(--bone);">Dr. Vernon Harrison — The Examiner</h2>
+                    <p>Dr. Vernon Harrison was a man caught between two worlds. As a former president of the Royal Photographic Society, he possessed impeccable technical credentials. As a psychical researcher and member of ASSAP, he maintained an open mind toward the paranormal. When Tony O'Rahilly's photograph landed on his desk, Harrison approached it with the precision of a scientist and the curiosity of a ghost hunter.</p>
+                    <p>His examination was thorough. He studied both the print and the original negative, searching for the telltale signs of manipulation: double exposures, retouching, paste marks. He found none. "The negative is a straightforward piece of black-and-white work and shows no sign of having been tampered with," he declared. This finding gave believers hope—the image was genuine, at least in a technical sense.</p>
+                    <p>But Harrison was not convinced he was looking at a ghost. A skeptic at heart, he suggested that the figure might simply be burning debris that, by chance, had arranged itself into the shape of a little girl—a classic case of pareidolia, the human tendency to see faces and figures in random patterns. His analysis was both a validation and a dismissal, leaving the mystery intact while providing ammunition for both sides of the debate. Harrison's dual conclusion—that the photograph was technically authentic but probably not paranormal—epitomizes the ambiguity that has defined the Wem ghost for decades.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+    </script>
+
+</body>
+</html>

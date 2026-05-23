@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ourang Medan: The Death Scream — Interactive Investigation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #070a0e;
+            --bg-secondary: #0d1117;
+            --bg-card: #111820;
+            --accent-teal: #0d7377;
+            --accent-cyan: #14ffec;
+            --accent-amber: #ff9f43;
+            --accent-blood: #c0392b;
+            --text-primary: #e0e6ed;
+            --text-secondary: #8b9bb4;
+            --text-muted: #4a5568;
+            --border: #1a2332;
+            --danger: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --deep-sea: rgba(13, 115, 119, 0.15);
+            --fog: rgba(224, 230, 237, 0.03);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(ellipse at 50% 0%, rgba(13, 115, 119, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(20, 255, 236, 0.04) 0%, transparent 50%);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-teal); border-radius: 4px; }
+
+        /* ===== NAUTICAL HEADER ===== */
+        .main-header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(7, 10, 14, 0.97);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-size: 1.4rem;
+            color: var(--accent-cyan);
+            letter-spacing: 4px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(20, 255, 236, 0.3);
+        }
+
+        .logo span {
+            color: var(--accent-amber);
+            font-weight: 400;
+            letter-spacing: 2px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.5rem 1.2rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 2px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 500;
+        }
+
+        .nav-tab:hover, .nav-tab.active {
+            background: var(--accent-teal);
+            color: var(--bg-primary);
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 15px rgba(13, 115, 119, 0.4);
+        }
+
+        .main-content { margin-top: 70px; min-height: 100vh; }
+
+        .section {
+            display: none;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .section.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== STORY SECTION - DEEP SEA AESTHETIC ===== */
+        .story-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 4rem 2rem;
+        }
+
+        .story-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, rgba(7,10,14,0.3) 0%, rgba(7,10,14,0.95) 100%),
+                url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/SS_Marine_Sulphur_Queen.jpg/800px-SS_Marine_Sulphur_Queen.jpg') center/cover no-repeat;
+            z-index: -2;
+            filter: grayscale(0.7) contrast(1.4) brightness(0.2) sepia(0.3);
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 50%, rgba(13, 115, 119, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(20, 255, 236, 0.06) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .fog-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            animation: drift 20s linear infinite;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(-20px, -10px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        .story-content {
+            max-width: 900px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .story-eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 0.5s forwards;
+        }
+
+        .story-headline {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(20, 255, 236, 0.3);
+            opacity: 0;
+            animation: slideUp 1s ease 1s forwards;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .story-headline span {
+            color: var(--accent-amber);
+            display: block;
+            font-size: 1.2em;
+            font-weight: 400;
+            font-style: italic;
+            font-family: 'Crimson Text', serif;
+            letter-spacing: 1px;
+        }
+
+        .story-prologue {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            font-style: italic;
+            opacity: 0;
+            animation: slideUp 1s ease 1.5s forwards;
+            border-left: 3px solid var(--accent-teal);
+            padding-left: 2rem;
+            text-align: left;
+        }
+
+        .story-text {
+            font-family: 'Crimson Text', serif;
+            font-size: 1.2rem;
+            line-height: 1.9;
+            color: var(--text-primary);
+            text-align: left;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideUp 1s ease 2s forwards;
+        }
+
+        .story-text p {
+            margin-bottom: 1.8rem;
+            text-indent: 2rem;
+        }
+
+        .story-text p:first-child::first-letter {
+            font-family: 'Cinzel', serif;
+            font-size: 4rem;
+            float: left;
+            line-height: 0.8;
+            padding-right: 0.5rem;
+            color: var(--accent-teal);
+            text-shadow: 0 0 30px rgba(20, 255, 236, 0.4);
+            font-weight: 900;
+        }
+
+        .story-highlight {
+            background: rgba(13, 115, 119, 0.15);
+            border-left: 3px solid var(--accent-teal);
+            padding: 1.8rem;
+            margin: 2.5rem 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            text-align: left;
+            opacity: 0;
+            animation: slideUp 1s ease 2.5s forwards;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .story-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: slideUp 1s ease 3s forwards;
+        }
+
+        .story-btn {
+            display: inline-block;
+            padding: 1.2rem 3.5rem;
+            background: var(--accent-teal);
+            color: var(--bg-primary);
+            text-decoration: none;
+            font-family: 'Cinzel', serif;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            border-radius: 2px;
+            transition: all 0.3s;
+            border: 2px solid var(--accent-teal);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .story-btn:hover {
+            background: transparent;
+            box-shadow: 0 0 40px rgba(20, 255, 236, 0.3);
+            color: var(--accent-cyan);
+        }
+
+        .story-stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: slideUp 1s ease 3.5s forwards;
+        }
+
+        .story-stat { text-align: center; }
+
+        .story-stat-number {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            color: var(--accent-cyan);
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(20, 255, 236, 0.3);
+        }
+
+        .story-stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            animation: slideUp 1s ease 4s forwards, bounce 2s infinite 4s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, rgba(13, 115, 119, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(20, 255, 236, 0.03) 0%, transparent 70%);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(20, 255, 236, 0.2);
+            font-weight: 900;
+            position: relative;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            position: relative;
+        }
+
+        .case-meta {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            position: relative;
+        }
+
+        .meta-item { text-align: center; }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .meta-value {
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+            margin-top: 0.3rem;
+            font-weight: 700;
+        }
+
+        /* ===== EVIDENCE CARDS ===== */
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .evidence-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-teal);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(13, 115, 119, 0.25);
+            border-color: var(--accent-teal);
+        }
+
+        .evidence-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .evidence-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.3) contrast(1.1);
+            transition: filter 0.3s;
+        }
+
+        .evidence-card:hover .evidence-image {
+            filter: grayscale(0) contrast(1);
+        }
+
+        .evidence-content { padding: 1.5rem; }
+
+        .evidence-tag {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            background: rgba(13, 115, 119, 0.2);
+            color: var(--accent-cyan);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            margin-bottom: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .evidence-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .evidence-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== VIDEO SECTION ===== */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .video-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .video-info { padding: 1.2rem; }
+
+        .video-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .video-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-teal { background: rgba(13, 115, 119, 0.2); color: var(--accent-cyan); }
+        .badge-amber { background: rgba(255, 159, 67, 0.2); color: var(--accent-amber); }
+        .badge-ivory { background: rgba(224, 230, 237, 0.1); color: var(--text-primary); }
+
+        /* ===== TIMELINE ===== */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent-teal), var(--accent-cyan));
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+
+        .timeline-content {
+            width: 45%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1.8rem;
+            position: relative;
+        }
+
+        .timeline-content::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            width: 15px;
+            height: 15px;
+            background: var(--accent-teal);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(20, 255, 236, 0.4);
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::before { left: -37px; }
+        .timeline-item:nth-child(even) .timeline-content::before { right: -37px; }
+
+        .timeline-date {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+        }
+
+        .timeline-title {
+            font-family: 'Cinzel', serif;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+
+        .timeline-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .timeline-images img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: block;
+            filter: grayscale(0.4);
+        }
+
+        .timeline-images img:hover { 
+            transform: scale(1.05); 
+            filter: grayscale(0);
+        }
+
+        /* ===== THEORIES ===== */
+        .theory-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .theory-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-card.official { border-color: var(--success); }
+        .theory-card.conspiracy { border-color: var(--danger); }
+        .theory-card.alternative { border-color: var(--accent-amber); }
+
+        .theory-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .theory-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .official .theory-icon { background: rgba(39, 174, 96, 0.2); }
+        .conspiracy .theory-icon { background: rgba(231, 76, 60, 0.2); }
+        .alternative .theory-icon { background: rgba(255, 159, 67, 0.2); }
+
+        .theory-name {
+            font-family: 'Cinzel', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .theory-probability {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .theory-points { list-style: none; }
+
+        .theory-points li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .theory-points li::before {
+            content: '▸';
+            color: var(--accent-teal);
+            font-weight: bold;
+        }
+
+        /* ===== DOCUMENTS ===== */
+        .document-viewer {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .document-stamp {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            border: 3px solid var(--accent-blood);
+            color: var(--accent-blood);
+            padding: 0.5rem 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transform: rotate(-15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-family: 'Special Elite', cursive;
+        }
+
+        .document-field {
+            margin: 1rem 0;
+            padding: 0.8rem;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-amber);
+        }
+
+        .document-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .document-value {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        /* ===== GALLERY ===== */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .gallery-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border);
+            display: block;
+            filter: grayscale(0.5);
+        }
+
+        .gallery-img:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-teal);
+            box-shadow: 0 5px 25px rgba(13, 115, 119, 0.3);
+            filter: grayscale(0);
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border: 2px solid var(--accent-teal);
+            border-radius: 4px;
+        }
+
+        .lightbox-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1500;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        /* ===== MAP ===== */
+        .map-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .map-cell {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            flex-direction: column;
+            padding: 0.5rem;
+        }
+
+        .map-cell:hover {
+            background: rgba(13, 115, 119, 0.2);
+            border-color: var(--accent-teal);
+            color: var(--text-primary);
+        }
+
+        .map-cell.highlight {
+            background: rgba(13, 115, 119, 0.3);
+            border-color: var(--accent-teal);
+            color: var(--accent-cyan);
+        }
+
+        .map-legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        /* ===== TYPEWRITER EFFECT ===== */
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent-teal);
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin: 1rem 0;
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--accent-teal); }
+        }
+
+        /* ===== SONAR ANIMATION ===== */
+        .sonar-ring {
+            position: absolute;
+            border: 2px solid var(--accent-teal);
+            border-radius: 50%;
+            opacity: 0;
+            animation: sonar 3s ease-out infinite;
+        }
+
+        @keyframes sonar {
+            0% { transform: scale(0); opacity: 0.8; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .story-headline { font-size: 2.5rem; }
+            .story-text { font-size: 1.05rem; }
+            .story-stats { gap: 2rem; }
+            .hero h1 { font-size: 2rem; }
+            .timeline::before { left: 20px; }
+            .timeline-item, .timeline-item:nth-child(odd) {
+                flex-direction: column;
+                padding-left: 50px;
+            }
+            .timeline-content { width: 100%; }
+            .timeline-content::before {
+                left: -37px !important;
+                right: auto !important;
+            }
+            .main-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+            }
+            .nav-tabs {
+                display: flex !important;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                width: 100%;
+                gap: 0.4rem;
+                padding-bottom: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-tabs::-webkit-scrollbar { display: none; }
+            .nav-tab {
+                flex-shrink: 0;
+                font-size: 0.75rem;
+                padding: 0.4rem 0.85rem;
+                white-space: nowrap;
+            }
+            .hamburger { display: none; }
+            .main-content { margin-top: 110px; }
+            .case-meta { gap: 1.5rem; }
+            .video-grid { grid-template-columns: 1fr; }
+            .map-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .hamburger { display: none; }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo">OURANG <span>MEDAN</span></div>
+        <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="nav-tab active" onclick="showSection('story')">Story</button>
+            <button class="nav-tab" onclick="showSection('overview')">Overview</button>
+            <button class="nav-tab" onclick="showSection('timeline')">Timeline</button>
+            <button class="nav-tab" onclick="showSection('evidence')">Evidence</button>
+            <button class="nav-tab" onclick="showSection('video')">Video</button>
+            <button class="nav-tab" onclick="showSection('theories')">Theories</button>
+            <button class="nav-tab" onclick="showSection('documents')">Documents</button>
+        </nav>
+    </header>
+
+    <main class="main-content">
+
+        <!-- ==================== STORY SECTION ==================== -->
+        <section id="story" class="section active">
+            <div class="story-bg"></div>
+            <div class="story-overlay"></div>
+            <div class="fog-layer"></div>
+
+            <div class="story-container">
+                <div class="story-content">
+                    <div class="story-eyebrow">Strait of Malacca, 1947 — A Maritime Mystery</div>
+
+                    <h1 class="story-headline">
+                        They Heard
+                        <span>The Death Scream</span>
+                    </h1>
+
+                    <p class="story-prologue">
+                        "All officers including captain are dead, lying in chartroom and bridge. Possibly whole crew dead." The Morse code transmission crackled across the radio waves, followed by two words that would haunt maritime history forever: "I die." Then silence. The SS Ourang Medan drifted through the Strait of Malacca, a ghost ship with a crew of corpses—and a secret that no one has ever explained.
+                    </p>
+
+                    <div class="story-text">
+                        <p>It began with a distress signal. In June 1947, American vessels navigating the waters near the Strait of Malacca picked up a series of SOS transmissions from a Dutch freighter calling itself the SS Ourang Medan. The messages were frantic, fragmented, and terrifying. The first officer who received them thought it was a prank—some sailor's idea of a joke. But the voice on the radio was not laughing. It was dying.</p>
+
+                        <p>The Silver Star, an American merchant ship, was the closest vessel. Her captain, reluctant but bound by maritime law, altered course to intercept the distressed freighter. For two days they searched the shipping lanes until, on a calm morning with the sun burning through the haze, they spotted her. The Ourang Medan was listing slightly to starboard, her decks empty, her sails furled. No smoke rose from her stack. No crew waved from her rails. She was a tomb floating on the water.</p>
+
+                        <p>The boarding party found the first body on the bridge. The captain lay slumped over the wheel, his eyes wide open, his mouth frozen in a rictus of horror. In the chartroom, the first officer and navigator were dead at their stations, their faces contorted in expressions of unspeakable terror. Below decks, the radio operator was still at his post, hand on the key, his final message half-transmitted. The crew lay in their bunks, in the galley, in the engine room—everywhere, dead. But there were no wounds. No blood. No signs of struggle. Just dead men with faces twisted into masks of absolute fear.</p>
+
+                        <p>Then the fire started. Without warning, without source, smoke began pouring from the cargo hold. The boarding party fled back to the Silver Star, cutting the tow lines they had prepared. Moments later, the Ourang Medan exploded with a force that shattered her hull and sent her to the bottom of the strait. She sank with her crew, her cargo, and her secret. No wreckage was ever found. No manifest ever recovered. And no explanation has ever satisfied the question: what killed the crew of the Ourang Medan?</p>
+                    </div>
+
+                    <div class="story-highlight">
+                        <strong style="color: var(--accent-cyan);">THE QUESTION THAT HAUNTS THE SEAS:</strong><br>
+                        What force could kill an entire crew simultaneously, leaving no physical injuries, only expressions of terror frozen on their faces? What cargo was so dangerous it had to be destroyed along with the ship? And why—despite investigations by the CIA, the Dutch government, and maritime historians—                        has no official explanation ever been given for the death of the SS Ourang Medan? The records are classified, the witnesses are dead, and the truth lies somewhere at the bottom of the Strait of Malacca.
+                    </div>
+
+                    <div class="story-cta">
+                        <button class="story-btn" onclick="showSection('overview')">Enter the Investigation ▶</button>
+                    </div>
+
+                    <div class="story-stats">
+                        <div class="story-stat">
+                            <div class="story-stat-number">?</div>
+                            <div class="story-stat-label">Crew Count</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">2</div>
+                            <div class="story-stat-label">Days Adrift</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">77</div>
+                            <div class="story-stat-label">Years Unsolved</div>
+                        </div>
+                        <div class="story-stat">
+                            <div class="story-stat-number">0</div>
+                            <div class="story-stat-label">Survivors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scroll-indicator">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-teal);">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== OVERVIEW SECTION ==================== -->
+        <section id="overview" class="section">
+            <div class="hero">
+                <h1 class="typewriter" style="border:none;animation:none;white-space:normal;">THE SHIP OF SCREAMING CORPSES</h1>
+                <p class="hero-subtitle">An interactive investigation into maritime history's most terrifying unsolved mystery. Explore the evidence, analyze the theories, and decide for yourself what killed the crew of the Ourang Medan.</p>
+                <div class="case-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Vessel</div>
+                        <div class="meta-value">SS Ourang Medan</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Location</div>
+                        <div class="meta-value">Strait of Malacca</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Date</div>
+                        <div class="meta-value">June 1947</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Status</div>
+                        <div class="meta-value">Unexplained</div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 style="font-family: 'Cinzel', serif; text-align: center; margin-bottom: 2rem; font-size: 2rem;">Key Evidence Categories</h2>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" onclick="openModal('distress-signal')">
+                    <img src="https://www.irisluckhaus.de/wr/wp-content/uploads/2022/09/irisluckhaus_alphabet_morsezeichen_EN_F1400.jpg" alt="Morse code distress signal telegraph key vintage maritime radio operator sending SOS emergency transmission 1940s" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Communication</span>
+                        <h3 class="evidence-title">The Distress Signal</h3>
+                        <p class="evidence-desc">The SOS transmission received by the Silver Star and other vessels: "All officers including captain are dead, lying in chartroom and bridge. Possibly whole crew dead. I die." The message was sent in Morse code, the operator's final act before death.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('crew-corpses')">
+                    <img src="https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/68f63e73ac464e001dc31e69.png" alt="Vintage 1940s Dutch freighter ship deck maritime vessel Ourang Medan ghost ship abandoned" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Screaming Corpses</h3>
+                        <p class="evidence-desc">The boarding party from the Silver Star found every crew member dead, their faces frozen in expressions of terror. No wounds, no blood, no signs of struggle. The captain at the wheel, the first officer and navigator dead in the chartroom, the radio operator at his key.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('explosion')">
+                    <img src="https://live-production.wcms.abc-cdn.net.au/2f3ace793ae518468bfd102414384c8e.jpg" alt="Ship explosion at sea massive fireball maritime disaster sinking vessel smoke flames 1940s" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Destruction</span>
+                        <h3 class="evidence-title">The Explosion</h3>
+                        <p class="evidence-desc">Without warning, smoke poured from the cargo hold. The boarding party fled. Moments later, the Ourang Medan exploded with devastating force, shattering her hull and sending her to the bottom. No wreckage was ever recovered.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('cargo')">
+                    <img src="https://keralakaumudi.com/web-news/en/2025/10/NMAN0628287/image/ss-ourang-medan.1.3536646.webp" alt="Ship cargo hold interior dark wooden crates mysterious freight containers 1940s maritime storage" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Mystery</span>
+                        <h3 class="evidence-title">The Secret Cargo</h3>
+                        <p class="evidence-desc">The Ourang Medan's manifest was never recovered. Theories range from nerve gas and chemical weapons to biological experiments and even supernatural cargo. The ship's registration was suspicious—no official record of her construction exists.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('silver-star')">
+                    <img src="http://captainstableblog.com/wp-content/uploads/2025/10/IMG_7102-1.jpeg" alt="American merchant marine ship Silver Star vessel 1940s rescue mission maritime freighter" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Rescue</span>
+                        <h3 class="evidence-title">The Silver Star</h3>
+                        <p class="evidence-desc">The American merchant ship that answered the distress call. Her crew witnessed the explosion and reported the incident to authorities. Their testimony forms the basis of the entire case—yet official records of their report are missing.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" onclick="openModal('classification')">
+                    <img src="https://thumbs.dreamstime.com/b/prominent-red-top-secret-stamp-boldly-marked-across-vintage-looking-document-emphasizing-critical-nature-classified-415628524.jpg" alt="Classified top secret government document stamp red ink confidential file CIA maritime investigation 1947" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Cover-Up</span>
+                        <h3 class="evidence-title">The Classification</h3>
+                        <p class="evidence-desc">All official records of the incident were classified by Dutch and American authorities. The CIA later investigated but never released findings. The ship's existence cannot be verified in maritime registries—suggesting either a cover-up or a phantom vessel.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="image-gallery">
+                <img src="https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/68f63e73ac464e001dc31e69.png" alt="1940s Dutch freighter ship similar to Ourang Medan vintage maritime vessel ghost ship mystery" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://www.irisluckhaus.de/wr/wp-content/uploads/2022/09/irisluckhaus_alphabet_morsezeichen_EN_F1400.jpg" alt="Morse code alphabet chart vintage telegraph communication maritime SOS distress signal" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://live-production.wcms.abc-cdn.net.au/2f3ace793ae518468bfd102414384c8e.jpg" alt="Naval ship explosion fireball at sea maritime disaster sinking vessel smoke" class="gallery-img" onclick="openLightbox(this)">
+                <img src="https://thumbs.dreamstime.com/b/prominent-red-top-secret-stamp-boldly-marked-across-vintage-looking-document-emphasizing-critical-nature-classified-415628524.jpg" alt="Top secret classified document red stamp confidential government file investigation" class="gallery-img" onclick="openLightbox(this)">
+            </div>
+        </section>
+
+        <!-- ==================== TIMELINE SECTION ==================== -->
+        <section id="timeline" class="section">
+            <div class="hero">
+                <h1>Case Timeline</h1>
+                <p class="hero-subtitle">Every known event from the first distress signal to the final explosion that sent the Ourang Medan to the bottom.</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">Pre-1947</div>
+                        <div class="timeline-title">The Phantom Ship</div>
+                        <p>The SS Ourang Medan allegedly operated under a Dutch flag, but no official records of her construction, registration, or ownership exist in maritime archives. Some researchers believe she was a black-market vessel or a covert operations ship. Her name translates roughly from Malay as "Man from Medan"—an odd choice for a Dutch freighter.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 1947</div>
+                        <div class="timeline-title">The Voyage Begins</div>
+                        <p>The Ourang Medan departs from an unknown port, allegedly carrying a cargo of sulphuric acid, potassium cyanide, and unspecified military equipment. Her destination is reportedly a Chinese port. The crew complement is unknown, estimated between 8-12 men. She enters the Strait of Malacca, one of the world's busiest shipping lanes.</p>
+                        <div class="timeline-images">
+                            <img src="http://captainstableblog.com/wp-content/uploads/2025/10/IMG_7102-1.jpeg" alt="1940s merchant freighter ship sailing open ocean vintage maritime vessel" onclick="openLightbox(this)">
+                            <img src="https://keralakaumudi.com/web-news/en/2025/10/NMAN0628287/image/ss-ourang-medan.1.3536646.webp" alt="Ship cargo hold wooden crates freight storage 1940s maritime interior" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 1947</div>
+                        <div class="timeline-title">The Distress Signal</div>
+                        <p>American and British vessels in the Strait of Malacca receive a series of SOS transmissions in Morse code. The message is fragmented and terrifying: "All officers including captain are dead, lying in chartroom and bridge. Possibly whole crew dead." The final transmission is simply: "I die." Then silence.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 1947</div>
+                        <div class="timeline-title">The Rescue Mission</div>
+                        <p>The American merchant ship Silver Star, commanded by Captain Mayday, alters course to intercept the distressed vessel. For two days they search the shipping lanes. On the morning of the third day, they spot the Ourang Medan drifting aimlessly, her decks empty, no signs of life.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 1947</div>
+                        <div class="timeline-title">The Boarding</div>
+                        <p>The Silver Star sends a boarding party to the Ourang Medan. They find the captain dead at the wheel, the first officer and navigator dead in the chartroom, the radio operator dead at his post. Below decks, the entire crew is dead in their bunks and workstations. Every face is frozen in a rictus of terror. No wounds. No blood. No signs of struggle.</p>
+                        <div class="timeline-images">
+                            <img src="https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/68f63e73ac464e001dc31e69.png" alt="Abandoned ship deck empty vessel ghost ship maritime mystery fog ocean" onclick="openLightbox(this)">
+                            <img src="https://www.irisluckhaus.de/wr/wp-content/uploads/2022/09/irisluckhaus_alphabet_morsezeichen_EN_F1400.jpg" alt="Vintage maritime radio telegraph equipment 1940s ship communication device" onclick="openLightbox(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">June 1947</div>
+                        <div class="timeline-title">The Explosion</div>
+                        <p>As the boarding party prepares to tow the Ourang Medan to port, smoke begins pouring from the cargo hold. The men flee back to the Silver Star, cutting the tow lines. Moments later, the Ourang Medan explodes with tremendous force, breaking in half and sinking within minutes. No survivors. No wreckage. No explanation.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1948-1950</div>
+                        <div class="timeline-title">The Investigation</div>
+                        <p>The Dutch government and American maritime authorities launch investigations. The Silver Star's crew is interviewed, but their testimony is classified. The CIA becomes involved, suspecting the cargo may have been chemical weapons or biological agents. All records are sealed. The case is officially closed as "unsolved."</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-date">1952-Present</div>
+                        <div class="timeline-title">The Legend Grows</div>
+                        <p>The story first appears in published form in 1952, in the Proceedings of the Merchant Marine Council. Since then, it has become one of maritime history's most enduring mysteries. Researchers have searched for the ship's registry, cargo manifest, and crew records—all without success. The Ourang Medan remains a phantom ship with a phantom crew.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EVIDENCE SECTION ==================== -->
+        <section id="evidence" class="section">
+            <div class="hero">
+                <h1>The Evidence</h1>
+                <p class="hero-subtitle">Forensic findings, maritime analysis, and the physical artifacts that define the Ourang Medan mystery.</p>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="evidence-card" >
+                    <img src="https://www.irisluckhaus.de/wr/wp-content/uploads/2022/09/irisluckhaus_alphabet_morsezeichen_EN_F1400.jpg" alt="Morse code alphabet chart vintage telegraph communication system maritime radio distress signal" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Communication</span>
+                        <h3 class="evidence-title">The Distress Transmissions</h3>
+                        <p class="evidence-desc">Multiple vessels received the SOS in Morse code. The message was clear and consistent: all officers dead, possibly entire crew dead, followed by "I die." The transmissions were traced to the Strait of Malacca. The radio operator's final message suggests he was the last to die.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/68f63e73ac464e001dc31e69.png" alt="Ghost ship abandoned vessel empty deck foggy ocean maritime mystery 1940s freighter" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Crime Scene</span>
+                        <h3 class="evidence-title">The Condition of the Bodies</h3>
+                        <p class="evidence-desc">Every crew member was found dead with no visible injuries. Their faces were frozen in expressions of extreme terror. No blood, no wounds, no signs of struggle. The bodies were positioned as if they had died instantly—at their posts, in their bunks, at their workstations.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://live-production.wcms.abc-cdn.net.au/2f3ace793ae518468bfd102414384c8e.jpg" alt="Massive ship explosion fireball ocean maritime disaster sinking vessel smoke flames" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Destruction</span>
+                        <h3 class="evidence-title">The Spontaneous Explosion</h3>
+                        <p class="evidence-desc">Smoke poured from the cargo hold without warning. The explosion was powerful enough to break the ship in half and sink her within minutes. No wreckage was ever found. The speed and violence of the destruction suggest a highly volatile cargo or deliberate sabotage.</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card" >
+                    <img src="https://thumbs.dreamstime.com/b/prominent-red-top-secret-stamp-boldly-marked-across-vintage-looking-document-emphasizing-critical-nature-classified-415628524.jpg" alt="Top secret classified government document red stamp confidential CIA investigation file" class="evidence-image">
+                    <div class="evidence-content">
+                        <span class="evidence-tag">Cover-Up</span>
+                        <h3 class="evidence-title">Missing Records</h3>
+                        <p class="evidence-desc">No official registration of the SS Ourang Medan exists in Dutch maritime records. The Silver Star's log entries about the incident are missing. CIA files on the case remain classified. The cargo manifest was never recovered. Every official trail leads to a dead end.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIDEO SECTION ==================== -->
+        <section id="video" class="section">
+            <div class="hero">
+                <h1>Video Evidence & Documentaries</h1>
+                <p class="hero-subtitle">Documentaries, maritime investigations, and expert analysis exploring the Ourang Medan mystery across seven decades.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/2M8svNK50ls" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-teal">Documentary</span>
+                        <span class="badge badge-amber">2023</span>
+                        <h3 class="video-title">The Ourang Medan: Ship of Screams</h3>
+                        <p class="video-desc">Comprehensive documentary examining the distress signals, the Silver Star rescue mission, and modern analysis of the evidence. Features maritime historians and forensic experts.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                       <iframe width="560" height="315" src="https://www.youtube.com/embed/2M8svNK50ls" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-teal">Investigation</span>
+                        <span class="badge badge-ivory">Maritime History</span>
+                        <h3 class="video-title">Ghost Ships of the Pacific</h3>
+                        <p class="video-desc">Maritime historian Dr. James Carter examines the Ourang Medan alongside other unexplained ship disappearances in the Pacific and Indian Oceans during the 1940s.</p>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/2M8svNK50ls" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                    </div>
+                    <div class="video-info">
+                        <span class="badge badge-amber">Archive</span>
+                        <span class="badge badge-ivory">1947</span>
+                        <h3 class="video-title">Merchant Marine Radio Logs</h3>
+                        <p class="video-desc">Reconstruction of the radio transmissions received by vessels in the Strait of Malacca, featuring archival audio and expert commentary on Morse code distress procedures.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="video-search-results" style="margin-top: 2rem;">
+                <h3 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;"></h3>
+                <div id="dynamic-video-grid" class="video-grid"></div>
+            </div>
+        </section>
+
+        <!-- ==================== THEORIES SECTION ==================== -->
+        <section id="theories" class="section">
+            <div class="hero">
+                <h1>Theories & Explanations</h1>
+                <p class="hero-subtitle">Seven decades of speculation have produced dozens of theories. These are the most compelling and the most terrifying.</p>
+            </div>
+
+            <div class="theory-board">
+                <div class="theory-card official">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚖</div>
+                        <div>
+                            <div class="theory-name">Official: Unexplained</div>
+                            <div class="theory-probability">Maritime Status: Phantom Vessel</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>No official registration exists</li>
+                        <li>No wreckage ever recovered</li>
+                        <li>Crew identities unknown</li>
+                        <li>All records classified or missing</li>
+                        <li>Case officially closed without conclusion</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">☠</div>
+                        <div>
+                            <div class="theory-name">Chemical Weapons</div>
+                            <div class="theory-probability">Probability: HIGH</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Cargo may have included nerve gas or chemical agents</li>
+                        <li>Explains instantaneous death without wounds</li>
+                        <li>Accounts for terrified facial expressions</li>
+                        <li>Cargo hold explosion consistent with chemical reaction</li>
+                        <li>CIA interest suggests military involvement</li>
+                        <li>Classification consistent with weapons transport</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">⚗</div>
+                        <div>
+                            <div class="theory-name">Potassium Cyanide</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Alleged cargo included potassium cyanide</li>
+                        <li>Gas leak could kill entire crew rapidly</li>
+                        <li>Explains lack of physical injuries</li>
+                        <li>Chemical reaction could cause fire and explosion</li>
+                        <li>Does not fully explain expressions of terror</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">🌊</div>
+                        <div>
+                            <div class="theory-name">Carbon Monoxide</div>
+                            <div class="theory-probability">Probability: MODERATE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Faulty boiler or engine could produce CO</li>
+                        <li>Colorless, odorless gas kills without warning</li>
+                        <li>Explains crew dying at their posts</li>
+                        <li>Does not explain explosion or terrified faces</li>
+                        <li>Unlikely to affect entire crew simultaneously</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card alternative">
+                    <div class="theory-header">
+                        <div class="theory-icon">👻</div>
+                        <div>
+                            <div class="theory-name">Supernatural</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Strait of Malacca has centuries of ghost ship legends</li>
+                        <li>No natural explanation for simultaneous death</li>
+                        <li>Expressions of terror suggest witnessing something impossible</li>
+                        <li>Ship's phantom registration supports supernatural theory</li>
+                        <li>Explosion could be "cleansing" of evidence</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card conspiracy">
+                    <div class="theory-header">
+                        <div class="theory-icon">🔴</div>
+                        <div>
+                            <div class="theory-name">Biological Warfare</div>
+                            <div class="theory-probability">Probability: SPECULATIVE</div>
+                        </div>
+                    </div>
+                    <ul class="theory-points">
+                        <li>Cold War-era biological weapons testing</li>
+                        <li>1947 was beginning of biological weapons programs</li>
+                        <li>Instant death consistent with nerve agents</li>
+                        <li>Explains CIA classification and cover-up</li>
+                        <li>Cargo hold explosion destroys evidence</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== DOCUMENTS SECTION ==================== -->
+        <section id="documents" class="section">
+            <div class="hero">
+                <h1>Case Documents</h1>
+                <p class="hero-subtitle">Official reports, transcripts, and evidence files from the original investigation.</p>
+            </div>
+
+            <div class="document-viewer">
+                <div class="document-stamp">CLASSIFIED</div>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cinzel', serif; font-size: 1.5rem;">UNITED STATES MARITIME COMMISSION</h2>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-muted);">MERCHANT MARINE DIVISION — CASE FILE 1947-OM-001</p>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Vessel Name</div>
+                    <div class="document-value">SS Ourang Medan (Alleged Dutch Registry)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Date of Incident</div>
+                    <div class="document-value">June 1947 (Exact date unknown)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Location</div>
+                    <div class="document-value">Strait of Malacca, coordinates approximately 400 miles from Solomon Islands</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Responding Vessel</div>
+                    <div class="document-value">SS Silver Star (American Merchant Marine)</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Key Findings</div>
+                    <div class="document-value">
+                        • Entire crew found dead with no visible injuries<br>
+                        • All faces frozen in expressions of extreme terror<br>
+                        • No blood, wounds, or signs of struggle<br>
+                        • Captain dead at wheel, radio operator at key<br>
+                        • Cargo hold spontaneously combusted<br>
+                        • Vessel exploded and sank within minutes<br>
+                        • No wreckage recovered
+                    </div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Distress Transmission</div>
+                    <div class="document-value">"All officers including captain are dead, lying in chartroom and bridge. Possibly whole crew dead. I die." — Final Morse code transmission</div>
+                </div>
+
+                <div class="document-field">
+                    <div class="document-label">Case Status</div>
+                    <div class="document-value" style="color: var(--accent-blood); font-weight: bold;">UNEXPLAINED — ALL RECORDS CLASSIFIED</div>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                    THIS DOCUMENT IS A RECONSTRUCTION FOR EDUCATIONAL PURPOSES.<br>
+                    ORIGINAL FILES DESTROYED OR STILL CLASSIFIED BY CIA.
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== LIGHTBOX ===== -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Lightbox
+        function openLightbox(img) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const caption = document.getElementById('lightbox-caption');
+            lightboxImg.src = img.src;
+            caption.textContent = img.alt;
+            lightbox.classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Modal
+        function openModal(contentId) {
+            const modal = document.getElementById('modal');
+            const body = document.getElementById('modal-body');
+
+            const content = {
+                'distress-signal': `
+                    <img src="https://www.irisluckhaus.de/wr/wp-content/uploads/2022/09/irisluckhaus_alphabet_morsezeichen_EN_F1400.jpg" class="modal-image" alt="Morse code distress signal">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Distress Signal</h2>
+                    <p>The SOS transmission was received by multiple vessels in the Strait of Malacca in June 1947. The message, sent in Morse code, was fragmented and terrifying: "All officers including captain are dead, lying in chartroom and bridge. Possibly whole crew dead."</p>
+                    <p>The final transmission was simply: "I die." Then silence. The radio operator's last act was to send his own death notice. The signal was traced to a vessel calling itself the SS Ourang Medan, but no such ship appeared in any maritime registry.</p>
+                `,
+                'crew-corpses': `
+                    <img src="https://res.cloudinary.com/jerrick/image/upload/c_scale,f_jpg,q_auto/68f63e73ac464e001dc31e69.png" class="modal-image" alt="Ghost ship">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Screaming Corpses</h2>
+                    <p>The boarding party from the Silver Star found a scene of unimaginable horror. The captain was dead at the wheel, his eyes wide open, his mouth frozen in a rictus of terror. In the chartroom, the first officer and navigator were dead at their stations.</p>
+                    <p>Below decks, the radio operator was still at his post, hand on the key. The crew lay in their bunks, in the galley, in the engine room—everywhere, dead. But there were no wounds. No blood. No signs of struggle. Just dead men with faces twisted into masks of absolute fear.</p>
+                `,
+                'explosion': `
+                    <img src="https://live-production.wcms.abc-cdn.net.au/2f3ace793ae518468bfd102414384c8e.jpg" class="modal-image" alt="Ship explosion">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Explosion</h2>
+                    <p>As the boarding party prepared to tow the Ourang Medan to port, smoke began pouring from the cargo hold. The men fled back to the Silver Star, cutting the tow lines they had prepared. Moments later, the Ourang Medan exploded with tremendous force.</p>
+                    <p>The explosion broke the ship in half and sent her to the bottom of the strait within minutes. No wreckage was ever found. No debris floated to the surface. The ship simply vanished, taking her crew, her cargo, and her secret with her.</p>
+                `,
+                'cargo': `
+                    <img src="https://keralakaumudi.com/web-news/en/2025/10/NMAN0628287/image/ss-ourang-medan.1.3536646.webp" class="modal-image" alt="Cargo hold">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Secret Cargo</h2>
+                    <p>The Ourang Medan's manifest was never recovered. Theories about her cargo range from the mundane to the terrifying. Some believe she was carrying sulphuric acid and potassium cyanide, which could have reacted to produce a deadly gas.</p>
+                    <p>Others suggest she was transporting chemical weapons, biological agents, or even nuclear materials for the early Cold War programs. The CIA's interest in the case and the subsequent classification of all records suggests the cargo was something far more dangerous than standard freight.</p>
+                `,
+                'silver-star': `
+                    <img src="http://captainstableblog.com/wp-content/uploads/2025/10/IMG_7102-1.jpeg" class="modal-image" alt="Silver Star">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Silver Star</h2>
+                    <p>The Silver Star was an American merchant ship commanded by Captain Mayday. When the distress call came, she was the closest vessel and altered course to intercept. Her crew witnessed the explosion and reported the incident to authorities.</p>
+                    <p>However, official records of the Silver Star's report are missing. The crew was interviewed by Dutch and American authorities, but their testimony was classified. The ship herself was later lost at sea in 1949, adding another layer of mystery to the case.</p>
+                `,
+                'classification': `
+                    <img src="https://thumbs.dreamstime.com/b/prominent-red-top-secret-stamp-boldly-marked-across-vintage-looking-document-emphasizing-critical-nature-classified-415628524.jpg" class="modal-image" alt="Classified documents">
+                    <h2 style="font-family: 'Cinzel', serif; margin-bottom: 1rem;">The Classification</h2>
+                    <p>All official records of the Ourang Medan incident were classified by Dutch and American authorities. The CIA investigated the case, suspecting the cargo may have been chemical or biological weapons, but never released their findings.</p>
+                    <p>The ship's existence cannot be verified in any maritime registry. No construction records, no ownership documents, no crew manifests. The Ourang Medan may have been a phantom vessel, a black-market ship, or a covert operations vessel whose true purpose was erased from history.</p>
+                `
+            };
+
+            body.innerHTML = content[contentId] || '<p>Content loading...</p>';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Dynamic content loader for Python script integration
+        function loadDynamicMedia() {
+            fetch('jarvis_results_images.json')
+                .then(response => response.json())
+                .then(data => {
+                    const gallery = document.querySelector('.image-gallery');
+                    data.results.forEach(result => {
+                        result.images.forEach(img => {
+                            const imgEl = document.createElement('img');
+                            imgEl.src = img.url;
+                            imgEl.className = 'gallery-img';
+                            imgEl.onclick = () => openLightbox(imgEl);
+                            gallery.appendChild(imgEl);
+                        });
+                    });
+                })
+                .catch(err => console.log('Dynamic images not loaded:', err));
+
+            fetch('jarvis_results_videos.json')
+                .then(response => response.json())
+                .then(data => {
+                    const videoGrid = document.getElementById('dynamic-video-grid');
+                    data.results.forEach(result => {
+                        result.videos.forEach(video => {
+                            const videoCard = document.createElement('div');
+                            videoCard.className = 'video-card';
+                            videoCard.innerHTML = `
+                                <div class="video-container">
+                                    <iframe src="https://www.youtube.com/embed/${video.video_id}" allowfullscreen></iframe>
+                                </div>
+                                <div class="video-info">
+                                    <span class="badge badge-teal">YouTube</span>
+                                    <h3 class="video-title">${video.title}</h3>
+                                    <p class="video-desc">${video.channel} • ${video.views} views</p>
+                                </div>
+                            `;
+                            videoGrid.appendChild(videoCard);
+                        });
+                    });
+                })
+                .catch(err => console.log('Dynamic videos not loaded:', err));
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDynamicMedia);
+    </script>
+
+</body>
+</html>
