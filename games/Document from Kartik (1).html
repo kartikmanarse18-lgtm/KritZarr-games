@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KRITZAAR — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#1A1C1E;--card:#1E2124;--card2:#222528;--mint:#00FFC2;--slate:#9BA4B0;--white:#E8ECF0;--mint-glow:rgba(0,255,194,0.28);--gold:#C9A227;--gold-glow:rgba(201,162,39,0.28);--danger:#FF4B6E;}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    html,body{height:100%;background:var(--bg);color:var(--slate);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+    /* GRID BG */
+    .grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,194,0.02)1px,transparent 1px),linear-gradient(90deg,rgba(0,255,194,0.02)1px,transparent 1px);background-size:64px 64px;z-index:0;pointer-events:none;}
+
+    /* ══ TOP BAR ══ */
+    .topbar{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(22,24,26,0.97);backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,255,194,0.08);z-index:800;display:flex;align-items:center;padding:0 24px;gap:20px;}
+    .top-logo{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;color:var(--white);letter-spacing:-1px;flex-shrink:0;}
+    .top-logo span{color:var(--mint);}
+    .top-badge{font-size:8px;letter-spacing:4px;color:rgba(0,255,194,0.5);text-transform:uppercase;background:rgba(0,255,194,0.07);border:1px solid rgba(0,255,194,0.15);padding:3px 8px;border-radius:1px;flex-shrink:0;}
+    .top-spacer{flex:1;}
+    .top-sync-status{font-size:9px;letter-spacing:3px;color:var(--slate);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+    .sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(155,164,176,0.4);}
+    .sync-dot.ok{background:var(--mint);box-shadow:0 0 8px var(--mint);}
+    .sync-dot.saving{background:var(--gold);box-shadow:0 0 8px var(--gold);animation:blink 0.8s ease-in-out infinite;}
+    .sync-dot.err{background:var(--danger);}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    .btn{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;border:1px solid;padding:8px 18px;background:none;cursor:pointer;transition:background .2s,color .2s;flex-shrink:0;}
+    .btn-mint{color:var(--mint);border-color:rgba(0,255,194,0.3);}
+    .btn-mint:hover{background:var(--mint);color:var(--bg);}
+    .btn-slate{color:var(--slate);border-color:rgba(155,164,176,0.2);}
+    .btn-slate:hover{border-color:var(--slate);color:var(--white);}
+    .btn-danger{color:var(--danger);border-color:rgba(255,75,110,0.25);}
+    .btn-danger:hover{background:var(--danger);color:#fff;}
+    .btn-gold{color:var(--gold);border-color:rgba(201,162,39,0.3);}
+    .btn-gold:hover{background:var(--gold);color:var(--bg);}
+
+    /* ══ LAYOUT ══ */
+    .layout{display:flex;height:100vh;padding-top:56px;}
+
+    /* ── LEFT SIDEBAR (tabs + new tab) ── */
+    .sidebar{width:200px;flex-shrink:0;background:#16181A;border-right:1px solid rgba(0,255,194,0.06);display:flex;flex-direction:column;position:relative;z-index:1;overflow:hidden;}
+    .sidebar-inner{flex:1;overflow-y:auto;padding:16px 0;scrollbar-width:thin;scrollbar-color:rgba(0,255,194,0.1) transparent;}
+    .sidebar-label{font-size:8px;letter-spacing:4px;color:rgba(155,164,176,0.3);text-transform:uppercase;padding:0 16px 10px;}
+    .stab{width:100%;padding:11px 16px;text-align:left;background:none;border:none;border-left:2px solid transparent;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate);cursor:pointer;transition:color .2s,border-color .2s,background .2s;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .stab:hover{color:var(--mint);background:rgba(0,255,194,0.03);}
+    .stab.active{color:var(--mint);border-left-color:var(--mint);background:rgba(0,255,194,0.05);}
+    .stab.gold-tab{color:rgba(201,162,39,0.6);}
+    .stab.gold-tab:hover{color:var(--gold);}
+    .stab.gold-tab.active{color:var(--gold);border-left-color:var(--gold);background:rgba(201,162,39,0.05);}
+    .stab-del{opacity:0;font-size:12px;color:var(--danger);line-height:1;padding:0 4px;background:none;border:none;cursor:pointer;transition:opacity .2s;}
+    .stab:hover .stab-del{opacity:1;}
+    .sidebar-footer{padding:12px;border-top:1px solid rgba(0,255,194,0.06);}
+    .add-tab-btn{width:100%;padding:10px;border:1px dashed rgba(0,255,194,0.2);background:none;color:rgba(0,255,194,0.5);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s;}
+    .add-tab-btn:hover{border-color:var(--mint);color:var(--mint);}
+
+    /* ── MAIN AREA ── */
+    .main{flex:1;overflow-y:auto;position:relative;z-index:1;scrollbar-width:thin;scrollbar-color:rgba(0,255,194,0.1) transparent;}
+    .main-inner{padding:28px 32px 60px;max-width:900px;}
+
+    /* ── SECTION HEADER ── */
+    .section-head{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid rgba(0,255,194,0.06);}
+    .section-title{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;color:var(--white);letter-spacing:3px;text-transform:uppercase;}
+    .section-subtitle{font-size:10px;letter-spacing:3px;color:var(--slate);text-transform:uppercase;}
+
+    /* ── TAB META ── */
+    .meta-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-bottom:24px;align-items:end;}
+    .field-group{display:flex;flex-direction:column;gap:6px;}
+    .field-label{font-size:8px;letter-spacing:3px;color:rgba(155,164,176,0.45);text-transform:uppercase;}
+    .field-input{background:rgba(0,0,0,0.3);border:1px solid rgba(0,255,194,0.1);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;width:100%;}
+    .field-input:focus{border-color:rgba(0,255,194,0.4);}
+    .field-input::placeholder{color:rgba(155,164,176,0.25);}
+    .gold-toggle{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid rgba(155,164,176,0.1);background:none;color:var(--slate);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;transition:border-color .2s,color .2s;white-space:nowrap;}
+    .gold-toggle.on{border-color:rgba(201,162,39,0.4);color:var(--gold);}
+    .gold-led{width:8px;height:8px;border-radius:50%;background:rgba(155,164,176,0.2);transition:background .2s,box-shadow .2s;}
+    .gold-toggle.on .gold-led{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+
+    /* ── CARDS GRID ── */
+    .cards-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:20px;}
+    .card-editor{background:var(--card);border:1px solid rgba(0,255,194,0.06);padding:16px;}
+    .card-editor-num{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:4px;color:rgba(0,255,194,0.3);margin-bottom:12px;}
+    .card-editor .field-group{margin-bottom:10px;}
+    /* Image preview */
+    .img-preview{width:100%;height:90px;object-fit:cover;display:block;margin-bottom:8px;border:1px solid rgba(0,255,194,0.06);}
+    .img-preview.hidden{display:none;}
+    .img-row{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px;}
+    .img-upload-btn{font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;color:var(--slate);background:rgba(0,0,0,0.3);border:1px solid rgba(155,164,176,0.12);padding:8px 10px;cursor:pointer;transition:border-color .2s,color .2s;white-space:nowrap;}
+    .img-upload-btn:hover{border-color:var(--slate);color:var(--white);}
+    /* Image position controls */
+    .img-pos-wrap{display:none;background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,194,0.07);padding:10px;margin-bottom:8px;}
+    .img-pos-wrap.visible{display:block;}
+    .img-pos-label{font-size:8px;letter-spacing:3px;color:rgba(0,255,194,0.4);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+    .img-pos-label span{color:rgba(155,164,176,0.35);}
+    .img-pos-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .img-pos-axis{font-size:8px;letter-spacing:2px;color:rgba(155,164,176,0.4);text-transform:uppercase;width:10px;flex-shrink:0;}
+    .img-pos-slider{flex:1;accent-color:var(--mint);cursor:pointer;height:3px;}
+    .img-pos-val{font-size:9px;font-family:monospace;color:var(--mint);width:30px;text-align:right;flex-shrink:0;}
+    .card-del-btn{width:100%;margin-top:12px;padding:7px;border:1px solid rgba(255,75,110,0.15);background:none;color:rgba(255,75,110,0.4);font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+    .card-del-btn:hover{border-color:var(--danger);color:var(--danger);}
+    /* Drag and drop */
+    .drag-handle{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:grab;user-select:none;}
+    .drag-handle:active{cursor:grabbing;}
+    .drag-handle-icon{font-size:14px;color:rgba(155,164,176,0.3);letter-spacing:2px;transition:color .2s;}
+    .drag-handle:hover .drag-handle-icon{color:var(--mint);}
+    .card-editor[draggable=true]{transition:opacity .2s,box-shadow .2s;}
+    .card-editor.drag-over{border-color:var(--mint)!important;box-shadow:0 0 0 1px var(--mint);opacity:0.7;}
+    .card-editor.dragging{opacity:0.35;}
+    .card-editor.is-game{border-color:rgba(138,43,226,0.2);}
+    .card-editor.is-game .card-editor-num{color:rgba(138,43,226,0.4);}
+    .type-toggle{display:flex;gap:0;margin-bottom:10px;}
+    .type-btn{flex:1;padding:7px;border:1px solid rgba(0,255,194,0.1);background:none;color:var(--slate);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background .2s,color .2s,border-color .2s;}
+    .type-btn.active-article{background:rgba(0,255,194,0.08);color:var(--mint);border-color:rgba(0,255,194,0.3);}
+    .type-btn.active-game{background:rgba(138,43,226,0.1);color:#A855F7;border-color:rgba(138,43,226,0.35);}
+    .game-hint{font-size:8px;letter-spacing:1.5px;color:rgba(138,43,226,0.5);line-height:1.6;margin-top:4px;}
+    .add-card-btn{border:1px dashed rgba(0,255,194,0.15);background:none;color:rgba(0,255,194,0.4);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;padding:14px;cursor:pointer;transition:border-color .2s,color .2s;width:100%;}
+    .add-card-btn:hover{border-color:var(--mint);color:var(--mint);}
+
+    /* ── SETTINGS PANEL ── */
+    .settings-panel{background:var(--card);border:1px solid rgba(0,255,194,0.06);padding:24px;margin-top:32px;}
+    .settings-title{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;color:var(--slate);text-transform:uppercase;margin-bottom:20px;}
+    .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .token-row{grid-column:1/-1;}
+    .token-note{font-size:9px;letter-spacing:1px;color:rgba(155,164,176,0.35);margin-top:5px;line-height:1.6;}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#1E2124;border:1px solid rgba(0,255,194,0.2);padding:12px 24px;font-size:10px;letter-spacing:3px;color:var(--mint);text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:3000;}
+    #toast.err{color:var(--danger);border-color:rgba(255,75,110,0.3);}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+    /* ── ADD TAB MODAL ── */
+    #tabModal{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;}
+    #tabModal.show{display:flex;}
+    .modal-box{background:#1C1D20;border:1px solid rgba(0,255,194,0.2);padding:40px;width:400px;max-width:90vw;}
+    .modal-title{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:5px;color:var(--white);text-transform:uppercase;margin-bottom:24px;}
+    .modal-field{margin-bottom:16px;}
+    .modal-actions{display:flex;gap:10px;margin-top:24px;}
+
+    /* ══ THEME STUDIO ══ */
+    .theme-stab-btn{width:100%;padding:10px;margin-bottom:8px;border:1px solid rgba(0,255,194,0.2);background:none;color:rgba(0,255,194,0.5);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+    .theme-stab-btn:hover{border-color:var(--mint);color:var(--mint);}
+    .theme-stab-btn.active{background:rgba(0,255,194,0.08);border-color:var(--mint);color:var(--mint);}
+    .theme-layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;}
+    .theme-block{background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,194,0.07);padding:18px;margin-bottom:14px;}
+    .theme-block-title{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:5px;color:var(--slate);text-transform:uppercase;margin-bottom:14px;}
+    .color-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+    .color-row-label{font-size:9px;letter-spacing:2px;color:rgba(155,164,176,0.5);text-transform:uppercase;width:86px;flex-shrink:0;}
+    .color-picker{width:34px;height:28px;padding:2px 3px;border:1px solid rgba(0,255,194,0.15);background:rgba(0,0,0,0.3);cursor:pointer;flex-shrink:0;}
+    .color-hex{flex:1;background:rgba(0,0,0,0.3);border:1px solid rgba(0,255,194,0.1);color:var(--white);font-family:monospace;font-size:12px;padding:5px 8px;outline:none;transition:border-color .2s;text-transform:uppercase;letter-spacing:1px;}
+    .color-hex:focus{border-color:rgba(0,255,194,0.35);}
+    .range-row{margin-bottom:12px;}
+    .range-row-label{font-size:9px;letter-spacing:2px;color:rgba(155,164,176,0.5);text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:7px;}
+    .range-val{color:var(--mint);}
+    .range-input{width:100%;accent-color:var(--mint);cursor:pointer;}
+    .preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+    .preset-btn{padding:10px 4px;border:1px solid rgba(155,164,176,0.1);background:none;font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:border-color .25s,color .25s,background .25s;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--slate);}
+    .preset-swatch{width:22px;height:22px;border-radius:50%;}
+    .preview-outer{position:sticky;top:16px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,255,194,0.07);padding:18px;}
+    .preview-title-row{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:5px;color:var(--slate);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+    .preview-live-badge{font-size:7px;letter-spacing:3px;color:var(--mint);background:rgba(0,255,194,0.07);border:1px solid rgba(0,255,194,0.2);padding:3px 8px;animation:blink 2s ease-in-out infinite;}
+    .preview-window{width:100%;overflow:hidden;border:1px solid rgba(0,255,194,0.08);position:relative;}
+    .preview-inner{width:900px;transform-origin:top left;}
+    .theme-save-row{display:flex;gap:10px;margin-top:4px;}
+
+    /* ── SUB-SECTION BAR (level 1) ── */
+    .subsec-bar{display:flex;align-items:center;gap:0;margin-bottom:8px;border-bottom:1px solid rgba(0,255,194,0.07);overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;}
+    .subsec-bar::-webkit-scrollbar{display:none;}
+    .ssb{position:relative;display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--slate);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:color .2s,border-color .2s;}
+    .ssb:hover{color:var(--mint);}
+    .ssb.active{color:var(--mint);border-bottom-color:var(--mint);}
+    .ssb-del{font-size:10px;color:rgba(255,75,110,0.35);background:none;border:none;cursor:pointer;padding:0 2px;opacity:0;line-height:1;transition:opacity .2s,color .2s;}
+    .ssb:hover .ssb-del{opacity:1;}
+    .ssb-del:hover{color:var(--danger)!important;}
+    .add-subsec-btn{margin-left:auto;padding:5px 12px;border:1px dashed rgba(0,255,194,0.18);background:none;color:rgba(0,255,194,0.4);font-family:'Rajdhani',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:border-color .2s,color .2s;}
+    .add-subsec-btn:hover{border-color:var(--mint);color:var(--mint);}
+    .subsec-divider{width:1px;height:20px;background:rgba(0,255,194,0.08);flex-shrink:0;align-self:center;margin:0 4px;}
+    /* ── SUB-SUB-SECTION BAR (level 2) ── */
+    .subsubsec-bar{display:flex;align-items:center;gap:0;margin-bottom:24px;padding-left:16px;border-bottom:1px solid rgba(0,255,194,0.04);border-left:2px solid rgba(0,255,194,0.15);overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;background:rgba(0,255,194,0.012);}
+    .subsubsec-bar::-webkit-scrollbar{display:none;}
+    .depth-label{font-size:7px;letter-spacing:3px;color:rgba(0,255,194,0.28);text-transform:uppercase;padding-right:10px;flex-shrink:0;align-self:center;border-right:1px solid rgba(0,255,194,0.1);margin-right:4px;}
+    .sssb{position:relative;display:inline-flex;align-items:center;gap:5px;padding:7px 12px;background:none;border:none;border-bottom:2px solid transparent;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(155,164,176,0.55);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:color .2s,border-color .2s;}
+    .sssb:hover{color:var(--mint);}
+    .sssb.active{color:var(--mint);border-bottom-color:var(--mint);}
+    .sssb-del{font-size:10px;color:rgba(255,75,110,0.35);background:none;border:none;cursor:pointer;padding:0 2px;opacity:0;line-height:1;transition:opacity .2s,color .2s;}
+    .sssb:hover .sssb-del{opacity:1;}
+    .sssb-del:hover{color:var(--danger)!important;}
+    .add-subsubsec-btn{margin-left:auto;padding:4px 10px;border:1px dashed rgba(0,255,194,0.14);background:none;color:rgba(0,255,194,0.3);font-family:'Rajdhani',sans-serif;font-size:8px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;flex-shrink:0;white-space:nowrap;transition:border-color .2s,color .2s;}
+    .add-subsubsec-btn:hover{border-color:var(--mint);color:var(--mint);}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:760px){
+      .sidebar{width:56px;overflow:hidden;}
+      .sidebar-label,.stab-del{display:none;}
+      .stab{padding:14px;justify-content:center;font-size:0;letter-spacing:0;}
+      .stab::before{content:attr(data-initial);font-size:11px;letter-spacing:1px;}
+      .sidebar-footer{padding:8px;}
+      .add-tab-btn{font-size:0;letter-spacing:0;}
+      .add-tab-btn::before{content:'+';}
+      .main-inner{padding:16px 16px 60px;}
+      .meta-row{grid-template-columns:1fr;gap:10px;}
+      .settings-grid{grid-template-columns:1fr;}
+      .token-row{grid-column:auto;}
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="top-logo">KRITZ<span>A</span>AR</div>
+    <div class="top-badge">Admin</div>
+    <div class="top-spacer"></div>
+    <div class="top-sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncMsg">Not saved</span>
+    </div>
+    <button class="btn btn-mint" id="publishBtn">↑ Publish to GitHub</button>
+    <button class="btn btn-slate" id="themeTabBtn">◈ Theme</button>
+    <button class="btn btn-slate" id="settingsBtn">Settings</button>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-label">Sections</div>
+        <div id="sidebarTabs"></div>
+      </div>
+      <div class="sidebar-footer">
+        <button class="add-tab-btn" id="addTabBtn">+ Add Section</button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="main-inner" id="mainInner">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD SECTION MODAL -->
+  <div id="tabModal">
+    <div class="modal-box">
+      <div class="modal-title">New Section</div>
+      <div class="modal-field">
+        <div class="field-label">Section ID (no spaces, lowercase)</div>
+        <input class="field-input" id="newTabId" placeholder="e.g. culture" style="width:100%;margin-top:6px">
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Display Label</div>
+        <input class="field-input" id="newTabLabel" placeholder="e.g. Culture" style="width:100%;margin-top:6px">
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Count text</div>
+        <input class="field-input" id="newTabCount" placeholder="e.g. 6 reads" style="width:100%;margin-top:6px">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-mint" id="createTabBtn">Create Section</button>
+        <button class="btn btn-slate" id="cancelTabBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script>
+    /* ════════════════════════════════════════════
+       ADMIN CONFIG — fill these in once
+    ════════════════════════════════════════════ */
+    const CFG_KEYS = { token:'krzAdminToken', user:'krzGhUser', repo:'krzGhRepo', file:'krzGhFile', imgbbKey:'krzImgbbKey' };
+    function getCfg(k){ return localStorage.getItem(CFG_KEYS[k])||''; }
+    function setCfg(k,v){ localStorage.setItem(CFG_KEYS[k],v); }
+
+    /* ════════════════════════════════════════════
+       DEFAULT FEEDS DATA (used on first load)
+    ════════════════════════════════════════════ */
+    const DEFAULT_FEEDS = {
+      stories:{label:'Stories',count:'6 stories',isGold:false,cards:[
+        {tag:'Feature',time:'14 min',title:'The Man Who Walked 4,000 Miles to Find His Purpose',url:'',image:''},
+        {tag:'Personal Essay',time:'9 min',title:'Three Years in Isolation — What I Found There',url:'',image:''},
+        {tag:'Profile',time:'11 min',title:'She Built an Empire From a Single Notebook',url:'',image:''},
+        {tag:'Fiction',time:'6 min',title:'The Night the City Forgot to Sleep',url:'',image:''},
+        {tag:'Documentary',time:'18 min',title:'Voices From the Edge: Border Stories Nobody Tells',url:'',image:''},
+        {tag:'Reflection',time:'7 min',title:'When Failure Was the Only Teacher That Mattered',url:'',image:''},
+      ]},
+      updates:{label:'Updates',count:'6 updates',isGold:false,cards:[
+        {tag:'Breaking',time:'3 min',title:'Global Markets Shift as Tech Sector Pivots Hard',url:'',image:''},
+        {tag:'Science',time:'5 min',title:'Scientists Confirm Breakthrough in Quantum Storage',url:'',image:''},
+        {tag:'Urban',time:'4 min',title:'New Framework Changes How Cities Plan Transit',url:'',image:''},
+        {tag:'Tech',time:'2 min',title:'Open Source Project Hits 100 Million Downloads',url:'',image:''},
+        {tag:'Environment',time:'4 min',title:'Ocean Cleanup Initiative Reports Record Results',url:'',image:''},
+        {tag:'Space',time:'6 min',title:'Telescope Captures First Clear Image of an Exoplanet Atmosphere',url:'',image:''},
+      ]},
+      conflict:{label:'Conflict',count:'6 reports',isGold:false,cards:[
+        {tag:'Field Report',time:'12 min',title:"Dispatches From the Front: A Journalist's Final Notes",url:'',image:''},
+        {tag:'Analysis',time:'10 min',title:'The Hidden Economics of Prolonged Conflict Zones',url:'',image:''},
+        {tag:'Humanitarian',time:'8 min',title:'How Civilians Rebuild When the Cameras Leave',url:'',image:''},
+        {tag:'Investigation',time:'14 min',title:'Mapping the Invisible: Satellite Data in War Zones',url:'',image:''},
+        {tag:'Deep Dive',time:'11 min',title:'Water as a Weapon: The New Frontline Nobody Discusses',url:'',image:''},
+        {tag:'Long Read',time:'16 min',title:'Children of the Ceasefire — A Generation in Limbo',url:'',image:''},
+      ]},
+      fun:{label:'Fun',count:'6 picks',isGold:false,cards:[
+        {tag:'Lifestyle',time:'5 min',title:'These 12 People Quit Corporate Jobs to Play Board Games for a Living',url:'',image:''},
+        {tag:'Gaming',time:'3 min',title:"The Internet's Best Hidden Game of the Year",url:'',image:''},
+        {tag:'Quirky',time:'4 min',title:'A Bakery That Only Opens When It Rains',url:'',image:''},
+        {tag:'Viral',time:'2 min',title:'Dog Breaks World Record. Dog Does Not Care.',url:'',image:''},
+        {tag:'Travel',time:'6 min',title:'How to Spend 48 Hours in a City You Initially Hated',url:'',image:''},
+        {tag:'Culture',time:'3 min',title:'The App That Makes You Laugh at 3am — Every Time',url:'',image:''},
+      ]},
+      coolstuff:{label:'Cool Stuff',count:'6 finds',isGold:false,cards:[
+        {tag:'Materials',time:'5 min',title:'This New Material Cools Itself Without a Single Watt of Electricity',url:'',image:''},
+        {tag:'Design',time:'7 min',title:'The Designer Who Makes Museum-Grade Furniture From Compressed Air',url:'',image:''},
+        {tag:'Architecture',time:'8 min',title:'Zero-Waste Studio Built Entirely From Reclaimed Found Objects',url:'',image:''},
+        {tag:'Photography',time:'4 min',title:'A Camera That Shoots in Near-Total Darkness — No Flash Needed',url:'',image:''},
+        {tag:'Gadgets',time:'3 min',title:'The Keyboard That Adapts Its Layout to Your Current Mood',url:'',image:''},
+        {tag:'Wearables',time:'6 min',title:'Solar Fabric: Clothes That Quietly Charge Your Phone as You Walk',url:'',image:''},
+      ]},
+      ai:{label:'AI',count:'6 reads',isGold:false,cards:[
+        {tag:'Development',time:'8 min',title:'LLMs Now Write Code That Autonomously Fixes Itself in Production',url:'',image:''},
+        {tag:'Safety',time:'10 min',title:"The Model That Learned to Refuse — And Why That's Complicated",url:'',image:''},
+        {tag:'Science',time:'7 min',title:'How AI Is Reading the Ocean Floor for the First Time in History',url:'',image:''},
+        {tag:'Analysis',time:'12 min',title:'Open Source vs Closed AI: The War That Shapes Your Future',url:'',image:''},
+        {tag:'Healthcare',time:'9 min',title:"Your Next Therapist May Not Be Human — and That's the Point",url:'',image:''},
+        {tag:'Critique',time:'6 min',title:'The Benchmark Problem: Why AI Scores Mean Absolutely Nothing',url:'',image:''},
+      ]},
+      interesting:{label:'Interesting',count:'6 discoveries',isGold:false,cards:[
+        {tag:'Discovery',time:'2 min',title:'This Site Lets You Hear Every Radio Station Simultaneously, Live',url:'',image:''},
+        {tag:'Linguistics',time:'4 min',title:'An Interactive Map of Every Language Ever Spoken on Earth',url:'',image:''},
+        {tag:'Internet History',time:'6 min',title:'The Website Built by One Person Over 22 Continuous Years',url:'',image:''},
+        {tag:'Creative Tool',time:'3 min',title:'Type Anything. Watch It Become a Song. (No Sign-up Required)',url:'',image:''},
+        {tag:'Tracking',time:'2 min',title:'Real-Time Satellite View of Every Single Ship on Earth Right Now',url:'',image:''},
+        {tag:'Speculative',time:'5 min',title:"A Wiki Entirely Dedicated to Things That Don't Exist Yet",url:'',image:''},
+      ]},
+      political:{label:'Political',count:'6 articles',isGold:true,cards:[
+        {tag:'Policy',time:'9 min',title:'Policy Shifts in Global Trade Agreements: A Full Breakdown',url:'',image:''},
+        {tag:'Analysis',time:'11 min',title:'The Widening Funding Gap in Democratic Infrastructure',url:'',image:''},
+        {tag:'Elections',time:'8 min',title:'Voting Systems Under Scrutiny Across Four Major Nations',url:'',image:''},
+        {tag:'Transparency',time:'12 min',title:'Lobbying Data Released: Who Pays for Which Policy, Exactly',url:'',image:''},
+        {tag:'Economy',time:'7 min',title:'Central Bank Decisions and Their Immediate Political Fallout',url:'',image:''},
+        {tag:'International',time:'14 min',title:'The Quiet Reshaping of International Law Few Are Watching',url:'',image:''},
+      ]},
+    };
+
+    /* ════════════════════════════════════════════
+       STATE
+    ════════════════════════════════════════════ */
+    let FEEDS = JSON.parse(JSON.stringify(DEFAULT_FEEDS));
+    let activeTab = Object.keys(FEEDS)[0];
+    let activeSubTabs = {};    // section id → active sub-section id (null = main section)
+    let activeSubSubTabs = {}; // "sectionId/subId" → active sub-sub-section id (null = sub-section main)
+    let settingsOpen = false;
+    let themeOpen = false;
+    let dirty = false;
+    let githubSynced = false;
+
+    /* ════════════════════════════════════════════
+       ACTIVE ENTITY — resolves to the deepest active level (main / sub / sub-sub)
+    ════════════════════════════════════════════ */
+    function getActiveEntity() {
+      const sub = activeSubTabs[activeTab];
+      if (!sub || !FEEDS[activeTab]?.subsections?.[sub]) return FEEDS[activeTab];
+      const subObj = FEEDS[activeTab].subsections[sub];
+      const subsub = activeSubSubTabs[activeTab + '/' + sub];
+      if (subsub && subObj?.subsections?.[subsub]) return subObj.subsections[subsub];
+      return subObj;
+    }
+    function isEditingSubSection() {
+      const sub = activeSubTabs[activeTab];
+      return !!(sub && FEEDS[activeTab]?.subsections?.[sub]);
+    }
+    function isEditingSubSubSection() {
+      const sub = activeSubTabs[activeTab];
+      if (!sub || !FEEDS[activeTab]?.subsections?.[sub]) return false;
+      const subsub = activeSubSubTabs[activeTab + '/' + sub];
+      return !!(subsub && FEEDS[activeTab].subsections[sub]?.subsections?.[subsub]);
+    }
+
+    /* ════════════════════════════════════════════
+       TOAST
+    ════════════════════════════════════════════ */
+    function resetMainInner() {
+      const m = document.getElementById('mainInner');
+      if (!m) return;
+      m.style.maxWidth = '900px';
+      m.style.padding = '28px 32px 60px';
+    }
+
+    function toast(msg, isErr=false) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'show' + (isErr?' err':'');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.className = (isErr?'err':''), 2600);
+    }
+
+    /* ════════════════════════════════════════════
+       SYNC STATUS
+    ════════════════════════════════════════════ */
+    function setSyncStatus(state, msg) {
+      const dot = document.getElementById('syncDot');
+      const lbl = document.getElementById('syncMsg');
+      dot.className = 'sync-dot' + (state?' '+state:'');
+      lbl.textContent = msg;
+    }
+
+    /* ════════════════════════════════════════════
+       SIDEBAR RENDER
+    ════════════════════════════════════════════ */
+    function renderSidebar() {
+      const container = document.getElementById('sidebarTabs');
+      container.innerHTML = '';
+      Object.keys(FEEDS).forEach(id => {
+        const f = FEEDS[id];
+        const btn = document.createElement('button');
+        btn.className = 'stab' + (f.isGold?' gold-tab':'') + (id===activeTab?' active':'');
+        btn.dataset.tab = id;
+        btn.dataset.initial = (f.label||id)[0].toUpperCase();
+        btn.innerHTML = `<span>${f.label||id}</span><button class="stab-del" title="Delete section" onclick="event.stopPropagation();deleteTab('${id}')">✕</button>`;
+        btn.addEventListener('click', () => setActiveTab(id));
+        container.appendChild(btn);
+      });
+    }
+
+    function setActiveTab(id) {
+      activeTab = id;
+      themeOpen = false;
+      settingsOpen = false;
+      document.getElementById('themeTabBtn').textContent = '◈ Theme';
+      document.getElementById('settingsBtn').textContent = 'Settings';
+      resetMainInner();
+      renderSidebar();
+      renderMain();
+    }
+
+    /* ════════════════════════════════════════════
+       MAIN AREA RENDER
+    ════════════════════════════════════════════ */
+    function renderMain() {
+      if (themeOpen) { renderTheme(); return; }
+      if (settingsOpen) { renderSettings(); return; }
+      const f = FEEDS[activeTab];
+      if (!f) return;
+      const entity = getActiveEntity();
+      const inSub = isEditingSubSection();
+      const inSubSub = isEditingSubSubSection();
+      const activeSub = activeSubTabs[activeTab] || null;
+      const activeSubSubKey = activeSub ? (activeSubSubTabs[activeTab + '/' + activeSub] || null) : null;
+
+      // ── Level-1 sub-section bar ──
+      const subsecs = f.subsections || {};
+      const subKeys = Object.keys(subsecs);
+      let subBarHtml = `<div class="subsec-bar">
+        <button class="ssb ${!inSub?'active':''}" onclick="setActiveSubTab(null)">◻ Main Section</button>`;
+      if (subKeys.length > 0) subBarHtml += `<div class="subsec-divider"></div>`;
+      subKeys.forEach(sid => {
+        subBarHtml += `<button class="ssb ${activeSub===sid?'active':''}" onclick="setActiveSubTab('${sid}')">
+          ${esc(subsecs[sid].label)}
+          <span class="ssb-del" onclick="event.stopPropagation();deleteSubSection('${sid}')" title="Delete sub-section">✕</span>
+        </button>`;
+      });
+      subBarHtml += `<button class="add-subsec-btn" onclick="addSubSection()">+ Add Sub-section</button></div>`;
+
+      // ── Level-2 sub-sub-section bar (only visible when a sub-section is active) ──
+      let subSubBarHtml = '';
+      if (inSub && activeSub) {
+        const subObj = FEEDS[activeTab].subsections[activeSub];
+        const subsubsecs = subObj.subsections || {};
+        const subsubKeys = Object.keys(subsubsecs);
+        subSubBarHtml = `<div class="subsubsec-bar">
+          <span class="depth-label">↳ SUB</span>
+          <button class="sssb ${!inSubSub?'active':''}" onclick="setActiveSubSubTab(null)">◻ ${esc(subObj.label)}</button>`;
+        if (subsubKeys.length > 0) subSubBarHtml += `<div class="subsec-divider"></div>`;
+        subsubKeys.forEach(ssid => {
+          subSubBarHtml += `<button class="sssb ${activeSubSubKey===ssid?'active':''}" onclick="setActiveSubSubTab('${ssid}')">
+            ${esc(subsubsecs[ssid].label)}
+            <span class="sssb-del" onclick="event.stopPropagation();deleteSubSubSection('${ssid}')" title="Delete">✕</span>
+          </button>`;
+        });
+        subSubBarHtml += `<button class="add-subsubsec-btn" onclick="addSubSubSection()">+ Add Nested Sub-section</button></div>`;
+      }
+
+      // ── Breadcrumb title ──
+      let titleHtml = esc(f.label || activeTab);
+      if (inSub && activeSub) {
+        const subLbl = esc(FEEDS[activeTab].subsections[activeSub]?.label || activeSub);
+        titleHtml += ` <span style="color:var(--mint);font-size:12px;letter-spacing:2px">/ ${subLbl}</span>`;
+        if (inSubSub && activeSubSubKey) {
+          const subsubLbl = esc(FEEDS[activeTab].subsections[activeSub]?.subsections?.[activeSubSubKey]?.label || activeSubSubKey);
+          titleHtml += ` <span style="color:rgba(0,255,194,0.55);font-size:11px;letter-spacing:2px">/ ${subsubLbl}</span>`;
+        }
+      }
+      const subtitleTxt = inSubSub
+        ? `${entity.cards.length} cards · nested sub-section: ${activeSubSubKey}`
+        : inSub
+          ? `${entity.cards.length} cards · sub-section: ${activeSub}`
+          : `${entity.cards.length} cards · section id: ${activeTab}`;
+
+      const main = document.getElementById('mainInner');
+      main.innerHTML = `
+        <div class="section-head">
+          <div>
+            <div class="section-title">${titleHtml}</div>
+            <div class="section-subtitle">${subtitleTxt}</div>
+          </div>
+        </div>
+
+        ${subBarHtml}
+        ${subSubBarHtml}
+
+        ${!inSub ? `<div class="meta-row">
+          <div class="field-group">
+            <div class="field-label">Section Label (shown in tabs)</div>
+            <input class="field-input" id="metaLabel" value="${esc(f.label)}" placeholder="e.g. Stories">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Count Text</div>
+            <input class="field-input" id="metaCount" value="${esc(f.count)}" placeholder="e.g. 6 stories">
+          </div>
+          <button class="gold-toggle ${f.isGold?'on':''}" id="goldToggle" onclick="toggleGold()">
+            <div class="gold-led"></div> Gold Mode
+          </button>
+        </div>` : `<div class="meta-row" style="grid-template-columns:1fr auto;margin-bottom:20px;">
+          <div class="field-group">
+            <div class="field-label">${inSubSub ? 'Nested Sub-section Label' : 'Sub-section Label'}</div>
+            <input class="field-input" id="subLabel" value="${esc(entity.label)}" placeholder="e.g. Reviews">
+          </div>
+        </div>`}
+
+        <div class="cards-head">
+          <div class="field-label" style="margin:0">Cards (${entity.cards.length})</div>
+          <button class="btn btn-slate" onclick="addCard()">+ Add Card</button>
+        </div>
+        <div class="cards-grid" id="cardsGrid"></div>
+        <button class="add-card-btn" onclick="addCard()">+ Add Another Card</button>
+      `;
+
+      if (!inSub) {
+        document.getElementById('metaLabel').addEventListener('input', e => { FEEDS[activeTab].label=e.target.value; markDirty(); renderSidebar(); });
+        document.getElementById('metaCount').addEventListener('input', e => { FEEDS[activeTab].count=e.target.value; markDirty(); });
+      } else {
+        document.getElementById('subLabel').addEventListener('input', e => { entity.label=e.target.value; markDirty(); });
+      }
+
+      renderCards();
+    }
+
+    /* ════════════════════════════════════════════
+       SUB-SECTION MANAGEMENT (level 1)
+    ════════════════════════════════════════════ */
+    function setActiveSubTab(subId) {
+      activeSubTabs[activeTab] = subId;
+      // Reset sub-sub tab when switching sub-section
+      if (subId) delete activeSubSubTabs[activeTab + '/' + subId];
+      renderMain();
+    }
+
+    function addSubSection() {
+      const label = prompt('Sub-section label (e.g. "Reviews"):');
+      if (!label?.trim()) return;
+      const id = label.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      if (!id) { toast('Invalid label', true); return; }
+      if (!FEEDS[activeTab].subsections) FEEDS[activeTab].subsections = {};
+      if (FEEDS[activeTab].subsections[id]) { toast('Sub-section ID already exists', true); return; }
+      FEEDS[activeTab].subsections[id] = { label: label.trim(), cards: [{tag:'New',time:'5 min',title:'New Article',url:'',image:'',type:'article'}] };
+      activeSubTabs[activeTab] = id;
+      markDirty();
+      renderMain();
+      toast('Sub-section "' + label.trim() + '" created ✓');
+    }
+
+    function deleteSubSection(subId) {
+      const lbl = FEEDS[activeTab].subsections?.[subId]?.label || subId;
+      if (!confirm(`Delete sub-section "\${lbl}"? This cannot be undone.`)) return;
+      delete FEEDS[activeTab].subsections[subId];
+      if (Object.keys(FEEDS[activeTab].subsections).length === 0) delete FEEDS[activeTab].subsections;
+      if (activeSubTabs[activeTab] === subId) delete activeSubTabs[activeTab];
+      // Also clean up any sub-sub state under this sub
+      Object.keys(activeSubSubTabs).forEach(k => { if (k.startsWith(activeTab + '/' + subId)) delete activeSubSubTabs[k]; });
+      markDirty();
+      renderMain();
+    }
+
+    /* ════════════════════════════════════════════
+       SUB-SUB-SECTION MANAGEMENT (level 2)
+    ════════════════════════════════════════════ */
+    function setActiveSubSubTab(subsubId) {
+      const sub = activeSubTabs[activeTab];
+      if (!sub) return;
+      activeSubSubTabs[activeTab + '/' + sub] = subsubId;
+      renderMain();
+    }
+
+    function addSubSubSection() {
+      const sub = activeSubTabs[activeTab];
+      if (!sub) { toast('Select a sub-section first', true); return; }
+      const label = prompt('Nested sub-section label (e.g. "Reviews"):');
+      if (!label?.trim()) return;
+      const id = label.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      if (!id) { toast('Invalid label', true); return; }
+      const subObj = FEEDS[activeTab].subsections[sub];
+      if (!subObj.subsections) subObj.subsections = {};
+      if (subObj.subsections[id]) { toast('ID already exists in this sub-section', true); return; }
+      subObj.subsections[id] = { label: label.trim(), cards: [{tag:'New',time:'5 min',title:'New Article',url:'',image:'',type:'article'}] };
+      activeSubSubTabs[activeTab + '/' + sub] = id;
+      markDirty();
+      renderMain();
+      toast('Nested sub-section "' + label.trim() + '" created ✓');
+    }
+
+    function deleteSubSubSection(subsubId) {
+      const sub = activeSubTabs[activeTab];
+      if (!sub) return;
+      const subObj = FEEDS[activeTab].subsections[sub];
+      const lbl = subObj?.subsections?.[subsubId]?.label || subsubId;
+      if (!confirm(`Delete nested sub-section "\${lbl}"? This cannot be undone.`)) return;
+      delete subObj.subsections[subsubId];
+      if (Object.keys(subObj.subsections).length === 0) delete subObj.subsections;
+      const key = activeTab + '/' + sub;
+      if (activeSubSubTabs[key] === subsubId) delete activeSubSubTabs[key];
+      markDirty();
+      renderMain();
+    }
+
+    let _dragSrcIdx = null;
+
+    function renderCards() {
+      const grid = document.getElementById('cardsGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      const f = getActiveEntity();
+      f.cards.forEach((c, i) => {
+        const isGame = c.type === 'game';
+        const div = document.createElement('div');
+        div.className = 'card-editor' + (isGame ? ' is-game' : '');
+        div.draggable = true;
+        div.dataset.idx = i;
+        div.innerHTML = `
+          <div class="drag-handle" title="Drag to reorder">
+            <div class="card-editor-num" style="margin:0">Card ${String(i+1).padStart(2,'0')} ${isGame ? '◈ GAME' : ''}</div>
+            <span class="drag-handle-icon">⠿⠿</span>
+          </div>
+          <div class="type-toggle">
+            <button class="type-btn ${!isGame?'active-article':''}" onclick="setCardType(${i},'article')">◻ Article</button>
+            <button class="type-btn ${isGame?'active-game':''}" onclick="setCardType(${i},'game')">▶ Game</button>
+          </div>
+          ${c.image ? `<img class="img-preview" src="${esc(c.image)}" alt="preview" onerror="this.classList.add('hidden')">` : `<img class="img-preview hidden" alt="preview">`}
+          <div class="field-group">
+            <div class="field-label">Title</div>
+            <input class="field-input card-field" data-i="${i}" data-f="title" value="${esc(c.title)}" placeholder="Title…">
+          </div>
+          <div class="field-group">
+            <div class="field-label">Tag / Category</div>
+            <input class="field-input card-field" data-i="${i}" data-f="tag" value="${esc(c.tag)}" placeholder="e.g. Gaming">
+          </div>
+          <div class="field-group">
+            <div class="field-label">${isGame ? 'Game HTML URL (GitHub Pages URL of your .html file)' : 'Article URL'}</div>
+            <input class="field-input card-field" data-i="${i}" data-f="url" value="${esc(c.url)}" placeholder="${isGame ? 'https://username.github.io/repo/game.html' : 'https://…'}">
+            ${isGame ? `<div class="game-hint">Upload your game .html file to GitHub → paste its GitHub Pages URL here.<br>It will open in a fullscreen overlay on the site.</div>` : ''}
+          </div>
+          ${!isGame ? `
+          <div class="field-group">
+            <div class="field-label">Read Time</div>
+            <input class="field-input card-field" data-i="${i}" data-f="time" value="${esc(c.time)}" placeholder="5 min">
+          </div>` : ''}
+          <div class="field-group">
+            <div class="field-label">Card Image</div>
+            <div class="img-row">
+              <input class="field-input card-field" data-i="${i}" data-f="image" value="${esc(c.image||'')}" placeholder="Paste image URL…">
+              <label class="img-upload-btn" title="Upload image">
+                <span class="img-upload-btn-label">↑ Upload</span>
+                <input type="file" accept="image/*" style="display:none" onchange="handleImgUpload(this,${i})">
+              </label>
+            </div>
+            <div class="img-pos-wrap${c.image ? ' visible' : ''}" id="imgPos_${i}">
+              <div class="img-pos-label">Focal Point <span>Drag to reframe</span></div>
+              <div class="img-pos-row">
+                <span class="img-pos-axis">X</span>
+                <input type="range" class="img-pos-slider" min="0" max="100" value="${c.imagePosX??50}" data-i="${i}" data-axis="X">
+                <span class="img-pos-val" id="imgPosXVal_${i}">${c.imagePosX??50}%</span>
+              </div>
+              <div class="img-pos-row">
+                <span class="img-pos-axis">Y</span>
+                <input type="range" class="img-pos-slider" min="0" max="100" value="${c.imagePosY??50}" data-i="${i}" data-axis="Y">
+                <span class="img-pos-val" id="imgPosYVal_${i}">${c.imagePosY??50}%</span>
+              </div>
+            </div>
+          </div>
+          <button class="card-del-btn" onclick="deleteCard(${i})">Remove Card</button>
+        `;
+
+        /* ── Drag events ── */
+        div.addEventListener('dragstart', e => {
+          _dragSrcIdx = i;
+          div.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        div.addEventListener('dragend', () => {
+          div.classList.remove('dragging');
+          grid.querySelectorAll('.card-editor').forEach(el => el.classList.remove('drag-over'));
+        });
+        div.addEventListener('dragover', e => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          grid.querySelectorAll('.card-editor').forEach(el => el.classList.remove('drag-over'));
+          div.classList.add('drag-over');
+        });
+        div.addEventListener('drop', e => {
+          e.preventDefault();
+          if (_dragSrcIdx === null || _dragSrcIdx === i) return;
+          const cards = getActiveEntity().cards;
+          const [moved] = cards.splice(_dragSrcIdx, 1);
+          cards.splice(i, 0, moved);
+          _dragSrcIdx = null;
+          markDirty();
+          renderCards();
+        });
+
+        grid.appendChild(div);
+      });
+
+      grid.querySelectorAll('.card-field').forEach(inp => {
+        inp.addEventListener('input', e => {
+          const i = parseInt(e.target.dataset.i);
+          const field = e.target.dataset.f;
+          getActiveEntity().cards[i][field] = e.target.value;
+          markDirty();
+          if (field === 'image') {
+            const prev = e.target.closest('.card-editor').querySelector('.img-preview');
+            const posWrap = document.getElementById('imgPos_' + i);
+            if (e.target.value) {
+              prev.src = e.target.value; prev.classList.remove('hidden');
+              posWrap?.classList.add('visible');
+            } else {
+              prev.classList.add('hidden');
+              posWrap?.classList.remove('visible');
+            }
+          }
+        });
+      });
+
+      grid.querySelectorAll('.img-pos-slider').forEach(slider => {
+        slider.addEventListener('input', e => {
+          const i = parseInt(e.target.dataset.i);
+          const axis = e.target.dataset.axis;
+          const val = parseInt(e.target.value);
+          const card = getActiveEntity().cards[i];
+          if (axis === 'X') { card.imagePosX = val; document.getElementById('imgPosXVal_' + i).textContent = val + '%'; }
+          else               { card.imagePosY = val; document.getElementById('imgPosYVal_' + i).textContent = val + '%'; }
+          const prev = e.target.closest('.card-editor').querySelector('.img-preview');
+          if (prev) prev.style.objectPosition = `${card.imagePosX??50}% ${card.imagePosY??50}%`;
+          markDirty();
+        });
+      });
+    }
+
+    function setCardType(i, type) {
+      getActiveEntity().cards[i].type = type;
+      markDirty();
+      renderCards();
+    }
+
+    /* ════════════════════════════════════════════
+       CARD ACTIONS
+    ════════════════════════════════════════════ */
+    function addCard() {
+      const entity = getActiveEntity();
+      entity.cards.unshift({tag:'New',time:'5 min',title:'Untitled Article',url:'',image:'',type:'article'});
+      if (!isEditingSubSection()) FEEDS[activeTab].count = FEEDS[activeTab].cards.length + ' articles';
+      markDirty();
+      renderMain();
+      // FIX: cards are prepended (unshift), so scroll to firstElementChild not last
+      setTimeout(() => document.getElementById('cardsGrid')?.firstElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+    }
+
+    function deleteCard(i) {
+      if (!confirm('Remove this card?')) return;
+      const entity = getActiveEntity();
+      entity.cards.splice(i, 1);
+      if (!isEditingSubSection()) FEEDS[activeTab].count = FEEDS[activeTab].cards.length + ' articles';
+      markDirty();
+      renderMain();
+    }
+
+    function toggleGold() {
+      FEEDS[activeTab].isGold = !FEEDS[activeTab].isGold;
+      markDirty();
+      renderSidebar();
+      renderMain();
+    }
+
+    /* ════════════════════════════════════════════
+       IMAGE UPLOAD — two modes:
+       1) ImgBB CDN (URL stored, no bloat) — preferred
+       2) Base64 local embed — works offline, no key needed
+    ════════════════════════════════════════════ */
+    // FIX: removed const IMGBB_KEY — always read live from localStorage so Settings changes take effect immediately
+
+    async function handleImgUpload(input, i) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const cardEl = input.closest('.card-editor');
+      const prevBtn = cardEl.querySelector('.img-upload-btn-label');
+      const IMGBB_KEY = getCfg('imgbbKey') || ''; // FIX: read live each time, not once at startup
+
+      // ── If ImgBB key is set → upload to CDN (no base64 bloat) ──
+      if (IMGBB_KEY) {
+        if (file.size > 32 * 1024 * 1024) { toast('Image too large — max 32MB', true); return; }
+        if (prevBtn) prevBtn.textContent = 'Uploading…';
+        toast('Uploading to ImgBB…');
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          const res = await fetch('https://api.imgbb.com/1/upload?key=' + IMGBB_KEY, { method:'POST', body:formData });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error?.message || 'Upload failed');
+          getActiveEntity().cards[i].image = json.data.url;
+          markDirty();
+          renderCards();
+          toast('Uploaded to ImgBB ✓ — URL saved (no base64 bloat)');
+        } catch(e) {
+          toast('ImgBB upload failed: ' + e.message + ' — falling back to base64', true);
+          if (prevBtn) prevBtn.textContent = '↑ Upload';
+          embedBase64(file, i);
+        }
+        return;
+      }
+
+      // ── No ImgBB key → base64 embed (works always, adds size) ──
+      if (file.size > 500 * 1024) {
+        toast('⚠ Large image (' + (file.size/1024).toFixed(0) + 'KB) embedded as base64 — add ImgBB key in Settings to use CDN instead', true);
+      }
+      embedBase64(file, i);
+    }
+
+    function embedBase64(file, i) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        getActiveEntity().cards[i].image = e.target.result;
+        markDirty();
+        renderCards();
+        toast('Image embedded as base64 ✓');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ════════════════════════════════════════════
+       ADD / DELETE SECTION
+    ════════════════════════════════════════════ */
+    document.getElementById('addTabBtn').addEventListener('click', () => {
+      document.getElementById('tabModal').classList.add('show');
+      document.getElementById('newTabId').focus();
+    });
+    document.getElementById('cancelTabBtn').addEventListener('click', () => {
+      document.getElementById('tabModal').classList.remove('show');
+    });
+    document.getElementById('createTabBtn').addEventListener('click', () => {
+      const id = document.getElementById('newTabId').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      const label = document.getElementById('newTabLabel').value.trim();
+      const count = document.getElementById('newTabCount').value.trim();
+      if (!id || !label) { toast('ID and Label are required', true); return; }
+      if (FEEDS[id]) { toast('Section ID already exists', true); return; }
+      FEEDS[id] = {label, count: count||'0 articles', isGold:false, cards:[
+        {tag:'New',time:'5 min',title:'New Article',url:'',image:''}
+      ]};
+      markDirty();
+      document.getElementById('tabModal').classList.remove('show');
+      document.getElementById('newTabId').value='';
+      document.getElementById('newTabLabel').value='';
+      document.getElementById('newTabCount').value='';
+      setActiveTab(id);
+    });
+
+    function deleteTab(id) {
+      if (Object.keys(FEEDS).length <= 1) { toast('Cannot delete the last section', true); return; }
+      if (!confirm(`Delete section "${FEEDS[id]?.label||id}"? This cannot be undone.`)) return;
+      delete FEEDS[id];
+      delete activeSubTabs[id]; Object.keys(activeSubSubTabs).forEach(k => { if (k.startsWith(id + '/')) delete activeSubSubTabs[k]; }); // clean up all sub state for deleted section
+      markDirty();
+      activeTab = Object.keys(FEEDS)[0];
+      renderSidebar();
+      renderMain();
+    }
+
+    /* ════════════════════════════════════════════
+       SETTINGS PANEL
+    ════════════════════════════════════════════ */
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+      settingsOpen = !settingsOpen;
+      themeOpen = false;
+      document.getElementById('themeTabBtn').textContent = '◈ Theme';
+      document.getElementById('settingsBtn').textContent = settingsOpen ? '← Back' : 'Settings';
+      renderMain();
+    });
+
+    function renderSettings() {
+      const main = document.getElementById('mainInner');
+      main.innerHTML = `
+        <div class="section-head">
+          <div>
+            <div class="section-title">Settings</div>
+            <div class="section-subtitle">GitHub sync configuration</div>
+          </div>
+        </div>
+        <div class="settings-panel">
+          <div class="settings-title">GitHub Connection</div>
+          <div class="settings-grid">
+            <div class="field-group">
+              <div class="field-label">GitHub Username</div>
+              <input class="field-input" id="cfgUser" placeholder="your-username" value="${esc(getCfg('user'))}">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Repository Name</div>
+              <input class="field-input" id="cfgRepo" placeholder="kritzaar-data" value="${esc(getCfg('repo'))}">
+            </div>
+            <div class="field-group">
+              <div class="field-label">File Path in Repo</div>
+              <input class="field-input" id="cfgFile" placeholder="feeds.json" value="${esc(getCfg('file')||'feeds.json')}">
+            </div>
+            <div class="field-group">
+              <div class="field-label">ImgBB API Key <span style="color:var(--mint);font-size:9px">(optional — CDN upload; without it, images embed as base64)</span></div>
+              <input class="field-input" id="cfgImgbb" type="password" placeholder="Get free key at api.imgbb.com" value="${esc(getCfg('imgbbKey'))}">
+            </div>
+            <div class="field-group token-row">
+              <div class="field-label">GitHub Personal Access Token</div>
+              <input class="field-input" id="cfgToken" type="password" placeholder="ghp_…" value="${esc(getCfg('token'))}">
+              <div class="token-note">
+                Go to GitHub → Settings → Developer Settings → Personal access tokens → Generate new token (classic).<br>
+                Enable scope: <strong style="color:var(--mint)">repo</strong> (or just <strong style="color:var(--mint)">public_repo</strong> if your repo is public).<br>
+                Token is stored locally in your browser only — never sent anywhere except GitHub.
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px">
+            <button class="btn btn-mint" onclick="saveSettings()">Save Settings</button>
+            <button class="btn btn-slate" onclick="testConnection()">Test Connection</button>
+          </div>
+        </div>
+
+        <div class="settings-panel" style="margin-top:16px">
+          <div class="settings-title">Viewer URL</div>
+          <div style="font-size:11px;letter-spacing:1px;color:var(--slate);line-height:1.8">
+            After setting up your repo, deploy <strong style="color:var(--white)">kritzaar-viewer.html</strong> to GitHub Pages:<br>
+            1. Put <code style="color:var(--mint);font-size:10px">kritzaar-viewer.html</code> in your repo (rename it to <code style="color:var(--mint);font-size:10px">index.html</code>)<br>
+            2. Go to repo → Settings → Pages → Source: main branch<br>
+            3. Your viewer will be live at: <code style="color:var(--mint);font-size:10px">https://YOUR_USERNAME.github.io/YOUR_REPO</code><br>
+            4. In the viewer file, set <code style="color:var(--mint);font-size:10px">GITHUB_USER</code> and <code style="color:var(--mint);font-size:10px">GITHUB_REPO</code> to match.
+          </div>
+        </div>
+
+        <div class="settings-panel" style="margin-top:16px">
+          <div class="settings-title">Data</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-slate" onclick="pullFromGitHub()">↓ Pull from GitHub</button>
+            <button class="btn btn-danger" onclick="resetToDefaults()">Reset to Defaults</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('cfgUser').addEventListener('change', e => setCfg('user',e.target.value.trim()));
+      document.getElementById('cfgRepo').addEventListener('change', e => setCfg('repo',e.target.value.trim()));
+      document.getElementById('cfgFile').addEventListener('change', e => setCfg('file',e.target.value.trim()));
+      document.getElementById('cfgToken').addEventListener('change', e => setCfg('token',e.target.value.trim()));
+      document.getElementById('cfgImgbb').addEventListener('change', e => setCfg('imgbbKey',e.target.value.trim()));
+    }
+
+    function saveSettings() {
+      setCfg('user', document.getElementById('cfgUser').value.trim());
+      setCfg('repo', document.getElementById('cfgRepo').value.trim());
+      setCfg('file', document.getElementById('cfgFile').value.trim());
+      setCfg('token', document.getElementById('cfgToken').value.trim());
+      setCfg('imgbbKey', document.getElementById('cfgImgbb').value.trim());
+      toast('Settings saved — pulling latest data from GitHub…');
+      pullFromGitHub();
+    }
+
+    async function testConnection() {
+      const user = getCfg('user'), repo = getCfg('repo'), token = getCfg('token');
+      if (!user||!repo||!token) { toast('Fill in all settings first', true); return; }
+      toast('Testing connection…');
+      try {
+        const res = await fetch(`https://api.github.com/repos/${user}/${repo}`, {headers:{'Authorization':'Bearer '+token}});
+        if (res.ok) { toast('Connected! Repo found ✓'); setSyncStatus('ok','Connected'); }
+        else if (res.status===401) { toast('Invalid token — regenerate it in GitHub Settings', true); setSyncStatus('err','Bad token'); }
+        else if (res.status===404) { toast(`Repo "${user}/${repo}" not found — check username/repo`, true); setSyncStatus('err','Repo not found'); }
+        else { toast('Connection failed: HTTP ' + res.status, true); setSyncStatus('err','Failed'); }
+      } catch(e) { toast('Network error — check your internet connection', true); }
+    }
+
+    async function pullFromGitHub() {
+      const user=getCfg('user'),repo=getCfg('repo'),file=getCfg('file')||'feeds.json',token=getCfg('token');
+      const folder = file.includes('/') ? file.replace(/\/[^/]+$/, '') : '';
+      const prefix = folder ? folder + '/' : '';
+
+      if (!user||!repo||!token){toast('Configure GitHub settings first',true);return;}
+      toast('Pulling from GitHub…');
+      setSyncStatus('saving','Loading…');
+
+      const ghHeaders = {'Authorization':'Bearer '+token,'Accept':'application/vnd.github.v3+json'};
+
+      try {
+        // ── Try new split-file format first (_index.json) ──
+        const idxRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${prefix}_index.json`, { headers: ghHeaders });
+
+        if (idxRes.ok) {
+          // New split format
+          const idxData = await idxRes.json();
+          let idxStr;
+          if (!idxData.content || idxData.encoding === 'none' || idxData.content.trim() === '') {
+            const raw = await fetch(idxData.download_url + '?t=' + Date.now());
+            idxStr = await raw.text();
+          } else {
+            idxStr = decodeGHContent(idxData.content);
+          }
+          const index = JSON.parse(idxStr);
+
+          if (index._theme) {
+            THEME = index._theme;
+            localStorage.setItem('krzTheme', JSON.stringify(THEME));
+            applyThemeToPage(THEME);
+          }
+
+          // Fetch each section file in parallel
+          const sectionIds = Object.keys(index.sections || {});
+          const sectionResults = await Promise.all(sectionIds.map(async id => {
+            const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${prefix}${id}.json`, { headers: ghHeaders });
+            if (!res.ok) throw new Error(`Could not load section "${id}" (HTTP ${res.status})`);
+            const d = await res.json();
+            let str;
+            if (!d.content || d.encoding === 'none' || d.content.trim() === '') {
+              const raw = await fetch(d.download_url + '?t=' + Date.now());
+              str = await raw.text();
+            } else {
+              str = decodeGHContent(d.content);
+            }
+            return [id, JSON.parse(str)];
+          }));
+
+          // Merge index meta with section cards + subsections
+          FEEDS = {};
+          for (const id of sectionIds) {
+            const meta = index.sections[id];
+            const sectionEntry = sectionResults.find(([sid]) => sid === id);
+            const secData = sectionEntry ? sectionEntry[1] : {};
+            FEEDS[id] = { ...meta, cards: secData.cards || [], ...(secData.subsections ? {subsections: secData.subsections} : {}) };
+          }
+
+          // Build snapshot for smart diff — normalize whitespace so comparison is consistent
+          _lastPublishedSnapshot = {
+            _index: JSON.stringify(JSON.parse(idxStr)), // FIX: normalize to compact form to match publish comparison
+            sections: Object.fromEntries(sectionResults.map(([id, payload]) => [id, JSON.stringify(payload, null, 2)]))
+          };
+
+        } else if (idxRes.status === 404) {
+          // ── Fallback: legacy single feeds.json ──
+          toast('Legacy feeds.json detected — will convert to split format on next publish');
+          const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${file}`, { headers: ghHeaders });
+          if (res.status===404) throw new Error('File not found — have you published yet? Check file path in Settings');
+          if (res.status===401) throw new Error('Invalid token — check Settings');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+
+          let jsonStr;
+          if (!data.content || data.encoding === 'none' || data.content.trim() === '') {
+            if (!data.download_url) throw new Error('File too large and no download URL available');
+            const raw = await fetch(data.download_url + '?t=' + Date.now());
+            if (!raw.ok) throw new Error('Failed to download raw file');
+            jsonStr = await raw.text();
+          } else {
+            jsonStr = decodeGHContent(data.content);
+          }
+
+          if (!jsonStr || !jsonStr.trim()) throw new Error('File on GitHub is empty — try publishing first');
+          const parsed = JSON.parse(jsonStr);
+          if (parsed._theme) { THEME = parsed._theme; localStorage.setItem('krzTheme', JSON.stringify(THEME)); applyThemeToPage(THEME); delete parsed._theme; }
+          FEEDS = parsed;
+          // No snapshot set — first publish will push everything as split files
+          _lastPublishedSnapshot = null;
+
+        } else {
+          throw new Error('Could not read index file: HTTP ' + idxRes.status);
+        }
+
+        activeTab = Object.keys(FEEDS)[0];
+        activeSubTabs = {}; activeSubSubTabs = {}; // reset sub-section state after pull
+        dirty = false;
+        githubSynced = true;
+        setSyncStatus('ok','Synced from GitHub');
+        renderSidebar();
+        renderMain();
+        toast('Pulled successfully ✓');
+      } catch(e) {
+        toast('Pull failed: ' + e.message, true);
+        setSyncStatus('err','Pull failed');
+      }
+    }
+
+    // UTF-8 safe base64 decoder — matches the encode used in publish
+    function decodeGHContent(b64) {
+      const raw = atob(b64.replace(/\n/g, ''));
+      try {
+        return decodeURIComponent(raw.split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
+      } catch(_) {
+        return raw; // fallback for plain ASCII content
+      }
+    }
+
+    function resetToDefaults() {
+      if (!confirm('Reset all content to defaults? This will overwrite your changes.')) return;
+      FEEDS = JSON.parse(JSON.stringify(DEFAULT_FEEDS));
+      activeTab = Object.keys(FEEDS)[0];
+      activeSubTabs = {}; activeSubSubTabs = {}; // clear stale state
+      markDirty();
+      renderSidebar();
+      renderMain();
+      toast('Reset to defaults');
+    }
+
+    /* ════════════════════════════════════════════
+       THEME STUDIO
+    ════════════════════════════════════════════ */
+    const THEME_DEFAULTS = {
+      accent:'#00FFC2', bg:'#1A1C1E', card:'#1E2124', gold:'#C9A227',
+      slate:'#9BA4B0', white:'#E8ECF0', danger:'#FF4B6E',
+      gridOpacity:2, glowIntensity:28
+    };
+    const THEME_PRESETS = {
+      Mint:   {accent:'#00FFC2',bg:'#1A1C1E',card:'#1E2124',gold:'#C9A227',slate:'#9BA4B0',white:'#E8ECF0'},
+      Ember:  {accent:'#FF6B35',bg:'#1C1614',card:'#231A15',gold:'#FFAA40',slate:'#A09080',white:'#F0EBE8'},
+      Violet: {accent:'#B57BFF',bg:'#16141C',card:'#1C1A24',gold:'#FFD040',slate:'#9490A8',white:'#EDE8F2'},
+      Ice:    {accent:'#4DC9FF',bg:'#14181E',card:'#181D26',gold:'#FFC940',slate:'#8AA0B0',white:'#E8EEF2'},
+      Blood:  {accent:'#FF4B6E',bg:'#1C1418',card:'#241820',gold:'#C9A227',slate:'#A08088',white:'#F0E8EC'},
+      Mono:   {accent:'#C8D0D8',bg:'#111213',card:'#191A1C',gold:'#C9A227',slate:'#808890',white:'#E0E4E8'},
+    };
+
+    let THEME = JSON.parse(localStorage.getItem('krzTheme') || JSON.stringify(THEME_DEFAULTS));
+
+    function hexToRgba(hex, alpha) {
+      const h = hex.replace('#','');
+      const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${(+alpha).toFixed(3)})`;
+    }
+
+    function applyThemeToPage(t) {
+      const s = document.documentElement.style;
+      s.setProperty('--mint', t.accent);
+      s.setProperty('--bg', t.bg);
+      s.setProperty('--card', t.card);
+      s.setProperty('--gold', t.gold);
+      s.setProperty('--slate', t.slate);
+      s.setProperty('--white', t.white);
+      s.setProperty('--danger', t.danger||'#FF4B6E');
+      s.setProperty('--mint-glow', hexToRgba(t.accent, (t.glowIntensity||28)/100));
+      s.setProperty('--gold-glow', hexToRgba(t.gold, 0.28));
+      document.querySelectorAll('.grid-bg').forEach(el => {
+        const a = (t.gridOpacity||2)/100;
+        el.style.backgroundImage = `linear-gradient(${hexToRgba(t.accent,a)}1px,transparent 1px),linear-gradient(90deg,${hexToRgba(t.accent,a)}1px,transparent 1px)`;
+      });
+    }
+
+    function saveThemeLive() {
+      localStorage.setItem('krzTheme', JSON.stringify(THEME));
+      applyThemeToPage(THEME);
+      markDirty();
+      updatePreview();
+    }
+
+    document.getElementById('themeTabBtn').addEventListener('click', () => {
+      themeOpen = !themeOpen;
+      settingsOpen = false;
+      document.getElementById('settingsBtn').textContent = 'Settings';
+      document.getElementById('themeTabBtn').textContent = themeOpen ? '✕ Theme' : '◈ Theme';
+      if (themeOpen) renderTheme(); else { resetMainInner(); renderMain(); }
+    });
+
+    function renderTheme() {
+      const main = document.getElementById('mainInner');
+      main.style.maxWidth = 'none';
+      main.style.padding = '24px 28px 60px';
+      main.innerHTML = `
+        <div class="section-head">
+          <div>
+            <div class="section-title">Theme Studio</div>
+            <div class="section-subtitle">Customize your viewer — changes publish with your content</div>
+          </div>
+        </div>
+        <div class="theme-layout">
+          <div>
+            <div class="theme-block">
+              <div class="theme-block-title">Presets</div>
+              <div class="preset-grid" id="presetGrid"></div>
+            </div>
+            <div class="theme-block">
+              <div class="theme-block-title">Colors</div>
+              ${colorRow('accent','Accent')}
+              ${colorRow('bg','Background')}
+              ${colorRow('card','Card BG')}
+              ${colorRow('gold','Gold')}
+              ${colorRow('white','Text')}
+              ${colorRow('slate','Muted Text')}
+              ${colorRow('danger','Danger')}
+            </div>
+            <div class="theme-block">
+              <div class="theme-block-title">Effects</div>
+              <div class="range-row">
+                <div class="range-row-label"><span>Grid Opacity</span><span class="range-val" id="gridOpVal">${THEME.gridOpacity}%</span></div>
+                <input type="range" class="range-input" id="rngGrid" min="0" max="8" step="0.5" value="${THEME.gridOpacity}">
+              </div>
+              <div class="range-row">
+                <div class="range-row-label"><span>Glow Intensity</span><span class="range-val" id="glowVal">${THEME.glowIntensity}%</span></div>
+                <input type="range" class="range-input" id="rngGlow" min="0" max="60" step="1" value="${THEME.glowIntensity}">
+              </div>
+            </div>
+            <div class="theme-save-row">
+              <button class="btn btn-mint" onclick="saveThemeLive();toast('Theme saved — publish to go live')">Save Theme</button>
+              <button class="btn btn-slate" onclick="THEME=JSON.parse(JSON.stringify(THEME_DEFAULTS));saveThemeLive();renderTheme()">Reset</button>
+            </div>
+          </div>
+          <div>
+            <div class="preview-outer">
+              <div class="preview-title-row">
+                <span>Live Preview</span>
+                <span class="preview-live-badge">● Live</span>
+              </div>
+              <div class="preview-window" id="previewWin">
+                <div class="preview-inner" id="previewInner"></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      // Presets
+      const pg = document.getElementById('presetGrid');
+      Object.entries(THEME_PRESETS).forEach(([name,p]) => {
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.style.cssText = `border-color:${p.accent}40;color:${p.accent}`;
+        btn.innerHTML = `<span class="preset-swatch" style="background:${p.accent};box-shadow:0 0 10px ${p.accent}70"></span>${name}`;
+        btn.addEventListener('click', () => { THEME={...THEME,...p}; saveThemeLive(); renderTheme(); });
+        pg.appendChild(btn);
+      });
+
+      // Color pickers
+      document.querySelectorAll('.color-picker').forEach(picker => {
+        const key = picker.dataset.key;
+        const hexIn = document.getElementById('chex-'+key);
+        picker.addEventListener('input', e => {
+          THEME[key] = e.target.value;
+          if(hexIn) hexIn.value = e.target.value.toUpperCase();
+          applyThemeToPage(THEME); markDirty(); updatePreview();
+        });
+        if(hexIn) hexIn.addEventListener('change', e => {
+          let v = e.target.value.trim();
+          if(!v.startsWith('#')) v='#'+v;
+          if(/^#[0-9A-Fa-f]{6}$/.test(v)){
+            THEME[key]=v; picker.value=v;
+            applyThemeToPage(THEME); markDirty(); updatePreview();
+          }
+        });
+      });
+
+      // Range sliders
+      document.getElementById('rngGrid').addEventListener('input', e => {
+        THEME.gridOpacity = parseFloat(e.target.value);
+        document.getElementById('gridOpVal').textContent = THEME.gridOpacity+'%';
+        applyThemeToPage(THEME); markDirty(); updatePreview();
+      });
+      document.getElementById('rngGlow').addEventListener('input', e => {
+        THEME.glowIntensity = parseInt(e.target.value);
+        document.getElementById('glowVal').textContent = THEME.glowIntensity+'%';
+        applyThemeToPage(THEME); markDirty(); updatePreview();
+      });
+
+      scalePreview();
+      updatePreview();
+      window.removeEventListener('resize', scalePreview);
+      window.addEventListener('resize', scalePreview);
+    }
+
+    function colorRow(key, label) {
+      const val = (THEME[key]||'#888888').toUpperCase();
+      return `<div class="color-row">
+        <span class="color-row-label">${label}</span>
+        <input type="color" class="color-picker" data-key="${key}" value="${val}">
+        <input type="text" class="color-hex" id="chex-${key}" value="${val}" maxlength="7" spellcheck="false">
+      </div>`;
+    }
+
+    function scalePreview() {
+      const win = document.getElementById('previewWin');
+      const inner = document.getElementById('previewInner');
+      if(!win||!inner) return;
+      const scale = win.offsetWidth / 900;
+      inner.style.transform = `scale(${scale})`;
+      win.style.height = (420 * scale) + 'px';
+    }
+
+    function updatePreview() {
+      const el = document.getElementById('previewInner');
+      if(!el) return;
+      const t = THEME;
+      const ga = (t.gridOpacity||2)/100;
+      const glow = (t.glowIntensity||28)/100;
+      const sectionId = Object.keys(FEEDS)[0];
+      const section = FEEDS[sectionId]||{label:'Stories',count:'6 stories',cards:[]};
+
+      const tabs = Object.entries(FEEDS).slice(0,6).map(([,f],i) => {
+        const c = i===0 ? t.accent : t.slate;
+        const border = i===0 ? t.accent : 'transparent';
+        return `<div style="padding:0 16px;height:52px;display:flex;align-items:center;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:${c};border-bottom:2px solid ${border};white-space:nowrap;flex-shrink:0;">${f.label}</div>`;
+      }).join('');
+
+      const cards = (section.cards||[]).slice(0,4).map((c,i) => {
+        const hasImg = c.image && c.image.trim();
+        return `<div style="background:${t.card};border:1px solid ${hexToRgba(t.accent,0.07)};overflow:hidden;display:flex;flex-direction:column;">
+          <div style="height:90px;background:${t.bg};display:flex;align-items:center;justify-content:center;border-bottom:1px solid ${hexToRgba(t.accent,0.06)};position:relative;overflow:hidden;">
+            ${hasImg?`<img src="${c.image}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" onerror="this.remove()">`:''}
+            <div style="font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;color:${hexToRgba(t.accent,0.18)};position:relative;z-index:1;">${String(i+1).padStart(2,'0')}</div>
+          </div>
+          <div style="padding:10px 12px;flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+              <span style="font-size:8px;letter-spacing:2px;color:${t.accent};text-transform:uppercase;">${c.tag||'Tag'}</span>
+              <span style="font-size:8px;color:${hexToRgba(t.slate,0.6)};">${c.time||'5 min'}</span>
+            </div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;color:${t.white};line-height:1.35;margin-bottom:7px;">${(c.title||'Article').slice(0,48)}${(c.title||'').length>48?'…':''}</div>
+            <div style="font-size:8px;letter-spacing:2px;color:${t.accent};text-transform:uppercase;border:1px solid ${hexToRgba(t.accent,0.3)};padding:3px 8px;display:inline-block;">Read →</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `<div style="background:${t.bg};min-height:420px;font-family:'Rajdhani',sans-serif;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background-image:linear-gradient(${hexToRgba(t.accent,ga)}1px,transparent 1px),linear-gradient(90deg,${hexToRgba(t.accent,ga)}1px,transparent 1px);background-size:64px 64px;pointer-events:none;"></div>
+        <div style="position:relative;padding:24px 32px 18px;border-bottom:1px solid ${hexToRgba(t.accent,0.07)};">
+          <div style="font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:${t.white};letter-spacing:-1px;line-height:1;">KRITZ<span style="color:${t.accent};text-shadow:0 0 24px ${hexToRgba(t.accent,glow)}">A</span>AR</div>
+          <div style="font-size:9px;letter-spacing:5px;color:${t.slate};text-transform:uppercase;margin-top:5px;">Curated Intelligence</div>
+        </div>
+        <div style="display:flex;border-bottom:1px solid ${hexToRgba(t.accent,0.07)};padding:0 32px;background:${hexToRgba(t.bg,0.95)};overflow:hidden;">${tabs}</div>
+        <div style="padding:18px 32px 12px;border-bottom:1px solid ${hexToRgba(t.white,0.04)};">
+          <div style="font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:${t.white};letter-spacing:4px;text-transform:uppercase;">${section.label}</div>
+          <div style="font-size:9px;letter-spacing:4px;color:${t.slate};text-transform:uppercase;margin-top:3px;">${section.count}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 32px;">${cards}</div>
+      </div>`;
+    }
+
+    /* ════════════════════════════════════════════
+       GITHUB PUBLISH — Split files + Smart Diff
+       Each section → its own JSON file.
+       _theme and _index go in a tiny index file.
+       Only changed files are pushed.
+    ════════════════════════════════════════════ */
+    document.getElementById('publishBtn').addEventListener('click', publishToGitHub);
+
+    // Snapshot of what was last fetched from GitHub (for diffing)
+    let _lastPublishedSnapshot = null;
+
+    async function publishToGitHub() {
+      const user=getCfg('user'),repo=getCfg('repo'),token=getCfg('token');
+      const baseFile = getCfg('file') || 'feeds.json';
+      // Derive folder prefix from the configured file path (strip filename)
+      const folder = baseFile.includes('/') ? baseFile.replace(/\/[^/]+$/, '') : '';
+      const prefix = folder ? folder + '/' : '';
+
+      if (!user||!repo||!token) {
+        toast('Set up GitHub settings first', true);
+        settingsOpen = true;
+        document.getElementById('settingsBtn').textContent = '← Back';
+        renderSettings();
+        return;
+      }
+
+      if (!githubSynced) {
+        const proceed = confirm(
+          '⚠ Not synced from GitHub yet.\n\n' +
+          'Publishing now will overwrite any changes made from other devices.\n\n' +
+          'Click OK to pull latest data first (recommended).\n' +
+          'Click Cancel to force-publish anyway.'
+        );
+        if (proceed) { await pullFromGitHub(); return; }
+      }
+
+      setSyncStatus('saving', 'Publishing…');
+      toast('Checking for changes…');
+
+      const authHeader = 'Bearer ' + token;
+      const ghHeaders = { 'Authorization': authHeader, 'Accept': 'application/vnd.github.v3+json' };
+
+      try {
+        // ── Verify repo/token ──
+        const repoRes = await fetch(`https://api.github.com/repos/${user}/${repo}`, { headers: ghHeaders });
+        if (repoRes.status === 401) throw new Error('Invalid token — check Settings');
+        if (repoRes.status === 403) throw new Error('Token lacks "repo" write permission');
+        if (repoRes.status === 404) throw new Error(`Repo "${user}/${repo}" not found — check Settings`);
+        if (!repoRes.ok) throw new Error(`GitHub error ${repoRes.status}`);
+
+        // ── Build the current payload ──
+        // Index file: section keys + labels + _theme (tiny, fast to load)
+        const indexPayload = {
+          _v: 2,
+          _theme: THEME,
+          sections: Object.fromEntries(
+            Object.entries(FEEDS).map(([id, f]) => [id, { label: f.label, count: f.count, isGold: f.isGold }])
+          )
+        };
+
+        // Per-section files: just the cards array
+        const sectionPayloads = {}; // id → { cards: [...] }
+        for (const [id, f] of Object.entries(FEEDS)) {
+          sectionPayloads[id] = { cards: f.cards, ...(f.subsections && Object.keys(f.subsections).length > 0 ? {subsections: f.subsections} : {}) };
+        }
+
+        // ── Smart diff: build list of files that actually changed ──
+        const filesToPush = []; // { path, content (JSON string) }
+
+        const prevIdx = _lastPublishedSnapshot?._index;
+        const currIdx = JSON.stringify(indexPayload);
+        if (!prevIdx || prevIdx !== currIdx) {
+          filesToPush.push({ path: prefix + '_index.json', content: currIdx });
+        }
+
+        for (const [id, payload] of Object.entries(sectionPayloads)) {
+          const curr = JSON.stringify(payload, null, 2);
+          const prev = _lastPublishedSnapshot?.sections?.[id];
+          if (!prev || prev !== curr) {
+            filesToPush.push({ path: prefix + id + '.json', content: curr });
+          }
+        }
+
+        if (filesToPush.length === 0) {
+          setSyncStatus('ok', 'Already up to date');
+          toast('Nothing changed — already up to date ✓');
+          dirty = false;
+          return;
+        }
+
+        toast(`Pushing ${filesToPush.length} changed file(s)…`);
+
+        // ── Push only changed files ──
+        let pushed = 0;
+        for (const f of filesToPush) {
+          // Get current SHA (needed for updates, not for new files)
+          let sha = null;
+          const checkRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${f.path}`, { headers: ghHeaders });
+          if (checkRes.ok) {
+            const d = await checkRes.json();
+            sha = d.sha;
+          } else if (checkRes.status !== 404) {
+            throw new Error(`Could not read "${f.path}" (status ${checkRes.status})`);
+          }
+
+          const content = btoa(encodeURIComponent(f.content).replace(/%([0-9A-F]{2})/g,
+            (_, p1) => String.fromCharCode('0x' + p1)));
+
+          const body = {
+            message: `Update ${f.path.split('/').pop()} — ${new Date().toISOString().slice(0,16)}`,
+            content
+          };
+          if (sha) body.sha = sha;
+
+          const putRes = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${f.path}`, {
+            method: 'PUT',
+            headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+
+          if (!putRes.ok) {
+            let errMsg;
+            try { const err = await putRes.json(); errMsg = err.message; } catch(_) { errMsg = putRes.statusText; }
+            const hints = {
+              401: 'Invalid token', 403: 'Token lacks write permission',
+              404: 'Repo/path not found — check Settings',
+              409: 'Conflict — pull first', 422: 'SHA mismatch — pull first',
+            };
+            throw new Error(hints[putRes.status] || (errMsg || `HTTP ${putRes.status}`));
+          }
+          pushed++;
+        }
+
+        // ── Update snapshot ──
+        _lastPublishedSnapshot = {
+          _index: JSON.stringify(indexPayload),
+          sections: Object.fromEntries(Object.entries(sectionPayloads).map(([id, p]) => [id, JSON.stringify(p, null, 2)]))
+        };
+
+        dirty = false;
+        setSyncStatus('ok', `Published ${pushed} file(s) ✓`);
+        toast(`Published ${pushed} file(s) to GitHub ✓ — viewer updates in ~30s`);
+
+      } catch(e) {
+        setSyncStatus('err', 'Publish failed');
+        toast('Publish failed: ' + e.message, true);
+        console.error('[Kritzaar] Publish error:', e);
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       DIRTY STATE
+    ════════════════════════════════════════════ */
+    function markDirty() {
+      dirty = true;
+      setSyncStatus('', 'Unsaved changes');
+    }
+
+    window.addEventListener('beforeunload', e => {
+      if (dirty) { e.preventDefault(); e.returnValue='You have unsaved changes. Publish before leaving?'; }
+    });
+
+    /* ════════════════════════════════════════════
+       UTILS
+    ════════════════════════════════════════════ */
+    function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    /* ════════════════════════════════════════════
+       INIT — try to load from GitHub, else defaults
+    ════════════════════════════════════════════ */
+    (async function init() {
+      applyThemeToPage(THEME);
+      const user=getCfg('user'),repo=getCfg('repo'),token=getCfg('token');
+      if (user && repo && token) {
+        await pullFromGitHub();
+      } else {
+        setSyncStatus('','Configure GitHub in Settings');
+      }
+      renderSidebar();
+      renderMain();
+    })();
+  </script>
+</body>
+</html>
