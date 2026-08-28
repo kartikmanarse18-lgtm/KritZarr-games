@@ -406,6 +406,27 @@ function haversineKm(lat1,lon1,lat2,lon2){
 }
 function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*60)); }
 
+/* Real road-following routing via OSRM's free public routing API (no key required).
+   Falls back to null (caller keeps the straight-line placeholder) if unreachable —
+   this keeps the app usable offline/on flaky connections while giving realistic
+   routes whenever the network allows it. */
+async function fetchRoadRoute(pts){
+  if(!pts || pts.length<2) return null;
+  const coordStr = pts.map(p=>`${p[1]},${p[0]}`).join(';');
+  try{
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data.routes || !data.routes.length) return null;
+    const route = data.routes[0];
+    return {
+      coords: route.geometry.coordinates.map(c=>[c[1],c[0]]), // GeoJSON is [lng,lat] — Leaflet wants [lat,lng]
+      distanceKm: route.distance/1000,
+      durationMin: Math.max(2, Math.round(route.duration/60))
+    };
+  }catch(e){ console.warn('Road routing unavailable, using straight-line estimate', e); return null; }
+}
+
 const SEED = {
   hospitals: [
     {id:'HOSP-01', name:'City Care Hospital', lat:BASE.lat+0.018, lng:BASE.lng+0.021, beds:6, icu:2, phone:'011-4000-1001', specialties:['Trauma','Cardiac','General']},
@@ -661,7 +682,7 @@ function initializeDataStore(){
   if(!db('incidents')) dbSet('incidents', []);
   if(!db('notifications')) dbSet('notifications', []);
   if(!db('audit')) dbSet('audit', []);
-  if(!db('profile')) dbSet('profile', {name:'Ananya Sharma', phone:'+91 98xxxxxx21', bloodGroup:'O+', allergies:'Penicillin', chronic:'None', emergencyContact:'Rahul Sharma · +91 99xxxxxx45', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)});
+  if(!db('profile')) dbSet('profile', {name:'Ananya Sharma', gender:'Female', phone:'+91 98xxxxxx21', bloodGroup:'O+', allergies:'Penicillin', chronic:'None', emergencyContact:'Rahul Sharma · +91 99xxxxxx45', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)});
   if(!db('appointments')) dbSet('appointments', []);
   if(!db('prescriptions')) dbSet('prescriptions', []);
   if(!db('reminders')) dbSet('reminders', []);
@@ -1081,6 +1102,14 @@ function renderPatientAuthCard(){
       <div class="form-group"><input type="password" class="dark-input" id="pa-password" placeholder="Create a password (min 6 chars)"></div>
       <div class="form-group"><input type="password" class="dark-input" id="pa-password2" placeholder="Confirm password"></div>
       <div class="form-group"><input class="dark-input" id="pa-phone" placeholder="+91 98xxxxxxxx" value="${d.phone||''}"></div>
+      <div class="form-group">
+        <label style="display:block;margin-bottom:6px;color:var(--text-muted);font-size:.85rem;">Gender</label>
+        <select class="dark-input" id="pa-gender">
+          <option value="Female" ${d.gender==='Female'?'selected':''}>Female</option>
+          <option value="Male" ${d.gender==='Male'?'selected':''}>Male</option>
+          <option value="Other" ${d.gender==='Other'?'selected':''}>Other / Prefer not to say</option>
+        </select>
+      </div>
       <div id="pa-signup-err"></div>
       <button class="btn btn-block" onclick="patientAuthSignupContinue()"><i class="fa-solid fa-paper-plane"></i> Continue &amp; send code</button>
       <div class="auth-link-row"><a onclick="patientAuthStep='email';renderAuthCard();">Use a different email</a><span></span></div>`;
@@ -1262,12 +1291,13 @@ async function patientAuthSignupContinue(){
   const pw = document.getElementById('pa-password').value;
   const pw2 = document.getElementById('pa-password2').value;
   const phone = document.getElementById('pa-phone').value.trim();
+  const gender = document.getElementById('pa-gender').value;
   const errBox = document.getElementById('pa-signup-err');
   if(!name || !phone){ errBox.innerHTML = `<div class="field-err">Name and phone number are required.</div>`; return; }
   if(pw.length<6){ errBox.innerHTML = `<div class="field-err">Password must be at least 6 characters.</div>`; return; }
   if(pw!==pw2){ errBox.innerHTML = `<div class="field-err">Passwords don't match.</div>`; return; }
   errBox.innerHTML = '';
-  patientAuthData.name = name; patientAuthData.phone = phone; patientAuthData.password = pw;
+  patientAuthData.name = name; patientAuthData.phone = phone; patientAuthData.password = pw; patientAuthData.gender = gender;
 
   const conflict = findUserByPhone(phone, patientAuthData.email);
   if(conflict){
@@ -1338,7 +1368,7 @@ async function patientAuthFinishSignup(){
   }
   const memberId = uid('MEM');
   const primaryMember = {
-    id: memberId, name: d.name, relation: 'Self', isPrimary: true,
+    id: memberId, name: d.name, relation: 'Self', isPrimary: true, gender: d.gender || 'Other',
     bloodGroup: 'Unknown', allergies: 'None recorded', chronic: 'None recorded', emergencyContact: '—',
     phone: d.phone || '', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)
   };
@@ -1407,7 +1437,13 @@ function renderFamilyModal(){
     ${canAdd ? `
     <div class="form-group" style="margin-top:16px;"><label>Add a family member</label>
       <input class="form-control" id="fam-name" placeholder="Full name" style="margin-bottom:8px;">
-      <input class="form-control" id="fam-rel" placeholder="Relation (e.g. Daughter, Son, Spouse)">
+      <input class="form-control" id="fam-rel" placeholder="Relation (e.g. Daughter, Son, Spouse)" style="margin-bottom:8px;">
+      <label style="display:block;margin-bottom:6px;color:var(--text-muted);font-size:.85rem;">Gender</label>
+      <select class="form-control" id="fam-gender">
+        <option value="Female">Female</option>
+        <option value="Male">Male</option>
+        <option value="Other">Other / Prefer not to say</option>
+      </select>
     </div>
     <button class="btn btn-block" onclick="addFamilyMember()"><i class="fa-solid fa-user-plus"></i> Add member</button>`
     : `<p style="font-size:.8rem;color:var(--text-muted);margin-top:10px;">Maximum of 3 members reached for this account.</p>`}
@@ -1419,8 +1455,10 @@ function switchFamilyMember(memberId){
   u.activeMemberId = memberId;
   saveUser(u);
   loadActiveMemberIntoProfile(u);
+  buildSideNav('patient');
   closeModal();
-  if(currentView) renderCurrentView(currentView);
+  const targetView = (currentView==='p-women' && (db('profile')||{}).gender==='Male') ? 'p-dash' : currentView;
+  if(targetView) renderCurrentView(targetView);
   refreshBell();
   showToast('Switched profile', 'Now viewing '+ (u.members.find(m=>m.id===memberId)||{}).name, 'success');
 }
@@ -1429,9 +1467,10 @@ function addFamilyMember(){
   if(u.members.length>=3){ showToast('Limit reached', 'Maximum of 3 members per account.', 'danger'); return; }
   const name = document.getElementById('fam-name').value.trim();
   const rel = document.getElementById('fam-rel').value.trim() || 'Family member';
+  const gender = document.getElementById('fam-gender').value || 'Other';
   if(!name){ showToast('Name required', 'Enter a name for the new family member.', 'danger'); return; }
   persistActiveProfileBackToMember();
-  const m = {id: uid('MEM'), name, relation: rel, isPrimary:false, bloodGroup:'Unknown', allergies:'None recorded', chronic:'None recorded', emergencyContact:'—', phone:u.phone||'', lat:BASE.lat+rnd(-0.01,0.01), lng:BASE.lng+rnd(-0.01,0.01)};
+  const m = {id: uid('MEM'), name, relation: rel, isPrimary:false, gender, bloodGroup:'Unknown', allergies:'None recorded', chronic:'None recorded', emergencyContact:'—', phone:u.phone||'', lat:BASE.lat+rnd(-0.01,0.01), lng:BASE.lng+rnd(-0.01,0.01)};
   u.members.push(m);
   saveUser(u);
   audit('patient', 'family_add', name+' added to '+u.email);
@@ -1589,7 +1628,12 @@ const SIDENAV = {
 };
 function buildSideNav(role){
   const nav = document.getElementById('app-sidenav');
-  nav.innerHTML = SIDENAV[role].map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="renderCurrentView('${item.id}')"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
+  let items = SIDENAV[role];
+  if(role==='patient'){
+    const gender = (db('profile')||{}).gender;
+    if(gender==='Male') items = items.filter(item=>item.id!=='p-women');
+  }
+  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="renderCurrentView('${item.id}')"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
 }
 function setActiveNav(navId){
   document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
@@ -1845,7 +1889,7 @@ function renderActiveSosTracking(inc){
     ${['Broadcast','Ambulance Assigned','Picked Up','At Hospital'].map((lbl,i)=>`<div class="step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="circ">${i<stepIdx?'<i class=\"fa-solid fa-check\"></i>':i+1}</div><div class="lbl">${lbl}</div></div>`).join('')}
   </div>
   <div class="grid-2">
-    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div></div>
+    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="sos-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
     <div class="card">
       <h3 style="margin-top:0;">Dispatch activity</h3>
       <ul class="activity-feed">
@@ -2042,7 +2086,7 @@ function viewResponderActive(){
   return `
   ${viewHeader('Active Case', inc.id, 'Status: '+incidentStatusLabel(inc.status))}
   <div class="grid-2">
-    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div></div>
+    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="resp-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
     <div class="card">
       <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark ? inc.landmark : 'No landmark given'} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);font-weight:600;">Get directions <i class="fa-solid fa-diamond-turn-right"></i></a></p>
       ${inc.reportedFor==='other' ? `<div class="card" style="background:var(--bg-subtle);padding:12px;margin-bottom:12px;"><strong>Reported by a bystander</strong> — patient not yet identified.${inc.victimNote?'<br>Reported condition: '+inc.victimNote:''}<br>Reporter contact: <a href="tel:${inc.reporterPhone}" style="color:var(--brand-primary);font-weight:700;">${inc.reporterPhone}</a></div>` : ''}
@@ -2239,6 +2283,13 @@ function viewPatientRecords(){
   <div class="card">
     <div class="grid-2">
       <div class="form-group"><label>Full name</label><input class="form-control" id="rec-name" value="${p.name}"></div>
+      <div class="form-group"><label>Gender</label>
+        <select class="form-control" id="rec-gender">
+          <option value="Female" ${p.gender==='Female'?'selected':''}>Female</option>
+          <option value="Male" ${p.gender==='Male'?'selected':''}>Male</option>
+          <option value="Other" ${(!p.gender||p.gender==='Other')?'selected':''}>Other / Prefer not to say</option>
+        </select>
+      </div>
       <div class="form-group"><label>Blood group</label><input class="form-control" id="rec-blood" value="${p.bloodGroup}"></div>
       <div class="form-group"><label>Known allergies</label><input class="form-control" id="rec-allergies" value="${p.allergies}"></div>
       <div class="form-group"><label>Chronic conditions</label><input class="form-control" id="rec-chronic" value="${p.chronic}"></div>
@@ -2255,11 +2306,12 @@ function viewPatientRecords(){
 }
 function saveProfile(){
   const p = db('profile');
-  p.name=document.getElementById('rec-name').value; p.bloodGroup=document.getElementById('rec-blood').value;
+  p.name=document.getElementById('rec-name').value; p.gender=document.getElementById('rec-gender').value; p.bloodGroup=document.getElementById('rec-blood').value;
   p.allergies=document.getElementById('rec-allergies').value; p.chronic=document.getElementById('rec-chronic').value;
   p.emergencyContact=document.getElementById('rec-contact').value;
   dbSet('profile',p);
   persistActiveProfileBackToMember(); // writes into this account's own member record, not a shared room doc
+  buildSideNav('patient'); // Women's Health visibility depends on gender
   audit('patient','profile_update','Emergency profile updated');
   showToast('Saved','Your emergency profile is up to date.','success');
 }
@@ -2565,8 +2617,8 @@ function submitClaim(){
 /* ============================================================
    LEAFLET MAPS
    ============================================================ */
-let mapInstance = null, mapMarkers = {};
-function cleanupMap(){ if(mapInstance){ mapInstance.remove(); mapInstance=null; mapMarkers={}; } }
+let mapInstance = null, mapMarkers = {}, routeFetchGen = 0;
+function cleanupMap(){ if(mapInstance){ mapInstance.remove(); mapInstance=null; mapMarkers={}; } routeFetchGen++; }
 function ensureMap(){
   const el = document.getElementById('leaflet-map-box'); if(!el) return null;
   if(mapInstance){ mapInstance.remove(); mapInstance=null; }
@@ -2575,11 +2627,38 @@ function ensureMap(){
   return mapInstance;
 }
 function icon(color){ return L.divIcon({className:'', html:`<div style="width:16px;height:16px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`, iconSize:[16,16]}); }
-function drawRoute(pts, color){
+function drawRoute(pts, color, etaElId){
   if(mapMarkers.route){ mapInstance.removeLayer(mapMarkers.route); mapMarkers.route=null; }
   if(pts.length>1){
-    mapMarkers.route = L.polyline(pts, {color: color||'#0d9488', weight:4, opacity:.75, dashArray:'9,9'}).addTo(mapInstance);
+    // Straight-line placeholder, shown immediately while the real road route loads.
+    mapMarkers.route = L.polyline(pts, {color: color||'#0d9488', weight:4, opacity:.6, dashArray:'9,9'}).addTo(mapInstance);
+  } else {
+    return;
   }
+  const myGen = ++routeFetchGen;
+  const totalKm = pts.slice(1).reduce((sum,p,i)=>sum+haversineKm(pts[i][0],pts[i][1],p[0],p[1]),0);
+  if(etaElId){
+    const el = document.getElementById(etaElId);
+    if(el) el.innerHTML = `<i class="fa-solid fa-route"></i> ~${etaMinutes(totalKm)} min (straight-line estimate, finding real route…)`;
+  }
+  fetchRoadRoute(pts).then(real=>{
+    if(myGen!==routeFetchGen || !mapInstance) return; // view changed or map torn down before this resolved
+    if(mapMarkers.route){ mapInstance.removeLayer(mapMarkers.route); mapMarkers.route=null; }
+    if(real){
+      mapMarkers.route = L.polyline(real.coords, {color: color||'#0d9488', weight:5, opacity:.85}).addTo(mapInstance);
+      if(etaElId){
+        const el = document.getElementById(etaElId);
+        if(el) el.innerHTML = `<i class="fa-solid fa-route"></i> ${real.distanceKm.toFixed(1)} km by road · ETA ${real.durationMin} min`;
+      }
+    } else {
+      // Road routing unreachable — keep a straight-line placeholder rather than leaving no route at all.
+      mapMarkers.route = L.polyline(pts, {color: color||'#0d9488', weight:4, opacity:.6, dashArray:'9,9'}).addTo(mapInstance);
+      if(etaElId){
+        const el = document.getElementById(etaElId);
+        if(el) el.innerHTML = `<i class="fa-solid fa-route"></i> ~${etaMinutes(totalKm)} min (straight-line estimate — live routing unavailable)`;
+      }
+    }
+  });
 }
 function initSosMapIfNeeded(update){
   const inc = currentIncident(); if(!inc) return;
@@ -2601,7 +2680,7 @@ function initSosMapIfNeeded(update){
     mapMarkers.hosp = L.marker([h.lat,h.lng], {icon: icon('#2563eb')}).addTo(mapInstance).bindPopup(h.name);
     pts.push([h.lat,h.lng]);
   }
-  drawRoute(pts, '#0d9488');
+  drawRoute(pts, '#0d9488', 'sos-live-eta');
   if(pts.length>1) mapInstance.fitBounds(pts, {padding:[40,40]});
 }
 function initResponderMap(update){
@@ -2620,7 +2699,7 @@ function initResponderMap(update){
     mapMarkers.hosp = L.marker([h.lat,h.lng], {icon: icon('#2563eb')}).addTo(mapInstance).bindPopup(h.name);
     pts.push([h.lat,h.lng]);
   }
-  drawRoute(pts, '#ef4444');
+  drawRoute(pts, '#ef4444', 'resp-live-eta');
   mapInstance.fitBounds(pts, {padding:[40,40]});
 }
 function initPoliceMap(update){
@@ -2631,6 +2710,7 @@ function initPoliceMap(update){
   (mapMarkers.dynList||[]).forEach(l=>mapInstance.removeLayer(l));
   mapMarkers.dynList = [];
   const pts = [];
+  const myGen = ++routeFetchGen;
   incidents.forEach(inc=>{
     const im = L.marker([inc.lat,inc.lng], {icon: icon('#ef4444')}).addTo(mapInstance).bindPopup(inc.id+' · '+inc.severity+' · '+incidentStatusLabel(inc.status));
     mapMarkers.dynList.push(im); pts.push([inc.lat,inc.lng]);
@@ -2639,8 +2719,17 @@ function initPoliceMap(update){
       if(r){
         const rm = L.marker([r.lat,r.lng], {icon: icon('#f59e0b')}).addTo(mapInstance).bindPopup(r.name+' · '+r.vehicle);
         mapMarkers.dynList.push(rm); pts.push([r.lat,r.lng]);
-        const line = L.polyline([[r.lat,r.lng],[inc.lat,inc.lng]], {color:'#f59e0b', weight:3, opacity:.75, dashArray:'7,7'}).addTo(mapInstance);
+        const routePts = [[r.lat,r.lng],[inc.lat,inc.lng]];
+        // Straight-line placeholder, upgraded to a real road route below once fetched.
+        const line = L.polyline(routePts, {color:'#f59e0b', weight:3, opacity:.75, dashArray:'7,7'}).addTo(mapInstance);
         mapMarkers.dynList.push(line);
+        fetchRoadRoute(routePts).then(real=>{
+          if(!real || myGen!==routeFetchGen || !mapInstance) return; // stale or map gone
+          mapInstance.removeLayer(line);
+          const idx = mapMarkers.dynList.indexOf(line);
+          const solid = L.polyline(real.coords, {color:'#f59e0b', weight:3, opacity:.85}).addTo(mapInstance).bindPopup(`${real.distanceKm.toFixed(1)} km · ETA ${real.durationMin} min`);
+          if(idx>-1) mapMarkers.dynList[idx] = solid; else mapMarkers.dynList.push(solid);
+        });
       }
     }
   });
