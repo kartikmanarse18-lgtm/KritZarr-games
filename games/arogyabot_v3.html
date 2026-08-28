@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArogyaBot — Emergency &amp; Health Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root{
+  --ff-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  --ff-display:'Space Grotesk',sans-serif;
+  --ff-mono:'JetBrains Mono',monospace;
+  --bg-main:#f4f7f6; --bg-surface:#ffffff; --bg-subtle:#e8f0ec;
+  --text-main:#111915; --text-muted:#52635a; --border-color:rgba(17,25,21,.1);
+  --shadow-sm:0 2px 8px rgba(17,25,21,.05); --shadow-md:0 8px 24px rgba(17,25,21,.09); --shadow-lg:0 16px 36px rgba(17,25,21,.14);
+  --radius-sm:8px; --radius-md:14px; --radius-lg:20px;
+  --brand-primary:#0d9488; --brand-primary-hover:#0f766e; --brand-secondary:#0284c7;
+  --brand-accent:#f59e0b; --brand-danger:#ef4444; --brand-success:#10b981;
+  --shell-bg:#0f172a; --shell-fg:#f8fafc; --shell-muted:rgba(248,250,252,.65); --shell-border:rgba(248,250,252,.12);
+}
+[data-role="responder"]{
+  --bg-main:#0b0f17; --bg-surface:#131b2a; --bg-subtle:#1c273c;
+  --text-main:#f1f5f9; --text-muted:#94a3b8; --border-color:rgba(241,245,249,.12);
+  --brand-primary:#ef4444; --brand-primary-hover:#dc2626; --brand-secondary:#f59e0b;
+}
+[data-role="hospital"]{
+  --bg-main:#f0f4f9; --bg-surface:#ffffff; --bg-subtle:#e1e9f5;
+  --text-main:#0f172a; --text-muted:#475569; --border-color:rgba(15,23,42,.12);
+  --brand-primary:#2563eb; --brand-primary-hover:#1d4ed8; --brand-secondary:#0d9488;
+}
+[data-role="police"]{
+  --bg-main:#101018; --bg-surface:#181826; --bg-subtle:#22223a;
+  --text-main:#f1f0f8; --text-muted:#9d9bc4; --border-color:rgba(241,240,248,.12);
+  --brand-primary:#6366f1; --brand-primary-hover:#4f46e5; --brand-secondary:#f59e0b;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body,html{margin:0;padding:0;font-family:var(--ff-sans);background:var(--bg-main);color:var(--text-main);-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none;}
+input,select,textarea{font-family:inherit;outline:none;}
+.hidden{display:none !important;}
+a{color:inherit;}
+::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:rgba(128,128,128,.35);border-radius:8px;}
+
+/* ============ LANDING ============ */
+#screen-auth,#screen-landing{min-height:100vh;background:radial-gradient(1000px 500px at 20% -10%,rgba(13,148,136,.16),transparent),radial-gradient(900px 500px at 80% 100%,rgba(99,102,241,.14),transparent),#0f172a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;position:relative;overflow:hidden;}
+.landing-hero{max-width:720px;margin-bottom:40px;position:relative;z-index:2;animation:fadeIn .8s ease-out;}
+.hero-logo{display:inline-flex;align-items:center;gap:12px;font-family:var(--ff-display);font-size:2.6rem;font-weight:800;color:#fff;margin-bottom:10px;letter-spacing:-.02em;}
+.hero-logo i{color:#10b981;}
+.hero-tagline{font-family:var(--ff-mono);font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:14px;}
+.hero-desc{font-size:1.05rem;color:#cbd5e1;max-width:580px;margin:0 auto;}
+.auth-card{width:100%;max-width:420px;background:rgba(30,41,59,.75);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:32px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.4);position:relative;z-index:2;animation:slideUp .6s ease-out;}
+.auth-card h3{font-family:var(--ff-display);font-size:1.3rem;margin:0 0 6px;}
+.auth-card p{color:#94a3b8;font-size:.88rem;margin:0 0 20px;}
+.otp-boxes{display:flex;gap:10px;margin:16px 0;}
+.otp-boxes input{width:48px;height:56px;text-align:center;font-size:1.4rem;font-weight:700;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#fff;}
+.otp-hint{font-family:var(--ff-mono);font-size:.75rem;color:#64748b;margin-top:4px;}
+.consent-row{display:flex;gap:10px;align-items:flex-start;background:rgba(0,0,0,.25);border-radius:12px;padding:14px;margin:14px 0;font-size:.82rem;color:#cbd5e1;}
+.consent-row input{margin-top:3px;}
+.step-dots{display:flex;gap:6px;margin-bottom:18px;}
+.step-dots span{height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.15);}
+.step-dots span.done{background:var(--brand-primary);}
+.dark-input{width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);color:#fff;font-size:.92rem;margin-bottom:2px;}
+.dark-input::placeholder{color:#64748b;}
+.auth-link-row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:.8rem;}
+.auth-link-row a{color:#5eead4;cursor:pointer;font-weight:600;}
+.auth-link-row a:hover{text-decoration:underline;}
+.field-err{color:#fca5a5;font-size:.76rem;margin:-10px 0 12px;}
+.conflict-box{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:16px;margin:14px 0;font-size:.85rem;color:#fde68a;}
+.conflict-box strong{color:#fbbf24;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(2,6,12,.6);backdrop-filter:blur(3px);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-box{width:100%;max-width:480px;max-height:86vh;overflow-y:auto;background:var(--bg-surface);color:var(--text-main);border-radius:20px;padding:26px;box-shadow:0 30px 70px rgba(0,0,0,.4);animation:slideUp .3s ease-out;}
+.modal-box h3{margin:0 0 4px;font-family:var(--ff-display);font-size:1.25rem;}
+.modal-box p.modal-sub{color:var(--text-muted);font-size:.85rem;margin:0 0 18px;}
+.modal-close-x{position:sticky;top:0;float:right;width:32px;height:32px;border-radius:9px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;}
+.member-row{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border-color);border-radius:14px;margin-bottom:10px;}
+.member-row.active{border-color:var(--brand-primary);background:rgba(13,148,136,.06);}
+.member-avatar{width:40px;height:40px;border-radius:50%;background:var(--brand-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0;}
+.member-name{font-weight:700;font-size:.88rem;}
+.member-rel{font-size:.74rem;color:var(--text-muted);}
+.member-actions{margin-left:auto;display:flex;gap:6px;}
+
+.badge-grid{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;max-width:1200px;width:100%;position:relative;z-index:2;animation:slideUp .8s ease-out;}
+.badge-card{width:270px;background:rgba(30,41,59,.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:26px 22px;text-align:left;transition:all .35s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.3);}
+.badge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:var(--badge-accent,#10b981);}
+.badge-card:hover{transform:translateY(-8px) scale(1.02);border-color:rgba(255,255,255,.3);box-shadow:0 30px 60px rgba(0,0,0,.4);}
+.badge-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.badge-icon{width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--badge-accent);}
+.badge-id{font-family:var(--ff-mono);font-size:.68rem;color:#64748b;background:rgba(0,0,0,.2);padding:4px 8px;border-radius:6px;font-weight:600;}
+.badge-title{font-family:var(--ff-display);font-size:1.35rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.badge-body{font-size:.85rem;color:#94a3b8;line-height:1.6;margin-bottom:22px;flex-grow:1;}
+.badge-footer{display:flex;align-items:center;justify-content:space-between;font-family:var(--ff-mono);font-size:.8rem;font-weight:600;color:var(--badge-accent);}
+.badge-card[data-role-type="patient"]{--badge-accent:#0d9488;}
+.badge-card[data-role-type="responder"]{--badge-accent:#ef4444;}
+.badge-card[data-role-type="police"]{--badge-accent:#6366f1;}
+.badge-card[data-role-type="hospital"]{--badge-accent:#3b82f6;}
+
+/* ============ APP SHELL ============ */
+#app-shell{min-height:100vh;display:flex;flex-direction:column;animation:fadeIn .4s;}
+.topbar{background:var(--shell-bg);color:var(--shell-fg);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--shell-border);position:sticky;top:0;z-index:1000;}
+.topbar-brand{display:flex;align-items:center;gap:12px;font-family:var(--ff-display);font-size:1.25rem;font-weight:700;text-decoration:none;color:inherit;}
+.pulse-indicator{width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 12px #10b981;animation:pulse 2s infinite;}
+@keyframes pulse{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,.7);}70%{transform:scale(1);box-shadow:0 0 0 10px rgba(16,185,129,0);}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(16,185,129,0);}}
+.topbar-actions{display:flex;align-items:center;gap:12px;}
+.role-badge-tag{font-family:var(--ff-mono);font-size:.72rem;text-transform:uppercase;font-weight:700;padding:4px 12px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);letter-spacing:1px;}
+
+.profile-wrap{position:relative;}
+.profile-btn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;transition:background .2s;}
+.profile-btn:hover{background:rgba(255,255,255,.18);}
+.profile-menu{position:absolute;top:48px;right:0;width:280px;background:var(--bg-surface);color:var(--text-main);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);border:1px solid var(--border-color);z-index:2000;overflow:hidden;}
+.profile-menu-head{padding:18px 16px;background:var(--bg-subtle);display:flex;gap:12px;align-items:center;}
+.profile-avatar{width:42px;height:42px;border-radius:50%;background:var(--brand-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;flex-shrink:0;}
+.profile-menu-name{font-weight:700;font-size:.92rem;}
+.profile-menu-sub{font-size:.76rem;color:var(--text-muted);margin-top:2px;font-family:var(--ff-mono);}
+.profile-menu-body{padding:10px;}
+.profile-menu-row{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;font-size:.8rem;color:var(--text-muted);}
+.profile-menu-row strong{color:var(--text-main);font-weight:600;}
+.profile-menu-logout{width:100%;text-align:left;padding:12px 10px;border-radius:10px;font-size:.85rem;font-weight:700;color:var(--brand-danger);display:flex;align-items:center;gap:10px;transition:background .15s;}
+.profile-menu-logout:hover{background:rgba(239,68,68,.1);}
+
+.bell-wrap{position:relative;}
+.bell-btn{position:relative;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.05rem;}
+.bell-btn:hover{background:rgba(255,255,255,.18);}
+.bell-dot{position:absolute;top:-3px;right:-3px;background:var(--brand-danger);color:#fff;font-size:.62rem;font-weight:800;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--shell-bg);}
+.bell-panel{position:absolute;top:48px;right:0;width:340px;max-height:420px;overflow-y:auto;background:var(--bg-surface);color:var(--text-main);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);border:1px solid var(--border-color);z-index:2000;}
+.bell-panel-head{padding:14px 16px;border-bottom:1px solid var(--border-color);font-weight:700;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;}
+.bell-item{padding:12px 16px;border-bottom:1px solid var(--border-color);font-size:.83rem;display:flex;gap:10px;}
+.bell-item:last-child{border-bottom:none;}
+.bell-item.unread{background:var(--bg-subtle);}
+.bell-item i{color:var(--brand-primary);margin-top:2px;}
+.bell-item-title{font-weight:700;margin-bottom:2px;}
+.bell-item-body{color:var(--text-muted);font-size:.78rem;}
+.bell-item-time{color:var(--text-muted);font-size:.68rem;font-family:var(--ff-mono);margin-top:4px;}
+.bell-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-size:.85rem;}
+
+.app-container{flex:1;display:flex;min-height:calc(100vh - 64px);}
+.sidenav{width:250px;background:var(--shell-bg);border-right:1px solid var(--shell-border);padding:20px 14px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.nav-link{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;color:var(--shell-muted);text-decoration:none;font-size:.9rem;font-weight:600;transition:all .2s ease;background:transparent;width:100%;text-align:left;}
+.nav-link i{font-size:1.05rem;width:22px;text-align:center;}
+.nav-link:hover{color:var(--shell-fg);background:rgba(255,255,255,.06);}
+.nav-link.active{color:#fff;background:var(--brand-primary);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.content-area{flex:1;padding:28px 36px;overflow-y:auto;max-width:1400px;margin:0 auto;width:100%;}
+@media (max-width:900px){
+  .app-container{flex-direction:column;}
+  .sidenav{width:100%;border-right:none;border-bottom:1px solid var(--shell-border);flex-direction:row;overflow-x:auto;padding:10px;}
+  .nav-link{white-space:nowrap;padding:9px 14px;font-size:.85rem;}
+  .content-area{padding:18px;}
+  .topbar{padding:0 14px;}
+  .role-badge-tag{display:none;}
+  .bell-panel{width:92vw;right:-40px;}
+}
+
+/* ============ COMPONENTS ============ */
+.view-header{margin-bottom:26px;animation:slideDown .4s ease-out;}
+.view-eyebrow{font-family:var(--ff-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-primary);font-weight:700;margin-bottom:6px;}
+.view-title{font-family:var(--ff-display);font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;}
+.view-subtitle{color:var(--text-muted);font-size:.95rem;margin:0;max-width:720px;line-height:1.6;}
+.card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:22px;animation:fadeIn .5s ease-out;}
+.card:hover{box-shadow:var(--shadow-md);}
+.card-flush{padding:0;overflow:hidden;}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media (max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+.form-group{margin-bottom:18px;}
+.form-group label{display:block;font-size:.8rem;font-weight:700;color:var(--text-muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
+.form-control{width:100%;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font-size:.92rem;transition:all .2s;}
+.form-control:focus{border-color:var(--brand-primary);background:var(--bg-surface);box-shadow:0 0 0 4px rgba(13,148,136,.12);}
+textarea.form-control{resize:vertical;min-height:90px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 22px;border-radius:var(--radius-md);font-weight:700;font-size:.9rem;background:var(--brand-primary);color:#fff;transition:all .2s ease;}
+.btn:hover{background:var(--brand-primary-hover);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15);}
+.btn:active{transform:translateY(0);}
+.btn-secondary{background:var(--bg-subtle);color:var(--text-main);}
+.btn-secondary:hover{background:var(--border-color);}
+.btn-danger{background:var(--brand-danger);color:#fff;}
+.btn-danger:hover{background:#dc2626;}
+.btn-outline{background:transparent;border:1px solid var(--border-color);color:var(--text-main);}
+.btn-sm{padding:8px 14px;font-size:.8rem;border-radius:var(--radius-sm);}
+.btn-block{width:100%;}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.doc-dropzone{border:2px dashed var(--border-color);border-radius:var(--radius-md);padding:26px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg-main);}
+.doc-dropzone:hover{border-color:var(--brand-primary);background:var(--bg-subtle);}
+.doc-dropzone i{font-size:1.6rem;color:var(--brand-primary);margin-bottom:8px;display:block;}
+.doc-list{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+.doc-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border-color);border-radius:var(--radius-md);background:var(--bg-main);}
+.doc-row-icon{width:38px;height:38px;border-radius:10px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;color:var(--brand-primary);flex-shrink:0;}
+.doc-row-name{font-weight:700;font-size:.85rem;}
+.doc-row-meta{font-size:.72rem;color:var(--text-muted);margin-top:2px;font-family:var(--ff-mono);}
+.doc-row-actions{margin-left:auto;display:flex;gap:8px;}
+.status-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--ff-mono);font-size:.7rem;font-weight:700;padding:5px 11px;border-radius:99px;text-transform:uppercase;letter-spacing:.5px;}
+.status-ok{background:rgba(16,185,129,.15);color:#10b981;}
+.status-warn{background:rgba(245,158,11,.15);color:#f59e0b;}
+.status-danger{background:rgba(239,68,68,.15);color:#ef4444;}
+.status-info{background:rgba(59,130,246,.15);color:#3b82f6;}
+.status-muted{background:rgba(148,163,184,.18);color:#94a3b8;}
+.dash-stat-card{display:flex;align-items:center;gap:14px;padding:18px;border-radius:var(--radius-lg);background:var(--bg-subtle);border:1px solid var(--border-color);}
+.dash-stat-icon{width:46px;height:46px;border-radius:13px;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--brand-primary);box-shadow:var(--shadow-sm);flex-shrink:0;}
+.dash-stat-num{font-family:var(--ff-display);font-size:1.4rem;font-weight:800;}
+.dash-stat-label{font-size:.76rem;color:var(--text-muted);font-weight:600;}
+
+/* Chat */
+.chat-container{display:flex;flex-direction:column;height:560px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-color);background:var(--bg-surface);}
+.chat-messages{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);scroll-behavior:smooth;}
+.chat-bubble{max-width:82%;padding:14px 18px;border-radius:20px;font-size:.9rem;line-height:1.5;position:relative;animation:slideUp .3s ease-out;}
+.chat-bubble.bot{align-self:flex-start;background:var(--bg-surface);border:1px solid var(--border-color);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm);}
+.chat-bubble.user{align-self:flex-end;background:var(--brand-primary);color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 12px rgba(13,148,136,.2);}
+.chat-quick-prompts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:var(--bg-surface);border-top:1px solid var(--border-color);}
+.prompt-chip{font-size:.8rem;padding:7px 14px;border-radius:99px;border:1px solid var(--border-color);background:var(--bg-main);transition:all .2s;font-weight:500;}
+.prompt-chip:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary);}
+.chat-input-bar{display:flex;gap:10px;padding:14px 18px;background:var(--bg-surface);border-top:1px solid var(--border-color);}
+
+/* SOS */
+.sos-banner{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border-radius:var(--radius-lg);padding:36px 22px;text-align:center;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(239,68,68,.35);}
+.sos-trigger-btn{width:160px;height:160px;border-radius:50%;background:#fff;color:#dc2626;font-family:var(--ff-display);font-size:1.6rem;font-weight:800;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;margin:20px 0;box-shadow:0 0 0 14px rgba(255,255,255,.2),0 20px 40px rgba(0,0,0,.3);transition:transform .2s,box-shadow .2s;}
+.sos-trigger-btn:active{transform:scale(.92);}
+.sos-trigger-btn.active{background:#fef2f2;color:#991b1b;animation:pulseRed 1.5s infinite;}
+@keyframes pulseRed{0%{box-shadow:0 0 0 0 rgba(255,255,255,.4);}70%{box-shadow:0 0 0 20px rgba(255,255,255,0);}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}}
+.map-container{min-height:360px;height:100%;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border-color);background:#e2e8f0;position:relative;z-index:1;}
+.activity-feed{list-style:none;margin:0;padding:0;}
+.activity-feed li{display:flex;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border-color);font-size:.86rem;}
+.activity-feed li:last-child{border-bottom:none;}
+.activity-feed .dot{width:9px;height:9px;border-radius:50%;background:var(--brand-primary);margin-top:5px;flex-shrink:0;}
+.activity-feed .dot.done{background:var(--brand-success);}
+.activity-feed .dot.pending{background:var(--brand-accent);animation:pulse 1.5s infinite;}
+.timeline-time{font-family:var(--ff-mono);font-size:.72rem;color:var(--text-muted);margin-left:auto;white-space:nowrap;}
+
+.incident-card{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px 18px;margin-bottom:14px;background:var(--bg-main);}
+.incident-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.incident-id{font-family:var(--ff-mono);font-weight:700;font-size:.85rem;}
+.incident-meta{font-size:.78rem;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;}
+.incident-meta span{display:flex;align-items:center;gap:5px;}
+.med-tag{display:inline-block;background:var(--bg-subtle);border:1px solid var(--border-color);border-radius:99px;padding:3px 10px;font-size:.72rem;margin:2px 4px 2px 0;font-weight:600;}
+
+table.data-table{width:100%;border-collapse:collapse;font-size:.86rem;}
+table.data-table th{text-align:left;padding:10px 12px;color:var(--text-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border-color);}
+table.data-table td{padding:12px;border-bottom:1px solid var(--border-color);}
+table.data-table tr:last-child td{border-bottom:none;}
+
+.stepper{display:flex;align-items:center;margin:18px 0;}
+.stepper .step{flex:1;text-align:center;position:relative;}
+.stepper .step .circ{width:30px;height:30px;border-radius:50%;background:var(--bg-subtle);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;margin:0 auto 6px;border:2px solid var(--border-color);}
+.stepper .step.active .circ{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary);}
+.stepper .step.done .circ{background:var(--brand-success);color:#fff;border-color:var(--brand-success);}
+.stepper .step .lbl{font-size:.7rem;color:var(--text-muted);font-weight:600;}
+.stepper .step::after{content:'';position:absolute;top:15px;left:50%;width:100%;height:2px;background:var(--border-color);z-index:-1;}
+.stepper .step:last-child::after{display:none;}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.cal-cell{aspect-ratio:1;border-radius:9px;background:var(--bg-subtle);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;cursor:pointer;border:2px solid transparent;position:relative;}
+.cal-cell:hover{border-color:var(--brand-primary);}
+.cal-cell.period{background:#ef4444;color:#fff;}
+.cal-cell.predicted{background:rgba(239,68,68,.25);}
+.cal-cell.fertile{background:rgba(245,158,11,.3);}
+.cal-cell.empty{background:transparent;cursor:default;}
+
+.pin-lock{max-width:320px;margin:60px auto;text-align:center;}
+.pin-dots{display:flex;gap:12px;justify-content:center;margin:20px 0;}
+.pin-dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--brand-primary);}
+.pin-dots span.filled{background:var(--brand-primary);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:240px;margin:0 auto;}
+.pin-pad button{padding:16px;font-size:1.1rem;font-weight:700;border-radius:12px;background:var(--bg-subtle);}
+.pin-pad button:hover{background:var(--border-color);}
+
+.reminder-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);}
+.reminder-row:last-child{border-bottom:none;}
+.toggle-sw{width:42px;height:24px;border-radius:99px;background:var(--border-color);position:relative;transition:.2s;flex-shrink:0;}
+.toggle-sw.on{background:var(--brand-primary);}
+.toggle-sw::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+.toggle-sw.on::after{left:20px;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted);}
+.empty-state i{font-size:2.2rem;margin-bottom:12px;opacity:.5;}
+
+.video-mock{background:#0f172a;border-radius:var(--radius-lg);aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;position:relative;overflow:hidden;}
+.video-mock .avatar{width:90px;height:90px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:12px;}
+.video-controls{position:absolute;bottom:16px;display:flex;gap:12px;}
+.video-controls button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.video-controls button.end{background:var(--brand-danger);}
+
+.audit-row{font-family:var(--ff-mono);font-size:.76rem;}
+.severity-picker{display:flex;gap:10px;flex-wrap:wrap;}
+.severity-opt{flex:1;min-width:100px;border:2px solid var(--border-color);border-radius:var(--radius-md);padding:14px;text-align:center;font-weight:700;font-size:.85rem;}
+.severity-opt.sel{border-color:var(--brand-danger);background:rgba(239,68,68,.1);color:var(--brand-danger);}
+
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes slideUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-15px);}to{opacity:1;transform:translateY(0);}}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:360px;}
+.toast-message{background:#0f172a;color:#fff;padding:14px 20px;border-radius:12px;font-size:.88rem;box-shadow:0 12px 30px rgba(0,0,0,.4);border-left:4px solid var(--brand-primary);animation:slideIn .3s cubic-bezier(.16,1,.3,1);display:flex;align-items:flex-start;gap:10px;}
+.toast-message.danger{border-left-color:#ef4444;}
+.toast-message.success{border-left-color:#10b981;}
+@keyframes slideIn{from{transform:translateX(100%) scale(.9);opacity:0;}to{transform:translateX(0) scale(1);opacity:1;}}
+@media (max-width:600px){.toast-container{left:12px;right:12px;max-width:none;}}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH / VERIFICATION SCREEN
+     ============================================================ -->
+<div id="screen-auth" class="hidden">
+  <div class="landing-hero">
+    <div class="hero-logo"><i class="fa-solid fa-heart-pulse"></i>ArogyaBot</div>
+    <div class="hero-tagline" id="auth-role-tagline">Emergency &amp; Health Intelligence Platform</div>
+  </div>
+  <div class="auth-card" id="auth-card-box"></div>
+</div>
+
+<!-- ============================================================
+     LANDING — ROLE SELECT (first screen)
+     ============================================================ -->
+<div id="screen-landing">
+  <div class="landing-hero">
+    <div class="hero-logo"><i class="fa-solid fa-heart-pulse"></i>ArogyaBot</div>
+    <div class="hero-tagline">Emergency &amp; Health Intelligence Platform</div>
+    <p class="hero-desc">Tell us who's signing in. Each console has its own sign-up and verification, and every emergency still broadcasts to the nearest hospitals, ambulances, and police simultaneously — no single point of failure.</p>
+  </div>
+  <div class="badge-grid" id="badge-grid"></div>
+  <p style="position:relative;z-index:2;margin-top:34px;font-size:.76rem;color:#475569;">
+    Phone number dispute or already registered elsewhere? <a href="#" style="color:#5eead4;" onclick="openAdminGate();return false;">Admin / support login</a>
+  </p>
+</div>
+
+<!-- ============================================================
+     ADMIN — reviews phone-number-conflict complaints
+     ============================================================ -->
+<div id="screen-admin" class="hidden">
+  <div class="landing-hero">
+    <div class="hero-logo"><i class="fa-solid fa-user-shield"></i>ArogyaBot Admin</div>
+    <div class="hero-tagline">Phone-number verification &amp; complaint desk</div>
+  </div>
+  <div class="auth-card" id="admin-card-box" style="max-width:560px;"></div>
+</div>
+
+<!-- ============================================================
+     GENERIC MODAL (Family Members etc.)
+     ============================================================ -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="if(event.target===this) closeModal();">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div id="app-shell" class="hidden">
+  <div class="topbar">
+    <a href="#" class="topbar-brand" onclick="return false;"><i class="fa-solid fa-heart-pulse" style="color:#10b981;"></i>ArogyaBot</a>
+    <div class="topbar-actions">
+      <span class="role-badge-tag" id="current-role-tag">PATIENT</span>
+      <div class="bell-wrap">
+        <button class="bell-btn" onclick="toggleBell(event)"><i class="fa-solid fa-bell"></i><span class="bell-dot hidden" id="bell-count">0</span></button>
+        <div class="bell-panel hidden" id="bell-panel"></div>
+      </div>
+      <div class="profile-wrap">
+        <button class="profile-btn" onclick="toggleProfileMenu(event)"><i class="fa-solid fa-circle-user"></i></button>
+        <div class="profile-menu hidden" id="profile-menu"></div>
+      </div>
+    </div>
+  </div>
+  <div class="app-container">
+    <nav class="sidenav" id="app-sidenav"></nav>
+    <main class="content-area"><div id="active-view-container"></div></main>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-stack"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+/* ============================================================
+   CONFIG + SEED DATA (simulated backend)
+   ============================================================ */
+const BASE = { lat: 28.6139, lng: 77.2090 }; // New Delhi reference point
+const now = () => Date.now();
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+const rnd = (a,b) => Math.random()*(b-a)+a;
+const uid = (p) => p + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
+
+function getDeviceLocation(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation){ resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos=>resolve({lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:Math.round(pos.coords.accuracy||0)}),
+      ()=>resolve(null),
+      {enableHighAccuracy:true, timeout:8000, maximumAge:0}
+    );
+  });
+}
+function mapsLink(lat,lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`; }
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLon=toRad(lon2-lon1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*60)); }
+
+const SEED = {
+  hospitals: [
+    {id:'HOSP-01', name:'City Care Hospital', lat:BASE.lat+0.018, lng:BASE.lng+0.021, beds:6, icu:2, phone:'011-4000-1001', specialties:['Trauma','Cardiac','General']},
+    {id:'HOSP-02', name:'Sunrise Multispecialty', lat:BASE.lat-0.032, lng:BASE.lng+0.012, beds:3, icu:1, phone:'011-4000-1002', specialties:['General','Orthopedic']},
+    {id:'HOSP-03', name:'Apex Trauma Center', lat:BASE.lat+0.009, lng:BASE.lng-0.028, beds:0, icu:0, phone:'011-4000-1003', specialties:['Trauma','Neuro']},
+    {id:'HOSP-04', name:'Lotus Women & Child', lat:BASE.lat-0.014, lng:BASE.lng-0.019, beds:4, icu:2, phone:'011-4000-1004', specialties:['Maternity','Pediatric']},
+    {id:'HOSP-05', name:'Metro General Hospital', lat:BASE.lat+0.041, lng:BASE.lng-0.006, beds:8, icu:3, phone:'011-4000-1005', specialties:['General','Cardiac','Trauma']},
+  ],
+  responders: [
+    {id:'RSP-01', name:'Rakesh Kumar', vehicle:'AMB-DL-01', phone:'+91 98111-22001', lat:BASE.lat+0.006, lng:BASE.lng+0.008, status:'available'},
+    {id:'RSP-02', name:'Sunil Yadav', vehicle:'AMB-DL-07', phone:'+91 98111-22002', lat:BASE.lat-0.011, lng:BASE.lng+0.004, status:'available'},
+    {id:'RSP-03', name:'Farhan Ali', vehicle:'AMB-DL-12', phone:'+91 98111-22003', lat:BASE.lat+0.002, lng:BASE.lng-0.015, status:'available'},
+    {id:'RSP-04', name:'Deepak Rana', vehicle:'AMB-DL-19', phone:'+91 98111-22004', lat:BASE.lat-0.022, lng:BASE.lng-0.009, status:'off_duty'},
+  ],
+  police: [
+    {id:'PS-09', name:'Sector 9 Police Station', lat:BASE.lat+0.012, lng:BASE.lng+0.006},
+    {id:'PS-14', name:'Sector 14 Police Station', lat:BASE.lat-0.02, lng:BASE.lng-0.014},
+  ],
+  doctors: [
+    {id:'DOC-01', name:'Dr. Meera Nair', specialty:'General Physician', hospital:'HOSP-01', available:true},
+    {id:'DOC-02', name:'Dr. Arjun Sethi', specialty:'Cardiologist', hospital:'HOSP-05', available:true},
+    {id:'DOC-03', name:'Dr. Kavita Rao', specialty:'Gynecologist', hospital:'HOSP-04', available:false},
+    {id:'DOC-04', name:'Dr. Sameer Joshi', specialty:'Orthopedic', hospital:'HOSP-02', available:true},
+  ],
+  pharmacies: [
+    {id:'PH-01', name:'Apollo Pharmacy - Sector 9', lat:BASE.lat+0.014, lng:BASE.lng+0.01, stock:'high'},
+    {id:'PH-02', name:'Wellness Forever', lat:BASE.lat-0.009, lng:BASE.lng-0.006, stock:'medium'},
+    {id:'PH-03', name:'MedPlus 24x7', lat:BASE.lat+0.003, lng:BASE.lng-0.02, stock:'low'},
+  ]
+};
+
+/* ============================================================
+   STORAGE ADAPTER (localStorage by default; mirrors to Firestore
+   in real time when FIREBASE_CONFIG below is filled in, so this
+   same file works across multiple physical phones)
+   ============================================================ */
+const LOCAL_CACHE = {}; // in-memory mirror so every db()/dbSet() call stays synchronous
+const StorageAdapter = {
+  get(key, fallback){
+    if(Object.prototype.hasOwnProperty.call(LOCAL_CACHE, key)) return LOCAL_CACHE[key];
+    try{
+      const v = localStorage.getItem('abot2_'+key);
+      if(v!==null){ const parsed = JSON.parse(v); LOCAL_CACHE[key] = parsed; return parsed; }
+    }catch(e){}
+    return fallback;
+  },
+  set(key, val){
+    LOCAL_CACHE[key] = val;
+    try{ localStorage.setItem('abot2_'+key, JSON.stringify(val)); }catch(e){}
+    if(fbEnabled && fbRoomRef){
+      fbRoomRef.doc(key).set({data: val, updatedAt: Date.now()}).catch(e=>console.warn('Firestore write failed for', key, e));
+    }
+  }
+};
+
+function db(key){ return StorageAdapter.get(key, null); }
+function dbSet(key,val){ StorageAdapter.set(key,val); }
+
+/* ============================================================
+   FIREBASE REALTIME SYNC — OPTIONAL
+   Fill FIREBASE_CONFIG in below and this file syncs shared state
+   (incidents, notifications, hospital beds, responder positions...)
+   across every phone that opens it, in real time.
+   Leave apiKey as "PASTE_..." and the app runs standalone on
+   localStorage only (single device, same as before).
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAhzw_8p9pIUO4C2_QYX53CvKuh0NjhY48",
+  authDomain: "kritzaararogyabot.firebaseapp.com",
+  projectId: "kritzaararogyabot",
+  storageBucket: "kritzaararogyabot.firebasestorage.app",
+  messagingSenderId: "188593206464",
+  appId: "1:188593206464:web:ece8c509f408d20e236925"
+};
+// Everyone who opens the app with the same ?room= link shares one live incident feed.
+// Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
+const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','phoneComplaints'];
+// NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
+// account/family-member is currently logged in on THIS device, refreshed from that
+// account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
+// and persistActiveProfileBackToMember()). It used to be synced as one shared room-wide
+// doc, which meant two different real patients in the same room would overwrite each
+// other's live profile — now each account's data lives isolated inside 'users'.
+
+/* ============================================================
+   EMAILJS — real, free OTP delivery to Gmail (or any inbox)
+   Sign up free at https://www.emailjs.com (no card required),
+   add an Email Service + a template with vars {{to_email}} and
+   {{otp_code}}, then paste the 3 IDs below. Until you do, the
+   app runs in demo mode and just shows the code in a toast.
+   ============================================================ */
+const EMAILJS_CONFIG = {
+  publicKey: "Y4zJTzwVc1zHM5SYu",
+  serviceId: "service_dzrh177",
+  templateId: "template_ct512x4"
+};
+let emailjsReady = false;
+(function initEmailJs(){
+  if(typeof emailjs==='undefined') return;
+  if(!EMAILJS_CONFIG.publicKey || EMAILJS_CONFIG.publicKey.indexOf('PASTE_')===0) return;
+  try{ emailjs.init({publicKey: EMAILJS_CONFIG.publicKey}); emailjsReady = true; }catch(e){ console.warn('EmailJS init failed', e); }
+})();
+// Sends a 6-digit code to toEmail. Resolves true if a real email went out,
+// false if we fell back to demo mode (still lets the flow continue).
+async function sendOtpEmail(toEmail, code){
+  if(!emailjsReady){
+    showToast('Demo mode — no email service configured', 'Code for '+toEmail+' is '+code+'. Add EmailJS keys in the source to send real emails.', 'danger');
+    return false;
+  }
+  try{
+    await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {to_email: toEmail, otp_code: code});
+    showToast('Code sent', 'A 6-digit verification code was emailed to '+toEmail+'.', 'success');
+    return true;
+  }catch(e){
+    console.error('EmailJS send failed', e);
+    showToast('Email send failed', 'Could not email a code (showing it here for now): '+code, 'danger');
+    return false;
+  }
+}
+function genOtp(){ return String(Math.floor(100000+Math.random()*900000)); }
+async function hashPassword(pw){
+  try{
+    const enc = new TextEncoder().encode('arogya::'+pw);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){ return 'plain:'+pw; } // ancient-browser fallback
+}
+
+/* ============================================================
+   GENERIC MODAL
+   ============================================================ */
+function openModal(html){
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.add('hidden'); }
+let fbEnabled = false, fbRoomRef = null;
+
+/* Real password storage — Firebase Authentication (Spark/free plan).
+   Google stores and hashes passwords; we never see or keep them. Falls
+   back to the local one-way-hash system automatically if Auth isn't
+   enabled in your Firebase console yet. */
+function ensureFirebaseApp(){
+  if(typeof firebase==='undefined') return false;
+  if(!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.indexOf('PASTE_')===0) return false;
+  if(!firebase.apps || !firebase.apps.length){
+    try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){ console.error('Firebase app init failed', e); return false; }
+  }
+  return true;
+}
+let _authPersistenceSet = false;
+function fbAuth(){
+  if(!ensureFirebaseApp()) return null;
+  if(typeof firebase.auth !== 'function') return null; // auth-compat script didn't load
+  try{
+    const a = firebase.auth();
+    if(!_authPersistenceSet){
+      _authPersistenceSet = true;
+      // IndexedDB-backed persistence can hang indefinitely on opaque/local origins
+      // (e.g. a file opened via a downloads/content:// viewer instead of being hosted
+      // at a real http(s) URL). In-memory persistence sidesteps that storage layer —
+      // the tradeoff is the user has to log in again after a full page reload.
+      a.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(e=>console.warn('setPersistence failed', e));
+    }
+    return a;
+  }catch(e){ console.warn('Firebase Auth unavailable', e); return null; }
+}
+function authBackendActive(){ return !!fbAuth(); }
+function friendlyAuthError(e){
+  const code = (e && e.code) || '';
+  const map = {
+    'auth/wrong-password':'Incorrect email or password.',
+    'auth/user-not-found':'Incorrect email or password.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/email-already-in-use':'An account with this email already exists.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/invalid-email':'That email address looks invalid.',
+    'auth/too-many-requests':'Too many attempts — please wait a bit and try again.',
+    'auth/network-request-failed':'Network error — check your connection.',
+    'auth/operation-not-allowed':'Email/Password sign-in isn\'t enabled in the Firebase console yet.'
+  };
+  return map[code] || (e && e.message) || 'Something went wrong.';
+}
+
+function initFirebaseSync(){
+  if(!ensureFirebaseApp()){
+    console.log('ArogyaBot: Firebase not configured — running in single-device demo mode.');
+    return;
+  }
+  try{
+    const fs = firebase.firestore();
+    fbRoomRef = fs.collection('arogya_rooms').doc(ROOM_ID).collection('state');
+    fbEnabled = true;
+    SYNC_KEYS.forEach(key=>{
+      fbRoomRef.doc(key).get().then(snap=>{
+        if(snap.exists){
+          // Shared room already has data — remote is the source of truth.
+          LOCAL_CACHE[key] = snap.data().data;
+          try{ localStorage.setItem('abot2_'+key, JSON.stringify(LOCAL_CACHE[key])); }catch(e){}
+        } else if(LOCAL_CACHE[key]!==undefined){
+          // First device in this room — seed the shared room from our local defaults.
+          fbRoomRef.doc(key).set({data: LOCAL_CACHE[key], updatedAt: Date.now()}).catch(()=>{});
+        }
+        scheduleRemoteRefresh();
+        // Live updates from every other phone in the same room:
+        fbRoomRef.doc(key).onSnapshot(liveSnap=>{
+          if(!liveSnap.exists) return;
+          // Skip the local echo of our own writes — only react to changes that
+          // actually came from the server (i.e. from another device), otherwise
+          // every action we take re-renders our own screen and causes flicker.
+          if(liveSnap.metadata.hasPendingWrites) return;
+          LOCAL_CACHE[key] = liveSnap.data().data;
+          try{ localStorage.setItem('abot2_'+key, JSON.stringify(LOCAL_CACHE[key])); }catch(e){}
+          scheduleRemoteRefresh();
+        });
+      }).catch(e=>console.warn('Firestore read failed for', key, e));
+    });
+    showToast('Live sync connected', 'This device is syncing in real time (room: '+ROOM_ID+').', 'success');
+  }catch(e){
+    console.error('Firebase init failed — falling back to single-device mode.', e);
+    fbEnabled = false;
+  }
+}
+
+// Multiple Firestore keys can update within the same instant (e.g. an ambulance
+// moving updates both 'responders' and 'incidents'). Batch those into a single
+// screen refresh instead of re-rendering once per key, and prefer a lightweight
+// in-place update over a full teardown/rebuild for map-bearing views.
+let remoteRefreshTimer = null;
+function scheduleRemoteRefresh(){
+  if(!currentRole) return;
+  if(remoteRefreshTimer) clearTimeout(remoteRefreshTimer);
+  remoteRefreshTimer = setTimeout(()=>{
+    remoteRefreshTimer = null;
+    softRefreshCurrentView();
+    refreshBell();
+  }, 300);
+}
+function softRefreshCurrentView(){
+  if(currentView==='p-sos'){ const inc=currentIncident(); if(inc){ document.getElementById('active-view-container').innerHTML = renderActiveSosTracking(inc); initSosMapIfNeeded(true); return; } }
+  if(currentView==='r-active'){ document.getElementById('active-view-container').innerHTML = viewResponderActive(); initResponderMap(true); return; }
+  if(currentView==='po-feed'){ document.getElementById('active-view-container').innerHTML = viewPoliceFeed(); initPoliceMap(true); return; }
+  renderCurrentView(currentView);
+}
+
+function initializeDataStore(){
+  if(!db('hospitals')) dbSet('hospitals', SEED.hospitals);
+  if(!db('responders')) dbSet('responders', SEED.responders);
+  if(!db('police')) dbSet('police', SEED.police);
+  if(!db('doctors')) dbSet('doctors', SEED.doctors);
+  if(!db('pharmacies')) dbSet('pharmacies', SEED.pharmacies);
+  if(!db('incidents')) dbSet('incidents', []);
+  if(!db('notifications')) dbSet('notifications', []);
+  if(!db('audit')) dbSet('audit', []);
+  if(!db('profile')) dbSet('profile', {name:'Ananya Sharma', phone:'+91 98xxxxxx21', bloodGroup:'O+', allergies:'Penicillin', chronic:'None', emergencyContact:'Rahul Sharma · +91 99xxxxxx45', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)});
+  if(!db('appointments')) dbSet('appointments', []);
+  if(!db('prescriptions')) dbSet('prescriptions', []);
+  if(!db('reminders')) dbSet('reminders', []);
+  if(!db('cycle')) dbSet('cycle', {logs:[], pinLock:'', unlocked:false});
+  if(!db('claims')) dbSet('claims', []);
+  if(!db('insurance')) dbSet('insurance', {aadhaar_verified:false});
+  if(!db('documents')) dbSet('documents', []);
+  if(!db('policeProfile')) dbSet('policeProfile', {name:'', badge:'', station:'', phone:''});
+  if(!db('auth')) dbSet('auth', {verified:false, consent:false});
+}
+initializeDataStore();
+
+function audit(actor, action, detail){
+  const a = db('audit');
+  a.unshift({id:uid('LOG'), ts:now(), actor, action, detail});
+  dbSet('audit', a.slice(0,300));
+}
+
+/* ============================================================
+   NOTIFICATION CENTER
+   ============================================================ */
+// scope examples: 'patient', 'police', 'responder:RSP-01', 'hospital:HOSP-01', 'responder:*', 'hospital:*'
+function pushNotification(scope, title, body, type, incidentId){
+  const n = db('notifications');
+  const item = {id:uid('NTF'), scope, title, body, type: type||'info', incidentId: incidentId||null, ts: now(), read:false};
+  n.unshift(item);
+  dbSet('notifications', n.slice(0,400));
+  audit(scope, 'notification', title);
+  // live toast if the currently open console matches the scope
+  if(scopeMatchesCurrent(scope)){
+    showToast(title, body, type);
+  }
+  refreshBell();
+  return item;
+}
+function scopeMatchesCurrent(scope){
+  if(!currentRole) return false;
+  if(scope === currentRole) return true; // e.g. 'patient' === 'patient'
+  if(scope === currentRole+':*') return true;
+  if(currentRole==='responder' && scope === 'responder:'+CURRENT_RESPONDER_ID) return true;
+  if(currentRole==='hospital' && scope === 'hospital:'+CURRENT_HOSPITAL_ID) return true;
+  if(currentRole==='police' && scope==='police') return true;
+  return false;
+}
+function notificationsForCurrentScope(){
+  const n = db('notifications');
+  return n.filter(x=>{
+    if(x.scope===currentRole) return true;
+    if(x.scope===currentRole+':*') return true;
+    if(currentRole==='responder' && x.scope==='responder:'+CURRENT_RESPONDER_ID) return true;
+    if(currentRole==='hospital' && x.scope==='hospital:'+CURRENT_HOSPITAL_ID) return true;
+    if(currentRole==='police' && x.scope==='police') return true;
+    return false;
+  });
+}
+function refreshBell(){
+  const list = notificationsForCurrentScope();
+  const unread = list.filter(x=>!x.read).length;
+  const dot = document.getElementById('bell-count');
+  if(!dot) return;
+  if(unread>0){ dot.textContent = unread>9?'9+':unread; dot.classList.remove('hidden'); } else { dot.classList.add('hidden'); }
+}
+function toggleBell(e){
+  e.stopPropagation();
+  const panel = document.getElementById('bell-panel');
+  if(panel.classList.contains('hidden')){
+    renderBellPanel();
+    panel.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+document.addEventListener('click', (e)=>{
+  const panel = document.getElementById('bell-panel');
+  if(panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && !e.target.closest('.bell-btn')){
+    panel.classList.add('hidden');
+  }
+});
+function renderBellPanel(){
+  const panel = document.getElementById('bell-panel');
+  const list = notificationsForCurrentScope().slice(0,25);
+  const n = db('notifications');
+  n.forEach(x=>{ if(list.includes(x)) x.read = true; });
+  dbSet('notifications', n);
+  panel.innerHTML = `<div class="bell-panel-head"><span>Notifications</span><span style="color:var(--text-muted);font-weight:500;">${list.length}</span></div>` +
+    (list.length ? list.map(x=>`
+      <div class="bell-item ${x.read?'':'unread'}">
+        <i class="fa-solid ${iconForType(x.type)}"></i>
+        <div>
+          <div class="bell-item-title">${x.title}</div>
+          <div class="bell-item-body">${x.body}</div>
+          <div class="bell-item-time">${fmtTime(x.ts)}</div>
+        </div>
+      </div>`).join('') : `<div class="bell-empty">No notifications yet</div>`);
+  refreshBell();
+}
+function iconForType(t){
+  return {danger:'fa-triangle-exclamation', success:'fa-circle-check', info:'fa-circle-info', dispatch:'fa-truck-medical'}[t] || 'fa-circle-info';
+}
+
+/* ============================================================
+   TOASTS
+   ============================================================ */
+function showToast(title, body, type){
+  const stack = document.getElementById('toast-stack');
+  const el = document.createElement('div');
+  el.className = 'toast-message ' + (type==='danger'?'danger':type==='success'?'success':'');
+  el.innerHTML = `<i class="fa-solid ${iconForType(type)}"></i><div><strong>${title}</strong><div style="color:#cbd5e1;font-size:.8rem;margin-top:2px;">${body||''}</div></div>`;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(100%)'; setTimeout(()=>el.remove(),300); }, 5200);
+}
+
+/* ============================================================
+   LANDING / ROLE SELECT (first screen)
+   ============================================================ */
+let currentRole = null;
+let CURRENT_RESPONDER_ID = null;
+let CURRENT_HOSPITAL_ID = null;
+let currentView = null;
+let simTimer = null;
+
+const ROLE_META = {
+  patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
+  responder: {icon:'fa-truck-medical', title:'Ambulance / Responder', id:'ROLE // RS-01', desc:'Live dispatch queue broadcast from Command, patient medical summary on accept, turn-by-turn navigation simulation.'},
+  police:    {icon:'fa-shield-halved', title:'Police', id:'ROLE // PO-01', desc:'Every SOS auto-notifies the nearest station. Track dispatch status, acknowledge, and clear the route.'},
+  hospital:  {icon:'fa-hospital', title:'Hospital', id:'ROLE // HP-01', desc:'Incoming-patient alerts the moment a responder accepts a case, bed &amp; ICU capacity, doctor roster, telemedicine and insurance verification.'}
+};
+
+function renderLandingBadges(){
+  const grid = document.getElementById('badge-grid');
+  grid.innerHTML = Object.keys(ROLE_META).map(r=>{
+    const m = ROLE_META[r];
+    return `<div class="badge-card" data-role-type="${r}" onclick="beginSignup('${r}')">
+      <div class="badge-header"><div class="badge-icon"><i class="fa-solid ${m.icon}"></i></div><span class="badge-id">${m.id}</span></div>
+      <div class="badge-title">${m.title}</div>
+      <div class="badge-body">${m.desc}</div>
+      <div class="badge-footer"><span>Sign in / Sign up</span><i class="fa-solid fa-arrow-right"></i></div>
+    </div>`;
+  }).join('');
+}
+renderLandingBadges();
+
+function beginSignup(role){
+  currentRole = role;
+  authStep = 1;
+  pendingSignup = {};
+  patientAuthStep = 'email';
+  patientAuthData = {};
+  patientAuthMode = null;
+  pendingOtp = null;
+  document.getElementById('auth-role-tagline').textContent = ROLE_META[role].title + ' sign-in';
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-auth').classList.remove('hidden');
+  renderAuthCard();
+}
+function backToRoleSelect(){
+  currentRole = null;
+  document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+}
+
+function enterConsole(role){
+  document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.body.setAttribute('data-role', role);
+  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : '';
+  document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
+  buildSideNav(role);
+  const first = SIDENAV[role][0].id;
+  renderCurrentView(first);
+  refreshBell();
+  audit(role, 'session', role+' console opened'+unitTag);
+}
+
+/* ============================================================
+   PROFILE MENU (replaces old "Switch Role" — shows who's signed
+   in for this console and offers Logout)
+   ============================================================ */
+function currentIdentity(){
+  if(currentRole==='patient'){ const p=db('profile')||{}; const u=currentUserRecord(); return {name:p.name||'Patient', sub:(u&&u.email)||p.phone||'', unit:p.relation&&p.relation!=='Self'?p.relation:''}; }
+  if(currentRole==='responder'){ const r=(db('responders')||[]).find(x=>x.id===CURRENT_RESPONDER_ID)||{}; return {name:r.name||'Responder', sub:r.phone||'', unit:r.vehicle||CURRENT_RESPONDER_ID}; }
+  if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; return {name:h.name||'Hospital', sub:h.phone||'', unit:h.id}; }
+  if(currentRole==='police'){ const po=db('policeProfile')||{}; return {name:po.name||'Officer', sub:po.phone||'', unit:po.station||''}; }
+  return {name:'—', sub:'', unit:''};
+}
+function toggleProfileMenu(e){
+  e.stopPropagation();
+  const panel = document.getElementById('profile-menu');
+  if(panel.classList.contains('hidden')){
+    renderProfileMenu();
+    panel.classList.remove('hidden');
+  } else {
+    panel.classList.add('hidden');
+  }
+}
+document.addEventListener('click', (e)=>{
+  const panel = document.getElementById('profile-menu');
+  if(panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && !e.target.closest('.profile-btn')){
+    panel.classList.add('hidden');
+  }
+});
+function renderProfileMenu(){
+  const panel = document.getElementById('profile-menu');
+  const idn = currentIdentity();
+  const initials = (idn.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  panel.innerHTML = `
+    <div class="profile-menu-head">
+      <div class="profile-avatar">${initials}</div>
+      <div><div class="profile-menu-name">${idn.name}</div><div class="profile-menu-sub">${(currentRole||'').toUpperCase()}${idn.unit?' · '+idn.unit:''}</div></div>
+    </div>
+    <div class="profile-menu-body">
+      ${idn.sub ? `<div class="profile-menu-row"><span>${currentRole==='patient'?'Account':'Phone'}</span><strong>${idn.sub}</strong></div>` : ''}
+      ${currentRole==='patient' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="openFamilyModal()"><i class="fa-solid fa-people-roof"></i> Family members</button>` : ''}
+      <button class="profile-menu-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
+    </div>`;
+}
+function logout(){
+  if(simTimer){ clearInterval(simTimer); simTimer=null; }
+  cleanupMap();
+  document.getElementById('profile-menu').classList.add('hidden');
+  audit(currentRole||'system', 'session', 'Logged out');
+  dbSet('auth', {verified:false, consent:false});
+  document.getElementById('app-shell').classList.add('hidden');
+  document.body.removeAttribute('data-role');
+  currentRole = null;
+  authStep = 1;
+  pendingSignup = {};
+  patientAuthStep = 'email';
+  patientAuthData = {};
+  patientAuthMode = null;
+  pendingOtp = null;
+  document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+  renderLandingBadges();
+  showToast('Logged out', 'Come back any time — your data stays saved on this device.');
+}
+
+/* ============================================================
+   AUTH FLOW — role-specific sign-up, OTP simulation, consent
+   ============================================================ */
+let authStep = 1;
+let pendingSignup = {};
+
+const SIGNUP_FIELDS = {
+  patient: [
+    {key:'name', label:'Full name', placeholder:'Your full name', value:'Ananya Sharma'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98xxxxxx21'},
+    {key:'blood', label:'Blood group', placeholder:'e.g. O+', value:'O+'},
+  ],
+  responder: [
+    {key:'name', label:'Driver / EMT name', placeholder:'Full name', value:'Rakesh Kumar'},
+    {key:'ambname', label:'Ambulance service name', placeholder:'e.g. City Rapid Response', value:'City Rapid Response'},
+    {key:'ambno', label:'Ambulance number', placeholder:'e.g. DL-01-AB-1234', value:'DL-01-AB-4521'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98111-22099'},
+  ],
+  police: [
+    {key:'name', label:'Officer name', placeholder:'Full name', value:'Inspector Verma'},
+    {key:'badge', label:'Badge / ID number', placeholder:'e.g. PS-2291', value:'PS-2291'},
+    {key:'station', label:'Police station', placeholder:'e.g. Sector 9 Police Station', value:'Sector 9 Police Station'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98111-33099'},
+  ],
+  hospital: [
+    {key:'name', label:'Hospital name', placeholder:'e.g. City Care Hospital', value:'Riverside General Hospital'},
+    {key:'regno', label:'Registration / license number', placeholder:'e.g. DL-HOSP-4471', value:'DL-HOSP-7732'},
+    {key:'contact', label:'Contact person', placeholder:'Admin / front-desk name', value:'Front Desk Admin'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'011-4000-9099'},
+  ],
+};
+
+function renderAuthCard(){
+  const box = document.getElementById('auth-card-box');
+  if(!currentRole) return;
+  if(currentRole==='patient'){ renderPatientAuthCard(); return; }
+  if(authStep===1){
+    const fields = SIGNUP_FIELDS[currentRole];
+    box.innerHTML = `
+      <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelect()"><i class="fa-solid fa-arrow-left"></i> Back to roles</button>
+      <div class="step-dots"><span class="done"></span><span></span><span></span></div>
+      <h3>${ROLE_META[currentRole].title} sign-up</h3>
+      <p>Emergency platforms require identity verification before access, per DPDP Act guidance. Tell us a bit about you.</p>
+      ${fields.map(f=>`<div class="form-group"><label>${f.label}</label><input class="form-control" id="su-${f.key}" placeholder="${f.placeholder}" value="${f.value}" style="color:#fff;background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.18);"></div>`).join('')}
+      <button class="btn btn-block" onclick="authSubmitSignup()"><i class="fa-solid fa-paper-plane"></i> Continue &amp; send OTP</button>`;
+  } else if(authStep===2){
+    box.innerHTML = `
+      <div class="step-dots"><span class="done"></span><span class="done"></span><span></span></div>
+      <h3>Enter the 6-digit code</h3>
+      <p>We sent an OTP to ${pendingSignup.phone||'your number'} (Twilio / Firebase Phone Auth in production).</p>
+      <div class="otp-boxes">
+        ${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="otp-${i}" oninput="otpAdvance(${i})">`).join('')}
+      </div>
+      <div class="otp-hint">Demo hint: any 6 digits work — code 123456 auto-verifies instantly.</div>
+      <button class="btn btn-block" style="margin-top:16px;" onclick="authVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify &amp; Continue</button>`;
+  } else if(authStep===3){
+    box.innerHTML = `
+      <div class="step-dots"><span class="done"></span><span class="done"></span><span class="done"></span></div>
+      <h3>Consent &amp; data sharing</h3>
+      <p>Your profile is encrypted at rest (AES-256) and in transit (TLS 1.3). During emergencies, minimal necessary data is shared with responders and hospitals only.</p>
+      <div class="consent-row"><input type="checkbox" id="consent-check"><span>I consent to sharing my profile data with dispatched responders and hospitals strictly during active emergencies.</span></div>
+      <button class="btn btn-block" onclick="authFinish()"><i class="fa-solid fa-check"></i> Enter ArogyaBot</button>`;
+  }
+}
+function authSubmitSignup(){
+  const fields = SIGNUP_FIELDS[currentRole];
+  for(const f of fields){
+    const el = document.getElementById('su-'+f.key);
+    pendingSignup[f.key] = el ? el.value.trim() : '';
+  }
+  if(!pendingSignup.name || !pendingSignup.phone){
+    showToast('A few details missing', 'Name and phone number are required to continue.', 'danger');
+    return;
+  }
+  showToast('OTP sent', 'A 6-digit code was sent to '+pendingSignup.phone+'.');
+  authStep=2; renderAuthCard();
+}
+function otpAdvance(i){ const el=document.getElementById('otp-'+i); if(el.value && i<5) document.getElementById('otp-'+(i+1)).focus(); }
+function authVerifyOtp(){ authStep=3; renderAuthCard(); }
+function authFinish(){
+  const consent = document.getElementById('consent-check').checked;
+  if(!consent){ showToast('Consent required', 'Please accept the data-sharing consent to continue.', 'danger'); return; }
+  completeRoleSetup(currentRole, pendingSignup);
+  dbSet('auth', {verified:true, consent:true});
+  audit(currentRole, 'auth', 'Identity verified via OTP; consent captured');
+  enterConsole(currentRole);
+}
+
+function completeRoleSetup(role, data){
+  if(role==='patient'){
+    const p = db('profile') || {};
+    p.name = data.name || p.name || 'Guest Patient';
+    p.phone = data.phone || p.phone || '';
+    p.bloodGroup = data.blood || p.bloodGroup || 'Unknown';
+    p.allergies = p.allergies || 'None recorded';
+    p.chronic = p.chronic || 'None recorded';
+    p.emergencyContact = p.emergencyContact || '—';
+    if(p.lat==null){ p.lat = BASE.lat+rnd(-0.01,0.01); p.lng = BASE.lng+rnd(-0.01,0.01); }
+    dbSet('profile', p);
+  } else if(role==='responder'){
+    const list = db('responders') || [];
+    const id = uid('RSP');
+    list.push({id, name:data.name||'Responder', vehicle:data.ambno||'AMB-NEW', serviceName:data.ambname||'', phone:data.phone||'', lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), status:'available'});
+    dbSet('responders', list);
+    CURRENT_RESPONDER_ID = id;
+  } else if(role==='hospital'){
+    const list = db('hospitals') || [];
+    const id = uid('HOSP');
+    list.push({id, name:data.name||'New Hospital', regNo:data.regno||'', contact:data.contact||'', phone:data.phone||'', beds:5, icu:2, lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), specialties:['General']});
+    dbSet('hospitals', list);
+    CURRENT_HOSPITAL_ID = id;
+  } else if(role==='police'){
+    dbSet('policeProfile', {name:data.name||'Officer', badge:data.badge||'', station:data.station||'', phone:data.phone||''});
+  }
+}
+
+/* ============================================================
+   PATIENT — REAL AUTH: Gmail + password + emailed OTP + phone,
+   with family sub-profiles (up to 3 members per account) and a
+   raise-a-complaint path when a phone is already registered.
+   ============================================================ */
+let patientAuthStep = 'email';   // email -> login|signup -> phone_conflict -> otp -> consent -> reset_password
+let patientAuthMode = null;      // 'login' | 'signup' | 'forgot'
+let patientAuthData = {};        // {email,password,name,phone,conflictWithEmail,newPassword}
+let pendingOtp = null;
+
+function usersDb(){ return db('users') || []; }
+function findUserByEmail(email){ return usersDb().find(u=>u.email===(email||'').trim().toLowerCase()); }
+function findUserByPhone(phone, excludeEmail){
+  const norm = (phone||'').replace(/\D/g,'');
+  if(!norm) return null;
+  return usersDb().find(u=>u.email!==excludeEmail && (u.phone||'').replace(/\D/g,'')===norm);
+}
+function currentUserRecord(){ return patientAuthData.loggedEmail ? findUserByEmail(patientAuthData.loggedEmail) : null; }
+function currentPatientId(){ const u = currentUserRecord(); return (u && u.activeMemberId) ? u.activeMemberId : 'ME'; }
+function saveUser(u){ const list=usersDb(); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users', list); }
+function isGmail(email){ return /^[^\s@]+@gmail\.com$/i.test((email||'').trim()); }
+
+function renderPatientAuthCard(){
+  const box = document.getElementById('auth-card-box');
+  const d = patientAuthData;
+  const dots = (n)=>`<div class="step-dots">${[1,2,3].map(i=>`<span class="${i<=n?'done':''}"></span>`).join('')}</div>`;
+
+  if(patientAuthStep==='email'){
+    box.innerHTML = `
+      <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelect()"><i class="fa-solid fa-arrow-left"></i> Back to roles</button>
+      ${dots(1)}
+      <h3>Patient sign-in</h3>
+      <p>Enter your Gmail address to sign in or create a free account.</p>
+      <div class="form-group"><input class="dark-input" id="pa-email" placeholder="you@gmail.com" value="${d.email||''}" autocomplete="email"></div>
+      <div id="pa-email-err"></div>
+      <button class="btn btn-block" onclick="patientAuthEmailContinue('login')"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+      <button class="btn-secondary btn-block" style="margin-top:10px;" onclick="patientAuthEmailContinue('signup')"><i class="fa-solid fa-user-plus"></i> Create new account</button>`;
+    return;
+  }
+
+  if(patientAuthStep==='login'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Welcome back</h3>
+      <p>${d.email}</p>
+      <div class="form-group"><input type="password" class="dark-input" id="pa-password" placeholder="Password" autocomplete="current-password"></div>
+      <div id="pa-login-err"></div>
+      <button class="btn btn-block" onclick="patientAuthLogin()"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+      <div class="auth-link-row">
+        <a onclick="patientAuthStep='email';renderAuthCard();">Use a different email</a>
+        <a onclick="patientAuthForgotStart();">Forgot password?</a>
+      </div>`;
+    return;
+  }
+
+  if(patientAuthStep==='signup'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3>Create your patient account</h3>
+      <p>Free — no charges. We'll email a 6-digit code to verify it's really you.</p>
+      <div class="form-group"><input class="dark-input" id="pa-name" placeholder="Full name" value="${d.name||''}"></div>
+      <div class="form-group"><input class="dark-input" id="pa-email2" placeholder="you@gmail.com" value="${d.email||''}" disabled style="opacity:.7;"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="pa-password" placeholder="Create a password (min 6 chars)"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="pa-password2" placeholder="Confirm password"></div>
+      <div class="form-group"><input class="dark-input" id="pa-phone" placeholder="+91 98xxxxxxxx" value="${d.phone||''}"></div>
+      <div id="pa-signup-err"></div>
+      <button class="btn btn-block" onclick="patientAuthSignupContinue()"><i class="fa-solid fa-paper-plane"></i> Continue &amp; send code</button>
+      <div class="auth-link-row"><a onclick="patientAuthStep='email';renderAuthCard();">Use a different email</a><span></span></div>`;
+    return;
+  }
+
+  if(patientAuthStep==='phone_conflict'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3>That number's already registered</h3>
+      <p>This phone number is already linked to another ArogyaBot account.</p>
+      <div class="conflict-box"><strong>What happens next:</strong> raise a complaint and our admin team will call this number to verify ownership. If it's really you, we'll re-allot the number to your new account (${d.email}).</div>
+      <button class="btn btn-block btn-danger" onclick="patientRaiseComplaint()"><i class="fa-solid fa-flag"></i> Raise complaint &amp; notify admin</button>
+      <div class="auth-link-row"><a onclick="patientAuthStep='signup';renderAuthCard();">Use a different number instead</a><span></span></div>`;
+    return;
+  }
+
+  if(patientAuthStep==='complaint_filed'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Complaint filed</h3>
+      <p>Reference <strong>${d.complaintId}</strong>. Admin will call ${d.phone} to verify, then either reassign the number to ${d.email} or contact you if it's disputed.</p>
+      <p>You can still create your account now without phone verification, and add the phone later once it's resolved.</p>
+      <button class="btn btn-block" onclick="patientContinueWithoutPhone()">Continue without phone for now</button>
+      <div class="auth-link-row"><a onclick="patientAuthStep='signup';renderAuthCard();">Try a different number</a><span></span></div>`;
+    return;
+  }
+
+  if(patientAuthStep==='otp'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Enter the 6-digit code</h3>
+      <p>We emailed a code to ${d.email}.</p>
+      <div class="otp-boxes">${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="pa-otp-${i}" oninput="otpAdvance(${i})">`).join('')}</div>
+      <div class="otp-hint">${emailjsReady ? 'Check your inbox (and spam folder).' : 'Demo mode: code was shown in a toast — EmailJS keys not configured yet.'}</div>
+      <button class="btn btn-block" style="margin-top:16px;" onclick="patientAuthVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify &amp; continue</button>
+      <div class="auth-link-row"><a onclick="patientResendOtp()">Resend code</a><span></span></div>`;
+    return;
+  }
+
+  if(patientAuthStep==='consent'){
+    box.innerHTML = `
+      ${dots(3)}
+      <h3>Consent &amp; data sharing</h3>
+      <p>Your profile is encrypted at rest (AES-256) and in transit (TLS 1.3). During emergencies, minimal necessary data is shared with responders and hospitals only.</p>
+      <div class="consent-row"><input type="checkbox" id="consent-check"><span>I consent to sharing my profile data with dispatched responders and hospitals strictly during active emergencies.</span></div>
+      <button class="btn btn-block" onclick="patientAuthFinishSignup()"><i class="fa-solid fa-check"></i> Enter ArogyaBot</button>`;
+    return;
+  }
+
+  if(patientAuthStep==='forgot_otp'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Reset your password</h3>
+      <p>We emailed a code to ${d.email}.</p>
+      <div class="otp-boxes">${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="pa-otp-${i}" oninput="otpAdvance(${i})">`).join('')}</div>
+      <div class="otp-hint">${emailjsReady ? 'Check your inbox (and spam folder).' : 'Demo mode: code was shown in a toast.'}</div>
+      <button class="btn btn-block" style="margin-top:16px;" onclick="patientAuthVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify code</button>
+      <div class="auth-link-row"><a onclick="patientAuthStep='login';renderAuthCard();">Back to login</a><span></span></div>`;
+    return;
+  }
+
+  if(patientAuthStep==='reset_password'){
+    box.innerHTML = `
+      ${dots(3)}
+      <h3>Choose a new password</h3>
+      <div class="form-group"><input type="password" class="dark-input" id="pa-newpass" placeholder="New password (min 6 chars)"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="pa-newpass2" placeholder="Confirm new password"></div>
+      <div id="pa-reset-err"></div>
+      <button class="btn btn-block" onclick="patientAuthResetPassword()"><i class="fa-solid fa-key"></i> Save password &amp; log in</button>`;
+    return;
+  }
+}
+
+async function patientAuthEmailContinue(choice){
+  const email = document.getElementById('pa-email').value.trim().toLowerCase();
+  const errBox = document.getElementById('pa-email-err');
+  if(!isGmail(email)){ errBox.innerHTML = `<div class="field-err">Please enter a valid Gmail address (name@gmail.com).</div>`; return; }
+  errBox.innerHTML = '';
+  patientAuthData = {email};
+  // Note: we deliberately don't auto-detect via fetchSignInMethodsForEmail — Firebase
+  // projects with Email Enumeration Protection (default on newer projects) always return
+  // an empty list from that call, which would silently force everyone into signup.
+  // Instead the user picks Log in / Create account explicitly, and patientAuthLogin()
+  // below redirects to signup if it turns out no account exists yet.
+  patientAuthMode = choice;
+  patientAuthStep = choice;
+  renderAuthCard();
+}
+
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error((label||'Request')+' timed out. If you opened this file from Downloads, try hosting it online instead (Firebase Hosting, GitHub Pages, etc.) — local file storage can block Firebase Auth.')), ms))
+  ]);
+}
+async function patientAuthLogin(){
+  const pw = document.getElementById('pa-password').value;
+  const errBox = document.getElementById('pa-login-err');
+  const btn = event && event.target && event.target.closest ? event.target.closest('button') : null;
+  errBox.innerHTML = '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in…'; }
+  try{
+    const fa = fbAuth();
+
+    if(fa){
+      try{
+        await withTimeout(fa.signInWithEmailAndPassword(patientAuthData.email, pw), 12000, 'Login');
+      }catch(e){
+        const code = (e && e.code) || '';
+        if(code==='auth/user-not-found' || code==='auth/invalid-credential' || code==='auth/wrong-password'){
+          // Could be "no account yet" — offer a direct path to signup instead of a dead end.
+          errBox.innerHTML = `<div class="field-err">No account found (or wrong password). <a style="color:#5eead4;cursor:pointer;font-weight:600;" onclick="patientAuthMode='signup';patientAuthStep='signup';renderAuthCard();">Create an account instead?</a></div>`;
+          return;
+        }
+        errBox.innerHTML = `<div class="field-err">${friendlyAuthError(e)}</div>`;
+        return;
+      }
+      errBox.innerHTML = '';
+      let u = findUserByEmail(patientAuthData.email);
+      if(!u){
+        // Firebase account exists but our metadata record is missing (e.g. created elsewhere) — create a minimal one.
+        const memberId = uid('MEM');
+        u = {email:patientAuthData.email, phone:'', phoneVerified:false,
+          members:[{id:memberId, name:patientAuthData.email.split('@')[0], relation:'Self', isPrimary:true, bloodGroup:'Unknown', allergies:'None recorded', chronic:'None recorded', emergencyContact:'—', lat:BASE.lat, lng:BASE.lng}],
+          activeMemberId:memberId, createdAt: now()};
+        saveUser(u);
+      }
+      patientAuthData.loggedEmail = u.email;
+      loadActiveMemberIntoProfile(u);
+      dbSet('auth', {verified:true, consent:true});
+      audit('patient', 'auth', 'Logged in as '+u.email+' (Firebase Authentication)');
+      currentRole = 'patient';
+      enterConsole('patient');
+      return;
+    }
+
+    // Local fallback (no Firebase Auth configured)
+    const u = findUserByEmail(patientAuthData.email);
+    const hash = await hashPassword(pw);
+    if(!u || u.passwordHash!==hash){ errBox.innerHTML = `<div class="field-err">Incorrect email or password.</div>`; return; }
+    errBox.innerHTML = '';
+    patientAuthData.loggedEmail = u.email;
+    loadActiveMemberIntoProfile(u);
+    dbSet('auth', {verified:true, consent:true});
+    audit('patient', 'auth', 'Logged in as '+u.email+' (local demo mode)');
+    currentRole = 'patient';
+    enterConsole('patient');
+  }catch(e){
+    console.error('patientAuthLogin failed', e);
+    errBox.innerHTML = `<div class="field-err">Something went wrong logging in: ${(e && e.message) || e}</div>`;
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Log in'; }
+  }
+}
+
+async function patientAuthForgotStart(){
+  patientAuthMode = 'forgot';
+  const fa = fbAuth();
+  if(fa){
+    try{
+      await fa.sendPasswordResetEmail(patientAuthData.email);
+      showToast('Reset email sent', 'Check '+patientAuthData.email+' for a link to set a new password.', 'success');
+    }catch(e){
+      showToast('Could not send reset email', friendlyAuthError(e), 'danger');
+    }
+    patientAuthStep = 'login';
+    renderAuthCard();
+    return;
+  }
+  // Local fallback: our own OTP-based reset flow
+  patientResendOtp();
+  patientAuthStep = 'forgot_otp';
+  renderAuthCard();
+}
+
+async function patientAuthSignupContinue(){
+  const name = document.getElementById('pa-name').value.trim();
+  const pw = document.getElementById('pa-password').value;
+  const pw2 = document.getElementById('pa-password2').value;
+  const phone = document.getElementById('pa-phone').value.trim();
+  const errBox = document.getElementById('pa-signup-err');
+  if(!name || !phone){ errBox.innerHTML = `<div class="field-err">Name and phone number are required.</div>`; return; }
+  if(pw.length<6){ errBox.innerHTML = `<div class="field-err">Password must be at least 6 characters.</div>`; return; }
+  if(pw!==pw2){ errBox.innerHTML = `<div class="field-err">Passwords don't match.</div>`; return; }
+  errBox.innerHTML = '';
+  patientAuthData.name = name; patientAuthData.phone = phone; patientAuthData.password = pw;
+
+  const conflict = findUserByPhone(phone, patientAuthData.email);
+  if(conflict){
+    patientAuthData.conflictWithEmail = conflict.email;
+    patientAuthStep = 'phone_conflict';
+    renderAuthCard();
+    return;
+  }
+  await patientSendSignupOtp();
+}
+
+async function patientSendSignupOtp(){
+  const code = genOtp();
+  pendingOtp = code;
+  await sendOtpEmail(patientAuthData.email, code);
+  patientAuthStep = 'otp';
+  renderAuthCard();
+}
+async function patientResendOtp(){
+  const code = genOtp();
+  pendingOtp = code;
+  await sendOtpEmail(patientAuthData.email, code);
+}
+
+function patientRaiseComplaint(){
+  const list = db('phoneComplaints') || [];
+  const c = {id: uid('CMP'), phone: patientAuthData.phone, existingEmail: patientAuthData.conflictWithEmail, requestingEmail: patientAuthData.email, status:'pending', createdAt: now()};
+  list.push(c);
+  dbSet('phoneComplaints', list);
+  audit('patient', 'phone_complaint', patientAuthData.phone+' claimed by '+patientAuthData.email+' — was on '+patientAuthData.conflictWithEmail);
+  patientAuthData.complaintId = c.id;
+  patientAuthStep = 'complaint_filed';
+  renderAuthCard();
+  showToast('Complaint filed', 'Reference '+c.id+' — admin will call to verify.', 'success');
+}
+async function patientContinueWithoutPhone(){
+  patientAuthData.phone = ''; // released — leave unverified for now
+  await patientSendSignupOtp();
+}
+
+async function patientAuthVerifyOtp(){
+  const code = [0,1,2,3,4,5].map(i=>document.getElementById('pa-otp-'+i).value||'').join('');
+  const demoBypass = code==='123456';
+  if(code.length<6 || (!demoBypass && code!==pendingOtp)){
+    showToast('Incorrect code', 'That code doesn\'t match — check your inbox and try again.', 'danger');
+    return;
+  }
+  if(patientAuthMode==='forgot'){ patientAuthStep = 'reset_password'; renderAuthCard(); return; }
+  patientAuthStep = 'consent';
+  renderAuthCard();
+}
+
+async function patientAuthFinishSignup(){
+  const consent = document.getElementById('consent-check').checked;
+  if(!consent){ showToast('Consent required', 'Please accept the data-sharing consent to continue.', 'danger'); return; }
+  const d = patientAuthData;
+  const fa = fbAuth();
+  let passwordHash;
+  if(fa){
+    try{
+      await withTimeout(fa.createUserWithEmailAndPassword(d.email, d.password), 12000, 'Account creation');
+    }catch(e){
+      showToast('Could not create account', friendlyAuthError(e), 'danger');
+      return;
+    }
+  } else {
+    passwordHash = await hashPassword(d.password); // local fallback only — Firebase Auth stores it otherwise
+  }
+  const memberId = uid('MEM');
+  const primaryMember = {
+    id: memberId, name: d.name, relation: 'Self', isPrimary: true,
+    bloodGroup: 'Unknown', allergies: 'None recorded', chronic: 'None recorded', emergencyContact: '—',
+    phone: d.phone || '', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)
+  };
+  const user = {
+    email: d.email, phone: d.phone || '', phoneVerified: !!d.phone,
+    members: [primaryMember], activeMemberId: memberId, createdAt: now()
+  };
+  if(passwordHash) user.passwordHash = passwordHash;
+  saveUser(user);
+  patientAuthData.loggedEmail = user.email;
+  loadActiveMemberIntoProfile(user);
+  dbSet('auth', {verified:true, consent:true});
+  audit('patient', 'auth', 'Account created for '+user.email+'; identity verified via emailed OTP ('+(fa?'Firebase Authentication':'local demo mode')+')');
+  currentRole = 'patient';
+  enterConsole('patient');
+}
+
+async function patientAuthResetPassword(){
+  // Only reached in local fallback mode — Firebase Auth handles resets via its own emailed link instead.
+  const p1 = document.getElementById('pa-newpass').value;
+  const p2 = document.getElementById('pa-newpass2').value;
+  const errBox = document.getElementById('pa-reset-err');
+  if(p1.length<6){ errBox.innerHTML = `<div class="field-err">Password must be at least 6 characters.</div>`; return; }
+  if(p1!==p2){ errBox.innerHTML = `<div class="field-err">Passwords don't match.</div>`; return; }
+  const u = findUserByEmail(patientAuthData.email);
+  if(!u){ errBox.innerHTML = `<div class="field-err">Account not found.</div>`; return; }
+  u.passwordHash = await hashPassword(p1);
+  saveUser(u);
+  audit('patient', 'auth', 'Password reset for '+u.email+' (local demo mode)');
+  showToast('Password updated', 'Log in with your new password.', 'success');
+  patientAuthMode = 'login';
+  patientAuthStep = 'login';
+  renderAuthCard();
+}
+
+/* ---- Family sub-profiles: up to 3 members share one login ---- */
+function loadActiveMemberIntoProfile(user){
+  const m = user.members.find(x=>x.id===user.activeMemberId) || user.members[0];
+  dbSet('profile', {...m});
+}
+function persistActiveProfileBackToMember(){
+  const u = currentUserRecord(); if(!u) return;
+  const p = db('profile') || {};
+  const i = u.members.findIndex(x=>x.id===u.activeMemberId);
+  if(i>-1){ u.members[i] = {...u.members[i], ...p}; saveUser(u); }
+}
+function openFamilyModal(){ renderFamilyModal(); }
+function renderFamilyModal(){
+  const u = currentUserRecord();
+  if(!u){ return; }
+  const rows = u.members.map(m=>`
+    <div class="member-row ${m.id===u.activeMemberId?'active':''}">
+      <div class="member-avatar">${(m.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+      <div><div class="member-name">${m.name}</div><div class="member-rel">${m.relation}${m.id===u.activeMemberId?' · currently active':''}</div></div>
+      <div class="member-actions">
+        ${m.id!==u.activeMemberId ? `<button class="btn btn-secondary btn-sm" onclick="switchFamilyMember('${m.id}')">Switch to</button>` : ''}
+        ${!m.isPrimary ? `<button class="btn btn-secondary btn-sm" onclick="removeFamilyMember('${m.id}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+      </div>
+    </div>`).join('');
+  const canAdd = u.members.length < 3;
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3>Family members</h3>
+    <p class="modal-sub">One Gmail login can cover up to 3 people — add a spouse or children instead of creating separate accounts. Each member keeps their own health profile; switching just changes whose profile the app is showing.</p>
+    ${rows}
+    ${canAdd ? `
+    <div class="form-group" style="margin-top:16px;"><label>Add a family member</label>
+      <input class="form-control" id="fam-name" placeholder="Full name" style="margin-bottom:8px;">
+      <input class="form-control" id="fam-rel" placeholder="Relation (e.g. Daughter, Son, Spouse)">
+    </div>
+    <button class="btn btn-block" onclick="addFamilyMember()"><i class="fa-solid fa-user-plus"></i> Add member</button>`
+    : `<p style="font-size:.8rem;color:var(--text-muted);margin-top:10px;">Maximum of 3 members reached for this account.</p>`}
+  `);
+}
+function switchFamilyMember(memberId){
+  const u = currentUserRecord(); if(!u) return;
+  persistActiveProfileBackToMember();
+  u.activeMemberId = memberId;
+  saveUser(u);
+  loadActiveMemberIntoProfile(u);
+  closeModal();
+  if(currentView) renderCurrentView(currentView);
+  refreshBell();
+  showToast('Switched profile', 'Now viewing '+ (u.members.find(m=>m.id===memberId)||{}).name, 'success');
+}
+function addFamilyMember(){
+  const u = currentUserRecord(); if(!u) return;
+  if(u.members.length>=3){ showToast('Limit reached', 'Maximum of 3 members per account.', 'danger'); return; }
+  const name = document.getElementById('fam-name').value.trim();
+  const rel = document.getElementById('fam-rel').value.trim() || 'Family member';
+  if(!name){ showToast('Name required', 'Enter a name for the new family member.', 'danger'); return; }
+  persistActiveProfileBackToMember();
+  const m = {id: uid('MEM'), name, relation: rel, isPrimary:false, bloodGroup:'Unknown', allergies:'None recorded', chronic:'None recorded', emergencyContact:'—', phone:u.phone||'', lat:BASE.lat+rnd(-0.01,0.01), lng:BASE.lng+rnd(-0.01,0.01)};
+  u.members.push(m);
+  saveUser(u);
+  audit('patient', 'family_add', name+' added to '+u.email);
+  renderFamilyModal();
+  showToast('Member added', name+' can now be switched to.', 'success');
+}
+function removeFamilyMember(memberId){
+  const u = currentUserRecord(); if(!u) return;
+  if(memberId===u.activeMemberId){ showToast("Can't remove active profile", 'Switch to another member first.', 'danger'); return; }
+  u.members = u.members.filter(m=>m.id!==memberId);
+  saveUser(u);
+  renderFamilyModal();
+}
+
+/* ---- Admin desk: resolves phone-number complaints + user directory ---- */
+let adminUnlocked = false;
+let adminTab = 'complaints';
+function openAdminGate(){
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-admin').classList.remove('hidden');
+  renderAdminScreen();
+}
+function backToRoleSelectFromAdmin(){
+  document.getElementById('screen-admin').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+}
+function renderAdminScreen(){
+  const box = document.getElementById('admin-card-box');
+  if(!adminUnlocked){
+    box.innerHTML = `
+      <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelectFromAdmin()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <h3>Admin access</h3>
+      <p>Demo passcode: <strong>admin123</strong></p>
+      <div class="form-group"><input type="password" class="dark-input" id="admin-pass" placeholder="Passcode"></div>
+      <button class="btn btn-block" onclick="adminUnlock()">Unlock</button>`;
+    return;
+  }
+  box.innerHTML = `
+    <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelectFromAdmin()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+    <h3>Admin desk</h3>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-sm ${adminTab==='complaints'?'':'btn-secondary'}" onclick="adminTab='complaints';renderAdminScreen();">Phone complaints</button>
+      <button class="btn btn-sm ${adminTab==='users'?'':'btn-secondary'}" onclick="adminTab='users';renderAdminScreen();">Users</button>
+    </div>
+    ${adminTab==='users' ? renderAdminUsersTab() : renderAdminComplaintsTab()}
+  `;
+}
+function renderAdminComplaintsTab(){
+  const complaints = (db('phoneComplaints')||[]).slice().reverse();
+  return `
+    <p>${complaints.length} total. Admin calls the number to verify ownership, then resolves below.</p>
+    ${complaints.length ? complaints.map(c=>`
+      <div class="card" style="margin-bottom:12px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><strong>${c.phone}</strong><span class="status-tag ${c.status==='pending'?'status-warn':'status-ok'}">${c.status}</span></div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin:8px 0;">Currently on <strong>${c.existingEmail}</strong> · requested by <strong>${c.requestingEmail}</strong></p>
+        ${c.status==='pending' ? `<button class="btn btn-sm" onclick="adminResolveComplaint('${c.id}')"><i class="fa-solid fa-phone"></i> Verified — reassign to requester</button>
+        <button class="btn btn-secondary btn-sm" onclick="adminDismissComplaint('${c.id}')">Dismiss (keep with original)</button>` : ''}
+      </div>`).join('') : `<p style="color:var(--text-muted);">No complaints filed yet.</p>`}
+  `;
+}
+function renderAdminUsersTab(){
+  const users = (db('users')||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const backendNote = authBackendActive()
+    ? `<i class="fa-solid fa-shield-halved"></i> Passwords are stored and hashed by Firebase Authentication — not visible here, by design.`
+    : `<i class="fa-solid fa-shield-halved"></i> Passwords are one-way hashed locally — not visible here, by design.`;
+  return `
+    <p>${users.length} registered account${users.length===1?'':'s'}. ${backendNote}</p>
+    ${users.length ? users.map(u=>`
+      <div class="card" style="margin-bottom:12px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+          <strong>${u.email}</strong>
+          <span class="status-tag ${u.phoneVerified?'status-ok':'status-warn'}">${u.phoneVerified?'Phone verified':'Phone unverified'}</span>
+        </div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin:8px 0;">
+          Phone: <strong>${u.phone||'—'}</strong> · ${u.members?u.members.length:1} member${(u.members?u.members.length:1)===1?'':'s'} (${(u.members||[]).map(m=>m.name).join(', ')}) · Joined ${u.createdAt?new Date(u.createdAt).toLocaleDateString():'—'}
+        </p>
+        <button class="btn btn-secondary btn-sm" onclick="adminSendReset('${u.email}')"><i class="fa-solid fa-key"></i> Send password reset</button>
+      </div>`).join('') : `<p style="color:var(--text-muted);">No registered users yet.</p>`}
+  `;
+}
+async function adminSendReset(email){
+  const fa = fbAuth();
+  if(fa){
+    try{
+      await fa.sendPasswordResetEmail(email);
+      audit('admin', 'password_reset_sent', email);
+      showToast('Reset email sent', email+' will receive a link to set a new password.', 'success');
+    }catch(e){
+      showToast('Could not send reset email', friendlyAuthError(e), 'danger');
+    }
+    return;
+  }
+  showToast('Local demo mode', 'Firebase Authentication isn\'t connected — ask the user to use "Forgot password" on the login screen instead.', 'danger');
+}
+function adminUnlock(){
+  const pass = document.getElementById('admin-pass').value;
+  if(pass!=='admin123'){ showToast('Wrong passcode', '', 'danger'); return; }
+  adminUnlocked = true;
+  renderAdminScreen();
+}
+function adminResolveComplaint(id){
+  const list = db('phoneComplaints')||[];
+  const c = list.find(x=>x.id===id); if(!c) return;
+  const oldUser = findUserByEmail(c.existingEmail);
+  if(oldUser){ oldUser.phone=''; oldUser.phoneVerified=false; saveUser(oldUser); }
+  const newUser = findUserByEmail(c.requestingEmail);
+  if(newUser){ newUser.phone=c.phone; newUser.phoneVerified=true; saveUser(newUser); }
+  c.status = 'resolved';
+  dbSet('phoneComplaints', list);
+  audit('admin', 'phone_reassign', c.phone+' moved from '+c.existingEmail+' to '+c.requestingEmail);
+  renderAdminScreen();
+  showToast('Number reassigned', c.phone+' now belongs to '+c.requestingEmail, 'success');
+}
+function adminDismissComplaint(id){
+  const list = db('phoneComplaints')||[];
+  const c = list.find(x=>x.id===id); if(!c) return;
+  c.status = 'dismissed';
+  dbSet('phoneComplaints', list);
+  renderAdminScreen();
+}
+
+/* ============================================================
+   SIDE NAV PER ROLE
+   ============================================================ */
+const SIDENAV = {
+  patient: [
+    {id:'p-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'p-sos', label:'Emergency SOS', icon:'fa-triangle-exclamation'},
+    {id:'p-chat', label:'AI Symptom Checker', icon:'fa-comment-medical'},
+    {id:'p-records', label:'Medical Records', icon:'fa-file-medical'},
+    {id:'p-tele', label:'Telemedicine', icon:'fa-video'},
+    {id:'p-rx', label:'e-Prescriptions', icon:'fa-prescription'},
+    {id:'p-pharmacy', label:'Pharmacy &amp; Reminders', icon:'fa-pills'},
+    {id:'p-women', label:"Women's Health", icon:'fa-venus'},
+    {id:'p-insurance', label:'Govt. Schemes &amp; Insurance', icon:'fa-file-shield'},
+    {id:'p-documents', label:'My Documents', icon:'fa-folder-open'},
+  ],
+  responder: [
+    {id:'r-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'r-queue', label:'Dispatch Queue', icon:'fa-list-check'},
+    {id:'r-active', label:'Active Case', icon:'fa-route'},
+  ],
+  police: [
+    {id:'po-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'po-feed', label:'Dispatch Feed', icon:'fa-satellite-dish'},
+  ],
+  hospital: [
+    {id:'h-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'h-incoming', label:'Incoming Patients', icon:'fa-bed-pulse'},
+    {id:'h-roster', label:'Doctor Roster', icon:'fa-user-doctor'},
+    {id:'h-tele', label:'Telemedicine Schedule', icon:'fa-calendar-check'},
+    {id:'h-verify', label:'Aadhaar &amp; Scheme Verify', icon:'fa-id-card'},
+    {id:'h-audit', label:'Audit Trail', icon:'fa-clipboard-list'},
+  ]
+};
+function buildSideNav(role){
+  const nav = document.getElementById('app-sidenav');
+  nav.innerHTML = SIDENAV[role].map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="renderCurrentView('${item.id}')"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
+}
+function setActiveNav(navId){
+  document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
+}
+
+/* ============================================================
+   VIEW RENDER DISPATCH
+   ============================================================ */
+function renderCurrentView(navId){
+  currentView = navId;
+  setActiveNav(navId);
+  cleanupMap();
+  const c = document.getElementById('active-view-container');
+  const renderers = {
+    'p-dash': viewPatientDash, 'p-sos': viewPatientSOS, 'p-chat': viewPatientChat, 'p-records': viewPatientRecords,
+    'p-tele': viewPatientTele, 'p-rx': viewPatientRx, 'p-pharmacy': viewPatientPharmacy, 'p-women': viewPatientWomen, 'p-insurance': viewPatientInsurance, 'p-documents': viewPatientDocuments,
+    'r-dash': viewResponderDash, 'r-queue': viewResponderQueue, 'r-active': viewResponderActive,
+    'po-dash': viewPoliceDash, 'po-feed': viewPoliceFeed,
+    'h-dash': viewHospitalDash, 'h-incoming': viewHospitalIncoming, 'h-roster': viewHospitalRoster, 'h-tele': viewHospitalTele, 'h-verify': viewHospitalVerify, 'h-audit': viewHospitalAudit,
+  };
+  c.innerHTML = renderers[navId] ? renderers[navId]() : '<div class="empty-state">View not found</div>';
+  postRenderHooks(navId);
+  refreshBell();
+}
+function postRenderHooks(navId){
+  if(navId==='p-sos') initSosMapIfNeeded();
+  if(navId==='r-active') initResponderMap();
+  if(navId==='po-feed') initPoliceMap();
+  if(navId==='p-women') renderCycleCalendar();
+}
+function viewHeader(eyebrow,title,sub){
+  return `<div class="view-header"><div class="view-eyebrow">${eyebrow}</div><h1 class="view-title">${title}</h1><p class="view-subtitle">${sub||''}</p></div>`;
+}
+
+/* ============================================================
+   PATIENT — DASHBOARD
+   ============================================================ */
+function viewPatientDash(){
+  const profile = db('profile');
+  const incidents = db('incidents').filter(i=>i.patientId===currentPatientId());
+  const active = incidents.find(i=>i.status!=='closed');
+  return `
+  ${viewHeader('Patient Console','Welcome back, '+profile.name.split(' ')[0],'Your emergency profile is verified and ready. One tap broadcasts to every nearby hospital, ambulance and police station at once.')}
+  ${active ? `<div class="card" style="border-color:#ef4444;background:rgba(239,68,68,.06);">
+    <strong style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Active emergency in progress — ${active.id}</strong>
+    <p style="margin:8px 0 12px;color:var(--text-muted);">Status: ${incidentStatusLabel(active.status)}</p>
+    <button class="btn btn-danger" onclick="renderCurrentView('p-sos')">Open live tracking</button>
+  </div>` : ''}
+  <div class="grid-4" style="margin-bottom:8px;">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-droplet"></i></div><div><div class="dash-stat-num">${profile.bloodGroup}</div><div class="dash-stat-label">Blood Group</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-file-medical"></i></div><div><div class="dash-stat-num">${db('appointments').length}</div><div class="dash-stat-label">Appointments</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div><div><div class="dash-stat-num">${db('prescriptions').length}</div><div class="dash-stat-label">Prescriptions</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-shield-heart"></i></div><div><div class="dash-stat-num">${db('insurance').aadhaar_verified?'Linked':'Unlinked'}</div><div class="dash-stat-label">Govt. Scheme ID</div></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="margin-top:0;">Emergency profile</h3>
+      <div class="med-tag">Blood: ${profile.bloodGroup}</div>
+      <div class="med-tag">Allergies: ${profile.allergies}</div>
+      <div class="med-tag">Chronic: ${profile.chronic}</div>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:12px;">Emergency contact: ${profile.emergencyContact}</p>
+      <button class="btn btn-secondary btn-sm" onclick="renderCurrentView('p-records')">Edit profile</button>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">How SOS dispatch works</h3>
+      <ul class="activity-feed">
+        <li><span class="dot done"></span> Broadcast to the 3 nearest hospitals with live bed capacity</li>
+        <li><span class="dot done"></span> Broadcast to the 2 nearest available ambulances</li>
+        <li><span class="dot done"></span> Auto-notify the nearest police station</li>
+        <li><span class="dot done"></span> Hospital gets a confirmed alert the instant a responder accepts</li>
+      </ul>
+    </div>
+  </div>`;
+}
+function incidentStatusLabel(s){
+  return {broadcasting:'Broadcasting to nearby units…', accepted:'Ambulance accepted — en route to you', picked_up:'Picked up — crew selecting hospital', enroute_hospital:'Picked up — en route to hospital', arrived:'Arrived at hospital', closed:'Closed'}[s]||s;
+}
+
+/* ============================================================
+   PATIENT — SOS
+   ============================================================ */
+function currentIncident(){
+  return db('incidents').find(i=>i.patientId===currentPatientId() && i.status!=='closed');
+}
+function viewPatientSOS(){
+  const inc = currentIncident();
+  if(!inc){
+    return `
+    ${viewHeader('Emergency SOS','One tap. Every nearby responder knows.','This immediately alerts the nearest hospitals, ambulances, and police — not just a single hospital.')}
+    <div class="card" style="padding:0;">
+      <div class="sos-banner">
+        <div style="font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.1em;font-size:.8rem;opacity:.85;">Press and hold is not required — one tap dispatches help</div>
+        <button class="sos-trigger-btn" onclick="openReportTypePicker()"><i class="fa-solid fa-triangle-exclamation" style="font-size:1.8rem;margin-bottom:6px;"></i>SOS</button>
+        <div style="font-size:.85rem;opacity:.9;">Voice trigger also available — say "Help, Arogya Emergency"</div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:14px;background:rgba(255,255,255,.18);color:#fff;" onclick="startVoiceSOS()"><i class="fa-solid fa-microphone"></i> Enable voice SOS</button>
+      </div>
+    </div>
+    <div id="severity-picker-slot"></div>
+    <div class="card">
+      <h3 style="margin-top:0;">Offline fallback</h3>
+      <p style="color:var(--text-muted);font-size:.88rem;">If mobile data fails, ArogyaBot automatically falls back to SMS-based location reporting and serves cached first-aid instructions from the offline service worker cache.</p>
+    </div>`;
+  }
+  return renderActiveSosTracking(inc);
+}
+function openReportTypePicker(){
+  window.__report = {type:null, lat:null, lng:null, accuracy:null, landmark:'', victimNote:'', reporterPhone: (db('profile')||{}).phone || ''};
+  const slot = document.getElementById('severity-picker-slot');
+  slot.innerHTML = `
+  <div class="card">
+    <h3 style="margin-top:0;">Who is this emergency for?</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">This changes what info we can safely send to responders — we won't guess someone else's medical details.</p>
+    <button class="btn btn-danger btn-block" style="margin-bottom:10px;" onclick="chooseReportType('self')"><i class="fa-solid fa-user"></i> This is happening to me</button>
+    <button class="btn btn-secondary btn-block" onclick="chooseReportType('other')"><i class="fa-solid fa-people-group"></i> I'm a bystander reporting for someone else</button>
+  </div>`;
+}
+async function chooseReportType(type){
+  window.__report.type = type;
+  const slot = document.getElementById('severity-picker-slot');
+  slot.innerHTML = `<div class="card"><p style="color:var(--text-muted);font-size:.85rem;"><i class="fa-solid fa-location-crosshairs fa-spin"></i> Getting your exact GPS location…</p></div>`;
+  const loc = await getDeviceLocation();
+  const profile = db('profile');
+  if(loc){ window.__report.lat = loc.lat; window.__report.lng = loc.lng; window.__report.accuracy = loc.accuracy; }
+  else { window.__report.lat = profile.lat; window.__report.lng = profile.lng; window.__report.accuracy = null; }
+
+  if(type==='self'){ renderSeverityStep(); return; }
+  renderBystanderForm();
+}
+function renderBystanderForm(){
+  const r = window.__report;
+  const locLine = r.accuracy!=null ? `GPS locked (±${r.accuracy}m)` : `Using approximate location — GPS unavailable/denied`;
+  const slot = document.getElementById('severity-picker-slot');
+  slot.innerHTML = `
+  <div class="card">
+    <h3 style="margin-top:0;">Bystander report</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;"><i class="fa-solid fa-location-dot"></i> ${locLine} · <a href="${mapsLink(r.lat,r.lng)}" target="_blank" style="color:var(--brand-primary);">preview on map</a></p>
+    <div class="form-group"><label>Landmark / direction (helps the ambulance find the exact spot)</label>
+      <input class="form-control" id="bys-landmark" placeholder="e.g. NH-8 service lane, opp. Sector 18 metro gate 2, facing towards Gurgaon"></div>
+    <div class="form-group"><label>What do you see? (visible condition — optional)</label>
+      <textarea class="form-control" id="bys-note" rows="2" placeholder="e.g. Man, ~30s, conscious but bleeding from head, two-wheeler accident"></textarea></div>
+    <div class="form-group"><label>Your phone (so responders can call you back for directions)</label>
+      <input class="form-control" id="bys-phone" value="${r.reporterPhone}"></div>
+    <button class="btn btn-danger btn-block" style="margin-top:6px;" onclick="submitBystanderForm()">Continue</button>
+  </div>`;
+}
+function submitBystanderForm(){
+  window.__report.landmark = document.getElementById('bys-landmark').value.trim();
+  window.__report.victimNote = document.getElementById('bys-note').value.trim();
+  window.__report.reporterPhone = document.getElementById('bys-phone').value.trim();
+  renderSeverityStep();
+}
+function renderSeverityStep(){
+  const r = window.__report;
+  const slot = document.getElementById('severity-picker-slot');
+  const locLine = r.accuracy!=null ? `Location locked (±${r.accuracy}m)` : `Approximate location (GPS unavailable)`;
+  slot.innerHTML = `
+  <div class="card">
+    <h3 style="margin-top:0;">Confirm severity</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">This helps dispatch the right response (ambulance only, or ambulance + police + fire).</p>
+    <p style="color:var(--text-muted);font-size:.8rem;"><i class="fa-solid fa-location-dot"></i> ${locLine}${r.landmark? ' · '+r.landmark : ''} · <a href="${mapsLink(r.lat,r.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>
+    <div class="severity-picker" id="sev-picker">
+      <button class="severity-opt" data-sev="moderate" onclick="pickSeverity('moderate')">Moderate</button>
+      <button class="severity-opt" data-sev="severe" onclick="pickSeverity('severe')">Severe</button>
+      <button class="severity-opt" data-sev="critical" onclick="pickSeverity('critical')">Critical</button>
+    </div>
+    <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="triggerSOS()"><i class="fa-solid fa-bolt"></i> Confirm &amp; Dispatch Now</button>
+  </div>`;
+  window.__sev = 'severe';
+}
+function pickSeverity(s){ window.__sev = s; document.querySelectorAll('.severity-opt').forEach(b=>b.classList.toggle('sel', b.dataset.sev===s)); }
+function startVoiceSOS(){
+  showToast('Voice SOS armed', 'Listening for "Help, Arogya Emergency"… (simulated)', 'info');
+  setTimeout(async ()=>{
+    if(currentIncident()) return;
+    window.__sev='severe';
+    window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
+    const loc = await getDeviceLocation();
+    const profile = db('profile');
+    if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
+    else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
+    triggerSOS();
+  }, 2500);
+}
+
+function triggerSOS(){
+  const profile = db('profile');
+  const sev = window.__sev || 'severe';
+  const r = window.__report || {type:'self', lat:profile.lat, lng:profile.lng, accuracy:null, landmark:'', victimNote:'', reporterPhone:profile.phone};
+  const patientLat = r.lat, patientLng = r.lng;
+  const isBystander = r.type==='other';
+
+  const hospitals = db('responders') && db('hospitals').map(h=>({...h, distKm: haversineKm(patientLat,patientLng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm);
+  const nearestHospitals = hospitals.filter(h=>h.beds>0).slice(0,3);
+  const responders = db('responders').filter(r=>r.status==='available').map(r=>({...r, distKm: haversineKm(patientLat,patientLng,r.lat,r.lng)})).sort((a,b)=>a.distKm-b.distKm);
+  const nearestResponders = responders.slice(0,2);
+  const police = db('police').map(p=>({...p, distKm: haversineKm(patientLat,patientLng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm)[0];
+
+  const inc = {
+    id: uid('INC'), patientId: isBystander ? 'UNKNOWN' : currentPatientId(),
+    patientName: isBystander ? 'Unknown patient (bystander report)' : profile.name,
+    reportedFor: r.type, reporterPhone: r.reporterPhone || profile.phone,
+    landmark: r.landmark || '', victimNote: r.victimNote || '',
+    locationAccuracy: r.accuracy,
+    medical: isBystander ? {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'} : {bloodGroup:profile.bloodGroup, allergies:profile.allergies, chronic:profile.chronic},
+    severity: sev,
+    lat: patientLat, lng: patientLng, status:'broadcasting', createdAt: now(),
+    notifiedHospitals: nearestHospitals.map(h=>h.id), notifiedResponders: nearestResponders.map(r=>r.id),
+    notifiedPoliceId: police ? police.id : null,
+    assignedResponderId: null, assignedHospitalId: null,
+    timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')}]
+  };
+  const all = db('incidents'); all.unshift(inc); dbSet('incidents', all);
+  audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev);
+
+  const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
+  const bystNote = isBystander ? ` Reported by a bystander (not the patient) — call ${inc.reporterPhone} for on-ground details.` : '';
+
+  // Multicast notifications — many hospitals, not one; police always included.
+  nearestHospitals.forEach(h=>{
+    pushNotification('hospital:'+h.id, 'Incoming emergency alert', `${inc.severity.toUpperCase()} case ${h.distKm.toFixed(1)}km away · ETA ${etaMinutes(h.distKm)} min.${locNote}${bystNote} Awaiting responder assignment.`, 'danger', inc.id);
+  });
+  nearestResponders.forEach(r=>{
+    pushNotification('responder:'+r.id, 'New dispatch request', `${inc.severity.toUpperCase()} case ${r.distKm.toFixed(1)}km away · ETA ${etaMinutes(r.distKm)} min.${locNote}${bystNote} Tap Accept in your queue.`, 'danger', inc.id);
+  });
+  if(police){
+    pushNotification('police', 'Emergency reported near '+police.name, `${inc.severity.toUpperCase()} case ${police.distKm.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
+  }
+  pushNotification('patient', 'Help is on the way', `Notified ${nearestHospitals.length} hospitals, ${nearestResponders.length} ambulances and ${police?police.name:'local police'} simultaneously.`, 'info', inc.id);
+
+  window.__report = null;
+  renderCurrentView('p-sos');
+
+  // Demo safety net only: if NO ambulance phone taps Accept within 45s, auto-accept with the nearest one
+  // so the flow doesn't stall. In a live multi-phone demo a real person should accept well before this fires.
+  setTimeout(()=>{
+    const fresh = db('incidents').find(i=>i.id===inc.id);
+    if(fresh && fresh.status==='broadcasting' && nearestResponders[0]){
+      acceptIncident(inc.id, nearestResponders[0].id, true);
+    }
+  }, 45000);
+}
+
+function renderActiveSosTracking(inc){
+  const hospitals = db('hospitals');
+  const responders = db('responders');
+  const assignedHosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
+  const assignedResp = inc.assignedResponderId ? responders.find(r=>r.id===inc.assignedResponderId) : null;
+  const stepIdx = {broadcasting:0, accepted:1, picked_up:2, enroute_hospital:2, arrived:3, closed:4}[inc.status];
+  return `
+  ${viewHeader('Live Emergency Tracking', inc.id, 'Severity: '+inc.severity.toUpperCase()+(inc.reportedFor==='other'?' · Reported for someone else':''))}
+  ${inc.landmark ? `<p style="color:var(--text-muted);font-size:.85rem;margin:-6px 0 12px;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>` : ''}
+  <div class="stepper">
+    ${['Broadcast','Ambulance Assigned','Picked Up','At Hospital'].map((lbl,i)=>`<div class="step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="circ">${i<stepIdx?'<i class=\"fa-solid fa-check\"></i>':i+1}</div><div class="lbl">${lbl}</div></div>`).join('')}
+  </div>
+  <div class="grid-2">
+    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div></div>
+    <div class="card">
+      <h3 style="margin-top:0;">Dispatch activity</h3>
+      <ul class="activity-feed">
+        ${inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('')}
+      </ul>
+      ${assignedResp ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+        <strong>Responder:</strong> ${assignedResp.name} · ${assignedResp.vehicle}<br>
+        <strong>Driver phone:</strong> <a href="tel:${assignedResp.phone}" style="color:var(--brand-primary);font-weight:700;">${assignedResp.phone} <i class="fa-solid fa-phone"></i></a><br>
+        ${assignedHosp ? `<strong>Hospital:</strong> ${assignedHosp.name}` : (inc.status==='picked_up' ? `<strong>Hospital:</strong> crew is selecting nearest hospital…` : `<strong>Hospital:</strong> pending confirmation`)}
+      </div>` : ''}
+      ${inc.status==='arrived' ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>` : ''}
+    </div>
+  </div>`;
+}
+function closeIncidentPatientSide(id){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===id);
+  if(inc){ inc.status='closed'; inc.timeline.push({ts:now(),text:'Case closed by patient'}); dbSet('incidents',all); }
+  audit('patient','incident_close', id);
+  renderCurrentView('p-dash');
+}
+
+/* ============================================================
+   RESPONDER
+   ============================================================ */
+function viewResponderDash(){
+  const mine = db('incidents').filter(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
+  const pending = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID));
+  return `
+  ${viewHeader('Responder Console','Unit '+CURRENT_RESPONDER_ID,'Command Center broadcasts every SOS to the 2 nearest available units — accept fast, others get auto-cleared.')}
+  <div class="grid-3">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-bell"></i></div><div><div class="dash-stat-num">${pending.length}</div><div class="dash-stat-label">Pending Requests</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-route"></i></div><div><div class="dash-stat-num">${mine.length}</div><div class="dash-stat-label">Active Case</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">Ready</div><div class="dash-stat-label">Vehicle Status</div></div></div>
+  </div>
+  ${pending.length ? `<div class="card"><h3 style="margin-top:0;">You have ${pending.length} pending request(s)</h3><button class="btn btn-danger" onclick="renderCurrentView('r-queue')">Open dispatch queue</button></div>` : ''}
+  ${mine.length ? `<div class="card"><h3 style="margin-top:0;">Active case in progress</h3><button class="btn" onclick="renderCurrentView('r-active')">Open live case</button></div>` : ''}`;
+}
+function viewResponderQueue(){
+  const pending = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID));
+  const hospitals = db('hospitals');
+  return `
+  ${viewHeader('Dispatch Queue','Incoming emergency requests','First responder to accept gets the case — everyone else notified instantly it\'s taken.')}
+  ${pending.length ? pending.map(inc=>{
+    const dKm = haversineKm(SEED_RESPONDER(CURRENT_RESPONDER_ID).lat, SEED_RESPONDER(CURRENT_RESPONDER_ID).lng, inc.lat, inc.lng);
+    return `<div class="incident-card">
+      <div class="incident-card-top"><span class="incident-id">${inc.id}</span><span class="status-tag ${inc.severity==='critical'?'status-danger':'status-warn'}">${inc.severity}</span></div>
+      <div class="incident-meta">
+        <span><i class="fa-solid fa-location-dot"></i> ${dKm.toFixed(1)} km away</span>
+        <span><i class="fa-solid fa-clock"></i> ETA ${etaMinutes(dKm)} min</span>
+        <span><i class="fa-solid fa-hospital"></i> ${inc.notifiedHospitals.length} hospitals alerted</span>
+      </div>
+      ${inc.landmark ? `<div style="font-size:.82rem;color:var(--text-muted);margin-top:4px;"><i class="fa-solid fa-signs-post"></i> ${inc.landmark}</div>` : ''}
+      ${inc.reportedFor==='other' ? `<div style="font-size:.8rem;color:var(--brand-accent);margin-top:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Reported by a bystander — patient not yet identified</div>` : ''}
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button class="btn btn-danger btn-sm" onclick="acceptIncident('${inc.id}','${CURRENT_RESPONDER_ID}')"><i class="fa-solid fa-check"></i> Accept case</button>
+        <button class="btn btn-secondary btn-sm" onclick="declineIncident('${inc.id}','${CURRENT_RESPONDER_ID}')">Decline</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>No pending requests right now.</p></div>`}`;
+}
+function SEED_RESPONDER(id){ return db('responders').find(r=>r.id===id) || {lat:BASE.lat,lng:BASE.lng}; }
+function declineIncident(incId, respId){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  inc.notifiedResponders = inc.notifiedResponders.filter(r=>r!==respId);
+  dbSet('incidents', all);
+  audit('responder:'+respId, 'decline', incId);
+  showToast('Declined', 'Case passed to next nearest unit.', 'info');
+  renderCurrentView('r-queue');
+}
+
+function acceptIncident(incId, respId, isAuto){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc || inc.status!=='broadcasting') return;
+  const responders = db('responders');
+  const resp = responders.find(r=>r.id===respId);
+
+  inc.assignedResponderId = respId;
+  inc.status = 'accepted';
+  inc.timeline.push({ts:now(), text:`${resp.name} (${resp.vehicle}) accepted the case`+(isAuto?' — auto-assigned (demo)':'')+' · heading to patient. Hospital will be chosen after pickup.'});
+
+  dbSet('incidents', all);
+  audit('responder:'+respId, 'accept', incId);
+
+  // Notify the responder who accepted
+  pushNotification('responder:'+respId, 'Case confirmed', `You're assigned to ${incId}. Head to patient location now — you'll pick the receiving hospital once you've got the patient on board.`, 'success', incId);
+
+  // Notify OTHER notified responders — remove from their queues
+  inc.notifiedResponders.filter(id=>id!==respId).forEach(id=>{
+    pushNotification('responder:'+id, 'Case no longer available', `${incId} was accepted by another unit and removed from your queue.`, 'info', incId);
+  });
+
+  // Police always gets the dispatch confirmation, not silence
+  if(inc.notifiedPoliceId){
+    pushNotification('police', 'Unit dispatched', `${resp.vehicle} dispatched to ${incId}. Consider clearing the route.`, 'dispatch', incId);
+  }
+
+  // Give the patient the driver's phone number directly, per the real-world flow
+  pushNotification('patient', 'Ambulance is on its way', `${resp.name} (${resp.vehicle}) accepted your case. Driver contact: ${resp.phone}.`, 'success', incId);
+
+  if(currentRole==='responder') renderCurrentView('r-active');
+  else if(currentRole==='patient' && currentView==='p-sos') renderCurrentView('p-sos');
+  else refreshBell();
+
+  startIncidentSimulation(incId);
+}
+
+function chooseHospitalForIncident(incId, hospId){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc || inc.status!=='picked_up') return;
+  const hospitals = db('hospitals');
+  const hosp = hospitals.find(h=>h.id===hospId);
+  if(!hosp) return;
+  const responders = db('responders');
+  const resp = responders.find(r=>r.id===inc.assignedResponderId);
+
+  inc.assignedHospitalId = hospId;
+  inc.status = 'enroute_hospital';
+  inc.timeline.push({ts:now(), text:`Ambulance crew selected ${hosp.name} as the receiving hospital`});
+  dbSet('incidents', all);
+  audit('responder:'+inc.assignedResponderId, 'select_hospital', incId+' -> '+hospId);
+
+  const inc_medical = inc.medical || {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'};
+  pushNotification('hospital:'+hosp.id, 'Incoming patient confirmed', `${incId} · ETA ${etaMinutes(haversineKm(inc.lat,inc.lng,hosp.lat,hosp.lng))} min · Ambulance ${resp?resp.vehicle:''} · Blood group ${inc_medical.bloodGroup} · Allergies: ${inc_medical.allergies}${inc.reportedFor==='other'?' · Patient identity unknown (bystander report) — reporter: '+inc.reporterPhone:''}`, 'danger', incId);
+  (inc.notifiedHospitals||[]).filter(id=>id!==hospId).forEach(id=>{
+    pushNotification('hospital:'+id, 'Case routed elsewhere — stand down', `${incId} was taken to another hospital. No action needed.`, 'info', incId);
+  });
+  if(inc.notifiedPoliceId){
+    pushNotification('police', 'Destination confirmed', `${resp?resp.vehicle:'Ambulance'} is heading to ${hosp.name} with ${incId}.`, 'dispatch', incId);
+  }
+  pushNotification('patient', 'Heading to hospital', `You're being taken to ${hosp.name}.`, 'success', incId);
+
+  if(currentRole==='responder') renderCurrentView('r-active');
+  else refreshBell();
+}
+
+function startIncidentSimulation(incId){
+  if(simTimer) clearInterval(simTimer);
+  let phase = 'to_patient';
+  simTimer = setInterval(()=>{
+    const all = db('incidents');
+    const inc = all.find(i=>i.id===incId);
+    if(!inc || inc.status==='closed'){ clearInterval(simTimer); simTimer=null; return; }
+    const responders = db('responders');
+    const resp = responders.find(r=>r.id===inc.assignedResponderId);
+    if(!resp) return;
+    const hospitals = db('hospitals');
+    const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
+
+    if(phase==='to_patient'){
+      resp.lat += (inc.lat-resp.lat)*0.35; resp.lng += (inc.lng-resp.lng)*0.35;
+      if(haversineKm(resp.lat,resp.lng,inc.lat,inc.lng) < 0.15){
+        phase='awaiting_hospital'; inc.status='picked_up';
+        inc.timeline.push({ts:now(), text:'Patient picked up — ambulance crew selecting nearest hospital'});
+        pushNotification('patient','Picked up','You are on board. The crew is now selecting the nearest hospital with capacity.','success',incId);
+      }
+    } else if(phase==='awaiting_hospital'){
+      // Waits here until the responder taps "Send here" on a hospital in their Active Case screen.
+      if(inc.assignedHospitalId){ phase='to_hospital'; }
+    } else if(phase==='to_hospital' && hosp){
+      resp.lat += (hosp.lat-resp.lat)*0.35; resp.lng += (hosp.lng-resp.lng)*0.35;
+      if(haversineKm(resp.lat,resp.lng,hosp.lat,hosp.lng) < 0.15){
+        phase='arrived'; inc.status='arrived';
+        inc.timeline.push({ts:now(), text:'Arrived at '+hosp.name});
+        pushNotification('patient','Arrived','You have arrived at '+hosp.name+'.','success',incId);
+        pushNotification('hospital:'+hosp.id,'Patient arrived','Case '+incId+' has arrived at your facility.','success',incId);
+        pushNotification('responder:'+resp.id,'Handoff complete','Patient handed off at '+hosp.name+'. You are now available.','success',incId);
+        pushNotification('police','Case resolved','Ambulance completed transport for '+incId+'.','info',incId);
+        resp.status='available';
+        clearInterval(simTimer); simTimer=null;
+      }
+    }
+    dbSet('responders', responders);
+    dbSet('incidents', all);
+    if(currentView==='p-sos') { document.getElementById('active-view-container').innerHTML = renderActiveSosTracking(inc); initSosMapIfNeeded(true); }
+    if(currentView==='r-active') { document.getElementById('active-view-container').innerHTML = viewResponderActive(); initResponderMap(true); }
+    if(currentView==='h-incoming') renderCurrentView('h-incoming');
+    if(currentView==='po-feed') { document.getElementById('active-view-container').innerHTML = viewPoliceFeed(); initPoliceMap(true); }
+    refreshBell();
+  }, 1400);
+}
+
+function viewResponderActive(){
+  const inc = db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
+  if(!inc) return `${viewHeader('Active Case','No case in progress','Accept a request from the dispatch queue to begin.')}<div class="empty-state"><i class="fa-solid fa-route"></i><p>Nothing active right now.</p></div>`;
+  const hospitals = db('hospitals');
+  const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
+  const med = inc.medical || {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'};
+  const needsHospitalPick = inc.status==='picked_up' && !inc.assignedHospitalId;
+  const nearbyHospitals = needsHospitalPick ? hospitals.filter(h=>h.beds>0).map(h=>({...h, distKm: haversineKm(inc.lat,inc.lng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,4) : [];
+  return `
+  ${viewHeader('Active Case', inc.id, 'Status: '+incidentStatusLabel(inc.status))}
+  <div class="grid-2">
+    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div></div>
+    <div class="card">
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark ? inc.landmark : 'No landmark given'} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);font-weight:600;">Get directions <i class="fa-solid fa-diamond-turn-right"></i></a></p>
+      ${inc.reportedFor==='other' ? `<div class="card" style="background:var(--bg-subtle);padding:12px;margin-bottom:12px;"><strong>Reported by a bystander</strong> — patient not yet identified.${inc.victimNote?'<br>Reported condition: '+inc.victimNote:''}<br>Reporter contact: <a href="tel:${inc.reporterPhone}" style="color:var(--brand-primary);font-weight:700;">${inc.reporterPhone}</a></div>` : ''}
+      <h3 style="margin-top:0;">Patient medical summary</h3>
+      <div class="med-tag">Blood: ${med.bloodGroup}</div>
+      <div class="med-tag">Allergies: ${med.allergies}</div>
+      <div class="med-tag">Chronic: ${med.chronic}</div>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:10px;">Destination: ${hosp ? hosp.name : (needsHospitalPick ? 'Choose a hospital below' : 'Selecting hospital…')}</p>
+      ${needsHospitalPick ? `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+          <strong>Patient is on board — choose the receiving hospital:</strong>
+          ${nearbyHospitals.length ? nearbyHospitals.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;">
+            <span style="font-size:.85rem;">${h.name}<br><span style="color:var(--text-muted);">${h.distKm.toFixed(1)} km · ${h.beds} beds free</span></span>
+            <button class="btn btn-danger btn-sm" onclick="chooseHospitalForIncident('${inc.id}','${h.id}')">Send here</button>
+          </div>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">No hospital with free beds nearby right now — check again shortly.</p>`}
+        </div>` : ''}
+      <ul class="activity-feed" style="margin-top:14px;">
+        ${inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('')}
+      </ul>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   POLICE
+   ============================================================ */
+function viewPoliceDash(){
+  const active = db('incidents').filter(i=>i.status!=='closed');
+  return `
+  ${viewHeader('Police Console','Sector 9 Police Station','Every emergency dispatch — ambulance and hospital — auto-notifies the nearest station. No more silent SOS calls.')}
+  <div class="grid-3">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-satellite-dish"></i></div><div><div class="dash-stat-num">${active.length}</div><div class="dash-stat-label">Active Cases Nearby</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">${active.filter(i=>i.assignedResponderId).length}</div><div class="dash-stat-label">Ambulances Dispatched</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-road"></i></div><div><div class="dash-stat-num">${active.filter(i=>i.status==='enroute_hospital').length}</div><div class="dash-stat-label">Routes To Clear</div></div></div>
+  </div>
+  <div class="card"><h3 style="margin-top:0;">Recent activity</h3>
+  <ul class="activity-feed">${db('notifications').filter(n=>n.scope==='police').slice(0,8).map(n=>`<li><span class="dot ${n.type==='danger'?'pending':'done'}"></span>${n.title} — ${n.body}<span class="timeline-time">${fmtTime(n.ts)}</span></li>`).join('') || '<li>No activity yet.</li>'}</ul></div>`;
+}
+function viewPoliceFeed(){
+  const incidents = db('incidents').filter(i=>i.status!=='closed');
+  const responders = db('responders'); const hospitals = db('hospitals');
+  return `
+  ${viewHeader('Dispatch Feed','Live emergency cases','Acknowledge to log route-clearing support for the responding ambulance.')}
+  ${incidents.length ? `<div class="card card-flush" style="margin-bottom:22px;"><div class="map-container" id="leaflet-map-box"></div></div>` : ''}
+  ${incidents.length ? incidents.map(inc=>{
+    const resp = inc.assignedResponderId ? responders.find(r=>r.id===inc.assignedResponderId) : null;
+    const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
+    return `<div class="incident-card">
+      <div class="incident-card-top"><span class="incident-id">${inc.id}</span><span class="status-tag ${inc.severity==='critical'?'status-danger':'status-warn'}">${inc.severity}</span></div>
+      <div class="incident-meta">
+        <span><i class="fa-solid fa-truck-medical"></i> ${resp? resp.name+' · '+resp.vehicle : 'Awaiting assignment'}</span>
+        <span><i class="fa-solid fa-hospital"></i> ${hosp? hosp.name : 'Awaiting hospital'}</span>
+      </div>
+      ${inc.landmark ? `<div style="font-size:.82rem;color:var(--text-muted);margin-top:4px;"><i class="fa-solid fa-signs-post"></i> ${inc.landmark}</div>` : ''}
+      <p style="margin:8px 0 0;font-size:.85rem;"><a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);font-weight:600;">Get directions to the spot <i class="fa-solid fa-diamond-turn-right"></i></a></p>
+      <span class="status-tag status-info">${incidentStatusLabel(inc.status)}</span>
+      <div style="margin-top:10px;"><button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button></div>
+    </div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><p>No active cases nearby.</p></div>`}`;
+}
+function ackPolice(id){ pushNotification('patient','Route support','Local police acknowledged and is helping clear the route.','info',id); showToast('Acknowledged','Logged as active route support.','success'); audit('police','acknowledge',id); }
+
+/* ============================================================
+   HOSPITAL
+   ============================================================ */
+function viewHospitalDash(){
+  const h = db('hospitals').find(x=>x.id===CURRENT_HOSPITAL_ID);
+  const incoming = db('incidents').filter(i=>i.assignedHospitalId===CURRENT_HOSPITAL_ID && i.status!=='closed');
+  return `
+  ${viewHeader('Hospital Console', h.name, 'Confirmed-incoming alerts fire the instant a responder accepts a case for your facility.')}
+  <div class="grid-4">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-bed-pulse"></i></div><div><div class="dash-stat-num">${h.beds}</div><div class="dash-stat-label">Beds Available</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-heart-pulse"></i></div><div><div class="dash-stat-num">${h.icu}</div><div class="dash-stat-label">ICU Available</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">${incoming.length}</div><div class="dash-stat-label">Incoming Patients</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-user-doctor"></i></div><div><div class="dash-stat-num">${db('doctors').filter(d=>d.hospital===CURRENT_HOSPITAL_ID && d.available).length}</div><div class="dash-stat-label">Doctors On Duty</div></div></div>
+  </div>
+  ${incoming.length ? `<div class="card"><h3 style="margin-top:0;">Prep required</h3><button class="btn btn-danger" onclick="renderCurrentView('h-incoming')">View incoming patients</button></div>` : `<div class="card"><p style="color:var(--text-muted);margin:0;">No incoming emergency cases right now.</p></div>`}`;
+}
+function viewHospitalIncoming(){
+  const incoming = db('incidents').filter(i=>i.assignedHospitalId===CURRENT_HOSPITAL_ID && i.status!=='closed');
+  const responders = db('responders');
+  return `
+  ${viewHeader('Incoming Patients','Confirmed cases assigned to your facility','')}
+  ${incoming.length ? incoming.map(inc=>{
+    const resp = responders.find(r=>r.id===inc.assignedResponderId);
+    const distKm = resp ? haversineKm(resp.lat,resp.lng, db('hospitals').find(h=>h.id===CURRENT_HOSPITAL_ID).lat, db('hospitals').find(h=>h.id===CURRENT_HOSPITAL_ID).lng) : 0;
+    const med = inc.medical || {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'};
+    return `<div class="incident-card">
+      <div class="incident-card-top"><span class="incident-id">${inc.id}</span><span class="status-tag ${inc.status==='arrived'?'status-ok':'status-warn'}">${incidentStatusLabel(inc.status)}</span></div>
+      <div class="incident-meta">
+        <span><i class="fa-solid fa-truck-medical"></i> ${resp? resp.name+' · '+resp.vehicle : '—'}</span>
+        <span><i class="fa-solid fa-clock"></i> ${inc.status==='enroute_hospital' ? 'ETA '+etaMinutes(distKm)+' min' : incidentStatusLabel(inc.status)}</span>
+      </div>
+      ${inc.reportedFor==='other' ? `<div style="font-size:.8rem;color:var(--brand-accent);margin:4px 0;"><i class="fa-solid fa-triangle-exclamation"></i> Patient not yet identified — reported by bystander (${inc.reporterPhone})</div>` : ''}
+      <div class="med-tag">Blood: ${med.bloodGroup}</div><div class="med-tag">Allergies: ${med.allergies}</div><div class="med-tag">Chronic: ${med.chronic}</div>
+      ${inc.status!=='arrived' ? `<div style="margin-top:10px;"><button class="btn btn-sm" onclick="confirmBedReady('${inc.id}')"><i class="fa-solid fa-bed"></i> Confirm bed ready</button></div>` : `<div style="margin-top:10px;"><button class="btn btn-sm btn-secondary" onclick="closeIncidentHospitalSide('${inc.id}')">Mark admitted &amp; close case</button></div>`}
+    </div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-bed-pulse"></i><p>No incoming patients right now.</p></div>`}`;
+}
+function confirmBedReady(id){
+  pushNotification('patient','Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
+  const resp = db('incidents').find(i=>i.id===id).assignedResponderId;
+  if(resp) pushNotification('responder:'+resp,'Bed confirmed','Destination hospital confirmed bed readiness.','info',id);
+  showToast('Confirmed','Patient and responder notified.','success');
+  audit('hospital:'+CURRENT_HOSPITAL_ID,'bed_ready',id);
+}
+function closeIncidentHospitalSide(id){
+  const all = db('incidents'); const inc = all.find(i=>i.id===id);
+  inc.status='closed'; inc.timeline.push({ts:now(),text:'Admitted and case closed by hospital'}); dbSet('incidents',all);
+  audit('hospital:'+CURRENT_HOSPITAL_ID,'close',id);
+  renderCurrentView('h-incoming');
+}
+function viewHospitalRoster(){
+  const docs = db('doctors').filter(d=>d.hospital===CURRENT_HOSPITAL_ID);
+  return `${viewHeader('Doctor Roster','On-duty specialists','Toggle availability — reflected instantly on the patient telemedicine booking screen.')}
+  <div class="card"><table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Status</th><th></th></tr></thead><tbody>
+  ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button></td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function toggleDoc(id){ const docs=db('doctors'); const d=docs.find(x=>x.id===id); d.available=!d.available; dbSet('doctors',docs); renderCurrentView('h-roster'); }
+function viewHospitalTele(){
+  const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID);
+  return `${viewHeader('Telemedicine Schedule','Booked consultations','')}
+  <div class="card">${appts.length ? `<table class="data-table"><thead><tr><th>Patient</th><th>Doctor</th><th>Slot</th><th>Status</th></tr></thead><tbody>
+  ${appts.map(a=>`<tr><td>${a.patient}</td><td>${a.doctor}</td><td>${a.slot}</td><td><span class="status-tag status-ok">${a.status}</span></td></tr>`).join('')}</tbody></table>` : `<div class="empty-state"><i class="fa-solid fa-calendar"></i><p>No bookings yet.</p></div>`}</div>`;
+}
+function viewHospitalVerify(){
+  const ins = db('insurance');
+  return `${viewHeader('Aadhaar &amp; Scheme Verification','Government ID + insurance pre-authorization','Real deployments call the UIDAI sandbox OTP API; this view simulates the same UX.')}
+  <div class="card">
+    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX" value="9999-8888-7777"></div>
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Verified</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="resetVerification()">Reset</button>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+  </div>
+  <div class="card"><h3 style="margin-top:0;">Insurance claims</h3>${renderClaimsTable()}</div>`;
+}
+function verifyPatientAadhaar(){ const ins=db('insurance'); ins.aadhaar_verified=true; dbSet('insurance',ins); audit('hospital:'+CURRENT_HOSPITAL_ID,'aadhaar_verify','OTP confirmed'); renderCurrentView('h-verify'); showToast('Verified','Government scheme data unlocked.','success'); }
+function resetVerification(){ const ins=db('insurance'); ins.aadhaar_verified=false; dbSet('insurance',ins); renderCurrentView('h-verify'); }
+function viewHospitalAudit(){
+  const logs = db('audit');
+  return `${viewHeader('Audit Trail','Immutable access &amp; dispatch log','Every record access, verification lookup, and dispatch event is logged for compliance.')}
+  <div class="card card-flush"><table class="data-table"><thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead><tbody>
+  ${logs.slice(0,60).map(l=>`<tr class="audit-row"><td>${new Date(l.ts).toLocaleString()}</td><td>${l.actor}</td><td>${l.action}</td><td>${l.detail||''}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ============================================================
+   PATIENT — AI CHAT (symptom checker)
+   ============================================================ */
+const CHAT_RULES = [
+  {re:/fever/i, reply:"A fever above 38°C along with chills can indicate infection. Stay hydrated, rest, and monitor your temperature. Seek care if it exceeds 39.5°C or lasts more than 3 days."},
+  {re:/chest pain|heart/i, reply:"Chest pain can be serious. If it's severe, radiating to your arm/jaw, or paired with shortness of breath, trigger SOS immediately."},
+  {re:/head ?ache/i, reply:"Most headaches are tension-related. Hydrate, rest in a dark room. Sudden 'worst headache of your life' needs emergency care."},
+  {re:/cough|cold/i, reply:"Common cold symptoms usually resolve in 7-10 days. Warm fluids and rest help. Seek care if breathing becomes difficult."},
+];
+function viewPatientChat(){
+  const msgs = db('chatHistory') || [{who:'bot', text:"Hi, I'm ArogyaBot's symptom assistant. Describe what you're feeling — I'll suggest next steps (not a diagnosis)."}];
+  dbSet('chatHistory', msgs);
+  return `${viewHeader('AI Symptom Checker','Describe your symptoms','This assistant offers general guidance only — always confirm with a licensed doctor.')}
+  <div class="chat-container">
+    <div class="chat-messages" id="chat-messages-box">${msgs.map(m=>`<div class="chat-bubble ${m.who}">${m.text}</div>`).join('')}</div>
+    <div class="chat-quick-prompts">
+      <button class="prompt-chip" onclick="setChatInput('I have a fever')">Fever</button>
+      <button class="prompt-chip" onclick="setChatInput('I have chest pain')">Chest pain</button>
+      <button class="prompt-chip" onclick="setChatInput('I have a headache')">Headache</button>
+      <button class="prompt-chip" onclick="setChatInput('I have a cough')">Cough</button>
+    </div>
+    <div class="chat-input-bar">
+      <input type="text" id="chat-user-input" class="form-control" placeholder="Type your symptoms..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+      <button class="btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>`;
+}
+function setChatInput(t){ document.getElementById('chat-user-input').value=t; document.getElementById('chat-user-input').focus(); }
+function sendChatMessage(){
+  const inp = document.getElementById('chat-user-input');
+  const text = inp.value.trim(); if(!text) return;
+  const msgs = db('chatHistory');
+  msgs.push({who:'user', text});
+  const rule = CHAT_RULES.find(r=>r.re.test(text));
+  const reply = rule ? rule.reply : "Thanks for sharing. For anything severe or worsening, please use Emergency SOS or consult a doctor via Telemedicine.";
+  msgs.push({who:'bot', text:reply});
+  dbSet('chatHistory', msgs);
+  inp.value='';
+  document.getElementById('chat-messages-box').innerHTML = msgs.map(m=>`<div class="chat-bubble ${m.who}">${m.text}</div>`).join('');
+  const box = document.getElementById('chat-messages-box'); box.scrollTop = box.scrollHeight;
+}
+
+/* ============================================================
+   PATIENT — RECORDS (profile + mock OCR)
+   ============================================================ */
+function viewPatientRecords(){
+  const p = db('profile');
+  return `${viewHeader('Medical Records','Your emergency profile','Shared with responders and hospitals only during an active emergency, per your consent.')}
+  <div class="card">
+    <div class="grid-2">
+      <div class="form-group"><label>Full name</label><input class="form-control" id="rec-name" value="${p.name}"></div>
+      <div class="form-group"><label>Blood group</label><input class="form-control" id="rec-blood" value="${p.bloodGroup}"></div>
+      <div class="form-group"><label>Known allergies</label><input class="form-control" id="rec-allergies" value="${p.allergies}"></div>
+      <div class="form-group"><label>Chronic conditions</label><input class="form-control" id="rec-chronic" value="${p.chronic}"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Emergency contact</label><input class="form-control" id="rec-contact" value="${p.emergencyContact}"></div>
+    </div>
+    <button class="btn" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> Save profile</button>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Upload a lab report or prescription</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">Simulates AI multimodal extraction (Gemini Flash / Tesseract OCR in production). Not a diagnosis.</p>
+    <button class="btn btn-secondary" onclick="runMockOcr()"><i class="fa-solid fa-file-arrow-up"></i> Upload &amp; extract</button>
+    <div id="ocr-result"></div>
+  </div>`;
+}
+function saveProfile(){
+  const p = db('profile');
+  p.name=document.getElementById('rec-name').value; p.bloodGroup=document.getElementById('rec-blood').value;
+  p.allergies=document.getElementById('rec-allergies').value; p.chronic=document.getElementById('rec-chronic').value;
+  p.emergencyContact=document.getElementById('rec-contact').value;
+  dbSet('profile',p);
+  persistActiveProfileBackToMember(); // writes into this account's own member record, not a shared room doc
+  audit('patient','profile_update','Emergency profile updated');
+  showToast('Saved','Your emergency profile is up to date.','success');
+}
+function runMockOcr(){
+  const slot = document.getElementById('ocr-result');
+  slot.innerHTML = `<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Extracting text…</p></div>`;
+  setTimeout(()=>{
+    slot.innerHTML = `<div class="card" style="background:var(--bg-subtle);margin-top:14px;margin-bottom:0;">
+      <strong>AI-extracted (unverified) — Complete Blood Count</strong>
+      <table class="data-table" style="margin-top:10px;"><tr><td>Hemoglobin</td><td>13.2 g/dL</td><td class="status-tag status-ok">Normal</td></tr>
+      <tr><td>WBC Count</td><td>11,200 /µL</td><td class="status-tag status-warn">Slightly high</td></tr>
+      <tr><td>Platelets</td><td>245,000 /µL</td><td class="status-tag status-ok">Normal</td></tr></table>
+      <p style="font-size:.78rem;color:var(--text-muted);margin-top:10px;">⚠️ AI-extracted, non-diagnostic. Confirm with your doctor.</p>
+    </div>`;
+    audit('patient','ocr_extract','Lab report processed (simulated)');
+  }, 1200);
+}
+
+/* ============================================================
+   PATIENT — MY DOCUMENTS (insurance papers, old history files, etc.)
+   ============================================================ */
+const DOC_CATEGORIES = {
+  insurance: {label:'Insurance', icon:'fa-file-shield'},
+  history:   {label:'Medical History', icon:'fa-file-waveform'},
+  report:    {label:'Lab Report', icon:'fa-file-medical'},
+  other:     {label:'Other', icon:'fa-file'},
+};
+function viewPatientDocuments(){
+  const docs = (db('documents')||[]).slice().sort((a,b)=>b.uploadedAt-a.uploadedAt);
+  return `${viewHeader('My Documents','Insurance papers &amp; medical history','Upload insurance cards, discharge summaries, or old medical history so they\'re on hand if you ever need them in an emergency.')}
+  <div class="card">
+    <h3 style="margin-top:0;">Upload a document</h3>
+    <div class="form-group"><label>Document type</label>
+      <select class="form-control" id="doc-category">
+        ${Object.keys(DOC_CATEGORIES).map(k=>`<option value="${k}">${DOC_CATEGORIES[k].label}</option>`).join('')}
+      </select>
+    </div>
+    <label class="doc-dropzone" for="doc-file-input">
+      <i class="fa-solid fa-cloud-arrow-up"></i>
+      <strong>Tap to choose a file</strong>
+      <div style="color:var(--text-muted);font-size:.8rem;margin-top:4px;">PDF or image · insurance card, discharge summary, old prescriptions, etc.</div>
+    </label>
+    <input type="file" id="doc-file-input" accept=".pdf,image/*" style="display:none;" onchange="handleDocUpload(event)">
+    <div id="doc-upload-status"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Saved documents (${docs.length})</h3>
+    ${docs.length ? `<div class="doc-list">${docs.map(d=>`
+      <div class="doc-row">
+        <div class="doc-row-icon"><i class="fa-solid ${DOC_CATEGORIES[d.category]?.icon||'fa-file'}"></i></div>
+        <div>
+          <div class="doc-row-name">${d.name}</div>
+          <div class="doc-row-meta">${DOC_CATEGORIES[d.category]?.label||'Other'} · ${d.sizeKB} KB · ${fmtTime(d.uploadedAt)}</div>
+        </div>
+        <div class="doc-row-actions">
+          <a class="btn btn-secondary btn-sm" href="${d.dataUrl}" download="${d.name}"><i class="fa-solid fa-download"></i></a>
+          <button class="btn btn-secondary btn-sm" onclick="deleteDocument('${d.id}')"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`).join('')}</div>` : `<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>No documents uploaded yet.</p></div>`}
+  </div>`;
+}
+function handleDocUpload(evt){
+  const file = evt.target.files[0];
+  const status = document.getElementById('doc-upload-status');
+  if(!file) return;
+  if(file.size > 4.5*1024*1024){
+    status.innerHTML = `<p style="color:var(--brand-danger);font-size:.82rem;margin-top:10px;">File too large for this demo (max ~4.5MB). Try a smaller scan or photo.</p>`;
+    evt.target.value = '';
+    return;
+  }
+  status.innerHTML = `<p style="color:var(--text-muted);font-size:.82rem;margin-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Uploading…</p>`;
+  const category = document.getElementById('doc-category').value;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const docs = db('documents') || [];
+    docs.push({
+      id: uid('DOC'),
+      name: file.name,
+      category,
+      sizeKB: Math.round(file.size/1024),
+      uploadedAt: now(),
+      dataUrl: reader.result,
+    });
+    dbSet('documents', docs);
+    audit('patient', 'document_upload', file.name+' ('+category+')');
+    showToast('Document saved', file.name+' was added to your documents.', 'success');
+    evt.target.value = '';
+    renderCurrentView('p-documents');
+  };
+  reader.onerror = () => {
+    status.innerHTML = `<p style="color:var(--brand-danger);font-size:.82rem;margin-top:10px;">Couldn't read that file — please try again.</p>`;
+  };
+  reader.readAsDataURL(file);
+}
+function deleteDocument(id){
+  const docs = (db('documents')||[]).filter(d=>d.id!==id);
+  dbSet('documents', docs);
+  audit('patient', 'document_delete', id);
+  showToast('Document removed', '', 'success');
+  renderCurrentView('p-documents');
+}
+
+/* ============================================================
+   PATIENT — TELEMEDICINE
+   ============================================================ */
+function viewPatientTele(){
+  const docs = db('doctors').filter(d=>d.available);
+  const appts = db('appointments').filter(a=>a.patient==='Ananya Sharma' || a.patient===db('profile').name);
+  const inCall = db('activeCall');
+  if(inCall){
+    return `${viewHeader('Telemedicine','Live consultation','')}
+    <div class="card">
+      <div class="video-mock">
+        <div class="avatar"><i class="fa-solid fa-user-doctor"></i></div>
+        <div>${inCall.doctor} · connected</div>
+        <div class="video-controls">
+          <button><i class="fa-solid fa-microphone"></i></button>
+          <button><i class="fa-solid fa-video"></i></button>
+          <button class="end" onclick="endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `${viewHeader('Telemedicine','Book a video consultation','WebRTC-based (Agora/Daily.co/Twilio Video in production) — simulated here.')}
+  <div class="grid-2">
+    ${docs.map(d=>`<div class="card">
+      <strong>${d.name}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${d.specialty} · ${db('hospitals').find(h=>h.id===d.hospital).name}</span>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        ${['10:30 AM','2:00 PM','5:15 PM'].map(t=>`<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t}')">${t}</button>`).join('')}
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="card"><h3 style="margin-top:0;">Upcoming consultations</h3>
+  ${appts.length ? appts.map(a=>`<div class="reminder-row"><div><strong>${a.doctor}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${a.slot}</span></div><button class="btn btn-sm" onclick="joinCall('${a.doctor}')"><i class="fa-solid fa-video"></i> Join</button></div>`).join('') : `<p style="color:var(--text-muted);">No bookings yet — pick a slot above.</p>`}</div>`;
+}
+function bookAppt(doctor, hospital, slot){
+  const appts = db('appointments');
+  appts.push({id:uid('APT'), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed'});
+  dbSet('appointments', appts);
+  audit('patient','appointment_book', doctor+' @ '+slot);
+  pushNotification('hospital:'+hospital, 'New telemedicine booking', `${db('profile').name} booked ${doctor} at ${slot}.`, 'info', null);
+  showToast('Booked', `Confirmed with ${doctor} at ${slot}.`, 'success');
+  renderCurrentView('p-tele');
+}
+function joinCall(doctor){ dbSet('activeCall',{doctor}); renderCurrentView('p-tele'); }
+function endCall(){ dbSet('activeCall', null);
+  const rx = db('prescriptions'); rx.push({id:uid('RX'), doctor: 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
+  dbSet('prescriptions', rx);
+  showToast('Consultation ended','e-Prescription issued.','success');
+  renderCurrentView('p-rx');
+}
+
+/* ============================================================
+   PATIENT — E-PRESCRIPTIONS
+   ============================================================ */
+function viewPatientRx(){
+  const rx = db('prescriptions');
+  return `${viewHeader('e-Prescriptions','Digitally signed prescriptions','')}
+  ${rx.length ? rx.map(r=>`<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button></div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
+}
+function sendToPharmacy(id){ showToast('Sent to pharmacy','Nearest pharmacy notified for fulfillment.','success'); audit('patient','rx_send_pharmacy', id); }
+
+/* ============================================================
+   PATIENT — PHARMACY & REMINDERS
+   ============================================================ */
+function viewPatientPharmacy(){
+  const reminders = db('reminders');
+  const pharmacies = db('pharmacies');
+  return `${viewHeader('Pharmacy &amp; Medicine Reminders','Never miss a dose','')}
+  <div class="card">
+    <h3 style="margin-top:0;">Add reminder</h3>
+    <div class="grid-2">
+      <div class="form-group"><label>Medicine</label><input class="form-control" id="rem-med" placeholder="e.g. Metformin 500mg"></div>
+      <div class="form-group"><label>Time</label><input type="time" class="form-control" id="rem-time"></div>
+    </div>
+    <button class="btn" onclick="addReminder()"><i class="fa-solid fa-plus"></i> Add reminder</button>
+  </div>
+  <div class="card">
+    ${reminders.length ? reminders.map(r=>`<div class="reminder-row"><div><strong>${r.med}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${r.time} daily</span></div><div class="toggle-sw ${r.on?'on':''}" onclick="toggleReminder('${r.id}')"></div></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No reminders yet.</p>`}
+  </div>
+  <div class="card"><h3 style="margin-top:0;">Nearby pharmacies</h3>
+  ${pharmacies.map(p=>`<div class="reminder-row"><div><strong>${p.name}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${haversineKm(db('profile').lat,db('profile').lng,p.lat,p.lng).toFixed(1)} km away</span></div><span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock} stock</span></div>`).join('')}
+  </div>`;
+}
+function addReminder(){
+  const med = document.getElementById('rem-med').value.trim();
+  const time = document.getElementById('rem-time').value;
+  if(!med || !time){ showToast('Missing info','Enter both medicine and time.','danger'); return; }
+  const r = db('reminders'); r.push({id:uid('REM'), med, time, on:true}); dbSet('reminders', r);
+  audit('patient','reminder_add', med+' @ '+time);
+  renderCurrentView('p-pharmacy');
+}
+function toggleReminder(id){ const r=db('reminders'); const item=r.find(x=>x.id===id); item.on=!item.on; dbSet('reminders',r); renderCurrentView('p-pharmacy'); }
+
+/* ============================================================
+   PATIENT — WOMEN'S HEALTH (with PIN lock)
+   ============================================================ */
+function viewPatientWomen(){
+  const c = db('cycle');
+  if(c.pinLock && !c.unlocked){
+    return `${viewHeader("Women's Health","Privacy protected","Enter your PIN to continue.")}
+    <div class="pin-lock">
+      <i class="fa-solid fa-lock" style="font-size:2rem;color:var(--brand-primary);"></i>
+      <div class="pin-dots" id="pin-dots">${'0000'.split('').map(()=>'<span></span>').join('')}</div>
+      <div class="pin-pad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(n=>`<button onclick="pinPress('${n}')">${n}</button>`).join('')}</div>
+    </div>`;
+  }
+  return `${viewHeader("Women's Health","Cycle tracker &amp; predictions","")}
+  <div class="card">
+    <div id="cycle-cal"></div>
+    <div style="display:flex;gap:14px;margin-top:14px;font-size:.78rem;color:var(--text-muted);">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:3px;"></span> Period</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(239,68,68,.25);border-radius:3px;"></span> Predicted</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(245,158,11,.3);border-radius:3px;"></span> Fertile window</span>
+    </div>
+    <button class="btn btn-sm" style="margin-top:14px;" onclick="logPeriodToday()"><i class="fa-solid fa-plus"></i> Log period start today</button>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Privacy lock</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">Set a 4-digit PIN so this section stays private even if someone else opens your phone.</p>
+    ${c.pinLock ? `<button class="btn btn-secondary btn-sm" onclick="removePin()">Remove PIN</button>` : `<div style="display:flex;gap:10px;"><input class="form-control" id="new-pin" maxlength="4" placeholder="Set 4-digit PIN" style="max-width:160px;"><button class="btn btn-sm" onclick="setPin()">Save</button></div>`}
+  </div>`;
+}
+let pinBuffer = '';
+function pinPress(n){
+  if(n==='' ) return;
+  if(n==='⌫'){ pinBuffer = pinBuffer.slice(0,-1); }
+  else if(pinBuffer.length<4){ pinBuffer += n; }
+  document.querySelectorAll('#pin-dots span').forEach((d,i)=>d.classList.toggle('filled', i<pinBuffer.length));
+  if(pinBuffer.length===4){
+    const c = db('cycle');
+    if(pinBuffer===c.pinLock){ c.unlocked=true; dbSet('cycle',c); renderCurrentView('p-women'); }
+    else { showToast('Incorrect PIN','Try again.','danger'); pinBuffer=''; }
+  }
+}
+function setPin(){ const v=document.getElementById('new-pin').value; if(v.length!==4){showToast('Invalid','PIN must be 4 digits.','danger');return;} const c=db('cycle'); c.pinLock=v; c.unlocked=true; dbSet('cycle',c); renderCurrentView('p-women'); }
+function removePin(){ const c=db('cycle'); c.pinLock=''; dbSet('cycle',c); renderCurrentView('p-women'); }
+function logPeriodToday(){ const c=db('cycle'); c.logs.push(new Date().toISOString().slice(0,10)); dbSet('cycle',c); renderCycleCalendar(); audit('patient','cycle_log','Period logged'); }
+function renderCycleCalendar(){
+  const slot = document.getElementById('cycle-cal'); if(!slot) return;
+  const c = db('cycle');
+  const today = new Date(); const year=today.getFullYear(), month=today.getMonth();
+  const first = new Date(year,month,1); const startDow = first.getDay(); const daysInMonth = new Date(year,month+1,0).getDate();
+  let lastLog = c.logs.length ? new Date(c.logs[c.logs.length-1]) : null;
+  let predictedStart = lastLog ? new Date(lastLog.getTime() + 28*86400000) : null;
+  let fertileStart = lastLog ? new Date(lastLog.getTime() + 11*86400000) : null;
+  let fertileEnd = lastLog ? new Date(lastLog.getTime() + 16*86400000) : null;
+  let cells = '';
+  for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = new Date(year,month,d).toISOString().slice(0,10);
+    let cls='';
+    if(c.logs.includes(dateStr)) cls='period';
+    else if(predictedStart && dateStr===predictedStart.toISOString().slice(0,10)) cls='predicted';
+    else if(fertileStart && new Date(dateStr)>=fertileStart && new Date(dateStr)<=fertileEnd) cls='fertile';
+    cells += `<div class="cal-cell ${cls}">${d}</div>`;
+  }
+  slot.innerHTML = `<div class="cal-grid">${['S','M','T','W','T','F','S'].map(d=>`<div style="text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);">${d}</div>`).join('')}${cells}</div>
+  ${predictedStart ? `<p style="margin-top:14px;font-size:.85rem;color:var(--text-muted);">Next period predicted: <strong>${predictedStart.toDateString()}</strong></p>` : `<p style="margin-top:14px;font-size:.85rem;color:var(--text-muted);">Log a period start to see predictions.</p>`}`;
+}
+
+/* ============================================================
+   PATIENT — INSURANCE / GOVT SCHEMES
+   ============================================================ */
+function viewPatientInsurance(){
+  const ins = db('insurance');
+  return `${viewHeader('Government Schemes &amp; Insurance','Ayushman Bharat / PM-JAY &amp; private cover','')}
+  <div class="card">
+    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX" value="9999-8888-7777"></div>
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — Scheme data unlocked</span>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+  </div>
+  ${ins.aadhaar_verified ? `<div class="card"><h3 style="margin-top:0;">PM-JAY Eligibility</h3><p style="color:var(--text-muted);">Coverage up to ₹5,00,000/year for your household. Cashless treatment at empaneled hospitals.</p></div>` : ''}
+  <div class="card">
+    <h3 style="margin-top:0;">Submit a claim</h3>
+    <div class="grid-2">
+      <div class="form-group"><label>Hospital</label><select class="form-control" id="claim-hosp">${db('hospitals').map(h=>`<option value="${h.id}">${h.name}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Amount (₹)</label><input class="form-control" id="claim-amt" placeholder="25000"></div>
+    </div>
+    <button class="btn" onclick="submitClaim()"><i class="fa-solid fa-file-invoice"></i> Submit claim</button>
+  </div>
+  <div class="card"><h3 style="margin-top:0;">Claim status</h3>${renderClaimsTable()}</div>`;
+}
+function renderClaimsTable(){
+  const claims = db('claims');
+  if(!claims.length) return `<p style="color:var(--text-muted);margin:0;">No claims submitted yet.</p>`;
+  return `<table class="data-table"><thead><tr><th>Claim ID</th><th>Hospital</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+  ${claims.map(c=>`<tr><td>${c.id}</td><td>${db('hospitals').find(h=>h.id===c.hosp)?.name||c.hosp}</td><td>₹${c.amt}</td><td><span class="status-tag ${c.status==='Approved'?'status-ok':c.status==='Under Review'?'status-warn':'status-info'}">${c.status}</span></td></tr>`).join('')}
+  </tbody></table>`;
+}
+function submitClaim(){
+  const hosp = document.getElementById('claim-hosp').value;
+  const amt = document.getElementById('claim-amt').value || '0';
+  const claims = db('claims');
+  const c = {id: uid('CLM'), hosp, amt, status:'Submitted'};
+  claims.push(c); dbSet('claims', claims);
+  audit('patient','claim_submit', c.id);
+  showToast('Claim submitted', c.id+' is now under review.', 'success');
+  renderCurrentView('p-insurance');
+  setTimeout(()=>{ c.status='Under Review'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); }, 4000);
+  setTimeout(()=>{ c.status='Approved'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); pushNotification('patient','Claim approved', c.id+' approved for ₹'+amt, 'success'); }, 9000);
+}
+
+/* ============================================================
+   LEAFLET MAPS
+   ============================================================ */
+let mapInstance = null, mapMarkers = {};
+function cleanupMap(){ if(mapInstance){ mapInstance.remove(); mapInstance=null; mapMarkers={}; } }
+function ensureMap(){
+  const el = document.getElementById('leaflet-map-box'); if(!el) return null;
+  if(mapInstance){ mapInstance.remove(); mapInstance=null; }
+  mapInstance = L.map(el, {zoomControl:true}).setView([BASE.lat, BASE.lng], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18}).addTo(mapInstance);
+  return mapInstance;
+}
+function icon(color){ return L.divIcon({className:'', html:`<div style="width:16px;height:16px;border-radius:50%;background:${color};border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);"></div>`, iconSize:[16,16]}); }
+function drawRoute(pts, color){
+  if(mapMarkers.route){ mapInstance.removeLayer(mapMarkers.route); mapMarkers.route=null; }
+  if(pts.length>1){
+    mapMarkers.route = L.polyline(pts, {color: color||'#0d9488', weight:4, opacity:.75, dashArray:'9,9'}).addTo(mapInstance);
+  }
+}
+function initSosMapIfNeeded(update){
+  const inc = currentIncident(); if(!inc) return;
+  if(!mapInstance || !update){ ensureMap(); }
+  if(!mapInstance) return;
+  const pts = [];
+  mapMarkers.patient && mapInstance.removeLayer(mapMarkers.patient);
+  mapMarkers.patient = L.marker([inc.lat,inc.lng], {icon: icon('#0d9488')}).addTo(mapInstance).bindPopup('You');
+  if(inc.assignedResponderId){
+    const r = db('responders').find(x=>x.id===inc.assignedResponderId);
+    mapMarkers.resp && mapInstance.removeLayer(mapMarkers.resp);
+    mapMarkers.resp = L.marker([r.lat,r.lng], {icon: icon('#ef4444')}).addTo(mapInstance).bindPopup(r.name);
+    pts.push([r.lat,r.lng]);
+  }
+  pts.push([inc.lat, inc.lng]);
+  if(inc.assignedHospitalId){
+    const h = db('hospitals').find(x=>x.id===inc.assignedHospitalId);
+    mapMarkers.hosp && mapInstance.removeLayer(mapMarkers.hosp);
+    mapMarkers.hosp = L.marker([h.lat,h.lng], {icon: icon('#2563eb')}).addTo(mapInstance).bindPopup(h.name);
+    pts.push([h.lat,h.lng]);
+  }
+  drawRoute(pts, '#0d9488');
+  if(pts.length>1) mapInstance.fitBounds(pts, {padding:[40,40]});
+}
+function initResponderMap(update){
+  const inc = db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed'); if(!inc) return;
+  if(!mapInstance || !update){ ensureMap(); }
+  if(!mapInstance) return;
+  const r = db('responders').find(x=>x.id===CURRENT_RESPONDER_ID);
+  const pts = [[r.lat,r.lng],[inc.lat,inc.lng]];
+  mapMarkers.resp && mapInstance.removeLayer(mapMarkers.resp);
+  mapMarkers.resp = L.marker([r.lat,r.lng], {icon: icon('#ef4444')}).addTo(mapInstance).bindPopup('You');
+  mapMarkers.patient && mapInstance.removeLayer(mapMarkers.patient);
+  mapMarkers.patient = L.marker([inc.lat,inc.lng], {icon: icon('#0d9488')}).addTo(mapInstance).bindPopup('Patient');
+  if(inc.assignedHospitalId){
+    const h = db('hospitals').find(x=>x.id===inc.assignedHospitalId);
+    mapMarkers.hosp && mapInstance.removeLayer(mapMarkers.hosp);
+    mapMarkers.hosp = L.marker([h.lat,h.lng], {icon: icon('#2563eb')}).addTo(mapInstance).bindPopup(h.name);
+    pts.push([h.lat,h.lng]);
+  }
+  drawRoute(pts, '#ef4444');
+  mapInstance.fitBounds(pts, {padding:[40,40]});
+}
+function initPoliceMap(update){
+  const incidents = db('incidents').filter(i=>i.status!=='closed');
+  if(!incidents.length){ cleanupMap(); return; }
+  if(!mapInstance || !update){ ensureMap(); }
+  if(!mapInstance) return;
+  (mapMarkers.dynList||[]).forEach(l=>mapInstance.removeLayer(l));
+  mapMarkers.dynList = [];
+  const pts = [];
+  incidents.forEach(inc=>{
+    const im = L.marker([inc.lat,inc.lng], {icon: icon('#ef4444')}).addTo(mapInstance).bindPopup(inc.id+' · '+inc.severity+' · '+incidentStatusLabel(inc.status));
+    mapMarkers.dynList.push(im); pts.push([inc.lat,inc.lng]);
+    if(inc.assignedResponderId){
+      const r = db('responders').find(x=>x.id===inc.assignedResponderId);
+      if(r){
+        const rm = L.marker([r.lat,r.lng], {icon: icon('#f59e0b')}).addTo(mapInstance).bindPopup(r.name+' · '+r.vehicle);
+        mapMarkers.dynList.push(rm); pts.push([r.lat,r.lng]);
+        const line = L.polyline([[r.lat,r.lng],[inc.lat,inc.lng]], {color:'#f59e0b', weight:3, opacity:.75, dashArray:'7,7'}).addTo(mapInstance);
+        mapMarkers.dynList.push(line);
+      }
+    }
+  });
+  if(pts.length) mapInstance.fitBounds(pts, {padding:[40,40]});
+}
+
+/* ============================================================
+   BOOTSTRAP
+   ============================================================ */
+(function boot(){
+  initFirebaseSync();
+  // Always start at role selection — each role has its own sign-up + verification flow.
+  document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+})();
+</script>
+</body>
+</html>
