@@ -1160,12 +1160,13 @@ async function patientAuthLogin(){
       errBox.innerHTML = '';
       let u = findUserByEmail(patientAuthData.email);
       if(!u){
-        // Firebase account exists but our metadata record is missing (e.g. created elsewhere) — create a minimal one.
-        const memberId = uid('MEM');
-        u = {email:patientAuthData.email, phone:'', phoneVerified:false,
-          members:[{id:memberId, name:patientAuthData.email.split('@')[0], relation:'Self', isPrimary:true, bloodGroup:'Unknown', allergies:'None recorded', chronic:'None recorded', emergencyContact:'—', lat:BASE.lat, lng:BASE.lng}],
-          activeMemberId:memberId, createdAt: now()};
-        saveUser(u);
+        // Firebase Auth is a single global account pool shared by every role, so a
+        // valid email+password does NOT mean this person ever registered as a patient.
+        // Refuse to auto-provision a patient record here — that would let e.g. a
+        // responder/police/hospital account log straight into the patient console.
+        errBox.innerHTML = `<div class="field-err">No patient account found for this email. <a style="color:#5eead4;cursor:pointer;font-weight:600;" onclick="patientAuthMode='signup';patientAuthStep='signup';renderAuthCard();">Create an account instead?</a></div>`;
+        await fa.signOut().catch(()=>{});
+        return;
       }
       patientAuthData.loggedEmail = u.email;
       loadActiveMemberIntoProfile(u);
@@ -1289,8 +1290,21 @@ async function patientAuthFinishSignup(){
     try{
       await withTimeout(fa.createUserWithEmailAndPassword(d.email, d.password), 12000, 'Account creation');
     }catch(e){
-      showToast('Could not create account', friendlyAuthError(e), 'danger');
-      return;
+      if(e && e.code==='auth/email-already-in-use'){
+        // This email already has a Firebase account under a different role (e.g. responder).
+        // Firebase Auth's user pool is global, not per-role, so we can't create a second
+        // account — instead confirm it's really them by signing in with the password they
+        // just entered, then attach a fresh patient record to that same account.
+        try{
+          await withTimeout(fa.signInWithEmailAndPassword(d.email, d.password), 12000, 'Verification');
+        }catch(e2){
+          showToast('Could not verify account', 'An account with this email already exists under a different role, and this password doesn\'t match it. Log in with that role\'s password first, or use a different email.', 'danger');
+          return;
+        }
+      } else {
+        showToast('Could not create account', friendlyAuthError(e), 'danger');
+        return;
+      }
     }
   } else {
     passwordHash = await hashPassword(d.password); // local fallback only — Firebase Auth stores it otherwise
@@ -1543,8 +1557,13 @@ async function roleAuthLogin(){
       errBox.innerHTML = '';
       let u = findRoleUserByEmail(role, roleAuthData.email);
       if(!u){
-        // Firebase account exists but our metadata record is missing — create a minimal one.
-        u = {email: roleAuthData.email, phone:'', phoneVerified:false, name: roleAuthData.email.split('@')[0], createdAt: now()};
+        // Firebase Auth is a single global account pool shared by every role, so a
+        // valid email+password does NOT mean this person ever registered for THIS role.
+        // Refuse to auto-provision a role record here — that would let e.g. any patient
+        // log straight into the police/hospital/ambulance console with their own creds.
+        errBox.innerHTML = `<div class="field-err">No ${ROLE_META[role].title.toLowerCase()} account found for this email. <a style="color:#5eead4;cursor:pointer;font-weight:600;" onclick="roleAuthMode='signup';roleAuthStep='signup';renderAuthCard();">Register instead?</a></div>`;
+        await fa.signOut().catch(()=>{});
+        return;
       }
       applyRoleUserToSession(role, u);
       saveRoleUser(role, u);
@@ -1674,8 +1693,21 @@ async function roleAuthFinishSignup(){
     try{
       await withTimeout(fa.createUserWithEmailAndPassword(d.email, d.password), 12000, 'Account creation');
     }catch(e){
-      showToast('Could not create account', friendlyAuthError(e), 'danger');
-      return;
+      if(e && e.code==='auth/email-already-in-use'){
+        // This email already has a Firebase account under a different role (e.g. patient).
+        // Firebase Auth's user pool is global, not per-role, so we can't create a second
+        // account — instead confirm it's really them by signing in with the password they
+        // just entered, then attach a fresh record for THIS role to that same account.
+        try{
+          await withTimeout(fa.signInWithEmailAndPassword(d.email, d.password), 12000, 'Verification');
+        }catch(e2){
+          showToast('Could not verify account', 'An account with this email already exists under a different role, and this password doesn\'t match it. Log in with that role\'s password first, or use a different email.', 'danger');
+          return;
+        }
+      } else {
+        showToast('Could not create account', friendlyAuthError(e), 'danger');
+        return;
+      }
     }
   } else {
     passwordHash = await hashPassword(d.password); // local fallback only — Firebase Auth stores it otherwise
