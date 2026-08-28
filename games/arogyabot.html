@@ -891,7 +891,7 @@ let CURRENT_RESPONDER_ID = null;
 let CURRENT_HOSPITAL_ID = null;
 let CURRENT_POLICE_STATION_ID = null;
 let currentView = null;
-let simTimer = null;
+let liveTrackingTimer = null;
 
 const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
@@ -1008,7 +1008,7 @@ function renderProfileMenu(){
     </div>`;
 }
 function logout(){
-  if(simTimer){ clearInterval(simTimer); simTimer=null; }
+  if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
   stopAllLiveLocationTracking();
   cleanupMap();
   document.getElementById('profile-menu').classList.add('hidden');
@@ -2132,9 +2132,9 @@ function renderCurrentView(navId){
   refreshBell();
 }
 function postRenderHooks(navId){
-  if(navId==='p-sos') initSosMapIfNeeded();
-  if(navId==='r-active') initResponderMap();
-  if(navId==='po-feed') initPoliceMap();
+  if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); }
+  if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
+  if(navId==='po-feed'){ initPoliceMap(); startLiveIncidentTracking(); }
   if(navId==='p-women') renderCycleCalendar();
 }
 function viewHeader(eyebrow,title,sub){
@@ -2382,15 +2382,6 @@ function triggerSOS(){
 
   window.__report = null;
   renderCurrentView('p-sos');
-
-  // Demo safety net only: if NO ambulance phone taps Accept within 45s, auto-accept with the nearest one
-  // so the flow doesn't stall. In a live multi-phone demo a real person should accept well before this fires.
-  setTimeout(()=>{
-    const fresh = db('incidents').find(i=>i.id===inc.id);
-    if(fresh && fresh.status==='broadcasting' && nearestResponders[0]){
-      acceptIncident(inc.id, nearestResponders[0].id, true);
-    }
-  }, 45000);
 }
 
 function renderActiveSosTracking(inc){
@@ -2400,7 +2391,10 @@ function renderActiveSosTracking(inc){
   const assignedResp = inc.assignedResponderId ? responders.find(r=>r.id===inc.assignedResponderId) : null;
   const stepIdx = {broadcasting:0, accepted:1, picked_up:2, enroute_hospital:2, arrived:3, closed:4}[inc.status];
   return `
-  ${viewHeader('Live Emergency Tracking', inc.id, 'Severity: '+inc.severity.toUpperCase()+(inc.reportedFor==='other'?' · Reported for someone else':''))}
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+    ${viewHeader('Live Emergency Tracking', inc.id, 'Severity: '+inc.severity.toUpperCase()+(inc.reportedFor==='other'?' · Reported for someone else':''))}
+    <button class="btn btn-secondary btn-sm" style="margin-top:2px;" onclick="renderCurrentView('p-dash')" title="This stays active in the background — use Cancel below to actually cancel it"><i class="fa-solid fa-xmark"></i> Exit to dashboard</button>
+  </div>
   ${inc.landmark ? `<p style="color:var(--text-muted);font-size:.85rem;margin:-6px 0 12px;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>` : ''}
   <div class="stepper" id="sos-stepper">
     ${['Broadcast','Ambulance Assigned','Picked Up','At Hospital'].map((lbl,i)=>`<div class="step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="circ">${i<stepIdx?'<i class=\"fa-solid fa-check\"></i>':i+1}</div><div class="lbl">${lbl}</div></div>`).join('')}
@@ -2422,7 +2416,9 @@ function renderSosDriverBlock(inc, assignedResp, assignedHosp){
     <strong>Driver phone:</strong> <a href="tel:${assignedResp.phone}" style="color:var(--brand-primary);font-weight:700;">${assignedResp.phone} <i class="fa-solid fa-phone"></i></a><br>
     ${assignedHosp ? `<strong>Hospital:</strong> ${assignedHosp.name}` : (inc.status==='picked_up' ? `<strong>Hospital:</strong> crew is selecting nearest hospital…` : `<strong>Hospital:</strong> pending confirmation`)}
   </div>` : ''}
-  ${inc.status==='arrived' ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>` : ''}`;
+  ${inc.status==='arrived'
+    ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>`
+    : `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="cancelIncident('${inc.id}')"><i class="fa-solid fa-ban"></i> Cancel emergency</button>`}`;
 }
 /* Called on every simulation tick instead of re-rendering the whole card: rewriting the
    full innerHTML every 1.4s destroyed and recreated #leaflet-map-box each time, which
@@ -2472,12 +2468,13 @@ function closeIncidentPatientSide(id){
 function viewResponderDash(){
   const mine = db('incidents').filter(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
   const pending = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID));
+  const myStatus = (db('responders').find(r=>r.id===CURRENT_RESPONDER_ID)||{}).status || 'available';
   return `
-  ${viewHeader('Responder Console','Unit '+CURRENT_RESPONDER_ID,'Command Center broadcasts every SOS to the 2 nearest available units — accept fast, others get auto-cleared.')}
+  ${viewHeader('Responder Console','Unit '+CURRENT_RESPONDER_ID,'Command Center broadcasts every SOS to the nearest available units — accept fast, others get auto-cleared.')}
   <div class="grid-3">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-bell"></i></div><div><div class="dash-stat-num">${pending.length}</div><div class="dash-stat-label">Pending Requests</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-route"></i></div><div><div class="dash-stat-num">${mine.length}</div><div class="dash-stat-label">Active Case</div></div></div>
-    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">Ready</div><div class="dash-stat-label">Vehicle Status</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">${myStatus==='busy'?'Busy':myStatus==='off_duty'?'Off duty':'Ready'}</div><div class="dash-stat-label">Vehicle Status</div></div></div>
   </div>
   ${pending.length ? `<div class="card"><h3 style="margin-top:0;">You have ${pending.length} pending request(s)</h3><button class="btn btn-danger" onclick="renderCurrentView('r-queue')">Open dispatch queue</button></div>` : ''}
   ${mine.length ? `<div class="card"><h3 style="margin-top:0;">Active case in progress</h3><button class="btn" onclick="renderCurrentView('r-active')">Open live case</button></div>` : ''}`;
@@ -2516,7 +2513,7 @@ function declineIncident(incId, respId){
   renderCurrentView('r-queue');
 }
 
-function acceptIncident(incId, respId, isAuto){
+function acceptIncident(incId, respId){
   const all = db('incidents');
   const inc = all.find(i=>i.id===incId);
   if(!inc || inc.status!=='broadcasting') return;
@@ -2525,8 +2522,10 @@ function acceptIncident(incId, respId, isAuto){
 
   inc.assignedResponderId = respId;
   inc.status = 'accepted';
-  inc.timeline.push({ts:now(), text:`${resp.name} (${resp.vehicle}) accepted the case`+(isAuto?' — auto-assigned (demo)':'')+' · heading to patient. Hospital will be chosen after pickup.'});
+  inc.timeline.push({ts:now(), text:`${resp.name} (${resp.vehicle}) accepted the case · heading to patient. Hospital will be chosen after pickup.`});
 
+  resp.status = 'busy';
+  dbSet('responders', responders);
   dbSet('incidents', all);
   audit('responder:'+respId, 'accept', incId);
 
@@ -2550,7 +2549,71 @@ function acceptIncident(incId, respId, isAuto){
   else if(currentRole==='patient' && currentView==='p-sos') renderCurrentView('p-sos');
   else refreshBell();
 
-  startIncidentSimulation(incId);
+  startLiveIncidentTracking();
+}
+
+function markPickedUp(incId){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc || inc.status!=='accepted' || inc.assignedResponderId!==CURRENT_RESPONDER_ID) return;
+  inc.status = 'picked_up';
+  inc.timeline.push({ts:now(), text:'Patient picked up — ambulance crew selecting nearest hospital'});
+  dbSet('incidents', all);
+  audit('responder:'+CURRENT_RESPONDER_ID, 'picked_up', incId);
+  pushNotification('patient', 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', incId);
+  if(currentRole==='responder') renderCurrentView('r-active');
+}
+
+function markArrivedAtHospital(incId){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc || inc.status!=='enroute_hospital' || inc.assignedResponderId!==CURRENT_RESPONDER_ID) return;
+  const responders = db('responders');
+  const resp = responders.find(r=>r.id===inc.assignedResponderId);
+  const hosp = inc.assignedHospitalId ? db('hospitals').find(h=>h.id===inc.assignedHospitalId) : null;
+
+  inc.status = 'arrived';
+  inc.timeline.push({ts:now(), text:'Arrived at '+(hosp?hosp.name:'the hospital')});
+  dbSet('incidents', all);
+  if(resp){ resp.status='available'; dbSet('responders', responders); }
+  audit('responder:'+CURRENT_RESPONDER_ID, 'arrived', incId);
+
+  pushNotification('patient', 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', incId);
+  if(hosp) pushNotification('hospital:'+hosp.id, 'Patient arrived', 'Case '+incId+' has arrived at your facility.', 'success', incId);
+  if(resp) pushNotification('responder:'+resp.id, 'Handoff complete', 'Patient handed off'+(hosp?' at '+hosp.name:'')+'. You are now available.', 'success', incId);
+  if(inc.notifiedPoliceId) pushNotification('police', 'Case resolved', 'Ambulance completed transport for '+incId+'.', 'info', incId);
+
+  if(currentRole==='responder') renderCurrentView('r-active');
+}
+
+function cancelIncident(incId){
+  if(!confirm('Cancel this emergency? Any assigned ambulance, hospital and police will be notified it\'s no longer needed.')) return;
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc) return;
+  inc.status = 'closed';
+  inc.timeline.push({ts:now(), text:'Cancelled by patient'});
+  dbSet('incidents', all);
+
+  if(inc.assignedResponderId){
+    const responders = db('responders');
+    const r = responders.find(x=>x.id===inc.assignedResponderId);
+    if(r){ r.status='available'; dbSet('responders', responders); }
+    pushNotification('responder:'+inc.assignedResponderId, 'Case cancelled', 'The patient cancelled this emergency. Case closed — you\'re available again.', 'info', incId);
+  }
+  (inc.notifiedResponders||[]).filter(rid=>rid!==inc.assignedResponderId).forEach(rid=>{
+    pushNotification('responder:'+rid, 'Case cancelled', incId+' was cancelled by the patient.', 'info', incId);
+  });
+  if(inc.assignedHospitalId){
+    pushNotification('hospital:'+inc.assignedHospitalId, 'Case cancelled', 'The patient cancelled this emergency before arrival.', 'info', incId);
+  }
+  if(inc.notifiedPoliceId){
+    pushNotification('police', 'Case cancelled', incId+' was cancelled by the patient.', 'info', incId);
+  }
+  audit('patient', 'incident_cancel', incId);
+  showToast('Cancelled', 'Emergency cancelled and everyone notified.', 'success');
+  if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
+  renderCurrentView('p-dash');
 }
 
 function chooseHospitalForIncident(incId, hospId){
@@ -2583,58 +2646,43 @@ function chooseHospitalForIncident(incId, hospId){
   else refreshBell();
 }
 
-function startIncidentSimulation(incId){
-  if(simTimer) clearInterval(simTimer);
-  let phase = 'to_patient';
-  simTimer = setInterval(()=>{
-    const all = db('incidents');
-    const inc = all.find(i=>i.id===incId);
-    if(!inc || inc.status==='closed'){ clearInterval(simTimer); simTimer=null; return; }
-    const responders = db('responders');
-    const resp = responders.find(r=>r.id===inc.assignedResponderId);
-    if(!resp) return;
-    const hospitals = db('hospitals');
-    const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
-
-    if(phase==='to_patient'){
-      resp.lat += (inc.lat-resp.lat)*0.35; resp.lng += (inc.lng-resp.lng)*0.35;
-      if(haversineKm(resp.lat,resp.lng,inc.lat,inc.lng) < 0.15){
-        phase='awaiting_hospital'; inc.status='picked_up';
-        inc.timeline.push({ts:now(), text:'Patient picked up — ambulance crew selecting nearest hospital'});
-        pushNotification('patient','Picked up','You are on board. The crew is now selecting the nearest hospital with capacity.','success',incId);
+/* Live tracking refresher — NOT a simulation. It never moves anyone or changes any
+   incident's status itself; it just re-reads real data (the driver's actual GPS-tracked
+   position, synced live from their device via applyLiveLocation) every few seconds and
+   repaints whichever live view is open, so the map/ETA/timeline stay current. Status only
+   ever changes from a real action: the driver tapping Accept / Picked up / Arrived, the
+   patient choosing a hospital, or Cancel/Close. Stops itself once nothing is left to track. */
+function startLiveIncidentTracking(){
+  if(liveTrackingTimer) clearInterval(liveTrackingTimer);
+  liveTrackingTimer = setInterval(()=>{
+    let stillActive = false;
+    if(currentView==='p-sos'){
+      const inc = currentIncident();
+      if(inc && inc.status!=='closed'){
+        stillActive = true;
+        if(!document.getElementById('sos-stepper')){ renderCurrentView('p-sos'); }
+        else { patchActiveSosTracking(inc); initSosMapIfNeeded(true); }
       }
-    } else if(phase==='awaiting_hospital'){
-      // Waits here until the responder taps "Send here" on a hospital in their Active Case screen.
-      if(inc.assignedHospitalId){ phase='to_hospital'; }
-    } else if(phase==='to_hospital' && hosp){
-      resp.lat += (hosp.lat-resp.lat)*0.35; resp.lng += (hosp.lng-resp.lng)*0.35;
-      if(haversineKm(resp.lat,resp.lng,hosp.lat,hosp.lng) < 0.15){
-        phase='arrived'; inc.status='arrived';
-        inc.timeline.push({ts:now(), text:'Arrived at '+hosp.name});
-        pushNotification('patient','Arrived','You have arrived at '+hosp.name+'.','success',incId);
-        pushNotification('hospital:'+hosp.id,'Patient arrived','Case '+incId+' has arrived at your facility.','success',incId);
-        pushNotification('responder:'+resp.id,'Handoff complete','Patient handed off at '+hosp.name+'. You are now available.','success',incId);
-        pushNotification('police','Case resolved','Ambulance completed transport for '+incId+'.','info',incId);
-        resp.status='available';
-        clearInterval(simTimer); simTimer=null;
+    } else if(currentView==='r-active'){
+      const inc = db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
+      if(inc){
+        stillActive = true;
+        if(!document.getElementById('resp-dynamic-card')){ renderCurrentView('r-active'); }
+        else { patchResponderActive(inc); initResponderMap(true); }
       }
-    }
-    dbSet('responders', responders);
-    dbSet('incidents', all);
-    if(currentView==='p-sos') { patchActiveSosTracking(inc); initSosMapIfNeeded(true); }
-    if(currentView==='r-active') { patchResponderActive(inc); initResponderMap(true); }
-    if(currentView==='h-incoming') renderCurrentView('h-incoming');
-    if(currentView==='po-feed') {
-      // A case just appearing/vanishing changes whether the map card should exist at all —
-      // patching can't add/remove that div, so fall back to a full render for that edge case.
+    } else if(currentView==='po-feed'){
       const incidentsNow = db('incidents').filter(i=>i.status!=='closed');
-      const hasMapEl = !!document.getElementById('leaflet-map-box');
-      if((incidentsNow.length>0) !== hasMapEl){ renderCurrentView('po-feed'); }
-      else { patchPoliceFeed(); }
-      initPoliceMap(true);
+      if(incidentsNow.length){
+        stillActive = true;
+        const hasMapEl = !!document.getElementById('leaflet-map-box');
+        if(!document.getElementById('police-feed-list') || (incidentsNow.length>0) !== hasMapEl){ renderCurrentView('po-feed'); }
+        else { patchPoliceFeed(); }
+        initPoliceMap(true);
+      }
     }
     refreshBell();
-  }, 1400);
+    if(!stillActive){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
+  }, 4000);
 }
 
 function viewResponderActive(){
@@ -2665,6 +2713,10 @@ function renderResponderDynamicCard(inc){
       <div class="med-tag">Allergies: ${med.allergies}</div>
       <div class="med-tag">Chronic: ${med.chronic}</div>
       <p style="color:var(--text-muted);font-size:.85rem;margin-top:10px;">Destination: ${hosp ? hosp.name : (needsHospitalPick ? 'Choose a hospital below' : 'Selecting hospital…')}</p>
+      ${inc.status==='accepted' ? `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+          <button class="btn btn-danger btn-block" onclick="markPickedUp('${inc.id}')"><i class="fa-solid fa-user-check"></i> Mark patient picked up</button>
+        </div>` : ''}
       ${needsHospitalPick ? `
         <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
           <strong>Patient is on board — choose the receiving hospital:</strong>
@@ -2672,6 +2724,10 @@ function renderResponderDynamicCard(inc){
             <span style="font-size:.85rem;">${h.name}<br><span style="color:var(--text-muted);">${h.distKm.toFixed(1)} km · ${h.beds} beds free</span></span>
             <button class="btn btn-danger btn-sm" onclick="chooseHospitalForIncident('${inc.id}','${h.id}')">Send here</button>
           </div>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">No hospital with free beds nearby right now — check again shortly.</p>`}
+        </div>` : ''}
+      ${inc.status==='enroute_hospital' ? `
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+          <button class="btn btn-danger btn-block" onclick="markArrivedAtHospital('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Mark arrived at hospital</button>
         </div>` : ''}
       <ul class="activity-feed" style="margin-top:14px;">
         ${inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('')}
@@ -2691,8 +2747,9 @@ function patchResponderActive(inc){
    ============================================================ */
 function viewPoliceDash(){
   const active = db('incidents').filter(i=>i.status!=='closed');
+  const stationName = (db('policeProfile')||{}).station || 'Your Station';
   return `
-  ${viewHeader('Police Console','Sector 9 Police Station','Every emergency dispatch — ambulance and hospital — auto-notifies the nearest station. No more silent SOS calls.')}
+  ${viewHeader('Police Console', stationName, 'Every emergency dispatch — ambulance and hospital — auto-notifies you. No more silent SOS calls.')}
   <div class="grid-3">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-satellite-dish"></i></div><div><div class="dash-stat-num">${active.length}</div><div class="dash-stat-label">Active Cases Nearby</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">${active.filter(i=>i.assignedResponderId).length}</div><div class="dash-stat-label">Ambulances Dispatched</div></div></div>
@@ -2731,7 +2788,7 @@ function renderPoliceFeedList(incidents){
 }
 // Tick-time update: patch the list in place, leave #leaflet-map-box untouched. If a case
 // just appeared/disappeared and the map card itself needs to be added/removed, fall back
-// to a full re-render — see the caller in startIncidentSimulation().
+// to a full re-render — see the caller in startLiveIncidentTracking().
 function patchPoliceFeed(){
   const incidents = db('incidents').filter(i=>i.status!=='closed');
   const el = document.getElementById('police-feed-list');
