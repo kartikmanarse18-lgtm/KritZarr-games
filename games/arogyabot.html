@@ -852,17 +852,44 @@ function renderBellPanel(){
   const n = db('notifications');
   n.forEach(x=>{ if(list.includes(x)) x.read = true; });
   dbSet('notifications', n);
-  panel.innerHTML = `<div class="bell-panel-head"><span>Notifications</span><span style="color:var(--text-muted);font-weight:500;">${list.length}</span></div>` +
+  panel.innerHTML = `<div class="bell-panel-head"><span>Notifications</span>${list.length ? `<button class="btn-secondary btn-sm" style="padding:3px 9px;font-size:.7rem;" onclick="clearAllNotifications(event)">Clear all</button>` : `<span style="color:var(--text-muted);font-weight:500;">0</span>`}</div>` +
     (list.length ? list.map(x=>`
-      <div class="bell-item ${x.read?'':'unread'}">
+      <div class="bell-item ${x.read?'':'unread'}" ${x.incidentId?`onclick="openNotificationTarget('${x.incidentId}')" style="cursor:pointer;"`:''}>
         <i class="fa-solid ${iconForType(x.type)}"></i>
         <div>
           <div class="bell-item-title">${x.title}</div>
           <div class="bell-item-body">${x.body}</div>
-          <div class="bell-item-time">${fmtTime(x.ts)}</div>
+          <div class="bell-item-time">${relTime(x.ts)}</div>
         </div>
       </div>`).join('') : `<div class="bell-empty">No notifications yet</div>`);
   refreshBell();
+}
+function relTime(ts){
+  const diffSec = Math.max(0, Math.round((Date.now()-ts)/1000));
+  if(diffSec<60) return 'just now';
+  const diffMin = Math.round(diffSec/60);
+  if(diffMin<60) return diffMin+'m ago';
+  const diffHr = Math.round(diffMin/60);
+  if(diffHr<24) return diffHr+'h ago';
+  return fmtTime(ts);
+}
+function clearAllNotifications(e){
+  if(e) e.stopPropagation();
+  const scoped = notificationsForCurrentScope();
+  const keepIds = new Set(scoped.map(x=>x.id));
+  const remaining = db('notifications').filter(x=>!keepIds.has(x.id));
+  dbSet('notifications', remaining);
+  audit(currentRole||'unknown', 'notifications_cleared', scoped.length+' cleared');
+  renderBellPanel();
+}
+// Deep-links a notification straight to the relevant live view for the
+// current role, so tapping "Ambulance dispatched" etc. actually takes you
+// somewhere instead of just sitting in the panel.
+function openNotificationTarget(incidentId){
+  document.getElementById('bell-panel').classList.add('hidden');
+  const targetByRole = {patient:'p-sos', responder:'r-active', police:'po-feed', hospital:'h-incoming'};
+  const target = targetByRole[currentRole];
+  if(target) renderCurrentView(target);
 }
 function iconForType(t){
   return {danger:'fa-triangle-exclamation', success:'fa-circle-check', info:'fa-circle-info', dispatch:'fa-truck-medical'}[t] || 'fa-circle-info';
@@ -2549,7 +2576,8 @@ function renderActiveSosTracking(inc){
     ${viewHeader('Live Emergency Tracking', inc.id, 'Severity: '+inc.severity.toUpperCase()+(inc.reportedFor==='other'?' · Reported for someone else':''))}
     <button class="btn btn-secondary btn-sm" style="margin-top:2px;" onclick="renderCurrentView('p-dash')" title="This stays active in the background — use Cancel below to actually cancel it"><i class="fa-solid fa-xmark"></i> Exit to dashboard</button>
   </div>
-  ${inc.landmark ? `<p style="color:var(--text-muted);font-size:.85rem;margin:-6px 0 12px;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>` : ''}
+  ${inc.landmark ? `<p style="color:var(--text-muted);font-size:.85rem;margin:-6px 0 12px;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a>${inc.status!=='arrived'&&inc.status!=='closed'?` · <a href="#" onclick="openEditSosDetails('${inc.id}');return false;" style="color:var(--brand-primary);">edit</a>`:''}</p>` : (inc.status!=='arrived'&&inc.status!=='closed' ? `<p style="margin:-6px 0 12px;"><a href="#" onclick="openEditSosDetails('${inc.id}');return false;" style="color:var(--brand-primary);font-size:.85rem;"><i class="fa-solid fa-pen"></i> Add a landmark</a></p>` : '')}
+  <div id="sos-edit-slot"></div>
   <div class="stepper" id="sos-stepper">
     ${['Broadcast','Ambulance Assigned','Picked Up','At Hospital'].map((lbl,i)=>`<div class="step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="circ">${i<stepIdx?'<i class=\"fa-solid fa-check\"></i>':i+1}</div><div class="lbl">${lbl}</div></div>`).join('')}
   </div>
@@ -2743,6 +2771,44 @@ function markArrivedAtHospital(incId){
   if(currentRole==='responder') renderCurrentView('r-active');
 }
 
+// Lets the patient fix a wrong/missing landmark or add condition notes after
+// the SOS has already gone out, instead of the only option being a full
+// Cancel. Whoever's already assigned gets pinged so they see the update.
+function openEditSosDetails(incId){
+  const inc = db('incidents').find(i=>i.id===incId);
+  if(!inc) return;
+  const slot = document.getElementById('sos-edit-slot');
+  if(!slot) return;
+  slot.innerHTML = `
+  <div class="card">
+    <h3 style="margin-top:0;">Update emergency details</h3>
+    <div class="form-group"><label>Landmark / direction</label>
+      <input class="form-control" id="edit-sos-landmark" value="${(inc.landmark||'').replace(/"/g,'&quot;')}" placeholder="e.g. NH-8 service lane, opp. Sector 18 metro gate 2"></div>
+    <div class="form-group"><label>Additional notes for the crew</label>
+      <textarea class="form-control" id="edit-sos-note" rows="2" placeholder="e.g. Now conscious and talking">${inc.victimNote||''}</textarea></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="saveSosDetails('${incId}')"><i class="fa-solid fa-check"></i> Save</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('sos-edit-slot').innerHTML=''">Cancel</button>
+    </div>
+  </div>`;
+}
+function saveSosDetails(incId){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===incId);
+  if(!inc) return;
+  const landmark = document.getElementById('edit-sos-landmark').value.trim();
+  const note = document.getElementById('edit-sos-note').value.trim();
+  const changed = landmark!==(inc.landmark||'') || note!==(inc.victimNote||'');
+  inc.landmark = landmark;
+  inc.victimNote = note;
+  if(changed) inc.timeline.push({ts:now(), text:'Patient updated emergency details'+(landmark?': '+landmark:'')});
+  dbSet('incidents', all);
+  audit(inc.reportedFor==='other'?'bystander':'patient', 'incident_update', incId);
+  if(inc.assignedResponderId) pushNotification('responder:'+inc.assignedResponderId, 'Details updated', `${incId}: ${landmark?'Landmark — '+landmark:'Notes updated'}${note?' · '+note:''}`, 'info', incId);
+  if(inc.assignedHospitalId) pushNotification('hospital:'+inc.assignedHospitalId, 'Case details updated', `${incId} details were updated by the patient.`, 'info', incId);
+  showToast('Updated', 'The crew will see your update.', 'success');
+  renderCurrentView('p-sos');
+}
 function cancelIncident(incId){
   if(!confirm('Cancel this emergency? Any assigned ambulance, hospital and police will be notified it\'s no longer needed.')) return;
   const all = db('incidents');
@@ -3090,7 +3156,7 @@ function viewHospitalRoster(){
   </div>
   <div class="card">
   ${docs.length ? `<table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Status</th><th></th></tr></thead><tbody>
-  ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button></td></tr>`).join('')}
+  ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td style="display:flex;gap:6px;"><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button><button class="btn btn-sm btn-danger" onclick="removeDoctor('${d.id}')" title="Remove from roster"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}
   </tbody></table>` : `<p style="color:var(--text-muted);margin:0;">No doctors added yet — add your first one above.</p>`}
   </div>`;
 }
@@ -3105,12 +3171,33 @@ function addDoctorToRoster(){
   showToast('Doctor added', name+' is now on your roster.', 'success');
   renderCurrentView('h-roster');
 }
+function removeDoctor(id){
+  const docs = db('doctors');
+  const d = docs.find(x=>x.id===id);
+  if(!d) return;
+  if(!confirm('Remove '+d.name+' from the roster? Any of their upcoming bookings will need to be rescheduled with someone else.')) return;
+  dbSet('doctors', docs.filter(x=>x.id!==id));
+  audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_remove', d.name);
+  showToast('Removed', d.name+' taken off the roster.', 'success');
+  renderCurrentView('h-roster');
+}
 function toggleDoc(id){ const docs=db('doctors'); const d=docs.find(x=>x.id===id); d.available=!d.available; dbSet('doctors',docs); renderCurrentView('h-roster'); }
 function viewHospitalTele(){
   const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID);
   return `${viewHeader('Telemedicine Schedule','Booked consultations','')}
-  <div class="card">${appts.length ? `<table class="data-table"><thead><tr><th>Patient</th><th>Doctor</th><th>Slot</th><th>Status</th></tr></thead><tbody>
-  ${appts.map(a=>`<tr><td>${a.patient}</td><td>${a.doctor}</td><td>${a.slot}</td><td><span class="status-tag status-ok">${a.status}</span></td></tr>`).join('')}</tbody></table>` : `<div class="empty-state"><i class="fa-solid fa-calendar"></i><p>No bookings yet.</p></div>`}</div>`;
+  <div class="card">${appts.length ? `<table class="data-table"><thead><tr><th>Patient</th><th>Doctor</th><th>Slot</th><th>Status</th><th></th></tr></thead><tbody>
+  ${appts.map(a=>`<tr><td>${a.patient}</td><td>${a.doctor}</td><td>${a.slot}</td><td><span class="status-tag ${a.status==='Completed'?'status-muted':a.status==='Cancelled'?'status-danger':'status-ok'}">${a.status}</span></td><td>${a.status==='Confirmed' ? `<button class="btn btn-sm btn-secondary" onclick="hospitalCancelAppt('${a.id}')">Cancel</button>` : ''}</td></tr>`).join('')}</tbody></table>` : `<div class="empty-state"><i class="fa-solid fa-calendar"></i><p>No bookings yet.</p></div>`}</div>`;
+}
+function hospitalCancelAppt(id){
+  const appts = db('appointments');
+  const a = appts.find(x=>x.id===id);
+  if(!a) return;
+  a.status = 'Cancelled';
+  dbSet('appointments', appts);
+  audit('hospital:'+CURRENT_HOSPITAL_ID, 'appointment_cancel', a.doctor+' @ '+a.slot);
+  pushNotification('patient', 'Appointment cancelled', `Your ${a.slot} consultation with ${a.doctor} was cancelled by the hospital.`, 'danger', null);
+  showToast('Cancelled', 'Patient notified. That slot is free again.', 'success');
+  renderCurrentView('h-tele');
 }
 function viewHospitalVerify(){
   const ins = db('insurance');
@@ -3318,7 +3405,8 @@ function deleteDocument(id){
    ============================================================ */
 function viewPatientTele(){
   const docs = db('doctors').filter(d=>d.available);
-  const appts = db('appointments').filter(a=>a.patient===db('profile').name);
+  const allAppts = db('appointments');
+  const myAppts = allAppts.filter(a=>a.patient===db('profile').name && a.status==='Confirmed');
   const inCall = db('activeCall');
   if(inCall){
     return `${viewHeader('Telemedicine','Live consultation','')}
@@ -3334,20 +3422,34 @@ function viewPatientTele(){
       </div>
     </div>`;
   }
+  const SLOTS = ['10:30 AM','2:00 PM','5:15 PM'];
   return `${viewHeader('Telemedicine','Book a video consultation','WebRTC-based (Agora/Daily.co/Twilio Video in production) — simulated here.')}
   <div class="grid-2">
-    ${docs.map(d=>`<div class="card">
+    ${docs.map(d=>{
+      const bookedSlots = new Set(allAppts.filter(a=>a.doctor===d.name && a.status==='Confirmed').map(a=>a.slot));
+      return `<div class="card">
       <strong>${d.name}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${d.specialty} · ${db('hospitals').find(h=>h.id===d.hospital).name}</span>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${['10:30 AM','2:00 PM','5:15 PM'].map(t=>`<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t}')">${t}</button>`).join('')}
+        ${SLOTS.map(t=>bookedSlots.has(t)
+          ? `<button class="btn btn-sm btn-secondary" disabled style="opacity:.4;cursor:not-allowed;">${t} · booked</button>`
+          : `<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t}')">${t}</button>`
+        ).join('')}
       </div>
-    </div>`).join('')}
+    </div>`;
+    }).join('')}
   </div>
   <div class="card"><h3 style="margin-top:0;">Upcoming consultations</h3>
-  ${appts.length ? appts.map(a=>`<div class="reminder-row"><div><strong>${a.doctor}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${a.slot}</span></div><button class="btn btn-sm" onclick="joinCall('${a.doctor}')"><i class="fa-solid fa-video"></i> Join</button></div>`).join('') : `<p style="color:var(--text-muted);">No bookings yet — pick a slot above.</p>`}</div>`;
+  ${myAppts.length ? myAppts.map(a=>`<div class="reminder-row"><div><strong>${a.doctor}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${a.slot}</span></div><div style="display:flex;gap:6px;"><button class="btn btn-sm" onclick="joinCall('${a.doctor}')"><i class="fa-solid fa-video"></i> Join</button><button class="btn btn-sm btn-secondary" onclick="patientCancelAppt('${a.id}')">Cancel</button></div></div>`).join('') : `<p style="color:var(--text-muted);">No bookings yet — pick a slot above.</p>`}</div>`;
 }
 function bookAppt(doctor, hospital, slot){
   const appts = db('appointments');
+  // Guard against a double-booking race (e.g. two tabs open at once) — the
+  // buttons already hide booked slots, but this is the real source of truth.
+  if(appts.some(a=>a.doctor===doctor && a.slot===slot && a.status==='Confirmed')){
+    showToast('Slot just got taken', 'Someone else booked that slot — pick another.', 'danger');
+    renderCurrentView('p-tele');
+    return;
+  }
   appts.push({id:uid('APT'), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed'});
   dbSet('appointments', appts);
   audit('patient','appointment_book', doctor+' @ '+slot);
@@ -3355,9 +3457,31 @@ function bookAppt(doctor, hospital, slot){
   showToast('Booked', `Confirmed with ${doctor} at ${slot}.`, 'success');
   renderCurrentView('p-tele');
 }
+function patientCancelAppt(id){
+  const appts = db('appointments');
+  const a = appts.find(x=>x.id===id);
+  if(!a) return;
+  if(!confirm('Cancel your '+a.slot+' consultation with '+a.doctor+'?')) return;
+  a.status = 'Cancelled';
+  dbSet('appointments', appts);
+  audit('patient', 'appointment_cancel', a.doctor+' @ '+a.slot);
+  if(a.hospital) pushNotification('hospital:'+a.hospital, 'Booking cancelled', `${db('profile').name} cancelled their ${a.slot} slot with ${a.doctor}. Now free.`, 'info', null);
+  showToast('Cancelled', 'That slot is free for someone else now.', 'success');
+  renderCurrentView('p-tele');
+}
 function joinCall(doctor){ dbSet('activeCall',{doctor}); renderCurrentView('p-tele'); }
-function endCall(){ dbSet('activeCall', null);
-  const rx = db('prescriptions'); rx.push({id:uid('RX'), doctor: 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
+function endCall(){
+  const inCall = db('activeCall');
+  dbSet('activeCall', null);
+  // Mark the underlying booking Completed — otherwise it stayed "Confirmed" forever,
+  // permanently occupying that doctor's slot and cluttering "Upcoming consultations".
+  if(inCall){
+    const appts = db('appointments');
+    const a = appts.find(x=>x.patient===db('profile').name && x.doctor===inCall.doctor && x.status==='Confirmed');
+    if(a){ a.status = 'Completed'; dbSet('appointments', appts); }
+  }
+  const rx = db('prescriptions');
+  rx.push({id:uid('RX'), doctor: (inCall&&inCall.doctor) || 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
   dbSet('prescriptions', rx);
   showToast('Consultation ended','e-Prescription issued.','success');
   renderCurrentView('p-rx');
