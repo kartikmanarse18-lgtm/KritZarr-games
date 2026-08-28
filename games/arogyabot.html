@@ -2281,8 +2281,19 @@ function nearbyHelpCard(){
       <button class="btn btn-secondary btn-sm" onclick="refreshNearbyWithGPS()"><i class="fa-solid fa-location-crosshairs"></i> Use my live location</button>
     </div>`;
   }
-  const responders = (db('responders')||[]).filter(r=>r.status==='available').map(r=>({...r, distKm:haversineKm(lat,lng,r.lat,r.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,3);
-  const police = (db('police')||[]).map(p=>({...p, distKm:haversineKm(lat,lng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,2);
+  // Only show units genuinely within range — no padding the list out to 3/2 with
+  // whatever's left in the database regardless of distance. A unit 1000km away
+  // isn't "nearby help right now", so it's better to show fewer results (or none)
+  // than to mislabel something far away as close by.
+  const NEARBY_RADIUS_KM = 15;
+  const responders = (db('responders')||[]).filter(r=>r.status==='available')
+    .map(r=>({...r, distKm:haversineKm(lat,lng,r.lat,r.lng)}))
+    .filter(r=>r.distKm<=NEARBY_RADIUS_KM)
+    .sort((a,b)=>a.distKm-b.distKm).slice(0,3);
+  const police = (db('police')||[])
+    .map(p=>({...p, distKm:haversineKm(lat,lng,p.lat,p.lng)}))
+    .filter(p=>p.distKm<=NEARBY_RADIUS_KM)
+    .sort((a,b)=>a.distKm-b.distKm).slice(0,2);
   const row = (name, sub, plat, plng) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-color);">
     <span style="font-size:.85rem;">${name}<br><span style="color:var(--text-muted);">${sub}</span></span>
     <a href="${mapsLink(plat,plng)}" target="_blank" class="btn btn-sm btn-secondary" title="Get directions"><i class="fa-solid fa-diamond-turn-right"></i></a>
@@ -2292,11 +2303,11 @@ function nearbyHelpCard(){
       <h3 style="margin-top:0;">Nearby help right now</h3>
       <button class="btn btn-secondary btn-sm" onclick="refreshNearbyWithGPS()"><i class="fa-solid fa-location-crosshairs"></i> Refresh with GPS</button>
     </div>
-    <p style="color:var(--text-muted);font-size:.78rem;margin:-8px 0 12px;">Based on your last known location — updates automatically once an SOS is active.</p>
+    <p style="color:var(--text-muted);font-size:.78rem;margin:-8px 0 12px;">Based on your last known location, within ${NEARBY_RADIUS_KM}km — updates automatically once an SOS is active.</p>
     <strong style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);">Ambulances</strong>
-    ${responders.length ? responders.map(r=>row(r.name+' · '+r.vehicle, r.distKm.toFixed(1)+' km · ETA '+etaMinutes(r.distKm)+' min', r.lat, r.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None available right now.</p>`}
+    ${responders.length ? responders.map(r=>row(r.name+' · '+r.vehicle, r.distKm.toFixed(1)+' km · ETA '+etaMinutes(r.distKm)+' min', r.lat, r.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None available within ${NEARBY_RADIUS_KM}km right now.</p>`}
     <strong style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-top:14px;">Police stations</strong>
-    ${police.length ? police.map(p=>row(p.name, p.distKm.toFixed(1)+' km · ETA '+etaMinutes(p.distKm)+' min', p.lat, p.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None found nearby.</p>`}
+    ${police.length ? police.map(p=>row(p.name, p.distKm.toFixed(1)+' km · ETA '+etaMinutes(p.distKm)+' min', p.lat, p.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None found within ${NEARBY_RADIUS_KM}km.</p>`}
   </div>`;
 }
 async function refreshNearbyWithGPS(){
