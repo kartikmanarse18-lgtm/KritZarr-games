@@ -460,9 +460,11 @@ function applyLiveLocation(kind, lat, lng, accuracy){
     const list = db('hospitals');
     const h = list.find(x=>x.id===CURRENT_HOSPITAL_ID);
     if(h){ h.lat=lat; h.lng=lng; dbSet('hospitals', list); }
+  } else if(kind==='police' && CURRENT_POLICE_STATION_ID){
+    const list = db('police');
+    const p = list.find(x=>x.id===CURRENT_POLICE_STATION_ID);
+    if(p){ p.lat=lat; p.lng=lng; dbSet('police', list); }
   }
-  // Police stations are shared reference points (not one per logged-in officer), so an
-  // individual officer's device location doesn't move the station pin — intentionally skipped.
 }
 
 function mapsLink(lat,lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`; }
@@ -511,35 +513,16 @@ async function fetchRoadRoute(pts){
   }catch(e){ console.warn('Road routing unavailable, using straight-line estimate', e); return null; }
 }
 
+/* No pre-filled hospitals, ambulances, police stations, doctors, or pharmacies.
+   Every one of these now only appears once a real account registers through the
+   app's own sign-up flow (see ensureResponderRecord / ensureHospitalRecord /
+   ensurePoliceStationRecord below, and "Add doctor" in the hospital console). */
 const SEED = {
-  hospitals: [
-    {id:'HOSP-01', name:'City Care Hospital', lat:BASE.lat+0.018, lng:BASE.lng+0.021, beds:6, icu:2, phone:'011-4000-1001', specialties:['Trauma','Cardiac','General']},
-    {id:'HOSP-02', name:'Sunrise Multispecialty', lat:BASE.lat-0.032, lng:BASE.lng+0.012, beds:3, icu:1, phone:'011-4000-1002', specialties:['General','Orthopedic']},
-    {id:'HOSP-03', name:'Apex Trauma Center', lat:BASE.lat+0.009, lng:BASE.lng-0.028, beds:0, icu:0, phone:'011-4000-1003', specialties:['Trauma','Neuro']},
-    {id:'HOSP-04', name:'Lotus Women & Child', lat:BASE.lat-0.014, lng:BASE.lng-0.019, beds:4, icu:2, phone:'011-4000-1004', specialties:['Maternity','Pediatric']},
-    {id:'HOSP-05', name:'Metro General Hospital', lat:BASE.lat+0.041, lng:BASE.lng-0.006, beds:8, icu:3, phone:'011-4000-1005', specialties:['General','Cardiac','Trauma']},
-  ],
-  responders: [
-    {id:'RSP-01', name:'Rakesh Kumar', vehicle:'AMB-DL-01', phone:'+91 98111-22001', lat:BASE.lat+0.006, lng:BASE.lng+0.008, status:'available'},
-    {id:'RSP-02', name:'Sunil Yadav', vehicle:'AMB-DL-07', phone:'+91 98111-22002', lat:BASE.lat-0.011, lng:BASE.lng+0.004, status:'available'},
-    {id:'RSP-03', name:'Farhan Ali', vehicle:'AMB-DL-12', phone:'+91 98111-22003', lat:BASE.lat+0.002, lng:BASE.lng-0.015, status:'available'},
-    {id:'RSP-04', name:'Deepak Rana', vehicle:'AMB-DL-19', phone:'+91 98111-22004', lat:BASE.lat-0.022, lng:BASE.lng-0.009, status:'off_duty'},
-  ],
-  police: [
-    {id:'PS-09', name:'Sector 9 Police Station', lat:BASE.lat+0.012, lng:BASE.lng+0.006},
-    {id:'PS-14', name:'Sector 14 Police Station', lat:BASE.lat-0.02, lng:BASE.lng-0.014},
-  ],
-  doctors: [
-    {id:'DOC-01', name:'Dr. Meera Nair', specialty:'General Physician', hospital:'HOSP-01', available:true},
-    {id:'DOC-02', name:'Dr. Arjun Sethi', specialty:'Cardiologist', hospital:'HOSP-05', available:true},
-    {id:'DOC-03', name:'Dr. Kavita Rao', specialty:'Gynecologist', hospital:'HOSP-04', available:false},
-    {id:'DOC-04', name:'Dr. Sameer Joshi', specialty:'Orthopedic', hospital:'HOSP-02', available:true},
-  ],
-  pharmacies: [
-    {id:'PH-01', name:'Apollo Pharmacy - Sector 9', lat:BASE.lat+0.014, lng:BASE.lng+0.01, stock:'high'},
-    {id:'PH-02', name:'Wellness Forever', lat:BASE.lat-0.009, lng:BASE.lng-0.006, stock:'medium'},
-    {id:'PH-03', name:'MedPlus 24x7', lat:BASE.lat+0.003, lng:BASE.lng-0.02, stock:'low'},
-  ]
+  hospitals: [],
+  responders: [],
+  police: [],
+  doctors: [],
+  pharmacies: []
 };
 
 /* ============================================================
@@ -785,7 +768,9 @@ function initializeDataStore(){
   if(!db('incidents')) dbSet('incidents', []);
   if(!db('notifications')) dbSet('notifications', []);
   if(!db('audit')) dbSet('audit', []);
-  if(!db('profile')) dbSet('profile', {name:'Ananya Sharma', gender:'Female', phone:'+91 98xxxxxx21', bloodGroup:'O+', allergies:'Penicillin', chronic:'None', emergencyContact:'Rahul Sharma · +91 99xxxxxx45', lat: BASE.lat+rnd(-0.01,0.01), lng: BASE.lng+rnd(-0.01,0.01)});
+  // Blank scaffold only — real values are written by loadActiveMemberIntoProfile()
+  // the moment an actual patient account signs up or logs in.
+  if(!db('profile')) dbSet('profile', {name:'', gender:'', phone:'', bloodGroup:'', allergies:'', chronic:'', emergencyContact:'', lat:null, lng:null});
   if(!db('appointments')) dbSet('appointments', []);
   if(!db('prescriptions')) dbSet('prescriptions', []);
   if(!db('reminders')) dbSet('reminders', []);
@@ -904,6 +889,7 @@ function showToast(title, body, type){
 let currentRole = null;
 let CURRENT_RESPONDER_ID = null;
 let CURRENT_HOSPITAL_ID = null;
+let CURRENT_POLICE_STATION_ID = null;
 let currentView = null;
 let simTimer = null;
 
@@ -971,6 +957,8 @@ function enterConsole(role){
     beginLiveLocationTracking('patient');
   } else if(role==='hospital'){
     captureOneTimeLocation('hospital');
+  } else if(role==='police'){
+    captureOneTimeLocation('police');
   }
 }
 
@@ -1015,6 +1003,7 @@ function renderProfileMenu(){
       ${currentRole==='patient' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="openFamilyModal()"><i class="fa-solid fa-people-roof"></i> Family members</button>` : ''}
       ${currentRole==='responder' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="beginLiveLocationTracking('responder');showToast('Refreshing location','Re-requesting GPS access…','info')"><i class="fa-solid fa-location-crosshairs"></i> Refresh live location</button>` : ''}
       ${currentRole==='hospital' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="captureOneTimeLocation('hospital').then(()=>showToast('Location updated','Facility position recalibrated.','success'))"><i class="fa-solid fa-location-crosshairs"></i> Recalibrate location</button>` : ''}
+      ${currentRole==='police' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="captureOneTimeLocation('police').then(()=>showToast('Location updated','Station position recalibrated.','success'))"><i class="fa-solid fa-location-crosshairs"></i> Recalibrate location</button>` : ''}
       <button class="profile-menu-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
     </div>`;
 }
@@ -1049,27 +1038,27 @@ function logout(){
    ============================================================ */
 const SIGNUP_FIELDS = {
   patient: [
-    {key:'name', label:'Full name', placeholder:'Your full name', value:'Ananya Sharma'},
-    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98xxxxxx21'},
-    {key:'blood', label:'Blood group', placeholder:'e.g. O+', value:'O+'},
+    {key:'name', label:'Full name', placeholder:'Your full name'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx'},
+    {key:'blood', label:'Blood group', placeholder:'e.g. O+'},
   ],
   responder: [
-    {key:'name', label:'Driver / EMT name', placeholder:'Full name', value:'Rakesh Kumar'},
-    {key:'ambname', label:'Ambulance service name', placeholder:'e.g. City Rapid Response', value:'City Rapid Response'},
-    {key:'ambno', label:'Ambulance number', placeholder:'e.g. DL-01-AB-1234', value:'DL-01-AB-4521'},
-    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98111-22099'},
+    {key:'name', label:'Driver / EMT name', placeholder:'Full name'},
+    {key:'ambname', label:'Ambulance service name', placeholder:'e.g. City Rapid Response'},
+    {key:'ambno', label:'Ambulance number', placeholder:'e.g. DL-01-AB-1234'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx'},
   ],
   police: [
-    {key:'name', label:'Officer name', placeholder:'Full name', value:'Inspector Verma'},
-    {key:'badge', label:'Badge / ID number', placeholder:'e.g. PS-2291', value:'PS-2291'},
-    {key:'station', label:'Police station', placeholder:'e.g. Sector 9 Police Station', value:'Sector 9 Police Station'},
-    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'+91 98111-33099'},
+    {key:'name', label:'Officer name', placeholder:'Full name'},
+    {key:'badge', label:'Badge / ID number', placeholder:'e.g. PS-2291'},
+    {key:'station', label:'Police station', placeholder:'e.g. Sector 9 Police Station'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx'},
   ],
   hospital: [
-    {key:'name', label:'Hospital name', placeholder:'e.g. City Care Hospital', value:'Riverside General Hospital'},
-    {key:'regno', label:'Registration / license number', placeholder:'e.g. DL-HOSP-4471', value:'DL-HOSP-7732'},
-    {key:'contact', label:'Contact person', placeholder:'Admin / front-desk name', value:'Front Desk Admin'},
-    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'011-4000-9099'},
+    {key:'name', label:'Hospital name', placeholder:'e.g. City Care Hospital'},
+    {key:'regno', label:'Registration / license number', placeholder:'e.g. DL-HOSP-4471'},
+    {key:'contact', label:'Contact person', placeholder:'Admin / front-desk name'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx'},
   ],
 };
 function roleExtraFields(role){ return (SIGNUP_FIELDS[role]||[]).filter(f=>f.key!=='name' && f.key!=='phone'); }
@@ -1512,10 +1501,23 @@ function ensureHospitalRecord(user){
 function applyPoliceProfile(user){
   dbSet('policeProfile', {name:user.name||'Officer', badge:user.badge||'', station:user.station||'', phone:user.phone||'', email:user.email});
 }
+// Real station record so this officer's station actually shows up in nearest-police
+// matching and on the live map — mirrors ensureResponderRecord/ensureHospitalRecord.
+function ensurePoliceStationRecord(user){
+  const list = db('police') || [];
+  let p = list.find(x=>x.id===user.stationId);
+  if(!p){
+    p = {id: user.stationId || uid('PS'), name:user.station||'Police Station', phone:user.phone||'', lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02)};
+    user.stationId = p.id;
+    list.push(p);
+    dbSet('police', list);
+  }
+  CURRENT_POLICE_STATION_ID = p.id;
+}
 function applyRoleUserToSession(role, user){
   if(role==='responder') ensureResponderRecord(user);
   else if(role==='hospital') ensureHospitalRecord(user);
-  else if(role==='police') applyPoliceProfile(user);
+  else if(role==='police'){ applyPoliceProfile(user); ensurePoliceStationRecord(user); }
 }
 
 function renderRoleAuthCard(){
@@ -2792,10 +2794,31 @@ function closeIncidentHospitalSide(id){
 }
 function viewHospitalRoster(){
   const docs = db('doctors').filter(d=>d.hospital===CURRENT_HOSPITAL_ID);
-  return `${viewHeader('Doctor Roster','On-duty specialists','Toggle availability — reflected instantly on the patient telemedicine booking screen.')}
-  <div class="card"><table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Status</th><th></th></tr></thead><tbody>
+  return `${viewHeader('Doctor Roster','On-duty specialists','Add your real doctors below, then toggle availability — reflected instantly on the patient telemedicine booking screen.')}
+  <div class="card">
+    <h3 style="margin-top:0;">Add doctor</h3>
+    <div class="grid-2">
+      <div class="form-group"><label>Doctor name</label><input class="form-control" id="doc-name" placeholder="e.g. Dr. Anil Kapoor"></div>
+      <div class="form-group"><label>Specialty</label><input class="form-control" id="doc-specialty" placeholder="e.g. Cardiologist"></div>
+    </div>
+    <button class="btn" onclick="addDoctorToRoster()"><i class="fa-solid fa-user-doctor"></i> Add to roster</button>
+  </div>
+  <div class="card">
+  ${docs.length ? `<table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Status</th><th></th></tr></thead><tbody>
   ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button></td></tr>`).join('')}
-  </tbody></table></div>`;
+  </tbody></table>` : `<p style="color:var(--text-muted);margin:0;">No doctors added yet — add your first one above.</p>`}
+  </div>`;
+}
+function addDoctorToRoster(){
+  const name = document.getElementById('doc-name').value.trim();
+  const specialty = document.getElementById('doc-specialty').value.trim();
+  if(!name || !specialty){ showToast('Missing info','Enter both the doctor\'s name and specialty.','danger'); return; }
+  const docs = db('doctors');
+  docs.push({id:uid('DOC'), name, specialty, hospital:CURRENT_HOSPITAL_ID, available:true});
+  dbSet('doctors', docs);
+  audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_add', name+' ('+specialty+')');
+  showToast('Doctor added', name+' is now on your roster.', 'success');
+  renderCurrentView('h-roster');
 }
 function toggleDoc(id){ const docs=db('doctors'); const d=docs.find(x=>x.id===id); d.available=!d.available; dbSet('doctors',docs); renderCurrentView('h-roster'); }
 function viewHospitalTele(){
@@ -2808,7 +2831,7 @@ function viewHospitalVerify(){
   const ins = db('insurance');
   return `${viewHeader('Aadhaar &amp; Scheme Verification','Government ID + insurance pre-authorization','Real deployments call the UIDAI sandbox OTP API; this view simulates the same UX.')}
   <div class="card">
-    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX" value="9999-8888-7777"></div>
+    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
     ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Verified</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="resetVerification()">Reset</button>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
   </div>
   <div class="card"><h3 style="margin-top:0;">Insurance claims</h3>${renderClaimsTable()}</div>`;
@@ -3010,7 +3033,7 @@ function deleteDocument(id){
    ============================================================ */
 function viewPatientTele(){
   const docs = db('doctors').filter(d=>d.available);
-  const appts = db('appointments').filter(a=>a.patient==='Ananya Sharma' || a.patient===db('profile').name);
+  const appts = db('appointments').filter(a=>a.patient===db('profile').name);
   const inCall = db('activeCall');
   if(inCall){
     return `${viewHeader('Telemedicine','Live consultation','')}
@@ -3084,7 +3107,7 @@ function viewPatientPharmacy(){
     ${reminders.length ? reminders.map(r=>`<div class="reminder-row"><div><strong>${r.med}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${r.time} daily</span></div><div class="toggle-sw ${r.on?'on':''}" onclick="toggleReminder('${r.id}')"></div></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No reminders yet.</p>`}
   </div>
   <div class="card"><h3 style="margin-top:0;">Nearby pharmacies</h3>
-  ${pharmacies.map(p=>`<div class="reminder-row"><div><strong>${p.name}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${haversineKm(db('profile').lat,db('profile').lng,p.lat,p.lng).toFixed(1)} km away</span></div><span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock} stock</span></div>`).join('')}
+  ${pharmacies.length ? pharmacies.map(p=>`<div class="reminder-row"><div><strong>${p.name}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${haversineKm(db('profile').lat,db('profile').lng,p.lat,p.lng).toFixed(1)} km away</span></div><span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock} stock</span></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No pharmacy data available yet.</p>`}
   </div>`;
 }
 function addReminder(){
@@ -3171,7 +3194,7 @@ function viewPatientInsurance(){
   const ins = db('insurance');
   return `${viewHeader('Government Schemes &amp; Insurance','Ayushman Bharat / PM-JAY &amp; private cover','')}
   <div class="card">
-    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX" value="9999-8888-7777"></div>
+    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
     ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — Scheme data unlocked</span>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
   </div>
   ${ins.aadhaar_verified ? `<div class="card"><h3 style="margin-top:0;">PM-JAY Eligibility</h3><p style="color:var(--text-muted);">Coverage up to ₹5,00,000/year for your household. Cashless treatment at empaneled hospitals.</p></div>` : ''}
