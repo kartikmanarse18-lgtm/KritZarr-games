@@ -397,6 +397,74 @@ function getDeviceLocation(){
     );
   });
 }
+
+/* ============================================================
+   LIVE LOCATION TRACKING (all roles)
+   ------------------------------------------------------------
+   Ambulances and patients move, so those two get a continuous
+   navigator.geolocation.watchPosition() feed that keeps their
+   record's lat/lng current — this is what nearest-ambulance
+   matching and the live map should be driven by. Hospitals and
+   police stations are fixed addresses; for those we just take a
+   one-time GPS fix at login to confirm/correct their pinned
+   location rather than continuously "tracking" a building.
+   Each role explicitly grants browser location permission the
+   first time this runs — nothing is captured silently.
+   ============================================================ */
+let geoWatchIds = {};
+function beginLiveLocationTracking(kind){
+  if(!navigator.geolocation){
+    showToast('Location unavailable', 'This browser/device doesn\'t support GPS — live tracking is off for this session.', 'danger');
+    return;
+  }
+  if(geoWatchIds[kind]!=null) return; // already watching
+  geoWatchIds[kind] = navigator.geolocation.watchPosition(
+    pos => applyLiveLocation(kind, pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+    err => {
+      console.warn('['+kind+'] location watch error:', err && err.message);
+      if(err && err.code===1){ // PERMISSION_DENIED
+        showToast('Location permission needed', 'Turn on location access for this site in your browser settings — it\'s how we place you accurately and match the nearest ambulance.', 'danger');
+      }
+    },
+    {enableHighAccuracy:true, maximumAge:5000, timeout:15000}
+  );
+}
+function stopLiveLocationTracking(kind){
+  if(geoWatchIds[kind]!=null){ navigator.geolocation.clearWatch(geoWatchIds[kind]); delete geoWatchIds[kind]; }
+}
+function stopAllLiveLocationTracking(){
+  Object.keys(geoWatchIds).forEach(stopLiveLocationTracking);
+}
+async function captureOneTimeLocation(kind){
+  const loc = await getDeviceLocation();
+  if(loc) applyLiveLocation(kind, loc.lat, loc.lng, loc.accuracy);
+  else showToast('Location permission needed', 'Turn on location access for this site so we can confirm your facility\'s position.', 'danger');
+}
+function applyLiveLocation(kind, lat, lng, accuracy){
+  const acc = Math.round(accuracy||0);
+  if(kind==='responder' && CURRENT_RESPONDER_ID){
+    const list = db('responders');
+    const r = list.find(x=>x.id===CURRENT_RESPONDER_ID);
+    if(r){ r.lat=lat; r.lng=lng; r.locAccuracy=acc; dbSet('responders', list); }
+  } else if(kind==='patient'){
+    const profile = db('profile');
+    if(profile){ profile.lat=lat; profile.lng=lng; profile.locAccuracy=acc; dbSet('profile', profile); }
+    // Keep an in-progress SOS's pin live too, so responders/hospital/police see the reporter actually moving.
+    const inc = currentIncident();
+    if(inc && inc.status!=='closed'){
+      const all = db('incidents');
+      const fresh = all.find(i=>i.id===inc.id);
+      if(fresh){ fresh.lat=lat; fresh.lng=lng; fresh.locationAccuracy=acc; dbSet('incidents', all); }
+    }
+  } else if(kind==='hospital' && CURRENT_HOSPITAL_ID){
+    const list = db('hospitals');
+    const h = list.find(x=>x.id===CURRENT_HOSPITAL_ID);
+    if(h){ h.lat=lat; h.lng=lng; dbSet('hospitals', list); }
+  }
+  // Police stations are shared reference points (not one per logged-in officer), so an
+  // individual officer's device location doesn't move the station pin — intentionally skipped.
+}
+
 function mapsLink(lat,lng){ return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`; }
 function haversineKm(lat1,lon1,lat2,lon2){
   const R=6371, toRad=d=>d*Math.PI/180;
@@ -405,6 +473,22 @@ function haversineKm(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*60)); }
+
+/* Nearest-ambulance matching: search a 5km radius first; if no *available* unit is
+   found that close, widen to 10km; if still nothing, fall back to whatever's closest
+   so a case never gets stranded. Returns up to `desiredCount` units plus the radius
+   that was actually used (null when we had to fall back beyond 10km). */
+function findNearbyAvailableResponders(lat, lng, desiredCount=3){
+  const RADIUS_TIERS_KM = [5, 10];
+  const available = db('responders').filter(r=>r.status==='available')
+    .map(r=>({...r, distKm: haversineKm(lat,lng,r.lat,r.lng)}))
+    .sort((a,b)=>a.distKm-b.distKm);
+  for(const radiusKm of RADIUS_TIERS_KM){
+    const within = available.filter(r=>r.distKm<=radiusKm);
+    if(within.length>0) return {responders: within.slice(0,desiredCount), radiusKm};
+  }
+  return {responders: available.slice(0,desiredCount), radiusKm: null};
+}
 
 /* Real road-following routing via OSRM's free public routing API (no key required).
    Falls back to null (caller keeps the straight-line placeholder) if unreachable —
@@ -667,9 +751,28 @@ function scheduleRemoteRefresh(){
   }, 300);
 }
 function softRefreshCurrentView(){
-  if(currentView==='p-sos'){ const inc=currentIncident(); if(inc){ document.getElementById('active-view-container').innerHTML = renderActiveSosTracking(inc); initSosMapIfNeeded(true); return; } }
-  if(currentView==='r-active'){ document.getElementById('active-view-container').innerHTML = viewResponderActive(); initResponderMap(true); return; }
-  if(currentView==='po-feed'){ document.getElementById('active-view-container').innerHTML = viewPoliceFeed(); initPoliceMap(true); return; }
+  if(currentView==='p-sos'){
+    const inc=currentIncident();
+    if(inc){
+      if(!document.getElementById('sos-stepper')){ renderCurrentView('p-sos'); return; }
+      patchActiveSosTracking(inc); initSosMapIfNeeded(true); return;
+    }
+  }
+  if(currentView==='r-active'){
+    const inc=db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
+    if(inc){
+      if(!document.getElementById('resp-dynamic-card')){ renderCurrentView('r-active'); return; }
+      patchResponderActive(inc); initResponderMap(true); return;
+    }
+  }
+  if(currentView==='po-feed'){
+    const incidentsNow = db('incidents').filter(i=>i.status!=='closed');
+    const hasMapEl = !!document.getElementById('leaflet-map-box');
+    if(!document.getElementById('police-feed-list') || (incidentsNow.length>0) !== hasMapEl){ renderCurrentView('po-feed'); }
+    else { patchPoliceFeed(); }
+    initPoliceMap(true);
+    return;
+  }
   renderCurrentView(currentView);
 }
 
@@ -858,6 +961,17 @@ function enterConsole(role){
   renderCurrentView(first);
   refreshBell();
   audit(role, 'session', role+' console opened'+unitTag);
+
+  // Ask for location permission up front for every role so tracking/matching works from
+  // the moment they're in, rather than only when a patient happens to trigger an SOS.
+  if(role==='responder'){
+    beginLiveLocationTracking('responder');
+    showToast('Live location on', 'Your position now updates in real time so nearby cases can find you accurately.', 'info');
+  } else if(role==='patient'){
+    beginLiveLocationTracking('patient');
+  } else if(role==='hospital'){
+    captureOneTimeLocation('hospital');
+  }
 }
 
 /* ============================================================
@@ -899,11 +1013,14 @@ function renderProfileMenu(){
     <div class="profile-menu-body">
       ${idn.sub ? `<div class="profile-menu-row"><span>${idn.sub.includes('@')?'Account':'Phone'}</span><strong>${idn.sub}</strong></div>` : ''}
       ${currentRole==='patient' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="openFamilyModal()"><i class="fa-solid fa-people-roof"></i> Family members</button>` : ''}
+      ${currentRole==='responder' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="beginLiveLocationTracking('responder');showToast('Refreshing location','Re-requesting GPS access…','info')"><i class="fa-solid fa-location-crosshairs"></i> Refresh live location</button>` : ''}
+      ${currentRole==='hospital' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="captureOneTimeLocation('hospital').then(()=>showToast('Location updated','Facility position recalibrated.','success'))"><i class="fa-solid fa-location-crosshairs"></i> Recalibrate location</button>` : ''}
       <button class="profile-menu-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
     </div>`;
 }
 function logout(){
   if(simTimer){ clearInterval(simTimer); simTimer=null; }
+  stopAllLiveLocationTracking();
   cleanupMap();
   document.getElementById('profile-menu').classList.add('hidden');
   audit(currentRole||'system', 'session', 'Logged out');
@@ -2224,8 +2341,8 @@ function triggerSOS(){
 
   const hospitals = db('responders') && db('hospitals').map(h=>({...h, distKm: haversineKm(patientLat,patientLng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm);
   const nearestHospitals = hospitals.filter(h=>h.beds>0).slice(0,3);
-  const responders = db('responders').filter(r=>r.status==='available').map(r=>({...r, distKm: haversineKm(patientLat,patientLng,r.lat,r.lng)})).sort((a,b)=>a.distKm-b.distKm);
-  const nearestResponders = responders.slice(0,2);
+  const nearbyMatch = findNearbyAvailableResponders(patientLat, patientLng, 3);
+  const nearestResponders = nearbyMatch.responders;
   const police = db('police').map(p=>({...p, distKm: haversineKm(patientLat,patientLng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm)[0];
 
   const inc = {
@@ -2239,11 +2356,12 @@ function triggerSOS(){
     lat: patientLat, lng: patientLng, status:'broadcasting', createdAt: now(),
     notifiedHospitals: nearestHospitals.map(h=>h.id), notifiedResponders: nearestResponders.map(r=>r.id),
     notifiedPoliceId: police ? police.id : null,
+    searchRadiusKm: nearbyMatch.radiusKm,
     assignedResponderId: null, assignedHospitalId: null,
-    timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')}]
+    timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')+(nearbyMatch.radiusKm?` · ${nearestResponders.length} ambulance(s) found within ${nearbyMatch.radiusKm}km`:(nearestResponders.length?' · nearest available ambulances notified (none within 10km)':' · no ambulances currently available'))}]
   };
   const all = db('incidents'); all.unshift(inc); dbSet('incidents', all);
-  audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev);
+  audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev+' radius='+(nearbyMatch.radiusKm||'>10')+'km');
 
   const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
   const bystNote = isBystander ? ` Reported by a bystander (not the patient) — call ${inc.reporterPhone} for on-ground details.` : '';
@@ -2258,7 +2376,7 @@ function triggerSOS(){
   if(police){
     pushNotification('police', 'Emergency reported near '+police.name, `${inc.severity.toUpperCase()} case ${police.distKm.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
   }
-  pushNotification('patient', 'Help is on the way', `Notified ${nearestHospitals.length} hospitals, ${nearestResponders.length} ambulances and ${police?police.name:'local police'} simultaneously.`, 'info', inc.id);
+  pushNotification('patient', 'Help is on the way', `Notified ${nearestHospitals.length} hospitals, ${nearestResponders.length} ambulances${nearbyMatch.radiusKm?' within '+nearbyMatch.radiusKm+'km':(nearestResponders.length?' (closest available, beyond 10km)':'')} and ${police?police.name:'local police'} simultaneously.`, 'info', inc.id);
 
   window.__report = null;
   renderCurrentView('p-sos');
@@ -2282,24 +2400,61 @@ function renderActiveSosTracking(inc){
   return `
   ${viewHeader('Live Emergency Tracking', inc.id, 'Severity: '+inc.severity.toUpperCase()+(inc.reportedFor==='other'?' · Reported for someone else':''))}
   ${inc.landmark ? `<p style="color:var(--text-muted);font-size:.85rem;margin:-6px 0 12px;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>` : ''}
-  <div class="stepper">
+  <div class="stepper" id="sos-stepper">
     ${['Broadcast','Ambulance Assigned','Picked Up','At Hospital'].map((lbl,i)=>`<div class="step ${i<stepIdx?'done':i===stepIdx?'active':''}"><div class="circ">${i<stepIdx?'<i class=\"fa-solid fa-check\"></i>':i+1}</div><div class="lbl">${lbl}</div></div>`).join('')}
   </div>
   <div class="grid-2">
     <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="sos-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
     <div class="card">
       <h3 style="margin-top:0;">Dispatch activity</h3>
-      <ul class="activity-feed">
+      <ul class="activity-feed" id="sos-timeline">
         ${inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('')}
       </ul>
-      ${assignedResp ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
-        <strong>Responder:</strong> ${assignedResp.name} · ${assignedResp.vehicle}<br>
-        <strong>Driver phone:</strong> <a href="tel:${assignedResp.phone}" style="color:var(--brand-primary);font-weight:700;">${assignedResp.phone} <i class="fa-solid fa-phone"></i></a><br>
-        ${assignedHosp ? `<strong>Hospital:</strong> ${assignedHosp.name}` : (inc.status==='picked_up' ? `<strong>Hospital:</strong> crew is selecting nearest hospital…` : `<strong>Hospital:</strong> pending confirmation`)}
-      </div>` : ''}
-      ${inc.status==='arrived' ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>` : ''}
+      <div id="sos-driver-block">${renderSosDriverBlock(inc, assignedResp, assignedHosp)}</div>
     </div>
   </div>`;
+}
+function renderSosDriverBlock(inc, assignedResp, assignedHosp){
+  return `${assignedResp ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+    <strong>Responder:</strong> ${assignedResp.name} · ${assignedResp.vehicle}<br>
+    <strong>Driver phone:</strong> <a href="tel:${assignedResp.phone}" style="color:var(--brand-primary);font-weight:700;">${assignedResp.phone} <i class="fa-solid fa-phone"></i></a><br>
+    ${assignedHosp ? `<strong>Hospital:</strong> ${assignedHosp.name}` : (inc.status==='picked_up' ? `<strong>Hospital:</strong> crew is selecting nearest hospital…` : `<strong>Hospital:</strong> pending confirmation`)}
+  </div>` : ''}
+  ${inc.status==='arrived' ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>` : ''}`;
+}
+/* Called on every simulation tick instead of re-rendering the whole card: rewriting the
+   full innerHTML every 1.4s destroyed and recreated #leaflet-map-box each time, which
+   orphaned the live Leaflet map instance and produced the flicker/"stuck loading" look.
+   This only touches the specific pieces that actually changed, and never touches the map
+   container — initSosMapIfNeeded() keeps moving markers on the same live map instance. */
+function patchActiveSosTracking(inc){
+  const hospitals = db('hospitals');
+  const responders = db('responders');
+  const assignedHosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
+  const assignedResp = inc.assignedResponderId ? responders.find(r=>r.id===inc.assignedResponderId) : null;
+  const stepIdx = {broadcasting:0, accepted:1, picked_up:2, enroute_hospital:2, arrived:3, closed:4}[inc.status];
+
+  const stepperEl = document.getElementById('sos-stepper');
+  if(stepperEl){
+    stepperEl.querySelectorAll('.step').forEach((el,i)=>{
+      const done = i<stepIdx, active = i===stepIdx;
+      el.classList.toggle('done', done);
+      el.classList.toggle('active', active);
+      const circ = el.querySelector('.circ');
+      const wantHtml = done ? '<i class="fa-solid fa-check"></i>' : String(i+1);
+      if(circ && circ.innerHTML!==wantHtml) circ.innerHTML = wantHtml;
+    });
+  }
+  const timelineEl = document.getElementById('sos-timeline');
+  if(timelineEl){
+    const html = inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('');
+    if(timelineEl.innerHTML!==html) timelineEl.innerHTML = html;
+  }
+  const driverEl = document.getElementById('sos-driver-block');
+  if(driverEl){
+    const html = renderSosDriverBlock(inc, assignedResp, assignedHosp);
+    if(driverEl.innerHTML!==html) driverEl.innerHTML = html;
+  }
 }
 function closeIncidentPatientSide(id){
   const all = db('incidents');
@@ -2464,10 +2619,18 @@ function startIncidentSimulation(incId){
     }
     dbSet('responders', responders);
     dbSet('incidents', all);
-    if(currentView==='p-sos') { document.getElementById('active-view-container').innerHTML = renderActiveSosTracking(inc); initSosMapIfNeeded(true); }
-    if(currentView==='r-active') { document.getElementById('active-view-container').innerHTML = viewResponderActive(); initResponderMap(true); }
+    if(currentView==='p-sos') { patchActiveSosTracking(inc); initSosMapIfNeeded(true); }
+    if(currentView==='r-active') { patchResponderActive(inc); initResponderMap(true); }
     if(currentView==='h-incoming') renderCurrentView('h-incoming');
-    if(currentView==='po-feed') { document.getElementById('active-view-container').innerHTML = viewPoliceFeed(); initPoliceMap(true); }
+    if(currentView==='po-feed') {
+      // A case just appearing/vanishing changes whether the map card should exist at all —
+      // patching can't add/remove that div, so fall back to a full render for that edge case.
+      const incidentsNow = db('incidents').filter(i=>i.status!=='closed');
+      const hasMapEl = !!document.getElementById('leaflet-map-box');
+      if((incidentsNow.length>0) !== hasMapEl){ renderCurrentView('po-feed'); }
+      else { patchPoliceFeed(); }
+      initPoliceMap(true);
+    }
     refreshBell();
   }, 1400);
 }
@@ -2475,16 +2638,20 @@ function startIncidentSimulation(incId){
 function viewResponderActive(){
   const inc = db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
   if(!inc) return `${viewHeader('Active Case','No case in progress','Accept a request from the dispatch queue to begin.')}<div class="empty-state"><i class="fa-solid fa-route"></i><p>Nothing active right now.</p></div>`;
+  return `
+  ${viewHeader('Active Case', inc.id, 'Status: '+incidentStatusLabel(inc.status))}
+  <div class="grid-2">
+    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="resp-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
+    <div class="card" id="resp-dynamic-card">${renderResponderDynamicCard(inc)}</div>
+  </div>`;
+}
+function renderResponderDynamicCard(inc){
   const hospitals = db('hospitals');
   const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
   const med = inc.medical || {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'};
   const needsHospitalPick = inc.status==='picked_up' && !inc.assignedHospitalId;
   const nearbyHospitals = needsHospitalPick ? hospitals.filter(h=>h.beds>0).map(h=>({...h, distKm: haversineKm(inc.lat,inc.lng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,4) : [];
   return `
-  ${viewHeader('Active Case', inc.id, 'Status: '+incidentStatusLabel(inc.status))}
-  <div class="grid-2">
-    <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="resp-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
-    <div class="card">
       <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark ? inc.landmark : 'No landmark given'}</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin:-4px 0 10px;">
         <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" class="btn btn-sm ${!hosp?'btn-danger':'btn-secondary'}"><i class="fa-solid fa-diamond-turn-right"></i> Directions to patient</a>
@@ -2506,9 +2673,15 @@ function viewResponderActive(){
         </div>` : ''}
       <ul class="activity-feed" style="margin-top:14px;">
         ${inc.timeline.slice().reverse().map(t=>`<li><span class="dot done"></span>${t.text}<span class="timeline-time">${fmtTime(t.ts)}</span></li>`).join('')}
-      </ul>
-    </div>
-  </div>`;
+      </ul>`;
+}
+// Tick-time update: patch the dynamic card in place, leave #leaflet-map-box untouched
+// so the live map (and its markers/route) don't get torn down and re-created every tick.
+function patchResponderActive(inc){
+  const card = document.getElementById('resp-dynamic-card');
+  if(!card) return;
+  const html = renderResponderDynamicCard(inc);
+  if(card.innerHTML!==html) card.innerHTML = html;
 }
 
 /* ============================================================
@@ -2528,11 +2701,14 @@ function viewPoliceDash(){
 }
 function viewPoliceFeed(){
   const incidents = db('incidents').filter(i=>i.status!=='closed');
-  const responders = db('responders'); const hospitals = db('hospitals');
   return `
   ${viewHeader('Dispatch Feed','Live emergency cases','Acknowledge to log route-clearing support for the responding ambulance.')}
   ${incidents.length ? `<div class="card card-flush" style="margin-bottom:22px;"><div class="map-container" id="leaflet-map-box"></div></div>` : ''}
-  ${incidents.length ? incidents.map(inc=>{
+  <div id="police-feed-list">${renderPoliceFeedList(incidents)}</div>`;
+}
+function renderPoliceFeedList(incidents){
+  const responders = db('responders'); const hospitals = db('hospitals');
+  return incidents.length ? incidents.map(inc=>{
     const resp = inc.assignedResponderId ? responders.find(r=>r.id===inc.assignedResponderId) : null;
     const hosp = inc.assignedHospitalId ? hospitals.find(h=>h.id===inc.assignedHospitalId) : null;
     return `<div class="incident-card">
@@ -2549,7 +2725,18 @@ function viewPoliceFeed(){
       <span class="status-tag status-info">${incidentStatusLabel(inc.status)}</span>
       <div style="margin-top:10px;"><button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button></div>
     </div>`;
-  }).join('') : `<div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><p>No active cases nearby.</p></div>`}`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><p>No active cases nearby.</p></div>`;
+}
+// Tick-time update: patch the list in place, leave #leaflet-map-box untouched. If a case
+// just appeared/disappeared and the map card itself needs to be added/removed, fall back
+// to a full re-render — see the caller in startIncidentSimulation().
+function patchPoliceFeed(){
+  const incidents = db('incidents').filter(i=>i.status!=='closed');
+  const el = document.getElementById('police-feed-list');
+  if(el){
+    const html = renderPoliceFeedList(incidents);
+    if(el.innerHTML!==html) el.innerHTML = html;
+  }
 }
 function ackPolice(id){ pushNotification('patient','Route support','Local police acknowledged and is helping clear the route.','info',id); showToast('Acknowledged','Logged as active route support.','success'); audit('police','acknowledge',id); }
 
