@@ -205,6 +205,13 @@ textarea.form-control{resize:vertical;min-height:90px;}
 .dash-stat-num{font-family:var(--ff-display);font-size:1.4rem;font-weight:800;}
 .dash-stat-label{font-size:.76rem;color:var(--text-muted);font-weight:600;}
 
+/* Responder "cases helped" badge */
+.responder-badge-card{display:flex;align-items:center;gap:16px;padding:20px;border-radius:var(--radius-lg);background:linear-gradient(135deg,var(--badge-tier-a,#f59e0b),var(--badge-tier-b,#ef4444));color:#fff;margin-bottom:22px;box-shadow:var(--shadow-md);}
+.responder-badge-icon{width:58px;height:58px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0;}
+.responder-badge-num{font-family:var(--ff-display);font-size:1.8rem;font-weight:800;line-height:1.1;}
+.responder-badge-label{font-size:.78rem;opacity:.92;font-weight:600;}
+.responder-badge-tier{font-family:var(--ff-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:99px;display:inline-block;margin-top:4px;}
+
 /* Chat */
 .chat-container{display:flex;flex-direction:column;height:560px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-color);background:var(--bg-surface);}
 .chat-messages{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);scroll-behavior:smooth;}
@@ -2639,7 +2646,7 @@ function patchActiveSosTracking(inc){
 function closeIncidentPatientSide(id){
   const all = db('incidents');
   const inc = all.find(i=>i.id===id);
-  if(inc){ inc.status='closed'; inc.timeline.push({ts:now(),text:'Case closed by patient'}); dbSet('incidents',all); }
+  if(inc){ inc.status='closed'; inc.timeline.push({ts:now(),text:'Case closed by patient'}); creditResponderCase(inc); dbSet('incidents',all); }
   audit('patient','incident_close', id);
   renderCurrentView('p-dash');
 }
@@ -2647,12 +2654,40 @@ function closeIncidentPatientSide(id){
 /* ============================================================
    RESPONDER
    ============================================================ */
+// A case only ever credits the responder once it reaches a genuine end state
+// (patient closes after arrival, or hospital confirms admission) — never on
+// cancellation. inc.responderCredited guards against double-counting if both
+// sides somehow race to close the same incident.
+function creditResponderCase(inc){
+  if(!inc || !inc.assignedResponderId || inc.responderCredited) return;
+  inc.responderCredited = true;
+  const responders = db('responders');
+  const r = responders.find(x=>x.id===inc.assignedResponderId);
+  if(r){ r.casesHelped = (r.casesHelped||0) + 1; dbSet('responders', responders); }
+}
+function responderBadgeTier(count){
+  if(count>=50) return {label:'Platinum Responder', icon:'fa-solid fa-award', a:'#a78bfa', b:'#6366f1'};
+  if(count>=20) return {label:'Gold Responder', icon:'fa-solid fa-medal', a:'#fbbf24', b:'#f59e0b'};
+  if(count>=5)  return {label:'Silver Responder', icon:'fa-solid fa-shield-heart', a:'#94a3b8', b:'#64748b'};
+  return {label:'Bronze Responder', icon:'fa-solid fa-heart-pulse', a:'#f59e0b', b:'#ef4444'};
+}
 function viewResponderDash(){
   const mine = db('incidents').filter(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
   const pending = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID));
-  const myStatus = (db('responders').find(r=>r.id===CURRENT_RESPONDER_ID)||{}).status || 'available';
+  const myResp = (db('responders').find(r=>r.id===CURRENT_RESPONDER_ID)||{});
+  const myStatus = myResp.status || 'available';
+  const casesHelped = myResp.casesHelped || 0;
+  const tier = responderBadgeTier(casesHelped);
   return `
   ${viewHeader('Responder Console','Unit '+CURRENT_RESPONDER_ID,'Command Center broadcasts every SOS to the nearest available units — accept fast, others get auto-cleared.')}
+  <div class="responder-badge-card" style="--badge-tier-a:${tier.a};--badge-tier-b:${tier.b};">
+    <div class="responder-badge-icon"><i class="${tier.icon}"></i></div>
+    <div>
+      <div class="responder-badge-num">${casesHelped}</div>
+      <div class="responder-badge-label">Case${casesHelped===1?'':'s'} Helped</div>
+      <span class="responder-badge-tier">${tier.label}</span>
+    </div>
+  </div>
   <div class="grid-3">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-bell"></i></div><div><div class="dash-stat-num">${pending.length}</div><div class="dash-stat-label">Pending Requests</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-route"></i></div><div><div class="dash-stat-num">${mine.length}</div><div class="dash-stat-label">Active Case</div></div></div>
@@ -2985,8 +3020,18 @@ function patchResponderActive(inc){
 // of (inc.notifiedPoliceId === its own station id) — mirrors how a hospital only
 // sees incidents assigned to CURRENT_HOSPITAL_ID. No station sees every case in
 // the system.
+// A case counts as "closed" for a station's own dashboard/feed once EITHER the
+// case is globally closed (patient/hospital finished it) OR this station has
+// marked its own involvement resolved (policeResolved). Previously the feed
+// only ever cleared on the global close, which patient/hospital might never
+// trigger (e.g. a false alarm, or the reporter simply never taps "close") —
+// so a station's "Active Cases Nearby" count could stay stuck/inflated
+// forever with nothing the officer could do about it.
 function myStationIncidents(){
-  return db('incidents').filter(i=>i.status!=='closed' && i.notifiedPoliceId===CURRENT_POLICE_STATION_ID);
+  return db('incidents').filter(i=>i.status!=='closed' && !i.policeResolved && i.notifiedPoliceId===CURRENT_POLICE_STATION_ID);
+}
+function myStationResolvedCount(){
+  return db('incidents').filter(i=>i.notifiedPoliceId===CURRENT_POLICE_STATION_ID && (i.status==='closed' || i.policeResolved)).length;
 }
 function viewPoliceDash(){
   const active = myStationIncidents();
@@ -2996,7 +3041,7 @@ function viewPoliceDash(){
   <div class="grid-3">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-satellite-dish"></i></div><div><div class="dash-stat-num">${active.length}</div><div class="dash-stat-label">Active Cases Nearby</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-truck-medical"></i></div><div><div class="dash-stat-num">${active.filter(i=>i.assignedResponderId).length}</div><div class="dash-stat-label">Ambulances Dispatched</div></div></div>
-    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-road"></i></div><div><div class="dash-stat-num">${active.filter(i=>i.status==='enroute_hospital').length}</div><div class="dash-stat-label">Routes To Clear</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-circle-check"></i></div><div><div class="dash-stat-num">${myStationResolvedCount()}</div><div class="dash-stat-label">Cases Resolved</div></div></div>
   </div>
   <div class="card"><h3 style="margin-top:0;">Recent activity</h3>
   <ul class="activity-feed">${db('notifications').filter(n=>n.scope==='police:'+CURRENT_POLICE_STATION_ID).slice(0,8).map(n=>`<li><span class="dot ${n.type==='danger'?'pending':'done'}"></span>${n.title} — ${n.body}<span class="timeline-time">${fmtTime(n.ts)}</span></li>`).join('') || '<li>No activity yet.</li>'}</ul></div>`;
@@ -3025,9 +3070,12 @@ function renderPoliceFeedList(incidents){
         ${hosp ? `<a href="${mapsLink(hosp.lat,hosp.lng)}" target="_blank" class="btn btn-sm btn-secondary"><i class="fa-solid fa-hospital"></i> Directions to ${hosp.name}</a>` : ''}
       </div>
       <span class="status-tag status-info">${incidentStatusLabel(inc.status)}</span>
-      <div style="margin-top:10px;">${inc.policeAcked
-        ? `<span class="status-tag status-ok"><i class="fa-solid fa-check"></i> Acknowledged — route support logged</span>`
-        : `<button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button>`}</div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        ${inc.policeAcked
+          ? `<span class="status-tag status-ok"><i class="fa-solid fa-check"></i> Acknowledged — route support logged</span>`
+          : `<button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button>`}
+        <button class="btn btn-sm" onclick="closePoliceCase('${inc.id}')"><i class="fa-solid fa-box-archive"></i> Close case</button>
+      </div>
     </div>`;
   }).join('') : `<div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><p>No active cases near your station right now.</p></div>`;
 }
@@ -3055,6 +3103,24 @@ function ackPolice(id){
   pushNotification('patient','Route support','Local police acknowledged and is helping clear the route.','info',id);
   showToast('Acknowledged','Logged as active route support.','success');
   audit('police:'+CURRENT_POLICE_STATION_ID,'acknowledge',id);
+  renderCurrentView('po-feed');
+}
+// Lets a station clear a case off its own feed once route-support is done,
+// independent of whether the patient or hospital has closed it on their end.
+// This is what was missing: without it, a station had no way to end its
+// involvement, so "Active Cases Nearby" only ever grew and never came down.
+function closePoliceCase(id){
+  const all = db('incidents');
+  const inc = all.find(i=>i.id===id);
+  if(!inc || inc.notifiedPoliceId!==CURRENT_POLICE_STATION_ID) return;
+  if(inc.policeResolved) return;
+  if(!confirm('Close this case on your station\'s side? It will move out of your active feed.')) return;
+  inc.policeResolved = true;
+  const stationLabel = (db('policeProfile')||{}).station || 'Local police';
+  inc.timeline.push({ts:now(), text:stationLabel+' closed the case on their end'});
+  dbSet('incidents', all);
+  audit('police:'+CURRENT_POLICE_STATION_ID,'close',id);
+  showToast('Case closed', 'Removed from your active feed and logged as resolved.', 'success');
   renderCurrentView('po-feed');
 }
 
@@ -3128,7 +3194,7 @@ function confirmBedReady(id){
 }
 function closeIncidentHospitalSide(id){
   const all = db('incidents'); const inc = all.find(i=>i.id===id);
-  inc.status='closed'; inc.timeline.push({ts:now(),text:'Admitted and case closed by hospital'}); dbSet('incidents',all);
+  inc.status='closed'; inc.timeline.push({ts:now(),text:'Admitted and case closed by hospital'}); creditResponderCase(inc); dbSet('incidents',all);
   audit('hospital:'+CURRENT_HOSPITAL_ID,'close',id);
   // This is the real end of the case — only now is the ambulance crew freed up.
   if(inc.assignedResponderId){
