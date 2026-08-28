@@ -357,7 +357,7 @@ table.data-table tr:last-child td{border-bottom:none;}
   <div class="topbar">
     <a href="#" class="topbar-brand" onclick="return false;"><i class="fa-solid fa-heart-pulse" style="color:#10b981;"></i>ArogyaBot</a>
     <div class="topbar-actions">
-      <span class="role-badge-tag" id="current-role-tag">PATIENT</span>
+      <span class="role-badge-tag" id="current-role-tag">PATIENT/USER</span>
       <div class="bell-wrap">
         <button class="bell-btn" onclick="toggleBell(event)"><i class="fa-solid fa-bell"></i><span class="bell-dot hidden" id="bell-count">0</span></button>
         <div class="bell-panel hidden" id="bell-panel"></div>
@@ -716,7 +716,8 @@ function initFirebaseSync(){
         });
       }).catch(e=>console.warn('Firestore read failed for', key, e));
     });
-    showToast('Live sync connected', 'This device is syncing in real time (room: '+ROOM_ID+').', 'success');
+      showToast('Live sync connected', 'This device is syncing in real time.', 'success');
+   // showToast('Live sync connected', 'This device is syncing in real time (room: '+ROOM_ID+').', 'success');
   }catch(e){
     console.error('Firebase init failed — falling back to single-device mode.', e);
     fbEnabled = false;
