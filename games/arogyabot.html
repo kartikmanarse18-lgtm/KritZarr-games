@@ -174,7 +174,7 @@ a{color:inherit;}
 .form-control{width:100%;padding:12px 16px;border-radius:var(--radius-md);border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font-size:.92rem;transition:all .2s;}
 .form-control:focus{border-color:var(--brand-primary);background:var(--bg-surface);box-shadow:0 0 0 4px rgba(13,148,136,.12);}
 textarea.form-control{resize:vertical;min-height:90px;}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 22px;border-radius:var(--radius-md);font-weight:700;font-size:.9rem;background:var(--brand-primary);color:#fff;transition:all .2s ease;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 22px;border-radius:var(--radius-md);font-weight:700;font-size:.9rem;background:var(--brand-primary);color:#fff;transition:all .2s ease;text-decoration:none;}
 .btn:hover{background:var(--brand-primary-hover);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15);}
 .btn:active{transform:translateY(0);}
 .btn-secondary{background:var(--bg-subtle);color:var(--text-main);}
@@ -504,7 +504,7 @@ const FIREBASE_CONFIG = {
 // Everyone who opens the app with the same ?room= link shares one live incident feed.
 // Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
 const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
-const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','phoneComplaints'];
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','phoneComplaints'];
 // NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
 // account/family-member is currently logged in on THIS device, refreshed from that
 // account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
@@ -827,12 +827,14 @@ renderLandingBadges();
 
 function beginSignup(role){
   currentRole = role;
-  authStep = 1;
-  pendingSignup = {};
   patientAuthStep = 'email';
   patientAuthData = {};
   patientAuthMode = null;
   pendingOtp = null;
+  roleAuthStep = 'email';
+  roleAuthData = {};
+  roleAuthMode = null;
+  rolePendingOtp = null;
   document.getElementById('auth-role-tagline').textContent = ROLE_META[role].title + ' sign-in';
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('screen-auth').classList.remove('hidden');
@@ -864,9 +866,9 @@ function enterConsole(role){
    ============================================================ */
 function currentIdentity(){
   if(currentRole==='patient'){ const p=db('profile')||{}; const u=currentUserRecord(); return {name:p.name||'Patient', sub:(u&&u.email)||p.phone||'', unit:p.relation&&p.relation!=='Self'?p.relation:''}; }
-  if(currentRole==='responder'){ const r=(db('responders')||[]).find(x=>x.id===CURRENT_RESPONDER_ID)||{}; return {name:r.name||'Responder', sub:r.phone||'', unit:r.vehicle||CURRENT_RESPONDER_ID}; }
-  if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; return {name:h.name||'Hospital', sub:h.phone||'', unit:h.id}; }
-  if(currentRole==='police'){ const po=db('policeProfile')||{}; return {name:po.name||'Officer', sub:po.phone||'', unit:po.station||''}; }
+  if(currentRole==='responder'){ const r=(db('responders')||[]).find(x=>x.id===CURRENT_RESPONDER_ID)||{}; const u=findRoleUserByEmail('responder', roleAuthData.loggedEmail); return {name:r.name||'Responder', sub:(u&&u.email)||r.phone||'', unit:r.vehicle||CURRENT_RESPONDER_ID}; }
+  if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; const u=findRoleUserByEmail('hospital', roleAuthData.loggedEmail); return {name:h.name||'Hospital', sub:(u&&u.email)||h.phone||'', unit:h.id}; }
+  if(currentRole==='police'){ const po=db('policeProfile')||{}; return {name:po.name||'Officer', sub:po.email||po.phone||'', unit:po.station||''}; }
   return {name:'—', sub:'', unit:''};
 }
 function toggleProfileMenu(e){
@@ -895,7 +897,7 @@ function renderProfileMenu(){
       <div><div class="profile-menu-name">${idn.name}</div><div class="profile-menu-sub">${(currentRole||'').toUpperCase()}${idn.unit?' · '+idn.unit:''}</div></div>
     </div>
     <div class="profile-menu-body">
-      ${idn.sub ? `<div class="profile-menu-row"><span>${currentRole==='patient'?'Account':'Phone'}</span><strong>${idn.sub}</strong></div>` : ''}
+      ${idn.sub ? `<div class="profile-menu-row"><span>${idn.sub.includes('@')?'Account':'Phone'}</span><strong>${idn.sub}</strong></div>` : ''}
       ${currentRole==='patient' ? `<button class="profile-menu-logout" style="color:var(--text-main);" onclick="openFamilyModal()"><i class="fa-solid fa-people-roof"></i> Family members</button>` : ''}
       <button class="profile-menu-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
     </div>`;
@@ -909,12 +911,14 @@ function logout(){
   document.getElementById('app-shell').classList.add('hidden');
   document.body.removeAttribute('data-role');
   currentRole = null;
-  authStep = 1;
-  pendingSignup = {};
   patientAuthStep = 'email';
   patientAuthData = {};
   patientAuthMode = null;
   pendingOtp = null;
+  roleAuthStep = 'email';
+  roleAuthData = {};
+  roleAuthMode = null;
+  rolePendingOtp = null;
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
   renderLandingBadges();
@@ -922,11 +926,10 @@ function logout(){
 }
 
 /* ============================================================
-   AUTH FLOW — role-specific sign-up, OTP simulation, consent
+   AUTH FLOW DISPATCH — patient has its own dedicated flow below;
+   responder/police/hospital share the generic role-auth flow
+   (see "SHARED ROLE AUTH" section further down).
    ============================================================ */
-let authStep = 1;
-let pendingSignup = {};
-
 const SIGNUP_FIELDS = {
   patient: [
     {key:'name', label:'Full name', placeholder:'Your full name', value:'Ananya Sharma'},
@@ -952,89 +955,15 @@ const SIGNUP_FIELDS = {
     {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx', value:'011-4000-9099'},
   ],
 };
+function roleExtraFields(role){ return (SIGNUP_FIELDS[role]||[]).filter(f=>f.key!=='name' && f.key!=='phone'); }
+function otpAdvance(i){ const el=document.getElementById('otp-'+i)||document.getElementById('pa-otp-'+i)||document.getElementById('ra-otp-'+i); if(el && el.value && i<5){ const next=document.getElementById('otp-'+(i+1))||document.getElementById('pa-otp-'+(i+1))||document.getElementById('ra-otp-'+(i+1)); if(next) next.focus(); } }
+function stepDotsHtml(n){ return `<div class="step-dots">${[1,2,3].map(i=>`<span class="${i<=n?'done':''}"></span>`).join('')}</div>`; }
 
 function renderAuthCard(){
   const box = document.getElementById('auth-card-box');
   if(!currentRole) return;
   if(currentRole==='patient'){ renderPatientAuthCard(); return; }
-  if(authStep===1){
-    const fields = SIGNUP_FIELDS[currentRole];
-    box.innerHTML = `
-      <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelect()"><i class="fa-solid fa-arrow-left"></i> Back to roles</button>
-      <div class="step-dots"><span class="done"></span><span></span><span></span></div>
-      <h3>${ROLE_META[currentRole].title} sign-up</h3>
-      <p>Emergency platforms require identity verification before access, per DPDP Act guidance. Tell us a bit about you.</p>
-      ${fields.map(f=>`<div class="form-group"><label>${f.label}</label><input class="form-control" id="su-${f.key}" placeholder="${f.placeholder}" value="${f.value}" style="color:#fff;background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.18);"></div>`).join('')}
-      <button class="btn btn-block" onclick="authSubmitSignup()"><i class="fa-solid fa-paper-plane"></i> Continue &amp; send OTP</button>`;
-  } else if(authStep===2){
-    box.innerHTML = `
-      <div class="step-dots"><span class="done"></span><span class="done"></span><span></span></div>
-      <h3>Enter the 6-digit code</h3>
-      <p>We sent an OTP to ${pendingSignup.phone||'your number'} (Twilio / Firebase Phone Auth in production).</p>
-      <div class="otp-boxes">
-        ${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="otp-${i}" oninput="otpAdvance(${i})">`).join('')}
-      </div>
-      <div class="otp-hint">Demo hint: any 6 digits work — code 123456 auto-verifies instantly.</div>
-      <button class="btn btn-block" style="margin-top:16px;" onclick="authVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify &amp; Continue</button>`;
-  } else if(authStep===3){
-    box.innerHTML = `
-      <div class="step-dots"><span class="done"></span><span class="done"></span><span class="done"></span></div>
-      <h3>Consent &amp; data sharing</h3>
-      <p>Your profile is encrypted at rest (AES-256) and in transit (TLS 1.3). During emergencies, minimal necessary data is shared with responders and hospitals only.</p>
-      <div class="consent-row"><input type="checkbox" id="consent-check"><span>I consent to sharing my profile data with dispatched responders and hospitals strictly during active emergencies.</span></div>
-      <button class="btn btn-block" onclick="authFinish()"><i class="fa-solid fa-check"></i> Enter ArogyaBot</button>`;
-  }
-}
-function authSubmitSignup(){
-  const fields = SIGNUP_FIELDS[currentRole];
-  for(const f of fields){
-    const el = document.getElementById('su-'+f.key);
-    pendingSignup[f.key] = el ? el.value.trim() : '';
-  }
-  if(!pendingSignup.name || !pendingSignup.phone){
-    showToast('A few details missing', 'Name and phone number are required to continue.', 'danger');
-    return;
-  }
-  showToast('OTP sent', 'A 6-digit code was sent to '+pendingSignup.phone+'.');
-  authStep=2; renderAuthCard();
-}
-function otpAdvance(i){ const el=document.getElementById('otp-'+i); if(el.value && i<5) document.getElementById('otp-'+(i+1)).focus(); }
-function authVerifyOtp(){ authStep=3; renderAuthCard(); }
-function authFinish(){
-  const consent = document.getElementById('consent-check').checked;
-  if(!consent){ showToast('Consent required', 'Please accept the data-sharing consent to continue.', 'danger'); return; }
-  completeRoleSetup(currentRole, pendingSignup);
-  dbSet('auth', {verified:true, consent:true});
-  audit(currentRole, 'auth', 'Identity verified via OTP; consent captured');
-  enterConsole(currentRole);
-}
-
-function completeRoleSetup(role, data){
-  if(role==='patient'){
-    const p = db('profile') || {};
-    p.name = data.name || p.name || 'Guest Patient';
-    p.phone = data.phone || p.phone || '';
-    p.bloodGroup = data.blood || p.bloodGroup || 'Unknown';
-    p.allergies = p.allergies || 'None recorded';
-    p.chronic = p.chronic || 'None recorded';
-    p.emergencyContact = p.emergencyContact || '—';
-    if(p.lat==null){ p.lat = BASE.lat+rnd(-0.01,0.01); p.lng = BASE.lng+rnd(-0.01,0.01); }
-    dbSet('profile', p);
-  } else if(role==='responder'){
-    const list = db('responders') || [];
-    const id = uid('RSP');
-    list.push({id, name:data.name||'Responder', vehicle:data.ambno||'AMB-NEW', serviceName:data.ambname||'', phone:data.phone||'', lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), status:'available'});
-    dbSet('responders', list);
-    CURRENT_RESPONDER_ID = id;
-  } else if(role==='hospital'){
-    const list = db('hospitals') || [];
-    const id = uid('HOSP');
-    list.push({id, name:data.name||'New Hospital', regNo:data.regno||'', contact:data.contact||'', phone:data.phone||'', beds:5, icu:2, lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), specialties:['General']});
-    dbSet('hospitals', list);
-    CURRENT_HOSPITAL_ID = id;
-  } else if(role==='police'){
-    dbSet('policeProfile', {name:data.name||'Officer', badge:data.badge||'', station:data.station||'', phone:data.phone||''});
-  }
+  renderRoleAuthCard();
 }
 
 /* ============================================================
@@ -1324,7 +1253,7 @@ async function patientResendOtp(){
 
 function patientRaiseComplaint(){
   const list = db('phoneComplaints') || [];
-  const c = {id: uid('CMP'), phone: patientAuthData.phone, existingEmail: patientAuthData.conflictWithEmail, requestingEmail: patientAuthData.email, status:'pending', createdAt: now()};
+  const c = {id: uid('CMP'), role:'patient', phone: patientAuthData.phone, existingEmail: patientAuthData.conflictWithEmail, requestingEmail: patientAuthData.email, status:'pending', createdAt: now()};
   list.push(c);
   dbSet('phoneComplaints', list);
   audit('patient', 'phone_complaint', patientAuthData.phone+' claimed by '+patientAuthData.email+' — was on '+patientAuthData.conflictWithEmail);
@@ -1401,6 +1330,384 @@ async function patientAuthResetPassword(){
   showToast('Password updated', 'Log in with your new password.', 'success');
   patientAuthMode = 'login';
   patientAuthStep = 'login';
+  renderAuthCard();
+}
+
+/* ============================================================
+   SHARED ROLE AUTH — Ambulance / Police / Hospital
+   Same real-auth flow as Patient (Gmail + password + Firebase,
+   emailed OTP, consent) but each role keeps its own account
+   store, so the same mobile number can be reused across roles
+   (a person can be a patient AND an ambulance driver, etc.)
+   ============================================================ */
+let roleAuthStep = 'email';   // email -> login|signup -> phone_conflict -> otp -> consent -> reset_password
+let roleAuthMode = null;      // 'login' | 'signup' | 'forgot'
+let roleAuthData = {};        // {email,password,name,phone,...role-specific fields,conflictWithEmail}
+let rolePendingOtp = null;
+
+function roleUsersDb(role){ return db('users_'+role) || []; }
+function findRoleUserByEmail(role, email){ return roleUsersDb(role).find(u=>u.email===(email||'').trim().toLowerCase()); }
+function findRoleUserByPhone(role, phone, excludeEmail){
+  // Deliberately scoped to THIS role's own account store — the same phone number
+  // can be registered once as a patient and separately as, say, an ambulance driver.
+  const norm = (phone||'').replace(/\D/g,'');
+  if(!norm) return null;
+  return roleUsersDb(role).find(u=>u.email!==excludeEmail && (u.phone||'').replace(/\D/g,'')===norm);
+}
+function saveRoleUser(role, u){ const list=roleUsersDb(role); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users_'+role, list); }
+
+function ensureResponderRecord(user){
+  const list = db('responders') || [];
+  let r = list.find(x=>x.id===user.responderId);
+  if(!r){
+    r = {id: user.responderId || uid('RSP'), name:user.name||'Responder', vehicle:user.ambno||'AMB-NEW', serviceName:user.ambname||'', phone:user.phone||'', lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), status:'available'};
+    user.responderId = r.id;
+    list.push(r);
+    dbSet('responders', list);
+  }
+  CURRENT_RESPONDER_ID = r.id;
+}
+function ensureHospitalRecord(user){
+  const list = db('hospitals') || [];
+  let h = list.find(x=>x.id===user.hospitalId);
+  if(!h){
+    h = {id: user.hospitalId || uid('HOSP'), name:user.name||'New Hospital', regNo:user.regno||'', contact:user.contact||'', phone:user.phone||'', beds:5, icu:2, lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), specialties:['General']};
+    user.hospitalId = h.id;
+    list.push(h);
+    dbSet('hospitals', list);
+  }
+  CURRENT_HOSPITAL_ID = h.id;
+}
+function applyPoliceProfile(user){
+  dbSet('policeProfile', {name:user.name||'Officer', badge:user.badge||'', station:user.station||'', phone:user.phone||'', email:user.email});
+}
+function applyRoleUserToSession(role, user){
+  if(role==='responder') ensureResponderRecord(user);
+  else if(role==='hospital') ensureHospitalRecord(user);
+  else if(role==='police') applyPoliceProfile(user);
+}
+
+function renderRoleAuthCard(){
+  const box = document.getElementById('auth-card-box');
+  const role = currentRole;
+  const d = roleAuthData;
+  const dots = stepDotsHtml;
+  const nameField = (SIGNUP_FIELDS[role]||[]).find(f=>f.key==='name') || {label:'Full name', placeholder:'Full name'};
+  const extra = roleExtraFields(role);
+
+  if(roleAuthStep==='email'){
+    box.innerHTML = `
+      <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelect()"><i class="fa-solid fa-arrow-left"></i> Back to roles</button>
+      ${dots(1)}
+      <h3>${ROLE_META[role].title} sign-in</h3>
+      <p>Enter your Gmail address to sign in or register this ${ROLE_META[role].title.toLowerCase()} account.</p>
+      <div class="form-group"><input class="dark-input" id="ra-email" placeholder="you@gmail.com" value="${d.email||''}" autocomplete="email"></div>
+      <div id="ra-email-err"></div>
+      <button class="btn btn-block" onclick="roleAuthEmailContinue('login')"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+      <button class="btn-secondary btn-block" style="margin-top:10px;" onclick="roleAuthEmailContinue('signup')"><i class="fa-solid fa-user-plus"></i> Register new account</button>`;
+    return;
+  }
+
+  if(roleAuthStep==='login'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Welcome back</h3>
+      <p>${d.email}</p>
+      <div class="form-group"><input type="password" class="dark-input" id="ra-password" placeholder="Password" autocomplete="current-password"></div>
+      <div id="ra-login-err"></div>
+      <button class="btn btn-block" onclick="roleAuthLogin()"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+      <div class="auth-link-row">
+        <a onclick="roleAuthStep='email';renderAuthCard();">Use a different email</a>
+        <a onclick="roleAuthForgotStart();">Forgot password?</a>
+      </div>`;
+    return;
+  }
+
+  if(roleAuthStep==='signup'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3>Register ${ROLE_META[role].title}</h3>
+      <p>Free — no charges. We'll email a 6-digit code to verify it's really you.</p>
+      <div class="form-group"><input class="dark-input" id="ra-name" placeholder="${nameField.placeholder}" value="${d.name||''}"></div>
+      <div class="form-group"><input class="dark-input" id="ra-email2" placeholder="you@gmail.com" value="${d.email||''}" disabled style="opacity:.7;"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="ra-password" placeholder="Create a password (min 6 chars)"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="ra-password2" placeholder="Confirm password"></div>
+      <div class="form-group"><input class="dark-input" id="ra-phone" placeholder="+91 98xxxxxxxx" value="${d.phone||''}"></div>
+      ${extra.map(f=>`<div class="form-group"><input class="dark-input" id="ra-x-${f.key}" placeholder="${f.placeholder}" value="${d[f.key]||''}"></div>`).join('')}
+      <div id="ra-signup-err"></div>
+      <button class="btn btn-block" onclick="roleAuthSignupContinue()"><i class="fa-solid fa-paper-plane"></i> Continue &amp; send code</button>
+      <div class="auth-link-row"><a onclick="roleAuthStep='email';renderAuthCard();">Use a different email</a><span></span></div>`;
+    return;
+  }
+
+  if(roleAuthStep==='phone_conflict'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3>That number's already registered</h3>
+      <p>This phone number is already linked to another ${ROLE_META[role].title} account.</p>
+      <div class="conflict-box"><strong>What happens next:</strong> raise a complaint and our admin team will call this number to verify ownership. If it's really you, we'll re-allot the number to your new account (${d.email}).</div>
+      <button class="btn btn-block btn-danger" onclick="roleRaiseComplaint()"><i class="fa-solid fa-flag"></i> Raise complaint &amp; notify admin</button>
+      <div class="auth-link-row"><a onclick="roleAuthStep='signup';renderAuthCard();">Use a different number instead</a><span></span></div>`;
+    return;
+  }
+
+  if(roleAuthStep==='complaint_filed'){
+    box.innerHTML = `
+      ${dots(1)}
+      <h3><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Complaint filed</h3>
+      <p>Reference <strong>${d.complaintId}</strong>. Admin will call ${d.phone} to verify, then either reassign the number to ${d.email} or contact you if it's disputed.</p>
+      <p>You can still register now without phone verification, and add the phone later once it's resolved.</p>
+      <button class="btn btn-block" onclick="roleContinueWithoutPhone()">Continue without phone for now</button>
+      <div class="auth-link-row"><a onclick="roleAuthStep='signup';renderAuthCard();">Try a different number</a><span></span></div>`;
+    return;
+  }
+
+  if(roleAuthStep==='otp'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Enter the 6-digit code</h3>
+      <p>We emailed a code to ${d.email}.</p>
+      <div class="otp-boxes">${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="ra-otp-${i}" oninput="otpAdvance(${i})">`).join('')}</div>
+      <div class="otp-hint">${emailjsReady ? 'Check your inbox (and spam folder).' : 'Demo mode: code was shown in a toast — EmailJS keys not configured yet.'}</div>
+      <button class="btn btn-block" style="margin-top:16px;" onclick="roleAuthVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify &amp; continue</button>
+      <div class="auth-link-row"><a onclick="roleResendOtp()">Resend code</a><span></span></div>`;
+    return;
+  }
+
+  if(roleAuthStep==='consent'){
+    box.innerHTML = `
+      ${dots(3)}
+      <h3>Consent &amp; data sharing</h3>
+      <p>Your profile is encrypted at rest (AES-256) and in transit (TLS 1.3). During emergencies, minimal necessary data is shared with other emergency stakeholders only.</p>
+      <div class="consent-row"><input type="checkbox" id="consent-check"><span>I consent to this account's data being shared with dispatched patients, responders, police and hospitals strictly during active emergencies.</span></div>
+      <button class="btn btn-block" onclick="roleAuthFinishSignup()"><i class="fa-solid fa-check"></i> Enter ArogyaBot</button>`;
+    return;
+  }
+
+  if(roleAuthStep==='forgot_otp'){
+    box.innerHTML = `
+      ${dots(2)}
+      <h3>Reset your password</h3>
+      <p>We emailed a code to ${d.email}.</p>
+      <div class="otp-boxes">${[0,1,2,3,4,5].map(i=>`<input maxlength="1" id="ra-otp-${i}" oninput="otpAdvance(${i})">`).join('')}</div>
+      <div class="otp-hint">${emailjsReady ? 'Check your inbox (and spam folder).' : 'Demo mode: code was shown in a toast.'}</div>
+      <button class="btn btn-block" style="margin-top:16px;" onclick="roleAuthVerifyOtp()"><i class="fa-solid fa-shield-halved"></i> Verify code</button>
+      <div class="auth-link-row"><a onclick="roleAuthStep='login';renderAuthCard();">Back to login</a><span></span></div>`;
+    return;
+  }
+
+  if(roleAuthStep==='reset_password'){
+    box.innerHTML = `
+      ${dots(3)}
+      <h3>Choose a new password</h3>
+      <div class="form-group"><input type="password" class="dark-input" id="ra-newpass" placeholder="New password (min 6 chars)"></div>
+      <div class="form-group"><input type="password" class="dark-input" id="ra-newpass2" placeholder="Confirm new password"></div>
+      <div id="ra-reset-err"></div>
+      <button class="btn btn-block" onclick="roleAuthResetPassword()"><i class="fa-solid fa-key"></i> Save password &amp; log in</button>`;
+    return;
+  }
+}
+
+async function roleAuthEmailContinue(choice){
+  const email = document.getElementById('ra-email').value.trim().toLowerCase();
+  const errBox = document.getElementById('ra-email-err');
+  if(!isGmail(email)){ errBox.innerHTML = `<div class="field-err">Please enter a valid Gmail address (name@gmail.com).</div>`; return; }
+  errBox.innerHTML = '';
+  roleAuthData = {email};
+  roleAuthMode = choice;
+  roleAuthStep = choice;
+  renderAuthCard();
+}
+
+async function roleAuthLogin(){
+  const role = currentRole;
+  const pw = document.getElementById('ra-password').value;
+  const errBox = document.getElementById('ra-login-err');
+  const btn = event && event.target && event.target.closest ? event.target.closest('button') : null;
+  errBox.innerHTML = '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in…'; }
+  try{
+    const fa = fbAuth();
+    if(fa){
+      try{
+        await withTimeout(fa.signInWithEmailAndPassword(roleAuthData.email, pw), 12000, 'Login');
+      }catch(e){
+        const code = (e && e.code) || '';
+        if(code==='auth/user-not-found' || code==='auth/invalid-credential' || code==='auth/wrong-password'){
+          errBox.innerHTML = `<div class="field-err">No account found (or wrong password). <a style="color:#5eead4;cursor:pointer;font-weight:600;" onclick="roleAuthMode='signup';roleAuthStep='signup';renderAuthCard();">Register instead?</a></div>`;
+          return;
+        }
+        errBox.innerHTML = `<div class="field-err">${friendlyAuthError(e)}</div>`;
+        return;
+      }
+      errBox.innerHTML = '';
+      let u = findRoleUserByEmail(role, roleAuthData.email);
+      if(!u){
+        // Firebase account exists but our metadata record is missing — create a minimal one.
+        u = {email: roleAuthData.email, phone:'', phoneVerified:false, name: roleAuthData.email.split('@')[0], createdAt: now()};
+      }
+      applyRoleUserToSession(role, u);
+      saveRoleUser(role, u);
+      roleAuthData.loggedEmail = u.email;
+      dbSet('auth', {verified:true, consent:true});
+      audit(role, 'auth', 'Logged in as '+u.email+' (Firebase Authentication)');
+      currentRole = role;
+      enterConsole(role);
+      return;
+    }
+
+    // Local fallback (no Firebase Auth configured)
+    const u = findRoleUserByEmail(role, roleAuthData.email);
+    const hash = await hashPassword(pw);
+    if(!u || u.passwordHash!==hash){ errBox.innerHTML = `<div class="field-err">Incorrect email or password.</div>`; return; }
+    errBox.innerHTML = '';
+    applyRoleUserToSession(role, u);
+    saveRoleUser(role, u);
+    roleAuthData.loggedEmail = u.email;
+    dbSet('auth', {verified:true, consent:true});
+    audit(role, 'auth', 'Logged in as '+u.email+' (local demo mode)');
+    currentRole = role;
+    enterConsole(role);
+  }catch(e){
+    console.error('roleAuthLogin failed', e);
+    errBox.innerHTML = `<div class="field-err">Something went wrong logging in: ${(e && e.message) || e}</div>`;
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Log in'; }
+  }
+}
+
+async function roleAuthForgotStart(){
+  roleAuthMode = 'forgot';
+  const fa = fbAuth();
+  if(fa){
+    try{
+      await fa.sendPasswordResetEmail(roleAuthData.email);
+      showToast('Reset email sent', 'Check '+roleAuthData.email+' for a link to set a new password.', 'success');
+    }catch(e){
+      showToast('Could not send reset email', friendlyAuthError(e), 'danger');
+    }
+    roleAuthStep = 'login';
+    renderAuthCard();
+    return;
+  }
+  await roleResendOtp();
+  roleAuthStep = 'forgot_otp';
+  renderAuthCard();
+}
+
+async function roleAuthSignupContinue(){
+  const role = currentRole;
+  const name = document.getElementById('ra-name').value.trim();
+  const pw = document.getElementById('ra-password').value;
+  const pw2 = document.getElementById('ra-password2').value;
+  const phone = document.getElementById('ra-phone').value.trim();
+  const errBox = document.getElementById('ra-signup-err');
+  if(!name || !phone){ errBox.innerHTML = `<div class="field-err">Name and phone number are required.</div>`; return; }
+  if(pw.length<6){ errBox.innerHTML = `<div class="field-err">Password must be at least 6 characters.</div>`; return; }
+  if(pw!==pw2){ errBox.innerHTML = `<div class="field-err">Passwords don't match.</div>`; return; }
+  errBox.innerHTML = '';
+  roleAuthData.name = name; roleAuthData.phone = phone; roleAuthData.password = pw;
+  roleExtraFields(role).forEach(f=>{ const el=document.getElementById('ra-x-'+f.key); roleAuthData[f.key] = el ? el.value.trim() : ''; });
+
+  // Phone numbers are namespaced per role — the same number can be used for a
+  // patient account and, separately, for an ambulance/police/hospital account.
+  const conflict = findRoleUserByPhone(role, phone, roleAuthData.email);
+  if(conflict){
+    roleAuthData.conflictWithEmail = conflict.email;
+    roleAuthStep = 'phone_conflict';
+    renderAuthCard();
+    return;
+  }
+  await roleSendSignupOtp();
+}
+
+async function roleSendSignupOtp(){
+  const code = genOtp();
+  rolePendingOtp = code;
+  await sendOtpEmail(roleAuthData.email, code);
+  roleAuthStep = 'otp';
+  renderAuthCard();
+}
+async function roleResendOtp(){
+  const code = genOtp();
+  rolePendingOtp = code;
+  await sendOtpEmail(roleAuthData.email, code);
+}
+
+function roleRaiseComplaint(){
+  const role = currentRole;
+  const list = db('phoneComplaints') || [];
+  const c = {id: uid('CMP'), role, phone: roleAuthData.phone, existingEmail: roleAuthData.conflictWithEmail, requestingEmail: roleAuthData.email, status:'pending', createdAt: now()};
+  list.push(c);
+  dbSet('phoneComplaints', list);
+  audit(role, 'phone_complaint', roleAuthData.phone+' claimed by '+roleAuthData.email+' — was on '+roleAuthData.conflictWithEmail);
+  roleAuthData.complaintId = c.id;
+  roleAuthStep = 'complaint_filed';
+  renderAuthCard();
+  showToast('Complaint filed', 'Reference '+c.id+' — admin will call to verify.', 'success');
+}
+async function roleContinueWithoutPhone(){
+  roleAuthData.phone = ''; // released — leave unverified for now
+  await roleSendSignupOtp();
+}
+
+async function roleAuthVerifyOtp(){
+  const code = [0,1,2,3,4,5].map(i=>document.getElementById('ra-otp-'+i).value||'').join('');
+  const demoBypass = code==='123456';
+  if(code.length<6 || (!demoBypass && code!==rolePendingOtp)){
+    showToast('Incorrect code', 'That code doesn\'t match — check your inbox and try again.', 'danger');
+    return;
+  }
+  if(roleAuthMode==='forgot'){ roleAuthStep = 'reset_password'; renderAuthCard(); return; }
+  roleAuthStep = 'consent';
+  renderAuthCard();
+}
+
+async function roleAuthFinishSignup(){
+  const role = currentRole;
+  const consent = document.getElementById('consent-check').checked;
+  if(!consent){ showToast('Consent required', 'Please accept the data-sharing consent to continue.', 'danger'); return; }
+  const d = roleAuthData;
+  const fa = fbAuth();
+  let passwordHash;
+  if(fa){
+    try{
+      await withTimeout(fa.createUserWithEmailAndPassword(d.email, d.password), 12000, 'Account creation');
+    }catch(e){
+      showToast('Could not create account', friendlyAuthError(e), 'danger');
+      return;
+    }
+  } else {
+    passwordHash = await hashPassword(d.password); // local fallback only — Firebase Auth stores it otherwise
+  }
+  const user = { email: d.email, phone: d.phone || '', phoneVerified: !!d.phone, name: d.name, createdAt: now() };
+  roleExtraFields(role).forEach(f=>{ user[f.key] = d[f.key] || ''; });
+  if(passwordHash) user.passwordHash = passwordHash;
+  applyRoleUserToSession(role, user);
+  saveRoleUser(role, user);
+  roleAuthData.loggedEmail = user.email;
+  dbSet('auth', {verified:true, consent:true});
+  audit(role, 'auth', 'Account created for '+user.email+'; identity verified via emailed OTP ('+(fa?'Firebase Authentication':'local demo mode')+')');
+  currentRole = role;
+  enterConsole(role);
+}
+
+async function roleAuthResetPassword(){
+  // Only reached in local fallback mode — Firebase Auth handles resets via its own emailed link instead.
+  const role = currentRole;
+  const p1 = document.getElementById('ra-newpass').value;
+  const p2 = document.getElementById('ra-newpass2').value;
+  const errBox = document.getElementById('ra-reset-err');
+  if(p1.length<6){ errBox.innerHTML = `<div class="field-err">Password must be at least 6 characters.</div>`; return; }
+  if(p1!==p2){ errBox.innerHTML = `<div class="field-err">Passwords don't match.</div>`; return; }
+  const u = findRoleUserByEmail(role, roleAuthData.email);
+  if(!u){ errBox.innerHTML = `<div class="field-err">Account not found.</div>`; return; }
+  u.passwordHash = await hashPassword(p1);
+  saveRoleUser(role, u);
+  audit(role, 'auth', 'Password reset for '+u.email+' (local demo mode)');
+  showToast('Password updated', 'Log in with your new password.', 'success');
+  roleAuthMode = 'login';
+  roleAuthStep = 'login';
   renderAuthCard();
 }
 
@@ -1518,6 +1825,7 @@ function renderAdminScreen(){
     ${adminTab==='users' ? renderAdminUsersTab() : renderAdminComplaintsTab()}
   `;
 }
+function complaintUsersKey(role){ return (role||'patient')==='patient' ? 'users' : 'users_'+role; }
 function renderAdminComplaintsTab(){
   const complaints = (db('phoneComplaints')||[]).slice().reverse();
   return `
@@ -1525,6 +1833,7 @@ function renderAdminComplaintsTab(){
     ${complaints.length ? complaints.map(c=>`
       <div class="card" style="margin-bottom:12px;padding:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;"><strong>${c.phone}</strong><span class="status-tag ${c.status==='pending'?'status-warn':'status-ok'}">${c.status}</span></div>
+        <p style="font-size:.72rem;color:var(--text-muted);margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em;">${(c.role||'patient')}</p>
         <p style="font-size:.8rem;color:var(--text-muted);margin:8px 0;">Currently on <strong>${c.existingEmail}</strong> · requested by <strong>${c.requestingEmail}</strong></p>
         ${c.status==='pending' ? `<button class="btn btn-sm" onclick="adminResolveComplaint('${c.id}')"><i class="fa-solid fa-phone"></i> Verified — reassign to requester</button>
         <button class="btn btn-secondary btn-sm" onclick="adminDismissComplaint('${c.id}')">Dismiss (keep with original)</button>` : ''}
@@ -1532,20 +1841,25 @@ function renderAdminComplaintsTab(){
   `;
 }
 function renderAdminUsersTab(){
-  const users = (db('users')||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const roles = ['patient','responder','police','hospital'];
+  const users = roles.flatMap(role => (db(complaintUsersKey(role))||[]).map(u=>({...u, role})))
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const backendNote = authBackendActive()
     ? `<i class="fa-solid fa-shield-halved"></i> Passwords are stored and hashed by Firebase Authentication — not visible here, by design.`
     : `<i class="fa-solid fa-shield-halved"></i> Passwords are one-way hashed locally — not visible here, by design.`;
   return `
-    <p>${users.length} registered account${users.length===1?'':'s'}. ${backendNote}</p>
+    <p>${users.length} registered account${users.length===1?'':'s'} across all roles. ${backendNote}</p>
     ${users.length ? users.map(u=>`
       <div class="card" style="margin-bottom:12px;padding:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
           <strong>${u.email}</strong>
           <span class="status-tag ${u.phoneVerified?'status-ok':'status-warn'}">${u.phoneVerified?'Phone verified':'Phone unverified'}</span>
         </div>
+        <p style="font-size:.72rem;color:var(--text-muted);margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em;">${u.role}</p>
         <p style="font-size:.8rem;color:var(--text-muted);margin:8px 0;">
-          Phone: <strong>${u.phone||'—'}</strong> · ${u.members?u.members.length:1} member${(u.members?u.members.length:1)===1?'':'s'} (${(u.members||[]).map(m=>m.name).join(', ')}) · Joined ${u.createdAt?new Date(u.createdAt).toLocaleDateString():'—'}
+          ${u.role==='patient'
+            ? `Phone: <strong>${u.phone||'—'}</strong> · ${u.members?u.members.length:1} member${(u.members?u.members.length:1)===1?'':'s'} (${(u.members||[]).map(m=>m.name).join(', ')}) · Joined ${u.createdAt?new Date(u.createdAt).toLocaleDateString():'—'}`
+            : `${u.name||''} · Phone: <strong>${u.phone||'—'}</strong> · Joined ${u.createdAt?new Date(u.createdAt).toLocaleDateString():'—'}`}
         </p>
         <button class="btn btn-secondary btn-sm" onclick="adminSendReset('${u.email}')"><i class="fa-solid fa-key"></i> Send password reset</button>
       </div>`).join('') : `<p style="color:var(--text-muted);">No registered users yet.</p>`}
@@ -1574,10 +1888,18 @@ function adminUnlock(){
 function adminResolveComplaint(id){
   const list = db('phoneComplaints')||[];
   const c = list.find(x=>x.id===id); if(!c) return;
-  const oldUser = findUserByEmail(c.existingEmail);
-  if(oldUser){ oldUser.phone=''; oldUser.phoneVerified=false; saveUser(oldUser); }
-  const newUser = findUserByEmail(c.requestingEmail);
-  if(newUser){ newUser.phone=c.phone; newUser.phoneVerified=true; saveUser(newUser); }
+  const role = c.role || 'patient';
+  if(role==='patient'){
+    const oldUser = findUserByEmail(c.existingEmail);
+    if(oldUser){ oldUser.phone=''; oldUser.phoneVerified=false; saveUser(oldUser); }
+    const newUser = findUserByEmail(c.requestingEmail);
+    if(newUser){ newUser.phone=c.phone; newUser.phoneVerified=true; saveUser(newUser); }
+  } else {
+    const oldUser = findRoleUserByEmail(role, c.existingEmail);
+    if(oldUser){ oldUser.phone=''; oldUser.phoneVerified=false; saveRoleUser(role, oldUser); }
+    const newUser = findRoleUserByEmail(role, c.requestingEmail);
+    if(newUser){ newUser.phone=c.phone; newUser.phoneVerified=true; saveRoleUser(role, newUser); }
+  }
   c.status = 'resolved';
   dbSet('phoneComplaints', list);
   audit('admin', 'phone_reassign', c.phone+' moved from '+c.existingEmail+' to '+c.requestingEmail);
@@ -1697,19 +2019,62 @@ function viewPatientDash(){
       <p style="color:var(--text-muted);font-size:.85rem;margin-top:12px;">Emergency contact: ${profile.emergencyContact}</p>
       <button class="btn btn-secondary btn-sm" onclick="renderCurrentView('p-records')">Edit profile</button>
     </div>
-    <div class="card">
-      <h3 style="margin-top:0;">How SOS dispatch works</h3>
-      <ul class="activity-feed">
-        <li><span class="dot done"></span> Broadcast to the 3 nearest hospitals with live bed capacity</li>
-        <li><span class="dot done"></span> Broadcast to the 2 nearest available ambulances</li>
-        <li><span class="dot done"></span> Auto-notify the nearest police station</li>
-        <li><span class="dot done"></span> Hospital gets a confirmed alert the instant a responder accepts</li>
-      </ul>
-    </div>
+    ${nearbyHelpCard()}
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">How SOS dispatch works</h3>
+    <ul class="activity-feed">
+      <li><span class="dot done"></span> Broadcast to the 3 nearest hospitals with live bed capacity</li>
+      <li><span class="dot done"></span> Broadcast to the 2 nearest available ambulances</li>
+      <li><span class="dot done"></span> Auto-notify the nearest police station</li>
+      <li><span class="dot done"></span> Hospital gets a confirmed alert the instant a responder accepts</li>
+    </ul>
   </div>`;
 }
 function incidentStatusLabel(s){
   return {broadcasting:'Broadcasting to nearby units…', accepted:'Ambulance accepted — en route to you', picked_up:'Picked up — crew selecting hospital', enroute_hospital:'Picked up — en route to hospital', arrived:'Arrived at hospital', closed:'Closed'}[s]||s;
+}
+
+/* ============================================================
+   PATIENT — NEARBY HELP (live-location aware, Google Maps links)
+   ============================================================ */
+function nearbyHelpCard(){
+  const profile = db('profile')||{};
+  const lat = profile.lat, lng = profile.lng;
+  if(lat==null || lng==null){
+    return `<div class="card">
+      <h3 style="margin-top:0;">Nearby help right now</h3>
+      <p style="color:var(--text-muted);font-size:.85rem;">We don't have a location on file yet.</p>
+      <button class="btn btn-secondary btn-sm" onclick="refreshNearbyWithGPS()"><i class="fa-solid fa-location-crosshairs"></i> Use my live location</button>
+    </div>`;
+  }
+  const responders = (db('responders')||[]).filter(r=>r.status==='available').map(r=>({...r, distKm:haversineKm(lat,lng,r.lat,r.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,3);
+  const police = (db('police')||[]).map(p=>({...p, distKm:haversineKm(lat,lng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm).slice(0,2);
+  const row = (name, sub, plat, plng) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-color);">
+    <span style="font-size:.85rem;">${name}<br><span style="color:var(--text-muted);">${sub}</span></span>
+    <a href="${mapsLink(plat,plng)}" target="_blank" class="btn btn-sm btn-secondary" title="Get directions"><i class="fa-solid fa-diamond-turn-right"></i></a>
+  </div>`;
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <h3 style="margin-top:0;">Nearby help right now</h3>
+      <button class="btn btn-secondary btn-sm" onclick="refreshNearbyWithGPS()"><i class="fa-solid fa-location-crosshairs"></i> Refresh with GPS</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.78rem;margin:-8px 0 12px;">Based on your last known location — updates automatically once an SOS is active.</p>
+    <strong style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);">Ambulances</strong>
+    ${responders.length ? responders.map(r=>row(r.name+' · '+r.vehicle, r.distKm.toFixed(1)+' km · ETA '+etaMinutes(r.distKm)+' min', r.lat, r.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None available right now.</p>`}
+    <strong style="font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:block;margin-top:14px;">Police stations</strong>
+    ${police.length ? police.map(p=>row(p.name, p.distKm.toFixed(1)+' km · ETA '+etaMinutes(p.distKm)+' min', p.lat, p.lng)).join('') : `<p style="color:var(--text-muted);font-size:.85rem;">None found nearby.</p>`}
+  </div>`;
+}
+async function refreshNearbyWithGPS(){
+  const loc = await getDeviceLocation();
+  if(!loc){ showToast('Location unavailable', 'Could not get a GPS fix — showing your last known location instead.', 'danger'); return; }
+  const p = db('profile')||{};
+  p.lat = loc.lat; p.lng = loc.lng;
+  dbSet('profile', p);
+  if(typeof persistActiveProfileBackToMember==='function') persistActiveProfileBackToMember();
+  showToast('Location updated', 'Nearby ambulances and police recalculated from your current GPS position.', 'success');
+  if(currentView==='p-dash') renderCurrentView('p-dash');
 }
 
 /* ============================================================
@@ -2088,7 +2453,11 @@ function viewResponderActive(){
   <div class="grid-2">
     <div class="card card-flush"><div class="map-container" id="leaflet-map-box"></div><div id="resp-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>
     <div class="card">
-      <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark ? inc.landmark : 'No landmark given'} · <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);font-weight:600;">Get directions <i class="fa-solid fa-diamond-turn-right"></i></a></p>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;"><i class="fa-solid fa-location-dot"></i> ${inc.landmark ? inc.landmark : 'No landmark given'}</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:-4px 0 10px;">
+        <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" class="btn btn-sm ${!hosp?'btn-danger':'btn-secondary'}"><i class="fa-solid fa-diamond-turn-right"></i> Directions to patient</a>
+        ${hosp ? `<a href="${mapsLink(hosp.lat,hosp.lng)}" target="_blank" class="btn btn-sm btn-danger"><i class="fa-solid fa-hospital"></i> Directions to ${hosp.name}</a>` : ''}
+      </div>
       ${inc.reportedFor==='other' ? `<div class="card" style="background:var(--bg-subtle);padding:12px;margin-bottom:12px;"><strong>Reported by a bystander</strong> — patient not yet identified.${inc.victimNote?'<br>Reported condition: '+inc.victimNote:''}<br>Reporter contact: <a href="tel:${inc.reporterPhone}" style="color:var(--brand-primary);font-weight:700;">${inc.reporterPhone}</a></div>` : ''}
       <h3 style="margin-top:0;">Patient medical summary</h3>
       <div class="med-tag">Blood: ${med.bloodGroup}</div>
@@ -2141,7 +2510,10 @@ function viewPoliceFeed(){
         <span><i class="fa-solid fa-hospital"></i> ${hosp? hosp.name : 'Awaiting hospital'}</span>
       </div>
       ${inc.landmark ? `<div style="font-size:.82rem;color:var(--text-muted);margin-top:4px;"><i class="fa-solid fa-signs-post"></i> ${inc.landmark}</div>` : ''}
-      <p style="margin:8px 0 0;font-size:.85rem;"><a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" style="color:var(--brand-primary);font-weight:600;">Get directions to the spot <i class="fa-solid fa-diamond-turn-right"></i></a></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <a href="${mapsLink(inc.lat,inc.lng)}" target="_blank" class="btn btn-sm btn-secondary"><i class="fa-solid fa-diamond-turn-right"></i> Directions to the spot</a>
+        ${hosp ? `<a href="${mapsLink(hosp.lat,hosp.lng)}" target="_blank" class="btn btn-sm btn-secondary"><i class="fa-solid fa-hospital"></i> Directions to ${hosp.name}</a>` : ''}
+      </div>
       <span class="status-tag status-info">${incidentStatusLabel(inc.status)}</span>
       <div style="margin-top:10px;"><button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button></div>
     </div>`;
