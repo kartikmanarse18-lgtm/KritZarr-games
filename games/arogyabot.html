@@ -323,9 +323,6 @@ table.data-table tr:last-child td{border-bottom:none;}
     <p class="hero-desc">Tell us who's signing in. Each console has its own sign-up and verification, and every emergency still broadcasts to the nearest hospitals, ambulances, and police simultaneously — no single point of failure.</p>
   </div>
   <div class="badge-grid" id="badge-grid"></div>
-  <p style="position:relative;z-index:2;margin-top:34px;font-size:.76rem;color:#475569;">
-    Phone number dispute or already registered elsewhere? <a href="#" style="color:#5eead4;" onclick="openAdminGate();return false;">Admin / support login</a>
-  </p>
 </div>
 
 <!-- ============================================================
@@ -2025,17 +2022,29 @@ function removeFamilyMember(memberId){
   renderFamilyModal();
 }
 
-/* ---- Admin desk: resolves phone-number complaints + user directory ---- */
+/* ---- Admin desk: resolves phone-number complaints + user directory ----
+   No public link points here anymore — see the "Secret admin access"
+   block near the bottom of this script for the two ways in. ---- */
 let adminUnlocked = false;
 let adminTab = 'complaints';
 function openAdminGate(){
+  // Works no matter which screen is currently showing — landing, auth,
+  // or a logged-in console (app-shell) — and remembers what to restore
+  // on "Back" via backToRoleSelectFromAdmin().
   document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-auth').classList.add('hidden');
+  const shell = document.getElementById('app-shell');
+  if(shell) shell.classList.add('hidden');
   document.getElementById('screen-admin').classList.remove('hidden');
   renderAdminScreen();
 }
 function backToRoleSelectFromAdmin(){
   document.getElementById('screen-admin').classList.add('hidden');
-  document.getElementById('screen-landing').classList.remove('hidden');
+  if(currentRole && document.getElementById('app-shell')){
+    document.getElementById('app-shell').classList.remove('hidden');
+  } else {
+    document.getElementById('screen-landing').classList.remove('hidden');
+  }
 }
 function renderAdminScreen(){
   const box = document.getElementById('admin-card-box');
@@ -2043,8 +2052,8 @@ function renderAdminScreen(){
     box.innerHTML = `
       <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelectFromAdmin()"><i class="fa-solid fa-arrow-left"></i> Back</button>
       <h3>Admin access</h3>
-      <p>Demo passcode: <strong>admin123</strong></p>
-      <div class="form-group"><input type="password" class="dark-input" id="admin-pass" placeholder="Passcode"></div>
+      <p style="color:var(--text-muted, #94a3b8);">Restricted — enter the staff passcode.</p>
+      <div class="form-group"><input type="password" class="dark-input" id="admin-pass" placeholder="Passcode" autocomplete="off"></div>
       <button class="btn btn-block" onclick="adminUnlock()">Unlock</button>`;
     return;
   }
@@ -2139,10 +2148,35 @@ async function adminSendReset(email){
   }
   showToast('Local demo mode', 'Firebase Authentication isn\'t connected — ask the user to use "Forgot password" on the login screen instead.', 'danger');
 }
+// Change this before using the admin desk anywhere but a local demo — a
+// hardcoded client-side passcode is obscurity, not real security, since
+// anyone can read it out of this file's source. For production, swap this
+// for a real check against Firebase Auth (e.g. an allow-listed admin email).
+const ADMIN_PASSCODE = 'admin123';
+let adminFailCount = 0;
+let adminLockUntil = 0;
 function adminUnlock(){
+  if(Date.now() < adminLockUntil){
+    const secs = Math.ceil((adminLockUntil-Date.now())/1000);
+    showToast('Too many attempts', 'Locked for '+secs+'s — try again shortly.', 'danger');
+    return;
+  }
   const pass = document.getElementById('admin-pass').value;
-  if(pass!=='admin123'){ showToast('Wrong passcode', '', 'danger'); return; }
+  if(pass!==ADMIN_PASSCODE){
+    adminFailCount++;
+    audit('admin', 'unlock_failed', 'attempt #'+adminFailCount);
+    if(adminFailCount>=5){
+      adminLockUntil = Date.now()+30000;
+      adminFailCount = 0;
+      showToast('Too many attempts', 'Locked for 30s.', 'danger');
+    } else {
+      showToast('Wrong passcode', '', 'danger');
+    }
+    return;
+  }
+  adminFailCount = 0;
   adminUnlocked = true;
+  audit('admin', 'unlock_success', '');
   renderAdminScreen();
 }
 function adminResolveComplaint(id){
@@ -3602,6 +3636,38 @@ function initPoliceMap(update){
 }
 
 /* ============================================================
+   SECRET ADMIN ACCESS
+   ------------------------------------------------------------
+   No visible link points to the admin desk anywhere in the UI.
+   Staff reach it one of two ways, from any screen:
+     1. Load/navigate the app with #opsdesk in the URL —
+        e.g. https://yoursite.com/arogyabot.html#opsdesk
+     2. Type the word "opsdesk" anywhere in the app (no need to
+        click into a field — just start typing on any screen).
+   Either way just reveals the passcode gate; ADMIN_PASSCODE above
+   still has to be entered correctly. Change ADMIN_SECRET_PHRASE
+   here (and ADMIN_PASSCODE above) before real-world use.
+   ============================================================ */
+const ADMIN_SECRET_PHRASE = 'opsdesk';
+let _secretKeyBuffer = '';
+document.addEventListener('keydown', (e)=>{
+  const tag = document.activeElement && document.activeElement.tagName;
+  if(tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT') return; // don't hijack normal typing in forms
+  if(e.ctrlKey || e.metaKey || e.altKey || e.key.length!==1) return;
+  _secretKeyBuffer = (_secretKeyBuffer + e.key.toLowerCase()).slice(-ADMIN_SECRET_PHRASE.length);
+  if(_secretKeyBuffer === ADMIN_SECRET_PHRASE){
+    _secretKeyBuffer = '';
+    openAdminGate();
+  }
+});
+function checkSecretHashRoute(){
+  if(location.hash.replace('#','').toLowerCase() === ADMIN_SECRET_PHRASE){
+    openAdminGate();
+  }
+}
+window.addEventListener('hashchange', checkSecretHashRoute);
+
+/* ============================================================
    BOOTSTRAP
    ============================================================ */
 (function boot(){
@@ -3609,9 +3675,10 @@ function initPoliceMap(update){
   // If a console session was saved (from a previous login on this device), restore it
   // straight into the console instead of bouncing back to role selection. Otherwise,
   // fall back to the original behaviour: start at role selection.
-  if(restoreActiveSession()) return;
+  if(restoreActiveSession()){ checkSecretHashRoute(); return; }
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
+  checkSecretHashRoute();
 })();
 </script>
 </body>
