@@ -213,8 +213,10 @@ textarea.form-control{resize:vertical;min-height:90px;}
 .responder-badge-tier{font-family:var(--ff-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:99px;display:inline-block;margin-top:4px;}
 
 /* Chat */
-.chat-container{display:flex;flex-direction:column;height:560px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-color);background:var(--bg-surface);}
-.chat-messages{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);scroll-behavior:smooth;}
+.chat-container{display:flex;flex-direction:column;height:min(78vh,720px);min-height:420px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-color);background:var(--bg-surface);}
+.chat-container>*{flex-shrink:0;}
+.chat-messages{flex:1 1 auto;min-height:0;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);scroll-behavior:smooth;}
+.chat-bubble{scroll-margin-top:14px;}
 .chat-bubble{max-width:82%;padding:14px 18px;border-radius:20px;font-size:.9rem;line-height:1.5;position:relative;animation:slideUp .3s ease-out;}
 .chat-bubble.bot{align-self:flex-start;background:var(--bg-surface);border:1px solid var(--border-color);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm);}
 .chat-bubble.user{align-self:flex-end;background:var(--brand-primary);color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 12px rgba(13,148,136,.2);}
@@ -3656,15 +3658,31 @@ function viewPatientChat(){
     </div>
     <div class="chat-input-bar">
       <input type="text" id="chat-user-input" class="form-control" placeholder="Type your symptoms..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-      <button class="btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+      <button class="btn" id="chat-send-btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
   </div>`;
 }
 function setChatInput(t){ document.getElementById('chat-user-input').value=t; document.getElementById('chat-user-input').focus(); }
+function scrollNewestIntoView(box){
+  if(!box || !box.lastElementChild) return;
+  try{
+    // Scroll so the TOP of the newest message is visible, not the bottom of the
+    // container — a long symptom report is often taller than the chat window,
+    // and jumping straight to box.scrollHeight used to hide the report's own
+    // heading and "why this happens" section above the fold.
+    if(typeof box.lastElementChild.scrollIntoView === 'function'){
+      box.lastElementChild.scrollIntoView({block:'start', behavior:'smooth'});
+    } else {
+      box.scrollTop = box.lastElementChild.offsetTop;
+    }
+  }catch(e){
+    try{ box.scrollTop = box.scrollHeight; }catch(e2){}
+  }
+}
 function renderChatBox(msgs){
   const box = document.getElementById('chat-messages-box'); if(!box) return;
   box.innerHTML = msgs.map(m=>m.html ? m.html : `<div class="chat-bubble ${m.who}">${m.text}</div>`).join('');
-  box.scrollTop = box.scrollHeight;
+  scrollNewestIntoView(box);
 }
 function showTypingIndicator(){
   const box = document.getElementById('chat-messages-box');
@@ -3672,52 +3690,76 @@ function showTypingIndicator(){
   const el = document.createElement('div');
   el.className = 'chat-bubble bot'; el.id = 'ai-typing-indicator';
   el.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles fa-fade"></i> Generating your report…';
-  box.appendChild(el); box.scrollTop = box.scrollHeight;
+  box.appendChild(el); scrollNewestIntoView(box);
 }
 function hideTypingIndicator(){ const el = document.getElementById('ai-typing-indicator'); if(el) el.remove(); }
+let chatSendInFlight = false;
 async function sendChatMessage(){
+  // Guard against double-submits (e.g. mashing Enter while an AI report is
+  // still loading) — without this, overlapping calls could race on the
+  // typing indicator and leave the chat looking stuck/empty.
+  if(chatSendInFlight) return;
   const inp = document.getElementById('chat-user-input');
+  const btn = document.getElementById('chat-send-btn');
   const text = inp.value.trim(); if(!text) return;
-  const msgs = db('chatHistory');
-  msgs.push({who:'user', text});
-  dbSet('chatHistory', msgs);
-  inp.value='';
-  renderChatBox(msgs);
 
-  // Safety-critical checks always run locally first, whether or not AI mode is on.
-  if(CRISIS_PATTERNS.test(text)){
-    msgs.push({who:'bot', html:renderCrisisSupport()});
-    dbSet('chatHistory', msgs); renderChatBox(msgs);
-    return;
-  }
-  const isEmergency = EMERGENCY_PATTERNS.some(p=>p.test(text));
-  if(isEmergency){
-    msgs.push({who:'bot', html:renderEmergencyAlert()});
-    dbSet('chatHistory', msgs); renderChatBox(msgs);
-  }
+  chatSendInFlight = true;
+  if(inp) inp.disabled = true;
+  if(btn) btn.disabled = true;
 
-  const aiKey = getAIKey();
-  if(aiKey){
-    showTypingIndicator();
-    try{
-      const entry = await fetchAISymptomReport(text);
-      hideTypingIndicator();
-      msgs.push({who:'bot', html:renderSymptomCard(entry, 'ai')});
-    }catch(err){
-      hideTypingIndicator();
-      msgs.push({who:'bot', text:'⚠️ AI report failed ('+(err && err.message ? err.message : 'network error')+') — showing offline guidance instead.'});
+  try{
+    const msgs = db('chatHistory');
+    msgs.push({who:'user', text});
+    dbSet('chatHistory', msgs);
+    inp.value='';
+    renderChatBox(msgs);
+
+    // Safety-critical checks always run locally first, whether or not AI mode is on.
+    if(CRISIS_PATTERNS.test(text)){
+      msgs.push({who:'bot', html:renderCrisisSupport()});
+      dbSet('chatHistory', msgs); renderChatBox(msgs);
+      return;
+    }
+    const isEmergency = EMERGENCY_PATTERNS.some(p=>p.test(text));
+    if(isEmergency){
+      msgs.push({who:'bot', html:renderEmergencyAlert()});
+      dbSet('chatHistory', msgs); renderChatBox(msgs);
+    }
+
+    const aiKey = getAIKey();
+    if(aiKey){
+      showTypingIndicator();
+      try{
+        const entry = await fetchAISymptomReport(text);
+        hideTypingIndicator();
+        msgs.push({who:'bot', html:renderSymptomCard(entry, 'ai')});
+      }catch(err){
+        hideTypingIndicator();
+        msgs.push({who:'bot', text:'⚠️ AI report failed ('+(err && err.message ? err.message : 'network error')+') — showing offline guidance instead.'});
+        const matches = SYMPTOM_KB.filter(e=>e.match.test(text));
+        if(matches.length) matches.forEach(m=>msgs.push({who:'bot', html:renderSymptomCard(m,'kb')}));
+        else if(!isEmergency) msgs.push({who:'bot', html:renderFallbackCard()});
+      }
+    } else {
       const matches = SYMPTOM_KB.filter(e=>e.match.test(text));
       if(matches.length) matches.forEach(m=>msgs.push({who:'bot', html:renderSymptomCard(m,'kb')}));
       else if(!isEmergency) msgs.push({who:'bot', html:renderFallbackCard()});
     }
-  } else {
-    const matches = SYMPTOM_KB.filter(e=>e.match.test(text));
-    if(matches.length) matches.forEach(m=>msgs.push({who:'bot', html:renderSymptomCard(m,'kb')}));
-    else if(!isEmergency) msgs.push({who:'bot', html:renderFallbackCard()});
-  }
 
-  dbSet('chatHistory', msgs);
-  renderChatBox(msgs);
+    dbSet('chatHistory', msgs);
+    renderChatBox(msgs);
+  }catch(err){
+    // Belt-and-braces: if anything above throws unexpectedly, surface it as a
+    // chat bubble instead of leaving the conversation silently stuck.
+    console.error('sendChatMessage failed', err);
+    const msgs = db('chatHistory') || [];
+    msgs.push({who:'bot', text:'⚠️ Something went wrong showing that report. Please try rephrasing your symptoms.'});
+    dbSet('chatHistory', msgs); renderChatBox(msgs);
+  }finally{
+    chatSendInFlight = false;
+    if(inp){ inp.disabled = false; inp.focus(); }
+    if(btn) btn.disabled = false;
+  }
 }
 
 /* ============================================================
