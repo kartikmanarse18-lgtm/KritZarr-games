@@ -213,17 +213,24 @@ textarea.form-control{resize:vertical;min-height:90px;}
 .responder-badge-tier{font-family:var(--ff-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700;background:rgba(255,255,255,.22);padding:3px 9px;border-radius:99px;display:inline-block;margin-top:4px;}
 
 /* Chat */
-.chat-container{display:flex;flex-direction:column;height:min(78vh,720px);min-height:420px;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-color);background:var(--bg-surface);}
-.chat-container>*{flex-shrink:0;}
-.chat-messages{flex:1 1 auto;min-height:0;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);scroll-behavior:smooth;}
-.chat-bubble{scroll-margin-top:14px;}
+/* The message list used to live inside its own small fixed-height, separately-
+   scrolling box nested within the page. That's a common source of bugs
+   (mobile browsers/webviews are unreliable with nested scroll containers,
+   and it visually clips long content like a full symptom report). Instead,
+   the whole chat panel now grows with its content and the OUTER page scrolls
+   normally — only the quick-prompt row and input bar stay pinned to the
+   bottom of the viewport via position:sticky, so typing is always reachable. */
+.chat-container{display:flex;flex-direction:column;border-radius:var(--radius-lg);overflow:visible;border:1px solid var(--border-color);background:var(--bg-surface);}
+.chat-messages{padding:22px;display:flex;flex-direction:column;gap:14px;background:var(--bg-main);}
+.chat-bubble{scroll-margin-top:90px;}
 .chat-bubble{max-width:82%;padding:14px 18px;border-radius:20px;font-size:.9rem;line-height:1.5;position:relative;animation:slideUp .3s ease-out;}
 .chat-bubble.bot{align-self:flex-start;background:var(--bg-surface);border:1px solid var(--border-color);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm);}
 .chat-bubble.user{align-self:flex-end;background:var(--brand-primary);color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 12px rgba(13,148,136,.2);}
-.chat-quick-prompts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:var(--bg-surface);border-top:1px solid var(--border-color);}
+.chat-bottom-bar{position:sticky;bottom:0;background:var(--bg-surface);border-top:1px solid var(--border-color);border-radius:0 0 var(--radius-lg) var(--radius-lg);box-shadow:0 -8px 20px rgba(17,25,21,.06);z-index:5;}
+.chat-quick-prompts{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;}
 .prompt-chip{font-size:.8rem;padding:7px 14px;border-radius:99px;border:1px solid var(--border-color);background:var(--bg-main);transition:all .2s;font-weight:500;}
 .prompt-chip:hover{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary);}
-.chat-input-bar{display:flex;gap:10px;padding:14px 18px;background:var(--bg-surface);border-top:1px solid var(--border-color);}
+.chat-input-bar{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--border-color);}
 
 /* Structured symptom-report cards inside the AI chat */
 .chat-bubble.symptom-card{max-width:96%;padding:0;overflow:hidden;border-radius:16px;}
@@ -3648,17 +3655,19 @@ function viewPatientChat(){
       <button class="btn btn-sm btn-secondary" onclick="openAISettingsModal()"><i class="fa-solid fa-gear"></i> AI Settings</button>
     </div>
     <div class="chat-messages" id="chat-messages-box">${msgs.map(m=>m.html ? m.html : `<div class="chat-bubble ${m.who}">${m.text}</div>`).join('')}</div>
-    <div class="chat-quick-prompts">
-      <button class="prompt-chip" onclick="setChatInput('I have a fever')">Fever</button>
-      <button class="prompt-chip" onclick="setChatInput('I have chest pain')">Chest pain</button>
-      <button class="prompt-chip" onclick="setChatInput('I have a headache')">Headache</button>
-      <button class="prompt-chip" onclick="setChatInput('I have a cough and cold')">Cough &amp; cold</button>
-      <button class="prompt-chip" onclick="setChatInput('I have stomach pain')">Stomach pain</button>
-      <button class="prompt-chip" onclick="setChatInput('I feel dizzy')">Dizziness</button>
-    </div>
-    <div class="chat-input-bar">
-      <input type="text" id="chat-user-input" class="form-control" placeholder="Type your symptoms..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-      <button class="btn" id="chat-send-btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    <div class="chat-bottom-bar">
+      <div class="chat-quick-prompts">
+        <button class="prompt-chip" onclick="setChatInput('I have a fever')">Fever</button>
+        <button class="prompt-chip" onclick="setChatInput('I have chest pain')">Chest pain</button>
+        <button class="prompt-chip" onclick="setChatInput('I have a headache')">Headache</button>
+        <button class="prompt-chip" onclick="setChatInput('I have a cough and cold')">Cough &amp; cold</button>
+        <button class="prompt-chip" onclick="setChatInput('I have stomach pain')">Stomach pain</button>
+        <button class="prompt-chip" onclick="setChatInput('I feel dizzy')">Dizziness</button>
+      </div>
+      <div class="chat-input-bar">
+        <input type="text" id="chat-user-input" class="form-control" placeholder="Type your symptoms..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button class="btn" id="chat-send-btn" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
     </div>
   </div>`;
 }
