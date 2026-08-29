@@ -3548,7 +3548,7 @@ function clearAISettings(){
   if(currentView==='p-chat') renderCurrentView('p-chat');
 }
 const AI_TIMEOUT_MS = 25000;
-async function withTimeout(fn){
+async function withAICallTimeout(fn){
   const controller = new AbortController();
   const timer = setTimeout(()=>controller.abort(), AI_TIMEOUT_MS);
   try{ return await fn(controller.signal); } finally { clearTimeout(timer); }
@@ -3572,7 +3572,7 @@ function normalizeAIReport(parsed){
 // and (for Gemini) grounds the answer in live Google Search results first.
 async function fetchAISymptomReport(text){
   if(!aiBackendConfigured()) throw new Error('AI backend not configured — deploy arogyabot-worker and set AI_BACKEND_URL');
-  const resp = await withTimeout(signal => fetch(getAIBackendUrl().replace(/\/$/,'') + '/api/symptom-report', {
+  const resp = await withAICallTimeout(signal => fetch(getAIBackendUrl().replace(/\/$/,'') + '/api/symptom-report', {
     method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text}), signal
   }));
   const data = await resp.json().catch(()=>null);
