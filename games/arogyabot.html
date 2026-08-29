@@ -3874,8 +3874,13 @@ function viewPatientRecords(){
   </div>
   <div class="card">
     <h3 style="margin-top:0;">Upload a lab report or prescription</h3>
-    <p style="color:var(--text-muted);font-size:.85rem;">Simulates AI multimodal extraction (Gemini Flash / Tesseract OCR in production). Not a diagnosis.</p>
-    <button class="btn btn-secondary" onclick="runMockOcr()"><i class="fa-solid fa-file-arrow-up"></i> Upload &amp; extract</button>
+    <p style="color:var(--text-muted);font-size:.85rem;">Extracted live by Google Gemini's document vision, via your Cloudflare Worker backend — never processed on-device or with a key stored in this file. AI-extracted, unverified — always confirm with your doctor.</p>
+    <label class="doc-dropzone" for="ocr-file-input">
+      <i class="fa-solid fa-cloud-arrow-up"></i>
+      <strong>Tap to choose a file</strong>
+      <div style="color:var(--text-muted);font-size:.8rem;margin-top:4px;">PDF or photo of a lab report / prescription (max ~8MB)</div>
+    </label>
+    <input type="file" id="ocr-file-input" accept=".pdf,image/*" style="display:none;" onchange="handleOcrUpload(event)">
     <div id="ocr-result"></div>
   </div>`;
 }
@@ -3890,19 +3895,56 @@ function saveProfile(){
   audit('patient','profile_update','Emergency profile updated');
   showToast('Saved','Your emergency profile is up to date.','success');
 }
-function runMockOcr(){
+function ocrStatusMeta(status){
+  return { low:{label:'Low', cls:'status-warn'}, high:{label:'High', cls:'status-danger'}, normal:{label:'Normal', cls:'status-ok'} }[status] || {label:'Unclear', cls:'status-muted'};
+}
+async function handleOcrUpload(evt){
+  const file = evt.target.files[0];
   const slot = document.getElementById('ocr-result');
-  slot.innerHTML = `<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Extracting text…</p></div>`;
-  setTimeout(()=>{
+  if(!file) return;
+  if(file.size > 8*1024*1024){
+    slot.innerHTML = `<p style="color:var(--brand-danger);font-size:.82rem;margin-top:10px;">File too large (max ~8MB). Try a smaller scan or photo.</p>`;
+    evt.target.value = ''; return;
+  }
+  if(!aiBackendConfigured()){
+    slot.innerHTML = `<p style="color:var(--brand-danger);font-size:.82rem;margin-top:10px;">AI backend not configured yet — deploy arogyabot-worker and set AI_BACKEND_URL (see AI Settings on the Symptom Checker page) to enable real document extraction.</p>`;
+    evt.target.value = ''; return;
+  }
+  slot.innerHTML = `<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Reading and extracting text…</p></div>`;
+  try{
+    const dataUrl = await new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read that file'));
+      reader.readAsDataURL(file);
+    });
+    const base64Data = dataUrl.split(',')[1];
+    const mimeType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+    const resp = await withAICallTimeout(signal => fetch(getAIBackendUrl().replace(/\/$/,'') + '/api/ocr-extract', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({base64Data, mimeType}), signal
+    }));
+    const result = await resp.json().catch(()=>null);
+    if(!resp.ok || !result) throw new Error((result && result.error) || `Extraction failed (${resp.status})`);
+
+    const rows = (result.tests||[]).map(t=>{
+      const sm = ocrStatusMeta(t.status);
+      return `<tr><td>${t.name}</td><td>${t.value}${t.unit?' '+t.unit:''}${t.referenceRange?` <span style="color:var(--text-muted);font-size:.75rem;">(ref: ${t.referenceRange})</span>`:''}</td><td class="status-tag ${sm.cls}">${sm.label}</td></tr>`;
+    }).join('');
+    const medsList = (result.medications||[]).length ? `<ul style="margin:10px 0 0;padding-left:18px;">${result.medications.map(m=>`<li>${m}</li>`).join('')}</ul>` : '';
+
     slot.innerHTML = `<div class="card" style="background:var(--bg-subtle);margin-top:14px;margin-bottom:0;">
-      <strong>AI-extracted (unverified) — Complete Blood Count</strong>
-      <table class="data-table" style="margin-top:10px;"><tr><td>Hemoglobin</td><td>13.2 g/dL</td><td class="status-tag status-ok">Normal</td></tr>
-      <tr><td>WBC Count</td><td>11,200 /µL</td><td class="status-tag status-warn">Slightly high</td></tr>
-      <tr><td>Platelets</td><td>245,000 /µL</td><td class="status-tag status-ok">Normal</td></tr></table>
+      <strong>AI-extracted (unverified) — ${result.reportType || 'Medical Document'}</strong>
+      ${rows ? `<table class="data-table" style="margin-top:10px;">${rows}</table>` : ''}
+      ${medsList}
+      ${result.summary ? `<p style="font-size:.82rem;margin-top:10px;">${result.summary}</p>` : ''}
       <p style="font-size:.78rem;color:var(--text-muted);margin-top:10px;">⚠️ AI-extracted, non-diagnostic. Confirm with your doctor.</p>
     </div>`;
-    audit('patient','ocr_extract','Lab report processed (simulated)');
-  }, 1200);
+    audit('patient','ocr_extract', file.name+' processed via Gemini document vision');
+  }catch(err){
+    slot.innerHTML = `<p style="color:var(--brand-danger);font-size:.82rem;margin-top:10px;">⚠️ Extraction failed: ${(err && err.message) || 'unknown error'}. Try a clearer photo or a different file.</p>`;
+  }finally{
+    evt.target.value = '';
+  }
 }
 
 /* ============================================================
