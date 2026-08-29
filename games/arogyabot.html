@@ -308,6 +308,60 @@ table.data-table tr:last-child td{border-bottom:none;}
 .pin-pad button{padding:16px;font-size:1.1rem;font-weight:700;border-radius:12px;background:var(--bg-subtle);}
 .pin-pad button:hover{background:var(--border-color);}
 
+/* ============ WOMEN'S HEALTH / CYCLE TRACKER ============ */
+.cal-cell.ovulation{background:rgba(139,92,246,.35);}
+.cal-cell.pms{background:rgba(245,158,11,.16);}
+.cal-cell.spotting{background:repeating-linear-gradient(135deg,rgba(239,68,68,.35) 0 4px,transparent 4px 8px);}
+.cal-cell.today{box-shadow:inset 0 0 0 2px var(--brand-primary);}
+.cal-cell .cal-dot{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--brand-secondary);}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav button{width:34px;height:34px;border-radius:50%;background:var(--bg-subtle);font-size:.85rem;}
+.cal-nav button:hover{background:var(--border-color);}
+.cal-nav .cal-month-label{font-family:var(--ff-display);font-weight:700;font-size:1.05rem;}
+.cyc-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:.76rem;color:var(--text-muted);}
+.cyc-legend span{display:inline-flex;align-items:center;gap:5px;}
+.cyc-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;}
+.phase-hero{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.phase-ring{width:112px;height:112px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:conic-gradient(var(--brand-primary) calc(var(--pct,0)*1%),var(--bg-subtle) 0);position:relative;}
+.phase-ring::before{content:'';position:absolute;inset:8px;border-radius:50%;background:var(--bg-surface);}
+.phase-ring b,.phase-ring small{position:relative;z-index:1;}
+.phase-ring b{font-family:var(--ff-display);font-size:1.5rem;}
+.phase-ring small{font-size:.68rem;color:var(--text-muted);}
+.phase-tag{display:inline-block;padding:5px 12px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:rgba(13,148,136,.12);color:var(--brand-primary);margin-bottom:8px;}
+.stat-mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-top:16px;}
+.stat-mini{background:var(--bg-subtle);border-radius:var(--radius-md);padding:14px;text-align:center;}
+.stat-mini b{display:block;font-family:var(--ff-display);font-size:1.3rem;}
+.stat-mini span{font-size:.72rem;color:var(--text-muted);}
+.chip-select{display:flex;flex-wrap:wrap;gap:8px;}
+.chip-opt{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border-color);background:var(--bg-main);font-size:.82rem;font-weight:600;color:var(--text-muted);transition:all .15s;}
+.chip-opt:hover{border-color:var(--brand-primary);}
+.chip-opt.active{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff;}
+.cyc-history-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border-color);font-size:.85rem;}
+.cyc-history-row:last-child{border-bottom:none;}
+.mode-select{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:6px;}
+.mode-opt{border:2px solid var(--border-color);border-radius:var(--radius-md);padding:12px 10px;text-align:center;font-size:.8rem;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all .15s;}
+.mode-opt i{display:block;font-size:1.1rem;margin-bottom:6px;color:var(--brand-primary);}
+.mode-opt:hover{border-color:var(--brand-primary);}
+.mode-opt.active{border-color:var(--brand-primary);background:rgba(13,148,136,.08);color:var(--text-main);}
+.insight-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.82rem;}
+.insight-bar-track{flex:1;height:8px;border-radius:99px;background:var(--bg-subtle);overflow:hidden;}
+.insight-bar-fill{height:100%;background:var(--brand-primary);border-radius:99px;}
+.insight-row .insight-label{width:130px;flex-shrink:0;font-weight:600;}
+.insight-row .insight-pct{width:34px;text-align:right;color:var(--text-muted);flex-shrink:0;}
+.mini-chip-add{display:flex;gap:8px;margin-top:8px;}
+.mini-chip-add input{flex:1;}
+.awareness-item{border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:10px;overflow:hidden;}
+.awareness-item summary{padding:14px 16px;cursor:pointer;font-weight:700;font-size:.92rem;list-style:none;display:flex;align-items:center;gap:10px;background:var(--bg-subtle);}
+.awareness-item summary::-webkit-details-marker{display:none;}
+.awareness-item summary i.fa-chevron-down{margin-left:auto;font-size:.75rem;transition:transform .2s;color:var(--text-muted);}
+.awareness-item[open] summary i.fa-chevron-down{transform:rotate(180deg);}
+.awareness-item .awareness-body{padding:14px 16px 18px;font-size:.87rem;color:var(--text-muted);line-height:1.7;}
+.awareness-body h5{color:var(--text-main);font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 6px;}
+.awareness-body ul{margin:6px 0;padding-left:20px;}
+.redflag-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--radius-md);padding:12px 14px;margin-top:10px;}
+.redflag-box b{color:var(--brand-danger);}
+.disclaimer-note{font-size:.76rem;color:var(--text-muted);background:var(--bg-subtle);border-radius:var(--radius-md);padding:10px 14px;margin-top:14px;}
+
 .reminder-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);}
 .reminder-row:last-child{border-bottom:none;}
 .toggle-sw{width:42px;height:24px;border-radius:99px;background:var(--border-color);position:relative;transition:.2s;flex-shrink:0;}
@@ -811,7 +865,20 @@ function initializeDataStore(){
   if(!db('appointments')) dbSet('appointments', []);
   if(!db('prescriptions')) dbSet('prescriptions', []);
   if(!db('reminders')) dbSet('reminders', []);
-  if(!db('cycle')) dbSet('cycle', {logs:[], pinLock:'', unlocked:false});
+  if(!db('cycle')) dbSet('cycle', {pinLock:'', entries:{}}); // unlocked state is intentionally NOT persisted here — see cycSessionUnlocked
+  else {
+    // migrate legacy shape {logs:[...]} -> {entries:{memberId:{days:{...}}}}
+    const c = db('cycle');
+    if(!c.entries){
+      c.entries = {};
+      if(Array.isArray(c.logs) && c.logs.length){
+        c.entries.ME = {days:{}};
+        c.logs.forEach(d=>{ c.entries.ME.days[d] = {flow:'medium', symptoms:[], mood:'', notes:''}; });
+      }
+      delete c.logs;
+      dbSet('cycle', c);
+    }
+  }
   if(!db('claims')) dbSet('claims', []);
   if(!db('insurance')) dbSet('insurance', {aadhaar_verified:false});
   if(!db('documents')) dbSet('documents', []);
@@ -1130,6 +1197,7 @@ function renderProfileMenu(){
     </div>`;
 }
 function logout(){
+  cycSessionUnlocked = false; // re-lock Women's Health so the next person to open this device must re-enter the PIN
   if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
   stopAllLiveLocationTracking();
   cleanupMap();
@@ -2055,6 +2123,7 @@ function renderFamilyModal(){
 }
 function switchFamilyMember(memberId){
   const u = currentUserRecord(); if(!u) return;
+  cycSessionUnlocked = false; // each family member's cycle data needs the PIN re-entered on switch, not just on first unlock
   persistActiveProfileBackToMember();
   u.activeMemberId = memberId;
   saveUser(u);
@@ -4163,9 +4232,180 @@ function toggleReminder(id){ const r=db('reminders'); const item=r.find(x=>x.id=
 /* ============================================================
    PATIENT — WOMEN'S HEALTH (with PIN lock)
    ============================================================ */
+/* ---------- data helpers ---------- */
+// Whether the Women's Health PIN has been unlocked THIS SESSION. Deliberately kept in memory only
+// (never written to db/localStorage) so it can't stay "unlocked" forever across logouts, browser
+// restarts, or after switching to a different family member's profile on a shared device.
+let cycSessionUnlocked = false;
+function cycRoot(){ const c = db('cycle'); if(!c.entries) c.entries={}; return c; }
+function cycEntry(){
+  const c = cycRoot();
+  const pid = currentPatientId();
+  if(!c.entries[pid]) c.entries[pid] = {days:{}, avgCycleLenOverride:null, avgPeriodLenOverride:null, mode:'track', onBirthControl:false, tempUnit:'C', reminderOn:false, reminderDays:2, customSymptoms:[]};
+  // backfill fields for entries created before these features existed
+  const e = c.entries[pid];
+  if(e.mode===undefined) e.mode='track';
+  if(e.onBirthControl===undefined) e.onBirthControl=false;
+  if(e.tempUnit===undefined) e.tempUnit='C';
+  if(e.reminderOn===undefined) e.reminderOn=false;
+  if(e.reminderDays===undefined) e.reminderDays=2;
+  if(!e.customSymptoms) e.customSymptoms=[];
+  return e;
+}
+function cycSaveEntry(entry){ const c = cycRoot(); c.entries[currentPatientId()] = entry; dbSet('cycle', c); }
+const CYC_BASE_SYMPTOMS = ['Cramps','Headache','Bloating','Backache','Breast tenderness','Acne','Fatigue','Nausea','Mood swings','Food cravings','Tender joints','Trouble sleeping'];
+function cycAllSymptoms(entry){ return [...CYC_BASE_SYMPTOMS, ...((entry && entry.customSymptoms) || [])]; }
+const CYC_MOODS = [{k:'happy',e:'😊',l:'Happy'},{k:'calm',e:'😌',l:'Calm'},{k:'tired',e:'😴',l:'Tired'},{k:'irritable',e:'😠',l:'Irritable'},{k:'anxious',e:'😰',l:'Anxious'},{k:'sad',e:'😢',l:'Sad'}];
+// 'spotting' is intentionally excluded from period-episode math (see cycEpisodes) so a single
+// spotting day mid-cycle can't be mistaken for a new period and skew cycle-length predictions.
+const CYC_FLOWS = [{k:'',l:'None'},{k:'spotting',l:'Spotting'},{k:'light',l:'Light'},{k:'medium',l:'Medium'},{k:'heavy',l:'Heavy'}];
+const CYC_PERIOD_FLOWS = ['light','medium','heavy'];
+const CYC_MUCUS = [{k:'',l:'—'},{k:'dry',l:'Dry'},{k:'sticky',l:'Sticky'},{k:'creamy',l:'Creamy'},{k:'watery',l:'Watery'},{k:'eggwhite',l:'Egg-white (fertile)'}];
+const CYC_LH = [{k:'',l:'Not tested'},{k:'negative',l:'Negative'},{k:'high',l:'High'},{k:'peak',l:'Peak (positive)'}];
+const CYC_MODES = [
+  {k:'track', icon:'fa-solid fa-calendar-check', l:'Just tracking'},
+  {k:'ttc', icon:'fa-solid fa-seedling', l:'Trying to conceive'},
+  {k:'avoid', icon:'fa-solid fa-shield-heart', l:'Avoiding pregnancy'},
+  {k:'pregnant', icon:'fa-solid fa-baby', l:'Pregnant'},
+  {k:'perimenopause', icon:'fa-solid fa-leaf', l:'Perimenopause'},
+];
+function isoDay(d){ return d.toISOString().slice(0,10); }
+function addDays(d,n){ return new Date(d.getTime()+n*86400000); }
+// group logged flow-days into consecutive-day period episodes, sorted oldest -> newest.
+// Only "real" period flow (light/medium/heavy) counts here — spotting is logged and shown
+// on the calendar, but never treated as a period start, so mid-cycle spotting can't skew predictions.
+function cycEpisodes(entry){
+  const dates = Object.keys(entry.days).filter(d=>entry.days[d].flow && CYC_PERIOD_FLOWS.includes(entry.days[d].flow)).sort();
+  const episodes = [];
+  let cur = null;
+  dates.forEach(d=>{
+    const dt = new Date(d+'T00:00:00');
+    if(cur && (dt - new Date(cur.end+'T00:00:00'))/86400000 <= 1.5){ cur.end = d; cur.days.push(d); }
+    else { cur = {start:d, end:d, days:[d]}; episodes.push(cur); }
+  });
+  return episodes;
+}
+function cycStats(entry){
+  const episodes = cycEpisodes(entry);
+  const starts = episodes.map(e=>new Date(e.start+'T00:00:00'));
+  const cycleLens = [];
+  for(let i=1;i<starts.length;i++) cycleLens.push(Math.round((starts[i]-starts[i-1])/86400000));
+  // ignore implausible gaps (e.g. months of missed logging) when computing the average, but keep them in history
+  const plausible = cycleLens.filter(n=>n>=15 && n<=90);
+  const recentLens = (plausible.length ? plausible : cycleLens).slice(-6);
+  const avgCycleLen = entry.avgCycleLenOverride || (recentLens.length ? Math.round(recentLens.reduce((a,b)=>a+b,0)/recentLens.length) : 28);
+  const periodLens = episodes.map(e=>e.days.length);
+  const recentPLens = periodLens.slice(-6);
+  const avgPeriodLen = entry.avgPeriodLenOverride || (recentPLens.length ? Math.round(recentPLens.reduce((a,b)=>a+b,0)/recentPLens.length) : 5);
+  let regularity = 'Not enough data yet';
+  if(recentLens.length>=2){
+    const mean = recentLens.reduce((a,b)=>a+b,0)/recentLens.length;
+    const variance = recentLens.reduce((a,b)=>a+Math.pow(b-mean,2),0)/recentLens.length;
+    const sd = Math.sqrt(variance);
+    regularity = sd<=3 ? 'Regular' : sd<=6 ? 'Slightly irregular' : 'Irregular';
+  }
+  const minLen = recentLens.length ? Math.min(...recentLens) : null;
+  const maxLen = recentLens.length ? Math.max(...recentLens) : null;
+  return {episodes, cycleLens, avgCycleLen, avgPeriodLen, regularity, cyclesTracked: episodes.length, minLen, maxLen};
+}
+function cycWindowFor(start, cycleLen){
+  const lutealPhase = 14; // typical luteal phase length; the follicular phase is what actually varies cycle to cycle
+  const ovulation = addDays(start, -lutealPhase);
+  return {start, ovulation, fertileStart: addDays(ovulation,-5), fertileEnd: addDays(ovulation,1)};
+}
+function cycPredict(entry, stats){
+  const episodes = stats.episodes;
+  if(!episodes.length) return null;
+  const lastStart = new Date(episodes[episodes.length-1].start+'T00:00:00');
+  const nextStart = addDays(lastStart, stats.avgCycleLen);
+  const futureStarts = [nextStart, addDays(nextStart, stats.avgCycleLen), addDays(nextStart, stats.avgCycleLen*2)];
+  const futureWindows = futureStarts.map(fs=>cycWindowFor(fs, stats.avgCycleLen));
+  const w0 = futureWindows[0];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdueDays = Math.round((today - nextStart)/86400000);
+  return {lastStart, nextStart, ovulation:w0.ovulation, fertileStart:w0.fertileStart, fertileEnd:w0.fertileEnd, futureStarts, futureWindows, overdueDays};
+}
+function cycPhaseToday(entry, stats, pred){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = isoDay(today);
+  const inLoggedPeriod = entry.days[todayStr] && entry.days[todayStr].flow;
+  if(!pred) return {phase: inLoggedPeriod ? 'Menstrual' : 'Log a period to see your phase', cycleDay: null, pct:0, daysToNext:null};
+  const cycleDay = Math.round((today - pred.lastStart)/86400000) + 1;
+  const daysToNext = Math.round((pred.nextStart - today)/86400000);
+  let phase = 'Follicular';
+  if(inLoggedPeriod || (cycleDay>=1 && cycleDay<=stats.avgPeriodLen)) phase='Menstrual';
+  else if(today>=pred.fertileStart && today<=pred.fertileEnd) phase='Fertile window';
+  else if(daysToNext<=5 && daysToNext>=0) phase='Late luteal (PMS likely)';
+  const pct = Math.max(0, Math.min(100, Math.round(((cycleDay-1)/stats.avgCycleLen)*100)));
+  return {phase, cycleDay, pct, daysToNext};
+}
+// Basal body temperature: a sustained rise of ~0.2°C+ above the prior baseline, held for 2+ days,
+// is the classic sign ovulation has already happened (this is what BBT charting is for in real trackers).
+function cycBBTConfirmedOvulation(entry){
+  const dates = Object.keys(entry.days).filter(d=>entry.days[d].bbt!=null).sort();
+  if(dates.length<8) return null;
+  for(let i=6;i<dates.length-1;i++){
+    const prior = dates.slice(Math.max(0,i-6),i).map(d=>entry.days[d].bbt);
+    if(prior.length<4) continue;
+    const baseline = prior.reduce((a,b)=>a+b,0)/prior.length;
+    const t1 = entry.days[dates[i]].bbt, t2 = entry.days[dates[i+1]].bbt;
+    if(t1>=baseline+0.2 && t2>=baseline+0.15) return {date:dates[i], baseline:Math.round(baseline*100)/100};
+  }
+  return null;
+}
+// symptom frequency by cycle phase, for the "Patterns" insight card — helps a person notice e.g.
+// "Bloating shows up almost every luteal phase" the way Flo/Clue's cycle-insights features do.
+function cycSymptomInsights(entry, stats){
+  const counts = {};
+  const phaseTotals = {Menstrual:0, Follicular:0, 'Fertile window':0, 'Late luteal (PMS likely)':0};
+  Object.keys(entry.days).forEach(d=>{
+    const day = entry.days[d];
+    if(!day.symptoms || !day.symptoms.length) return;
+    // approximate the phase that date fell in using its position within the nearest period episode
+    const dt = new Date(d+'T00:00:00');
+    let phase = null;
+    for(let i=0;i<stats.episodes.length;i++){
+      const start = new Date(stats.episodes[i].start+'T00:00:00');
+      const nextStart = i+1<stats.episodes.length ? new Date(stats.episodes[i+1].start+'T00:00:00') : addDays(start, stats.avgCycleLen);
+      if(dt>=start && dt<nextStart){
+        const day0 = Math.round((dt-start)/86400000)+1;
+        const lutealStart = stats.avgCycleLen - 12;
+        if(day0<=stats.avgPeriodLen) phase='Menstrual';
+        else if(day0>=lutealStart) phase='Late luteal (PMS likely)';
+        else if(day0>=Math.round(stats.avgCycleLen/2)-3 && day0<=Math.round(stats.avgCycleLen/2)+2) phase='Fertile window';
+        else phase='Follicular';
+        break;
+      }
+    }
+    if(!phase) return;
+    phaseTotals[phase] = (phaseTotals[phase]||0)+1;
+    day.symptoms.forEach(s=>{
+      counts[s] = counts[s]||{total:0, byPhase:{}};
+      counts[s].total++;
+      counts[s].byPhase[phase] = (counts[s].byPhase[phase]||0)+1;
+    });
+  });
+  const ranked = Object.keys(counts).map(s=>{
+    const c = counts[s];
+    const topPhase = Object.keys(c.byPhase).sort((a,b)=>c.byPhase[b]-c.byPhase[a])[0];
+    return {symptom:s, total:c.total, topPhase};
+  }).sort((a,b)=>b.total-a.total).slice(0,6);
+  return ranked;
+}
+// in-app "period coming up" reminder — there's no push-notification channel in this build, so this
+// surfaces as a banner in Women's Health itself once the person is inside the reminder window they set.
+function cycReminderBanner(entry, pred){
+  if(!entry.reminderOn || !pred) return '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysAway = Math.round((pred.nextStart-today)/86400000);
+  if(daysAway<0 || daysAway>entry.reminderDays) return '';
+  return `<div class="redflag-box" style="margin-bottom:18px;background:rgba(13,148,136,.08);border-color:rgba(13,148,136,.3);"><b style="color:var(--brand-primary);"><i class="fa-solid fa-bell"></i> Reminder:</b> your period is predicted to start ${daysAway===0?'<strong>today</strong>':`in <strong>${daysAway} day${daysAway===1?'':'s'}</strong>`}. Good time to stock up on supplies.</div>`;
+}
+
+/* ---------- main view ---------- */
 function viewPatientWomen(){
-  const c = db('cycle');
-  if(c.pinLock && !c.unlocked){
+  const c = cycRoot();
+  if(c.pinLock && !cycSessionUnlocked){
     return `${viewHeader("Women's Health","Privacy protected","Enter your PIN to continue.")}
     <div class="pin-lock">
       <i class="fa-solid fa-lock" style="font-size:2rem;color:var(--brand-primary);"></i>
@@ -4173,21 +4413,175 @@ function viewPatientWomen(){
       <div class="pin-pad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(n=>`<button onclick="pinPress('${n}')">${n}</button>`).join('')}</div>
     </div>`;
   }
-  return `${viewHeader("Women's Health","Cycle tracker &amp; predictions","")}
+  const entry = cycEntry();
+  const stats = cycStats(entry);
+  const pred = cycPredict(entry, stats);
+  const today = cycPhaseToday(entry, stats, pred);
+  const overdueBanner = (pred && pred.overdueDays>5 && !(entry.days[isoDay(new Date())]&&entry.days[isoDay(new Date())].flow) && entry.mode!=='pregnant')
+    ? `<div class="redflag-box" style="margin-bottom:18px;"><b>Your period is ${pred.overdueDays} days later than predicted.</b> A late period can happen for many reasons (stress, travel, illness, birth control changes, or pregnancy). If it's unusual for you, consider a pregnancy test if relevant, and see a doctor if it's been 3+ months or you have other symptoms.</div>` : '';
+  const irregularBanner = (stats.regularity==='Irregular' && entry.mode!=='pregnant')
+    ? `<div class="redflag-box" style="margin-bottom:18px;"><b>Your recent cycles look quite irregular</b> (lengths ranging ${stats.minLen}–${stats.maxLen} days). This is sometimes normal, but persistent irregularity is worth mentioning to a doctor — it can relate to conditions like PCOS or thyroid changes.</div>` : '';
+  const reminderBanner = entry.mode!=='pregnant' ? cycReminderBanner(entry, pred) : '';
+  const bbtConfirm = cycBBTConfirmedOvulation(entry);
+  const insights = cycSymptomInsights(entry, stats);
+  return `${viewHeader("Women's Health","Period &amp; cycle tracker","Log your cycle, see personalised predictions, and browse women's health awareness content.")}
+  ${reminderBanner}${overdueBanner}${irregularBanner}
+
   <div class="card">
-    <div id="cycle-cal"></div>
-    <div style="display:flex;gap:14px;margin-top:14px;font-size:.78rem;color:var(--text-muted);">
-      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:3px;"></span> Period</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(239,68,68,.25);border-radius:3px;"></span> Predicted</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:rgba(245,158,11,.3);border-radius:3px;"></span> Fertile window</span>
+    <h3 style="margin-top:0;">What are you focused on right now?</h3>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-top:-8px;">This changes what predictions and tips are emphasised below.</p>
+    <div class="mode-select">
+      ${CYC_MODES.map(m=>`<div class="mode-opt ${entry.mode===m.k?'active':''}" onclick="cycSetMode('${m.k}')"><i class="${m.icon}"></i>${m.l}</div>`).join('')}
     </div>
-    <button class="btn btn-sm" style="margin-top:14px;" onclick="logPeriodToday()"><i class="fa-solid fa-plus"></i> Log period start today</button>
   </div>
+  ${entry.mode==='pregnant' ? `<div class="card" style="text-align:center;padding:26px;"><i class="fa-solid fa-baby" style="font-size:1.8rem;color:var(--brand-primary);"></i><p style="margin-top:10px;color:var(--text-muted);">You've marked yourself as pregnant, so cycle/ovulation predictions are paused. You can still log symptoms and notes below, or switch modes above once that changes.</p></div>` : `
+  <div class="card phase-hero">
+    <div class="phase-ring" style="--pct:${today.pct}"><b>${today.cycleDay ?? '—'}</b><small>${today.cycleDay ? 'cycle day' : ''}</small></div>
+    <div style="flex:1;min-width:220px;">
+      <span class="phase-tag">${today.phase}</span>
+      <div style="font-size:.9rem;color:var(--text-muted);line-height:1.7;">
+        ${pred ? `${today.daysToNext>0 ? `<strong>${today.daysToNext} day${today.daysToNext===1?'':'s'}</strong> until your next period is predicted to start.` : today.daysToNext===0 ? `Your next period is predicted to start <strong>today</strong>.` : `Your predicted period start has passed — log it below when it begins so predictions stay accurate.`}<br>Predicted next period: <strong>${pred.nextStart.toDateString()}</strong> &nbsp;·&nbsp; Fertile window (est.): <strong>${pred.fertileStart.toDateString()} – ${pred.fertileEnd.toDateString()}</strong>${entry.mode==='ttc' ? `<br><span style="color:var(--brand-primary);font-weight:700;">Trying to conceive: your best-estimated fertile days are highlighted above — logging BBT and LH tests will sharpen this.</span>` : entry.mode==='avoid' ? `<br><span style="color:var(--brand-danger);font-weight:700;">Avoiding pregnancy: treat the fertile window as an estimate only, not a contraceptive method.</span>` : ''}` : `Log at least one period to unlock personalised predictions.`}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-sm" onclick="openDayLogModal('${isoDay(new Date())}')"><i class="fa-solid fa-plus"></i> Log today</button>
+      <button class="btn btn-secondary btn-sm" onclick="cycOpenBulkModal()"><i class="fa-solid fa-clock-rotate-left"></i> Add past period</button>
+    </div>
+  </div>
+  `}
+
   <div class="card">
-    <h3 style="margin-top:0;">Privacy lock</h3>
-    <p style="color:var(--text-muted);font-size:.85rem;">Set a 4-digit PIN so this section stays private even if someone else opens your phone.</p>
-    ${c.pinLock ? `<button class="btn btn-secondary btn-sm" onclick="removePin()">Remove PIN</button>` : `<div style="display:flex;gap:10px;"><input class="form-control" id="new-pin" maxlength="4" placeholder="Set 4-digit PIN" style="max-width:160px;"><button class="btn btn-sm" onclick="setPin()">Save</button></div>`}
-  </div>`;
+    <div class="cal-nav">
+      <button onclick="cycNavMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="cal-month-label" id="cal-month-label"></div>
+      <button onclick="cycNavMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div id="cycle-cal"></div>
+    <div class="cyc-legend">
+      <span><i style="background:#ef4444;"></i> Period logged</span>
+      <span><i style="background:repeating-linear-gradient(135deg,rgba(239,68,68,.6) 0 2px,transparent 2px 4px);"></i> Spotting</span>
+      <span><i style="background:rgba(239,68,68,.25);"></i> Predicted period</span>
+      <span><i style="background:rgba(245,158,11,.3);"></i> Fertile window</span>
+      <span><i style="background:rgba(139,92,246,.35);"></i> Ovulation (est.)</span>
+      <span><i style="background:rgba(245,158,11,.16);"></i> PMS window</span>
+    </div>
+    <p style="font-size:.78rem;color:var(--text-muted);margin-top:10px;">Tap any day to log flow, symptoms, mood or notes for that date.</p>
+  </div>
+
+  ${bbtConfirm ? `<div class="redflag-box" style="margin-bottom:18px;background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3);"><b style="color:#7c3aed;"><i class="fa-solid fa-temperature-half"></i> Temperature shift detected:</b> your BBT rose on <strong>${new Date(bbtConfirm.date+'T00:00:00').toDateString()}</strong> and stayed up — this pattern usually means ovulation had already happened around that day.</div>` : ''}
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="margin-top:0;">Your cycle stats</h3>
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><b>${stats.avgCycleLen}</b><span>Avg cycle length (days)</span></div>
+        <div class="stat-mini"><b>${stats.avgPeriodLen}</b><span>Avg period length (days)</span></div>
+        <div class="stat-mini"><b>${stats.cyclesTracked}</b><span>Cycles tracked</span></div>
+        <div class="stat-mini"><b>${stats.regularity}</b><span>Regularity</span></div>
+      </div>
+      ${stats.minLen ? `<p style="font-size:.76rem;color:var(--text-muted);margin-top:12px;">Recent cycle lengths ranged from <strong>${stats.minLen}</strong> to <strong>${stats.maxLen}</strong> days.</p>` : ''}
+      <p style="font-size:.76rem;color:var(--text-muted);margin-top:6px;">A typical cycle is 21–35 days and a period lasts 2–7 days — both vary a lot between people, and your own predictions get more accurate the more cycles you log. Unusually large gaps between logged periods are automatically excluded from the average so a missed month of logging doesn't skew your predictions.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Recent cycles</h3>
+      ${stats.episodes.length ? [...stats.episodes].reverse().slice(0,6).map((e,i,arr)=>{
+        const idxInAll = stats.episodes.length-1-i;
+        const len = idxInAll>0 ? Math.round((new Date(stats.episodes[idxInAll].start+'T00:00:00') - new Date(stats.episodes[idxInAll-1].start+'T00:00:00'))/86400000)+' day cycle' : 'baseline';
+        return `<div class="cyc-history-row"><span>${new Date(e.start+'T00:00:00').toDateString()}</span><span style="color:var(--text-muted);">${e.days.length}-day period · ${len}</span></div>`;
+      }).join('') : `<p class="empty-state" style="padding:20px 0;">No periods logged yet. Tap "Log today" or "Add past period" to get started.</p>`}
+    </div>
+  </div>
+
+  ${stats.cycleLens.length>=2 || Object.values(entry.days).some(d=>d.bbt!=null) ? `<div class="grid-2">
+    ${cycLenChartCard(stats)}
+    ${cycBBTChartCard(entry)}
+  </div>` : ''}
+
+  ${insights.length ? `<div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-chart-simple" style="color:var(--brand-primary);"></i> Your patterns</h3>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-top:-8px;">Based on what you've logged so far — most-logged symptoms and which phase they tend to show up in.</p>
+    ${insights.map(i=>{
+      const pct = Math.round((i.total/Math.max(...insights.map(x=>x.total)))*100);
+      return `<div class="insight-row"><span class="insight-label">${i.symptom}</span><div class="insight-bar-track"><div class="insight-bar-fill" style="width:${pct}%;"></div></div><span class="insight-pct">${i.total}×</span></div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin:-4px 0 6px 140px;">Most common in: ${i.topPhase}</div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-sliders" style="color:var(--brand-primary);"></i> Prediction settings</h3>
+    <p style="font-size:.85rem;color:var(--text-muted);">Predictions are calculated automatically from your logged periods. If you already know your typical cycle length, you can set it manually instead.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;"><label>Cycle length override (days)</label><input class="form-control" style="max-width:140px;" type="number" min="15" max="60" id="cyc-override-len" value="${entry.avgCycleLenOverride||''}" placeholder="Auto"></div>
+      <button class="btn btn-secondary btn-sm" onclick="cycSaveOverride()">Save</button>
+      ${entry.avgCycleLenOverride ? `<button class="btn btn-secondary btn-sm" onclick="cycClearOverride()">Reset to auto</button>` : ''}
+    </div>
+    <div class="reminder-row">
+      <div><b style="font-size:.85rem;">On hormonal birth control</b><div style="font-size:.76rem;color:var(--text-muted);">Pill, IUD, injection, implant, etc. — we'll flag that ovulation/fertile-window predictions won't apply to you.</div></div>
+      <div class="toggle-sw ${entry.onBirthControl?'on':''}" onclick="cycToggleBC()"></div>
+    </div>
+    <div class="reminder-row">
+      <div><b style="font-size:.85rem;">Remind me before my period</b><div style="font-size:.76rem;color:var(--text-muted);">Shows a banner at the top of this page once you're inside the window (no push notifications in this build).</div></div>
+      <div class="toggle-sw ${entry.reminderOn?'on':''}" onclick="cycToggleReminder()"></div>
+    </div>
+    ${entry.reminderOn ? `<div class="form-group" style="margin-top:10px;max-width:220px;"><label>Days before predicted start</label><input class="form-control" type="number" min="1" max="10" value="${entry.reminderDays}" onchange="cycSetReminderDays(this.value)"></div>` : ''}
+    ${entry.onBirthControl ? `<p style="font-size:.76rem;color:var(--text-muted);margin-top:10px;">Predictions below are still shown, but treat ovulation/fertile-window estimates as not applicable while on hormonal birth control.</p>` : ''}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-lock" style="color:var(--brand-primary);"></i> Privacy &amp; backup</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">This data stays on this device only — it is never included in the app's shared/synced data, so it is not visible to responders, hospitals or other family accounts. That also means it isn't backed up automatically: use the export button below to save a copy before clearing your browser data or switching devices.</p>
+    ${c.pinLock ? `<p style="font-size:.76rem;color:var(--text-muted);">Your PIN re-locks this section every time you open the app or switch family profiles.</p><button class="btn btn-secondary btn-sm" onclick="removePin()">Remove PIN</button>` : `<div style="display:flex;gap:10px;margin-bottom:14px;"><input class="form-control" id="new-pin" maxlength="4" placeholder="Set 4-digit PIN" style="max-width:160px;"><button class="btn btn-sm" onclick="setPin()">Save</button></div>`}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="cycExportData()"><i class="fa-solid fa-download"></i> Export my data (JSON)</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cyc-import-file').click()"><i class="fa-solid fa-upload"></i> Import backup</button>
+      <input type="file" id="cyc-import-file" accept="application/json" class="hidden" onchange="cycImportData(this.files[0])">
+    </div>
+  </div>
+
+  <div class="disclaimer-note" style="margin-bottom:22px;"><i class="fa-solid fa-triangle-exclamation"></i> Predicted dates (period, ovulation, fertile window) are statistical estimates based on your own logged history — they are <strong>not precise enough to rely on for contraception or for timing conception</strong>. Use a doctor-recommended method for either.</div>
+
+  ${renderCycAwareness()}
+  `;
+}
+function cycSetMode(k){ const entry=cycEntry(); entry.mode=k; cycSaveEntry(entry); renderCurrentView('p-women'); }
+function cycToggleBC(){ const entry=cycEntry(); entry.onBirthControl=!entry.onBirthControl; cycSaveEntry(entry); renderCurrentView('p-women'); }
+function cycToggleReminder(){ const entry=cycEntry(); entry.reminderOn=!entry.reminderOn; cycSaveEntry(entry); renderCurrentView('p-women'); }
+function cycSetReminderDays(v){ const entry=cycEntry(); const n=parseInt(v,10); entry.reminderDays=(n&&n>=1&&n<=10)?n:2; cycSaveEntry(entry); }
+/* ---------- small inline SVG charts (no external chart lib in this build) ---------- */
+function cycLenChartCard(stats){
+  const lens = stats.cycleLens.slice(-12);
+  if(lens.length<2) return `<div class="card"><h3 style="margin-top:0;">Cycle length trend</h3><p class="empty-state" style="padding:20px 0;">Log at least 3 periods to see a trend.</p></div>`;
+  const w=280,h=110,pad=18, max=Math.max(...lens,35), min=Math.min(...lens,21);
+  const bw = (w-pad*2)/lens.length;
+  const bars = lens.map((v,i)=>{
+    const bh = Math.max(4, ((v-min+2)/(max-min+4))*(h-pad*2));
+    const x = pad + i*bw + bw*0.15, y = h-pad-bh;
+    return `<rect x="${x}" y="${y}" width="${bw*0.7}" height="${bh}" rx="3" fill="var(--brand-primary)"></rect><text x="${x+bw*0.35}" y="${h-4}" font-size="7" text-anchor="middle" fill="var(--text-muted)">${v}</text>`;
+  }).join('');
+  return `<div class="card"><h3 style="margin-top:0;">Cycle length trend</h3><p style="font-size:.76rem;color:var(--text-muted);margin-top:-6px;">Last ${lens.length} cycles, in days.</p>
+  <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;">${bars}</svg></div>`;
+}
+function cycBBTChartCard(entry){
+  const dates = Object.keys(entry.days).filter(d=>entry.days[d].bbt!=null).sort().slice(-20);
+  if(dates.length<2) return `<div class="card"><h3 style="margin-top:0;">Basal body temperature</h3><p class="empty-state" style="padding:20px 0;">Log your temperature each morning (in the day log) to build a BBT chart.</p></div>`;
+  const temps = dates.map(d=>entry.days[d].bbt);
+  const w=280,h=110,pad=18, max=Math.max(...temps)+0.15, min=Math.min(...temps)-0.15;
+  const pts = temps.map((t,i)=>{
+    const x = pad + (i/(temps.length-1))*(w-pad*2);
+    const y = h-pad - ((t-min)/(max-min))*(h-pad*2);
+    return `${x},${y}`;
+  }).join(' ');
+  return `<div class="card"><h3 style="margin-top:0;">Basal body temperature</h3><p style="font-size:.76rem;color:var(--text-muted);margin-top:-6px;">Last ${temps.length} logged readings (°C).</p>
+  <svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;"><polyline points="${pts}" fill="none" stroke="#7c3aed" stroke-width="2"></polyline>${temps.map((t,i)=>{const x=pad+(i/(temps.length-1))*(w-pad*2);const y=h-pad-((t-min)/(max-min))*(h-pad*2);return `<circle cx="${x}" cy="${y}" r="2.4" fill="#7c3aed"></circle>`;}).join('')}</svg></div>`;
+}
+
+let cycCalMonth = null; // {year, month}
+function cycNavMonth(delta){
+  if(!cycCalMonth){ const t=new Date(); cycCalMonth={year:t.getFullYear(), month:t.getMonth()}; }
+  cycCalMonth.month += delta;
+  if(cycCalMonth.month<0){ cycCalMonth.month=11; cycCalMonth.year--; }
+  if(cycCalMonth.month>11){ cycCalMonth.month=0; cycCalMonth.year++; }
+  renderCycleCalendar();
 }
 let pinBuffer = '';
 function pinPress(n){
@@ -4197,34 +4591,284 @@ function pinPress(n){
   document.querySelectorAll('#pin-dots span').forEach((d,i)=>d.classList.toggle('filled', i<pinBuffer.length));
   if(pinBuffer.length===4){
     const c = db('cycle');
-    if(pinBuffer===c.pinLock){ c.unlocked=true; dbSet('cycle',c); renderCurrentView('p-women'); }
+    if(pinBuffer===c.pinLock){ cycSessionUnlocked=true; renderCurrentView('p-women'); }
     else { showToast('Incorrect PIN','Try again.','danger'); pinBuffer=''; }
   }
 }
-function setPin(){ const v=document.getElementById('new-pin').value; if(v.length!==4){showToast('Invalid','PIN must be 4 digits.','danger');return;} const c=db('cycle'); c.pinLock=v; c.unlocked=true; dbSet('cycle',c); renderCurrentView('p-women'); }
-function removePin(){ const c=db('cycle'); c.pinLock=''; dbSet('cycle',c); renderCurrentView('p-women'); }
-function logPeriodToday(){ const c=db('cycle'); c.logs.push(new Date().toISOString().slice(0,10)); dbSet('cycle',c); renderCycleCalendar(); audit('patient','cycle_log','Period logged'); }
+function setPin(){ const v=document.getElementById('new-pin').value; if(v.length!==4){showToast('Invalid','PIN must be 4 digits.','danger');return;} const c=db('cycle'); c.pinLock=v; dbSet('cycle',c); cycSessionUnlocked=true; renderCurrentView('p-women'); }
+function removePin(){ const c=db('cycle'); c.pinLock=''; dbSet('cycle',c); cycSessionUnlocked=true; renderCurrentView('p-women'); }
+function cycSaveOverride(){ const v=parseInt(document.getElementById('cyc-override-len').value,10); const entry=cycEntry(); entry.avgCycleLenOverride = (v && v>=15 && v<=60) ? v : null; cycSaveEntry(entry); renderCurrentView('p-women'); }
+function cycClearOverride(){ const entry=cycEntry(); entry.avgCycleLenOverride=null; cycSaveEntry(entry); renderCurrentView('p-women'); }
+
 function renderCycleCalendar(){
   const slot = document.getElementById('cycle-cal'); if(!slot) return;
-  const c = db('cycle');
-  const today = new Date(); const year=today.getFullYear(), month=today.getMonth();
+  const entry = cycEntry();
+  const stats = cycStats(entry);
+  const pred = cycPredict(entry, stats);
+  if(!cycCalMonth){ const t=new Date(); cycCalMonth={year:t.getFullYear(), month:t.getMonth()}; }
+  const {year, month} = cycCalMonth;
+  document.getElementById('cal-month-label').textContent = new Date(year,month,1).toLocaleDateString([], {month:'long', year:'numeric'});
   const first = new Date(year,month,1); const startDow = first.getDay(); const daysInMonth = new Date(year,month+1,0).getDate();
-  let lastLog = c.logs.length ? new Date(c.logs[c.logs.length-1]) : null;
-  let predictedStart = lastLog ? new Date(lastLog.getTime() + 28*86400000) : null;
-  let fertileStart = lastLog ? new Date(lastLog.getTime() + 11*86400000) : null;
-  let fertileEnd = lastLog ? new Date(lastLog.getTime() + 16*86400000) : null;
+  const todayStr = isoDay(new Date());
   let cells = '';
   for(let i=0;i<startDow;i++) cells += `<div class="cal-cell empty"></div>`;
   for(let d=1; d<=daysInMonth; d++){
-    const dateStr = new Date(year,month,d).toISOString().slice(0,10);
+    const dateStr = isoDay(new Date(year,month,d));
+    const dObj = new Date(dateStr+'T00:00:00');
     let cls='';
-    if(c.logs.includes(dateStr)) cls='period';
-    else if(predictedStart && dateStr===predictedStart.toISOString().slice(0,10)) cls='predicted';
-    else if(fertileStart && new Date(dateStr)>=fertileStart && new Date(dateStr)<=fertileEnd) cls='fertile';
-    cells += `<div class="cal-cell ${cls}">${d}</div>`;
+    const dayFlow = entry.days[dateStr] && entry.days[dateStr].flow;
+    if(dayFlow==='spotting') cls='spotting';
+    else if(dayFlow) cls='period';
+    else if(pred && pred.futureStarts.some(fs=>{ const start=fs, end=addDays(fs, stats.avgPeriodLen-1); return dObj>=start && dObj<=end; })) cls='predicted';
+    else if(pred && pred.futureWindows.some(w=>dObj>=w.fertileStart && dObj<=w.fertileEnd)){
+      cls = pred.futureWindows.some(w=>isoDay(dObj)===isoDay(w.ovulation)) ? 'ovulation' : 'fertile';
+    }
+    else if(pred){
+      const untilNext = pred.futureStarts.map(fs=>Math.round((fs-dObj)/86400000)).find(x=>x>=0 && x<=5);
+      if(untilNext!==undefined) cls='pms';
+    }
+    const hasNote = entry.days[dateStr] && (entry.days[dateStr].symptoms?.length || entry.days[dateStr].mood || entry.days[dateStr].notes || entry.days[dateStr].bbt!=null || entry.days[dateStr].lh || entry.days[dateStr].mucus);
+    cells += `<div class="cal-cell ${cls} ${dateStr===todayStr?'today':''}" onclick="openDayLogModal('${dateStr}')">${d}${hasNote?'<span class="cal-dot"></span>':''}</div>`;
   }
-  slot.innerHTML = `<div class="cal-grid">${['S','M','T','W','T','F','S'].map(d=>`<div style="text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);">${d}</div>`).join('')}${cells}</div>
-  ${predictedStart ? `<p style="margin-top:14px;font-size:.85rem;color:var(--text-muted);">Next period predicted: <strong>${predictedStart.toDateString()}</strong></p>` : `<p style="margin-top:14px;font-size:.85rem;color:var(--text-muted);">Log a period start to see predictions.</p>`}`;
+  slot.innerHTML = `<div class="cal-grid">${['S','M','T','W','T','F','S'].map(d=>`<div style="text-align:center;font-size:.7rem;font-weight:700;color:var(--text-muted);">${d}</div>`).join('')}${cells}</div>`;
+}
+
+/* ---------- day log modal ---------- */
+const CYC_PAIN = [{k:'',l:'None'},{k:'mild',l:'Mild'},{k:'moderate',l:'Moderate'},{k:'severe',l:'Severe'}];
+function openDayLogModal(dateStr){
+  const entry = cycEntry();
+  const day = entry.days[dateStr] || {flow:'', symptoms:[], mood:'', notes:'', pain:'', bbt:null, lh:'', mucus:'', medTaken:false};
+  window.__cycDraft = {dateStr, flow:day.flow||'', symptoms:[...(day.symptoms||[])], mood:day.mood||'', notes:day.notes||'', pain:day.pain||'', bbt:(day.bbt!=null?day.bbt:''), lh:day.lh||'', mucus:day.mucus||'', medTaken:!!day.medTaken};
+  const allSymptoms = cycAllSymptoms(entry);
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3>${new Date(dateStr+'T00:00:00').toDateString()}</h3>
+    <p class="modal-sub">Log your flow, symptoms and mood for this day. This stays private to this device.</p>
+    <div class="form-group"><label>Flow</label>
+      <div class="chip-select" id="cyc-flow-chips">${CYC_FLOWS.map(f=>`<button type="button" class="chip-opt ${window.__cycDraft.flow===f.k?'active':''}" data-flow="${f.k}" onclick="cycPickFlow('${f.k}')">${f.l}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label>Pain level</label>
+      <div class="chip-select" id="cyc-pain-chips">${CYC_PAIN.map(p=>`<button type="button" class="chip-opt ${window.__cycDraft.pain===p.k?'active':''}" data-pain="${p.k}" onclick="cycPickPain('${p.k}')">${p.l}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label>Symptoms</label>
+      <div class="chip-select" id="cyc-symptom-chips">${allSymptoms.map(s=>`<button type="button" class="chip-opt ${window.__cycDraft.symptoms.includes(s)?'active':''}" onclick="cycToggleSymptom('${s.replace(/'/g,"\\'")}')">${s}</button>`).join('')}</div>
+      <div class="mini-chip-add"><input class="form-control" id="cyc-new-symptom" placeholder="Add your own symptom..."><button class="btn btn-secondary btn-sm" onclick="cycAddCustomSymptom()">Add</button></div>
+    </div>
+    <div class="form-group"><label>Mood</label>
+      <div class="chip-select" id="cyc-mood-chips">${CYC_MOODS.map(m=>`<button type="button" class="chip-opt ${window.__cycDraft.mood===m.k?'active':''}" onclick="cycPickMood('${m.k}')">${m.e} ${m.l}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label>Cervical mucus</label>
+      <div class="chip-select" id="cyc-mucus-chips">${CYC_MUCUS.filter(m=>m.k).map(m=>`<button type="button" class="chip-opt ${window.__cycDraft.mucus===m.k?'active':''}" data-mucus="${m.k}" onclick="cycPickMucus('${m.k}')">${m.l}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label>Ovulation (LH) test</label>
+      <div class="chip-select" id="cyc-lh-chips">${CYC_LH.filter(l=>l.k).map(l=>`<button type="button" class="chip-opt ${window.__cycDraft.lh===l.k?'active':''}" data-lh="${l.k}" onclick="cycPickLH('${l.k}')">${l.l}</button>`).join('')}</div>
+    </div>
+    <div class="form-group"><label>Basal body temperature (°C, taken on waking)</label><input class="form-control" style="max-width:160px;" type="number" step="0.01" min="34" max="42" id="cyc-bbt" value="${window.__cycDraft.bbt}" placeholder="e.g. 36.55"></div>
+    <div class="reminder-row" style="padding:4px 0 10px;">
+      <div><b style="font-size:.85rem;">Took birth control / medication today</b></div>
+      <div class="toggle-sw ${window.__cycDraft.medTaken?'on':''}" id="cyc-med-toggle" onclick="cycToggleMed()"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea class="form-control" id="cyc-notes" rows="2" placeholder="Optional notes...">${window.__cycDraft.notes}</textarea></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-block" onclick="saveDayLog()"><i class="fa-solid fa-check"></i> Save</button>
+      ${(entry.days[dateStr]) ? `<button class="btn btn-secondary" onclick="clearDayLog('${dateStr}')"><i class="fa-solid fa-trash"></i></button>` : ''}
+    </div>
+  `);
+}
+function cycPickPain(k){ window.__cycDraft.pain = (window.__cycDraft.pain===k?'':k); document.querySelectorAll('#cyc-pain-chips .chip-opt').forEach(b=>b.classList.toggle('active', b.dataset.pain===window.__cycDraft.pain)); }
+function cycPickFlow(k){ window.__cycDraft.flow = (window.__cycDraft.flow===k ? '' : k); document.querySelectorAll('#cyc-flow-chips .chip-opt').forEach(b=>b.classList.toggle('active', b.dataset.flow===window.__cycDraft.flow)); }
+function cycToggleSymptom(s){ const i=window.__cycDraft.symptoms.indexOf(s); if(i>-1) window.__cycDraft.symptoms.splice(i,1); else window.__cycDraft.symptoms.push(s); document.querySelectorAll('#cyc-symptom-chips .chip-opt').forEach(b=>b.classList.toggle('active', window.__cycDraft.symptoms.includes(b.textContent))); }
+function cycPickMood(k){ window.__cycDraft.mood = (window.__cycDraft.mood===k?'':k); document.querySelectorAll('#cyc-mood-chips .chip-opt').forEach((b,i)=>b.classList.toggle('active', CYC_MOODS[i].k===window.__cycDraft.mood)); }
+function cycPickMucus(k){ window.__cycDraft.mucus = (window.__cycDraft.mucus===k?'':k); document.querySelectorAll('#cyc-mucus-chips .chip-opt').forEach(b=>b.classList.toggle('active', b.dataset.mucus===window.__cycDraft.mucus)); }
+function cycPickLH(k){ window.__cycDraft.lh = (window.__cycDraft.lh===k?'':k); document.querySelectorAll('#cyc-lh-chips .chip-opt').forEach(b=>b.classList.toggle('active', b.dataset.lh===window.__cycDraft.lh)); }
+function cycToggleMed(){ window.__cycDraft.medTaken = !window.__cycDraft.medTaken; document.getElementById('cyc-med-toggle').classList.toggle('on', window.__cycDraft.medTaken); }
+function cycAddCustomSymptom(){
+  const input = document.getElementById('cyc-new-symptom');
+  const val = (input.value||'').trim();
+  if(!val){ return; }
+  const entry = cycEntry();
+  if(!cycAllSymptoms(entry).some(s=>s.toLowerCase()===val.toLowerCase())){
+    entry.customSymptoms.push(val);
+    cycSaveEntry(entry);
+  }
+  if(!window.__cycDraft.symptoms.includes(val)) window.__cycDraft.symptoms.push(val);
+  input.value='';
+  openDayLogModal(window.__cycDraft.dateStr); // re-render chips with the new symptom included and selected
+  document.querySelectorAll('#cyc-symptom-chips .chip-opt').forEach(b=>{ if(b.textContent===val) b.classList.add('active'); });
+}
+function saveDayLog(){
+  const d = window.__cycDraft;
+  d.notes = document.getElementById('cyc-notes').value.trim();
+  const bbtRaw = document.getElementById('cyc-bbt').value;
+  d.bbt = bbtRaw!=='' ? parseFloat(bbtRaw) : null;
+  const entry = cycEntry();
+  const isEmpty = !d.flow && !d.symptoms.length && !d.mood && !d.notes && !d.pain && d.bbt==null && !d.lh && !d.mucus && !d.medTaken;
+  if(isEmpty){ delete entry.days[d.dateStr]; }
+  else entry.days[d.dateStr] = {flow:d.flow, symptoms:d.symptoms, mood:d.mood, notes:d.notes, pain:d.pain, bbt:d.bbt, lh:d.lh, mucus:d.mucus, medTaken:d.medTaken};
+  cycSaveEntry(entry);
+  audit('patient','cycle_log','Cycle entry saved for '+d.dateStr);
+  closeModal();
+  renderCurrentView('p-women');
+}
+function clearDayLog(dateStr){ const entry=cycEntry(); delete entry.days[dateStr]; cycSaveEntry(entry); closeModal(); renderCurrentView('p-women'); }
+function logPeriodToday(){ openDayLogModal(isoDay(new Date())); }
+
+/* ---------- bulk / past-period entry ---------- */
+function cycOpenBulkModal(){
+  const entry = cycEntry();
+  const stats = cycStats(entry);
+  const todayStr = isoDay(new Date());
+  const defStart = isoDay(addDays(new Date(), -(stats.avgPeriodLen||5)));
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3>Add a past period</h3>
+    <p class="modal-sub">Quickly back-fill a period you've already had, so predictions become accurate right away without tapping every single day.</p>
+    <div class="form-group"><label>Period start date</label><input class="form-control" type="date" id="bulk-start" max="${todayStr}" value="${defStart}"></div>
+    <div class="form-group"><label>Number of days</label><input class="form-control" type="number" id="bulk-days" min="1" max="14" value="${stats.avgPeriodLen||5}"></div>
+    <div class="form-group"><label>Flow (applied to all days)</label>
+      <div class="chip-select" id="bulk-flow-chips">${CYC_FLOWS.filter(f=>f.k).map((f,i)=>`<button type="button" class="chip-opt ${f.k==='medium'?'active':''}" data-flow="${f.k}" onclick="cycBulkPickFlow('${f.k}')">${f.l}</button>`).join('')}</div>
+    </div>
+    <button class="btn btn-block" onclick="cycSaveBulk()"><i class="fa-solid fa-check"></i> Add period</button>
+  `);
+  window.__cycBulkFlow = 'medium';
+}
+function cycBulkPickFlow(k){ window.__cycBulkFlow=k; document.querySelectorAll('#bulk-flow-chips .chip-opt').forEach(b=>b.classList.toggle('active', b.dataset.flow===k)); }
+function cycSaveBulk(){
+  const startStr = document.getElementById('bulk-start').value;
+  const numDays = parseInt(document.getElementById('bulk-days').value,10) || 1;
+  if(!startStr){ showToast('Missing date','Pick a start date first.','danger'); return; }
+  const entry = cycEntry();
+  const start = new Date(startStr+'T00:00:00');
+  for(let i=0;i<Math.min(numDays,14);i++){
+    const ds = isoDay(addDays(start,i));
+    const existing = entry.days[ds] || {};
+    entry.days[ds] = {...existing, flow: window.__cycBulkFlow||'medium'};
+  }
+  cycSaveEntry(entry);
+  audit('patient','cycle_log','Past period added: '+startStr+' ('+numDays+' days)');
+  closeModal();
+  renderCurrentView('p-women');
+  showToast('Period added','Your predictions have been updated.','success');
+}
+
+/* ---------- backup / restore ---------- */
+function cycExportData(){
+  const c = cycRoot();
+  const payload = {exportedAt: new Date().toISOString(), app:'ArogyaBot Women\'s Health', data: c};
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'arogyabot-cycle-backup-'+isoDay(new Date())+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Exported','Your cycle data was downloaded as a JSON file.','success');
+}
+function cycImportData(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      const incoming = parsed.data || parsed; // tolerate a raw cycle object too
+      if(!incoming || typeof incoming!=='object' || !incoming.entries){ throw new Error('bad shape'); }
+      const current = cycRoot();
+      // merge: incoming days win on conflict per member, but don't wipe entries not present in the file
+      Object.keys(incoming.entries).forEach(memberId=>{
+        if(!current.entries[memberId]) current.entries[memberId] = {days:{}, avgCycleLenOverride:null, avgPeriodLenOverride:null};
+        Object.assign(current.entries[memberId].days, incoming.entries[memberId].days||{});
+        if(incoming.entries[memberId].avgCycleLenOverride) current.entries[memberId].avgCycleLenOverride = incoming.entries[memberId].avgCycleLenOverride;
+      });
+      dbSet('cycle', current);
+      audit('patient','cycle_log','Cycle data imported from backup file');
+      renderCurrentView('p-women');
+      showToast('Import complete','Your backup was merged into this device.','success');
+    }catch(err){
+      showToast('Import failed','That file doesn\'t look like a valid ArogyaBot cycle backup.','danger');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- awareness / education hub ---------- */
+function renderCycAwareness(){
+  return `<div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-book-open" style="color:var(--brand-primary);"></i> Women's health awareness</h3>
+    <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:16px;">General educational information to help you understand your body. This is not a diagnosis — use the <a href="#" onclick="renderCurrentView('p-chat');return false;" style="color:var(--brand-primary);font-weight:600;">AI Symptom Checker</a> or <a href="#" onclick="renderCurrentView('p-tele');return false;" style="color:var(--brand-primary);font-weight:600;">Telemedicine</a> for anything concerning you personally.</p>
+
+    <details class="awareness-item" open>
+      <summary>Understanding your cycle <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <p>The menstrual cycle is counted from the first day of one period to the first day of the next, and moves through four broad phases driven by shifting hormone levels:</p>
+        <h5>Menstrual phase</h5><p>The uterine lining sheds, causing bleeding. Usually lasts 2–7 days.</p>
+        <h5>Follicular phase</h5><p>Starts on day 1 of the period and runs until ovulation; the body prepares an egg for release and rebuilds the uterine lining.</p>
+        <h5>Ovulation</h5><p>An egg is released, typically around the midpoint of the cycle (about 14 days before the next period). This is when pregnancy is most likely if unprotected sex occurs.</p>
+        <h5>Luteal phase</h5><p>After ovulation until the next period. Hormone shifts here are what commonly cause PMS symptoms like mood changes, bloating and breast tenderness.</p>
+        <p>A cycle length of 21–35 days and a period of 2–7 days both fall within a wide normal range — "normal" varies a lot between individuals.</p>
+      </div>
+    </details>
+
+    <details class="awareness-item">
+      <summary>What's normal vs. when to see a doctor <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <p>Some variation cycle-to-cycle is expected. Consider speaking with a doctor if you notice:</p>
+        <div class="redflag-box">
+          <b>Talk to a doctor if:</b>
+          <ul>
+            <li>Periods regularly last longer than 7 days</li>
+            <li>You soak through a pad or tampon every 1–2 hours</li>
+            <li>Cycles are consistently shorter than 21 or longer than 35 days</li>
+            <li>You miss periods for 3+ months and pregnancy is ruled out</li>
+            <li>Pain is severe enough to disrupt work, school or daily activity</li>
+            <li>You notice bleeding between periods, after sex, or after menopause</li>
+            <li>Severe mood symptoms (e.g. hopelessness, panic) show up predictably before your period</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <details class="awareness-item">
+      <summary>Common conditions, explained simply <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <h5>PCOS (Polycystic Ovary Syndrome)</h5><p>A hormonal condition that can cause irregular or missed periods, acne, extra hair growth, and weight changes. It's common and manageable with medical guidance.</p>
+        <h5>Endometriosis</h5><p>Tissue similar to the uterine lining grows outside the uterus, often causing worsening pain during periods, pain during sex, or pain with bowel movements.</p>
+        <h5>Uterine fibroids</h5><p>Non-cancerous growths in the uterus that can cause heavy or prolonged bleeding and pelvic pressure.</p>
+        <h5>PMDD (Premenstrual Dysphoric Disorder)</h5><p>A more severe form of PMS with intense mood symptoms in the days before a period, significant enough to affect daily life — this is a recognised medical condition, not "just PMS."</p>
+        <p style="margin-top:10px;">None of these can be diagnosed from an app — they're mentioned so the symptoms are easier to recognise and discuss with a doctor.</p>
+      </div>
+    </details>
+
+    <details class="awareness-item">
+      <summary>Myths vs. facts <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <p><b>Myth:</b> You shouldn't exercise during your period.<br><b>Fact:</b> Light-to-moderate exercise is generally safe and can even ease cramps for many people.</p>
+        <p><b>Myth:</b> A "normal" cycle is always exactly 28 days.<br><b>Fact:</b> 21–35 days is typical, and it can vary cycle to cycle for the same person.</p>
+        <p><b>Myth:</b> You can't get pregnant during your period.<br><b>Fact:</b> It's less likely but not impossible, especially with shorter cycles or irregular ovulation.</p>
+        <p><b>Myth:</b> Period pain is always something you just have to endure.<br><b>Fact:</b> Pain that disrupts daily life is worth discussing with a doctor — effective treatments exist.</p>
+      </div>
+    </details>
+
+    <details class="awareness-item">
+      <summary>Self-care &amp; hygiene tips <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <ul>
+          <li>Change pads every 4–6 hours, tampons every 4–8 hours, and menstrual cups per manufacturer guidance, to reduce infection risk.</li>
+          <li>A heating pad or warm compress on the lower abdomen can ease cramps.</li>
+          <li>Staying hydrated and getting light movement (like walking or stretching) can help with bloating and fatigue.</li>
+          <li>Iron-rich foods (leafy greens, legumes, lean meat) can help offset iron lost during heavier periods.</li>
+          <li>Tracking symptoms over a few cycles (like you're doing here) makes it much easier to describe patterns to a doctor.</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="awareness-item">
+      <summary>Mood &amp; mental health connection <i class="fa-solid fa-chevron-down"></i></summary>
+      <div class="awareness-body">
+        <p>Hormonal shifts in the luteal phase are a real, physiological cause of mood changes for many people — irritability, low mood, or anxiety in the days before a period is common and not "in your head." If mood symptoms feel severe, out of proportion, or are affecting relationships or daily functioning, it's worth talking to a doctor — this can sometimes indicate PMDD, which responds well to treatment.</p>
+      </div>
+    </details>
+
+    <div class="disclaimer-note"><i class="fa-solid fa-circle-info"></i> This section provides general educational information only and is not a medical diagnosis. Your logged cycle data stays on this device and is not shared with any other part of the app.</div>
+  </div>`;
 }
 
 /* ============================================================
