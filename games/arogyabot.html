@@ -476,7 +476,12 @@ const BASE = { lat: 28.6139, lng: 77.2090 }; // New Delhi reference point
 const now = () => Date.now();
 const fmtTime = (ts) => new Date(ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 const rnd = (a,b) => Math.random()*(b-a)+a;
-const uid = (p) => p + '-' + Math.random().toString(36).slice(2,7).toUpperCase();
+// Old version used only a 5-char random suffix (36^5 ≈ 60M combinations), which by
+// the birthday paradox has a ~95%+ chance of a collision somewhere in 20,000 IDs —
+// a real risk at this app's target scale. Adding a base36 timestamp component means
+// two IDs can only collide if they're generated in the same millisecond AND the
+// random part also matches, which is astronomically less likely.
+const uid = (p) => p + '-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,7).toUpperCase();
 
 function getDeviceLocation(){
   return new Promise(resolve=>{
@@ -622,6 +627,14 @@ const SEED = {
    same file works across multiple physical phones)
    ============================================================ */
 const LOCAL_CACHE = {}; // in-memory mirror so every db()/dbSet() call stays synchronous
+// Remembers the exact 'updatedAt' timestamp we just sent to Firestore for each key, so the
+// onSnapshot listener below can tell "the server acknowledging MY write" apart from "another
+// device actually changed this" — see initFirebaseSync().
+const LAST_LOCAL_WRITE_AT = {};
+// Tracks which storage-failure toasts we've already shown this session, so a device
+// with a full quota or a dead connection doesn't spam the user with a toast on every
+// single write — just once per key until the page reloads.
+const STORAGE_WARNED = new Set();
 const StorageAdapter = {
   get(key, fallback){
     if(Object.prototype.hasOwnProperty.call(LOCAL_CACHE, key)) return LOCAL_CACHE[key];
@@ -633,9 +646,31 @@ const StorageAdapter = {
   },
   set(key, val){
     LOCAL_CACHE[key] = val;
-    try{ localStorage.setItem('abot2_'+key, JSON.stringify(val)); }catch(e){}
+    try{
+      localStorage.setItem('abot2_'+key, JSON.stringify(val));
+    }catch(e){
+      // Quota exceeded (or private-browsing storage block) used to fail silently here —
+      // the app looked fine for the rest of the session but lost the update on refresh.
+      // Warn once per key per session instead of every write, so it doesn't spam the user.
+      if(!STORAGE_WARNED.has('local:'+key)){
+        STORAGE_WARNED.add('local:'+key);
+        if(typeof showToast==='function') showToast('Storage almost full', 'This device is low on storage — some changes may not be saved after you close the app.', 'danger');
+      }
+    }
     if(fbEnabled && fbRoomRef){
-      fbRoomRef.doc(key).set({data: val, updatedAt: Date.now()}).catch(e=>console.warn('Firestore write failed for', key, e));
+      const updatedAt = Date.now();
+      LAST_LOCAL_WRITE_AT[key] = updatedAt;
+      fbRoomRef.doc(key).set({data: val, updatedAt}).catch(e=>{
+        console.warn('Firestore write failed for', key, e);
+        // Previously silent — a failed sync write (e.g. hitting Firestore's 1MB
+        // document limit, or a dropped connection) looked identical to success from
+        // the user's point of view. They need to know the action may not have saved
+        // for everyone else in the room.
+        if(!STORAGE_WARNED.has('remote:'+key)){
+          STORAGE_WARNED.add('remote:'+key);
+          if(typeof showToast==='function') showToast('Sync failed', 'Your last update may not have saved for other devices. Check your connection.', 'danger');
+        }
+      });
     }
   }
 };
@@ -793,11 +828,17 @@ function initFirebaseSync(){
         // Live updates from every other phone in the same room:
         fbRoomRef.doc(key).onSnapshot(liveSnap=>{
           if(!liveSnap.exists) return;
-          // Skip the local echo of our own writes — only react to changes that
-          // actually came from the server (i.e. from another device), otherwise
-          // every action we take re-renders our own screen and causes flicker.
+          // hasPendingWrites only catches the FIRST (optimistic, local) echo of our own
+          // write. Once the server acknowledges it, this listener fires again with
+          // hasPendingWrites:false — indistinguishable from a real change from another
+          // device unless we check for it explicitly. Without this check, every single
+          // dbSet() this device makes (incidents, notifications, audit log, etc.) causes
+          // a second, delayed re-render of the current screen a moment later — that's
+          // the "keeps refreshing/flickering while sync is connected" bug.
           if(liveSnap.metadata.hasPendingWrites) return;
-          LOCAL_CACHE[key] = liveSnap.data().data;
+          const data = liveSnap.data();
+          if(LAST_LOCAL_WRITE_AT[key] && data.updatedAt === LAST_LOCAL_WRITE_AT[key]) return;
+          LOCAL_CACHE[key] = data.data;
           try{ localStorage.setItem('abot2_'+key, JSON.stringify(LOCAL_CACHE[key])); }catch(e){}
           scheduleRemoteRefresh();
         });
@@ -831,6 +872,15 @@ function softRefreshCurrentView(){
       if(!document.getElementById('sos-stepper')){ renderCurrentView('p-sos'); return; }
       patchActiveSosTracking(inc); initSosMapIfNeeded(true); return;
     }
+    // No incident yet — if the patient is mid-flow (picked report type, is waiting on
+    // GPS, or has already chosen a severity and is about to tap "Confirm & Dispatch"),
+    // that entire in-progress form lives only in the DOM (#severity-picker-slot) and in
+    // window.__report/__sev. A full renderCurrentView('p-sos') here would wipe it back to
+    // a blank SOS button, which is why "Confirm & Dispatch" sometimes silently did
+    // nothing — a background sync refresh landed between picking severity and tapping
+    // the button and reset the screen out from under the user. Nothing here is urgent
+    // enough to justify blowing that away, so just skip the refresh.
+    if(window.__report) return;
   }
   if(currentView==='r-active'){
     const inc=db('incidents').find(i=>i.assignedResponderId===CURRENT_RESPONDER_ID && i.status!=='closed');
@@ -2632,7 +2682,7 @@ function triggerSOS(){
   const patientLat = r.lat, patientLng = r.lng;
   const isBystander = r.type==='other';
 
-  const hospitals = db('responders') && db('hospitals').map(h=>({...h, distKm: haversineKm(patientLat,patientLng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm);
+  const hospitals = (db('hospitals')||[]).map(h=>({...h, distKm: haversineKm(patientLat,patientLng,h.lat,h.lng)})).sort((a,b)=>a.distKm-b.distKm);
   const nearestHospitals = hospitals.filter(h=>h.beds>0).slice(0,3);
   const nearbyMatch = findNearbyAvailableResponders(patientLat, patientLng, 3);
   const nearestResponders = nearbyMatch.responders;
@@ -2653,7 +2703,11 @@ function triggerSOS(){
     assignedResponderId: null, assignedHospitalId: null,
     timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')+(nearbyMatch.radiusKm?` · ${nearestResponders.length} ambulance(s) found within ${nearbyMatch.radiusKm}km`:(nearestResponders.length?' · nearest available ambulances notified (none within 10km)':' · no ambulances currently available'))}]
   };
-  const all = db('incidents'); all.unshift(inc); dbSet('incidents', all);
+  // Capped like notifications/audit — an unbounded incidents array will eventually
+  // exceed Firestore's 1MB per-document limit at high user volume, and writes fail
+  // silently past that point. Closed incidents aren't shown anywhere except a count
+  // (myStationResolvedCount), so trimming the oldest ones is safe.
+  const all = [inc, ...db('incidents')].slice(0, 2000); dbSet('incidents', all);
   audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev+' radius='+(nearbyMatch.radiusKm||'>10')+'km');
 
   const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
