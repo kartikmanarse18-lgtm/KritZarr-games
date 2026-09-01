@@ -572,20 +572,80 @@ function haversineKm(lat1,lon1,lat2,lon2){
 }
 function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*60)); }
 
-/* Nearest-ambulance matching: search a 5km radius first; if no *available* unit is
-   found that close, widen to 10km; if still nothing, fall back to whatever's closest
-   so a case never gets stranded. Returns up to `desiredCount` units plus the radius
-   that was actually used (null when we had to fall back beyond 10km). */
-function findNearbyAvailableResponders(lat, lng, desiredCount=3){
+/* Nearest-ambulance matching: broadcast to EVERY available unit within 5km first
+   (not just the closest few — a unit at 4.9km must never be silently skipped just
+   because 3 others happen to be slightly closer). If nobody at all is available
+   within 5km, widen once to 10km; if still nothing, fall back to the closest
+   available unit anywhere so a case never gets stranded. Returns every matching
+   unit plus the radius tier that was actually used (null when we had to fall back
+   beyond 10km). The *time-based* escalation — pulling in the 5-10km ring if nobody
+   in the initial batch accepts within 60s — is handled separately by
+   escalateStaleSosIncidents() below. */
+function findNearbyAvailableResponders(lat, lng, fallbackCount=3){
   const RADIUS_TIERS_KM = [5, 10];
   const available = db('responders').filter(r=>r.status==='available')
     .map(r=>({...r, distKm: haversineKm(lat,lng,r.lat,r.lng)}))
     .sort((a,b)=>a.distKm-b.distKm);
   for(const radiusKm of RADIUS_TIERS_KM){
     const within = available.filter(r=>r.distKm<=radiusKm);
-    if(within.length>0) return {responders: within.slice(0,desiredCount), radiusKm};
+    if(within.length>0) return {responders: within, radiusKm};
   }
-  return {responders: available.slice(0,desiredCount), radiusKm: null};
+  return {responders: available.slice(0,fallbackCount), radiusKm: null};
+}
+
+// How long we wait for someone in the initial notified batch to accept before
+// pulling in additional available ambulances out to 10km.
+const SOS_ESCALATE_AFTER_MS = 60*1000;
+
+/* Time-based escalation: any incident still 'broadcasting' 60s after creation,
+   that hasn't been escalated yet, gets widened to pull in every available
+   responder within 10km who wasn't already notified (this matters most when the
+   initial match was a tight 5km ring). Idempotent via inc.escalatedAt so repeated
+   calls (this runs on a poll loop, not a single timer) never double-notify.
+   Called from the global watcher below and from the live-tracking tick, so it
+   fires whether the escalation is due while a patient/responder/police screen is
+   open or not. */
+function escalateStaleSosIncidents(){
+  const all = db('incidents');
+  let changed = false;
+  all.forEach(inc=>{
+    if(inc.status!=='broadcasting' || inc.escalatedAt) return;
+    if(now() - inc.createdAt < SOS_ESCALATE_AFTER_MS) return;
+    const already = new Set(inc.notifiedResponders);
+    const wider = db('responders').filter(r=>r.status==='available' && !already.has(r.id))
+      .map(r=>({...r, distKm: haversineKm(inc.lat, inc.lng, r.lat, r.lng)}))
+      .filter(r=>r.distKm<=10)
+      .sort((a,b)=>a.distKm-b.distKm);
+    inc.escalatedAt = now();
+    if(wider.length){
+      inc.notifiedResponders = [...inc.notifiedResponders, ...wider.map(r=>r.id)];
+      inc.searchRadiusKm = 10;
+      inc.timeline.push({ts:now(), text:`No unit accepted within 1 minute — escalated to ${wider.length} more ambulance(s) within 10km.`});
+      wider.forEach(r=>{
+        pushNotification('responder:'+r.id, 'Dispatch escalation', `${inc.severity.toUpperCase()} case ${r.distKm.toFixed(1)}km away · ETA ${etaMinutes(r.distKm)} min. No unit accepted within 1 min — please respond if you're available.`, 'danger', inc.id);
+      });
+    } else {
+      inc.timeline.push({ts:now(), text:'No unit accepted within 1 minute — no additional ambulances available within 10km.'});
+    }
+    changed = true;
+  });
+  if(changed) dbSet('incidents', all);
+  return changed;
+}
+
+// One global watcher, started the first time any console is entered, independent
+// of which view is open — so escalation still fires while a responder is sitting
+// on the Dashboard or Dispatch Queue rather than only on the Active Case screen.
+let sosEscalationWatcherStarted = false;
+function beginSosEscalationWatcher(){
+  if(sosEscalationWatcherStarted) return;
+  sosEscalationWatcherStarted = true;
+  setInterval(()=>{
+    if(escalateStaleSosIncidents() && currentRole){
+      softRefreshCurrentView();
+      refreshBell();
+    }
+  }, 10000);
 }
 
 /* Real road-following routing via OSRM's free public routing API (no key required).
@@ -1073,6 +1133,7 @@ let CURRENT_HOSPITAL_ID = null;
 let CURRENT_POLICE_STATION_ID = null;
 let currentView = null;
 let liveTrackingTimer = null;
+let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue can re-render itself
 
 const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
@@ -1186,6 +1247,7 @@ function enterConsole(role){
   refreshBell();
   audit(role, 'session', role+' console opened'+unitTag);
   saveActiveSession(role);
+  beginSosEscalationWatcher();
 
   // Ask for location permission up front for every role so tracking/matching works from
   // the moment they're in, rather than only when a patient happens to trigger an SOS.
@@ -2464,6 +2526,10 @@ function renderCurrentView(navId){
 function postRenderHooks(navId){
   if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); }
   if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
+  if(navId==='r-queue'){
+    lastRQueueSnapshot = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID)).map(i=>i.id).sort().join(',');
+    startLiveIncidentTracking();
+  }
   if(navId==='po-feed'){ initPoliceMap(); startLiveIncidentTracking(); }
   if(navId==='p-women') renderCycleCalendar();
 }
@@ -2699,7 +2765,7 @@ function triggerSOS(){
     lat: patientLat, lng: patientLng, status:'broadcasting', createdAt: now(),
     notifiedHospitals: nearestHospitals.map(h=>h.id), notifiedResponders: nearestResponders.map(r=>r.id),
     notifiedPoliceId: police ? police.id : null,
-    searchRadiusKm: nearbyMatch.radiusKm,
+    searchRadiusKm: nearbyMatch.radiusKm, escalatedAt: null,
     assignedResponderId: null, assignedHospitalId: null,
     timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')+(nearbyMatch.radiusKm?` · ${nearestResponders.length} ambulance(s) found within ${nearbyMatch.radiusKm}km`:(nearestResponders.length?' · nearest available ambulances notified (none within 10km)':' · no ambulances currently available'))}]
   };
@@ -3070,6 +3136,7 @@ function chooseHospitalForIncident(incId, hospId){
 function startLiveIncidentTracking(){
   if(liveTrackingTimer) clearInterval(liveTrackingTimer);
   liveTrackingTimer = setInterval(()=>{
+    escalateStaleSosIncidents(); // widen to 10km if 60s passed with no accept — see escalateStaleSosIncidents()
     let stillActive = false;
     if(currentView==='p-sos'){
       const inc = currentIncident();
@@ -3085,6 +3152,13 @@ function startLiveIncidentTracking(){
         if(!document.getElementById('resp-dynamic-card')){ renderCurrentView('r-active'); }
         else { patchResponderActive(inc); initResponderMap(true); }
       }
+    } else if(currentView==='r-queue'){
+      // Keeps the Dispatch Queue itself live — previously a responder sitting on this
+      // screen wouldn't see a brand-new SOS (or an escalated 10km case) until they
+      // manually navigated away and back, since nothing here was polling before.
+      stillActive = true;
+      const pendingIds = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID)).map(i=>i.id).sort().join(',');
+      if(pendingIds !== lastRQueueSnapshot){ lastRQueueSnapshot = pendingIds; renderCurrentView('r-queue'); }
     } else if(currentView==='po-feed'){
       const incidentsNow = myStationIncidents();
       if(incidentsNow.length){
