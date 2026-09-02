@@ -936,10 +936,15 @@ function softRefreshCurrentView(){
     // GPS, or has already chosen a severity and is about to tap "Confirm & Dispatch"),
     // that entire in-progress form lives only in the DOM (#severity-picker-slot) and in
     // window.__report/__sev. A full renderCurrentView('p-sos') here would wipe it back to
-    // a blank SOS button, which is why "Confirm & Dispatch" sometimes silently did
+    // a blank SOS button, which is why "Confirm & Dispatch" used to sometimes silently do
     // nothing — a background sync refresh landed between picking severity and tapping
     // the button and reset the screen out from under the user. Nothing here is urgent
-    // enough to justify blowing that away, so just skip the refresh.
+    // enough to justify blowing that away, so just skip the refresh whenever we still
+    // have the in-memory state. (window.__report/__sev are also mirrored into
+    // localStorage as they change — see persistInProgressSOS/rehydrateInProgressSOS —
+    // so even if this guard is bypassed, e.g. state got cleared by something else
+    // entirely, the p-sos screen can rebuild the exact step the user was on instead
+    // of dropping them back to a blank button.)
     if(window.__report) return;
   }
   if(currentView==='r-active'){
@@ -2524,7 +2529,7 @@ function renderCurrentView(navId){
   refreshBell();
 }
 function postRenderHooks(navId){
-  if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); }
+  if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); rehydrateInProgressSOS(); }
   if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
   if(navId==='r-queue'){
     lastRQueueSnapshot = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID)).map(i=>i.id).sort().join(',');
@@ -2662,8 +2667,55 @@ function viewPatientSOS(){
   }
   return renderActiveSosTracking(inc);
 }
+// In-progress SOS reports live in window.__report/__sev (see softRefreshCurrentView
+// for why). That's fine while the tab stays open and untouched, but it means the
+// data has nowhere to go if the page reloads, the tab gets backgrounded and the
+// browser reclaims it, or a sync refresh slips through outside the guard below —
+// any of which silently reset the form and made "Confirm & Dispatch" a no-op.
+// Mirroring the same state into localStorage costs nothing (it's a tiny object,
+// written on the same ticks the state already changes) and lets us rebuild the
+// exact step the user was on instead of dropping them back to a blank SOS button.
+function persistInProgressSOS(stage){
+  try{
+    if(window.__report){
+      localStorage.setItem('abot2_sos_inprogress', JSON.stringify({report:window.__report, sev:window.__sev||null, stage:stage||null}));
+    } else {
+      localStorage.removeItem('abot2_sos_inprogress');
+    }
+  }catch(e){}
+}
+function loadInProgressSOS(){
+  try{
+    const raw = localStorage.getItem('abot2_sos_inprogress');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearInProgressSOS(){
+  try{ localStorage.removeItem('abot2_sos_inprogress'); }catch(e){}
+}
+// Called after the p-sos screen renders. If the in-memory report got wiped out
+// from under the user (see above) but a saved draft exists, silently rebuild the
+// step they were on instead of leaving them at a blank SOS button they already
+// thought they'd moved past.
+function rehydrateInProgressSOS(){
+  if(currentIncident()) return; // a real incident already exists — nothing to resume
+  if(window.__report) return; // state is intact in memory, nothing to do
+  const saved = loadInProgressSOS();
+  if(!saved || !saved.report || !saved.report.type) return; // nothing meaningful was in flight
+  window.__report = saved.report;
+  window.__sev = saved.sev || 'severe';
+  if(saved.stage==='locating'){
+    // GPS lookup hadn't resolved yet when state was lost — just resume that lookup.
+    chooseReportType(saved.report.type);
+    return;
+  }
+  if(saved.stage==='bystander') renderBystanderForm();
+  else renderSeverityStep();
+  showToast('Resumed your report', 'We restored the emergency details you were entering — double-check and tap Confirm & Dispatch.', 'info');
+}
 function openReportTypePicker(){
   window.__report = {type:null, lat:null, lng:null, accuracy:null, landmark:'', victimNote:'', reporterPhone: (db('profile')||{}).phone || ''};
+  persistInProgressSOS('type-picker');
   const slot = document.getElementById('severity-picker-slot');
   slot.innerHTML = `
   <div class="card">
@@ -2675,6 +2727,7 @@ function openReportTypePicker(){
 }
 async function chooseReportType(type){
   window.__report.type = type;
+  persistInProgressSOS('locating');
   const slot = document.getElementById('severity-picker-slot');
   slot.innerHTML = `<div class="card"><p style="color:var(--text-muted);font-size:.85rem;"><i class="fa-solid fa-location-crosshairs fa-spin"></i> Getting your exact GPS location…</p></div>`;
   const loc = await getDeviceLocation();
@@ -2701,6 +2754,7 @@ function renderBystanderForm(){
       <input class="form-control" id="bys-phone" value="${r.reporterPhone}"></div>
     <button class="btn btn-danger btn-block" style="margin-top:6px;" onclick="submitBystanderForm()">Continue</button>
   </div>`;
+  persistInProgressSOS('bystander');
 }
 function submitBystanderForm(){
   window.__report.landmark = document.getElementById('bys-landmark').value.trim();
@@ -2712,36 +2766,52 @@ function renderSeverityStep(){
   const r = window.__report;
   const slot = document.getElementById('severity-picker-slot');
   const locLine = r.accuracy!=null ? `Location locked (±${r.accuracy}m)` : `Approximate location (GPS unavailable)`;
+  // Preserve whatever severity is already in memory (e.g. restored by
+  // rehydrateInProgressSOS) instead of stomping it. Only default to 'severe'
+  // when nothing has been chosen yet — and reflect that choice visually via
+  // .sel, so a restored/defaulted value is never silently invisible.
+  const sev = window.__sev || 'severe';
   slot.innerHTML = `
   <div class="card">
     <h3 style="margin-top:0;">Confirm severity</h3>
     <p style="color:var(--text-muted);font-size:.85rem;">This helps dispatch the right response (ambulance only, or ambulance + police + fire).</p>
     <p style="color:var(--text-muted);font-size:.8rem;"><i class="fa-solid fa-location-dot"></i> ${locLine}${r.landmark? ' · '+r.landmark : ''} · <a href="${mapsLink(r.lat,r.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>
     <div class="severity-picker" id="sev-picker">
-      <button class="severity-opt" data-sev="moderate" onclick="pickSeverity('moderate')">Moderate</button>
-      <button class="severity-opt" data-sev="severe" onclick="pickSeverity('severe')">Severe</button>
-      <button class="severity-opt" data-sev="critical" onclick="pickSeverity('critical')">Critical</button>
+      <button class="severity-opt${sev==='moderate'?' sel':''}" data-sev="moderate" onclick="pickSeverity('moderate')">Moderate</button>
+      <button class="severity-opt${sev==='severe'?' sel':''}" data-sev="severe" onclick="pickSeverity('severe')">Severe</button>
+      <button class="severity-opt${sev==='critical'?' sel':''}" data-sev="critical" onclick="pickSeverity('critical')">Critical</button>
     </div>
-    <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="triggerSOS()"><i class="fa-solid fa-bolt"></i> Confirm &amp; Dispatch Now</button>
+    <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="this.disabled=true; this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin\'></i> Dispatching…'; triggerSOS();"><i class="fa-solid fa-bolt"></i> Confirm &amp; Dispatch Now</button>
   </div>`;
-  window.__sev = 'severe';
+  window.__sev = sev;
+  persistInProgressSOS('severity');
 }
-function pickSeverity(s){ window.__sev = s; document.querySelectorAll('.severity-opt').forEach(b=>b.classList.toggle('sel', b.dataset.sev===s)); }
+function pickSeverity(s){ window.__sev = s; document.querySelectorAll('.severity-opt').forEach(b=>b.classList.toggle('sel', b.dataset.sev===s)); persistInProgressSOS('severity'); }
 function startVoiceSOS(){
   showToast('Voice SOS armed', 'Listening for "Help, Arogya Emergency"… (simulated)', 'info');
   setTimeout(async ()=>{
     if(currentIncident()) return;
-    window.__sev='severe';
-    window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
-    const loc = await getDeviceLocation();
-    const profile = db('profile');
-    if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
-    else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
+    // Don't clobber a manual report already in progress (landmark, bystander note,
+    // chosen severity) — only fill in bare defaults if nothing exists yet. Whatever
+    // severity/details the patient already entered ride along as-is.
+    if(!window.__report){
+      window.__sev='severe';
+      window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
+      const loc = await getDeviceLocation();
+      const profile = db('profile');
+      if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
+      else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
+    }
     triggerSOS();
   }, 2500);
 }
 
 function triggerSOS(){
+  // Idempotency guard: this is the single choke point every dispatch path goes
+  // through (manual Confirm & Dispatch tap, Voice SOS timer). Without this, a
+  // double-tap on the button, or Voice SOS's GPS lookup resolving while a manual
+  // dispatch is also in flight, creates two separate incidents for one emergency.
+  if(currentIncident()) return;
   const profile = db('profile');
   const sev = window.__sev || 'severe';
   const r = window.__report || {type:'self', lat:profile.lat, lng:profile.lng, accuracy:null, landmark:'', victimNote:'', reporterPhone:profile.phone};
@@ -2792,6 +2862,8 @@ function triggerSOS(){
   pushNotification('patient', 'Help is on the way', `Notified ${nearestHospitals.length} hospitals, ${nearestResponders.length} ambulances${nearbyMatch.radiusKm?' within '+nearbyMatch.radiusKm+'km':(nearestResponders.length?' (closest available, beyond 10km)':'')} and ${police?police.name:'local police'} simultaneously.`, 'info', inc.id);
 
   window.__report = null;
+  window.__sev = null;
+  clearInProgressSOS();
   renderCurrentView('p-sos');
 }
 
