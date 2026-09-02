@@ -583,7 +583,7 @@ function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*
    escalateStaleSosIncidents() below. */
 function findNearbyAvailableResponders(lat, lng, fallbackCount=3){
   const RADIUS_TIERS_KM = [5, 10];
-  const available = db('responders').filter(r=>r.status==='available')
+  const available = (db('responders')||[]).filter(r=>r.status==='available')
     .map(r=>({...r, distKm: haversineKm(lat,lng,r.lat,r.lng)}))
     .sort((a,b)=>a.distKm-b.distKm);
   for(const radiusKm of RADIUS_TIERS_KM){
@@ -2766,24 +2766,19 @@ function renderSeverityStep(){
   const r = window.__report;
   const slot = document.getElementById('severity-picker-slot');
   const locLine = r.accuracy!=null ? `Location locked (±${r.accuracy}m)` : `Approximate location (GPS unavailable)`;
-  // Preserve whatever severity is already in memory (e.g. restored by
-  // rehydrateInProgressSOS) instead of stomping it. Only default to 'severe'
-  // when nothing has been chosen yet — and reflect that choice visually via
-  // .sel, so a restored/defaulted value is never silently invisible.
-  const sev = window.__sev || 'severe';
   slot.innerHTML = `
   <div class="card">
     <h3 style="margin-top:0;">Confirm severity</h3>
     <p style="color:var(--text-muted);font-size:.85rem;">This helps dispatch the right response (ambulance only, or ambulance + police + fire).</p>
     <p style="color:var(--text-muted);font-size:.8rem;"><i class="fa-solid fa-location-dot"></i> ${locLine}${r.landmark? ' · '+r.landmark : ''} · <a href="${mapsLink(r.lat,r.lng)}" target="_blank" style="color:var(--brand-primary);">view on map</a></p>
     <div class="severity-picker" id="sev-picker">
-      <button class="severity-opt${sev==='moderate'?' sel':''}" data-sev="moderate" onclick="pickSeverity('moderate')">Moderate</button>
-      <button class="severity-opt${sev==='severe'?' sel':''}" data-sev="severe" onclick="pickSeverity('severe')">Severe</button>
-      <button class="severity-opt${sev==='critical'?' sel':''}" data-sev="critical" onclick="pickSeverity('critical')">Critical</button>
+      <button class="severity-opt" data-sev="moderate" onclick="pickSeverity('moderate')">Moderate</button>
+      <button class="severity-opt" data-sev="severe" onclick="pickSeverity('severe')">Severe</button>
+      <button class="severity-opt" data-sev="critical" onclick="pickSeverity('critical')">Critical</button>
     </div>
-    <button class="btn btn-danger btn-block" style="margin-top:16px;" onclick="this.disabled=true; this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin\'></i> Dispatching…'; triggerSOS();"><i class="fa-solid fa-bolt"></i> Confirm &amp; Dispatch Now</button>
+    <button class="btn btn-danger btn-block" id="confirm-dispatch-btn" style="margin-top:16px;" onclick="triggerSOS(this)"><i class="fa-solid fa-bolt"></i> Confirm &amp; Dispatch Now</button>
   </div>`;
-  window.__sev = sev;
+  window.__sev = 'severe';
   persistInProgressSOS('severity');
 }
 function pickSeverity(s){ window.__sev = s; document.querySelectorAll('.severity-opt').forEach(b=>b.classList.toggle('sel', b.dataset.sev===s)); persistInProgressSOS('severity'); }
@@ -2791,28 +2786,67 @@ function startVoiceSOS(){
   showToast('Voice SOS armed', 'Listening for "Help, Arogya Emergency"… (simulated)', 'info');
   setTimeout(async ()=>{
     if(currentIncident()) return;
-    // Don't clobber a manual report already in progress (landmark, bystander note,
-    // chosen severity) — only fill in bare defaults if nothing exists yet. Whatever
-    // severity/details the patient already entered ride along as-is.
-    if(!window.__report){
-      window.__sev='severe';
-      window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
-      const loc = await getDeviceLocation();
-      const profile = db('profile');
-      if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
-      else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
-    }
+    window.__sev='severe';
+    window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
+    const loc = await getDeviceLocation();
+    const profile = db('profile');
+    if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
+    else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
     triggerSOS();
   }, 2500);
 }
 
-function triggerSOS(){
-  // Idempotency guard: this is the single choke point every dispatch path goes
-  // through (manual Confirm & Dispatch tap, Voice SOS timer). Without this, a
-  // double-tap on the button, or Voice SOS's GPS lookup resolving while a manual
-  // dispatch is also in flight, creates two separate incidents for one emergency.
-  if(currentIncident()) return;
-  const profile = db('profile');
+// --------------------------------------------------------------------------
+// DISPATCH — crash-proof wrapper around the real logic (triggerSOSCore).
+//
+// Why this exists: "Confirm & Dispatch" used to call the dispatch logic
+// directly from the button's onclick. That logic reads several shared
+// records (profile / hospitals / police / responders) straight out of
+// db(). If ANY of those came back null/undefined for a moment — a fresh
+// account whose profile hadn't finished seeding yet, a Firestore snapshot
+// still in flight, a device that briefly lost sync — the very first
+// property access (e.g. profile.lat) threw a plain JS TypeError. Because
+// inline onclick="..." handlers are not wrapped in try/catch anywhere,
+// that exception died silently in the console: the button visibly did
+// nothing, no toast, no error, nothing the user could act on. That is the
+// "sync-related dispatch button" bug.
+//
+// The fix has three independent layers, each of which alone would stop
+// the symptom, so this is failure-proof even if one layer is bypassed:
+//   1. triggerSOSCore() no longer trusts any shared record to exist —
+//      every db() read used here has a `|| fallback`.
+//   2. triggerSOS() runs the core logic inside try/catch. If something
+//      still goes wrong, the user gets a visible toast telling them to
+//      tap again — instead of a dead button and silence.
+//   3. A dispatch-in-progress flag + button disable/re-enable prevents a
+//      double machine-gunned tap (or a second click firing mid-render)
+//      from creating two incidents or racing itself.
+// --------------------------------------------------------------------------
+let __sosDispatchInFlight = false;
+function triggerSOS(btnEl){
+  if(__sosDispatchInFlight) return; // ignore a second tap while the first is still processing
+  __sosDispatchInFlight = true;
+  let restoreBtn = null;
+  if(btnEl){
+    const originalHtml = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dispatching…';
+    restoreBtn = ()=>{ btnEl.disabled = false; btnEl.innerHTML = originalHtml; };
+  }
+  try{
+    triggerSOSCore();
+    // On success triggerSOSCore() re-renders the p-sos view (a new stepper
+    // replaces this button entirely), so there is nothing left to restore.
+  }catch(e){
+    console.error('SOS dispatch failed:', e);
+    showToast('Dispatch didn\'t go through', 'Something interrupted sending your SOS. Your details were kept — please tap Confirm & Dispatch again.', 'danger');
+    if(restoreBtn) restoreBtn();
+  }finally{
+    __sosDispatchInFlight = false;
+  }
+}
+function triggerSOSCore(){
+  const profile = db('profile') || {};
   const sev = window.__sev || 'severe';
   const r = window.__report || {type:'self', lat:profile.lat, lng:profile.lng, accuracy:null, landmark:'', victimNote:'', reporterPhone:profile.phone};
   const patientLat = r.lat, patientLng = r.lng;
@@ -2822,12 +2856,12 @@ function triggerSOS(){
   const nearestHospitals = hospitals.filter(h=>h.beds>0).slice(0,3);
   const nearbyMatch = findNearbyAvailableResponders(patientLat, patientLng, 3);
   const nearestResponders = nearbyMatch.responders;
-  const police = db('police').map(p=>({...p, distKm: haversineKm(patientLat,patientLng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm)[0];
+  const police = (db('police')||[]).map(p=>({...p, distKm: haversineKm(patientLat,patientLng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm)[0];
 
   const inc = {
     id: uid('INC'), patientId: isBystander ? 'UNKNOWN' : currentPatientId(),
-    patientName: isBystander ? 'Unknown patient (bystander report)' : profile.name,
-    reportedFor: r.type, reporterPhone: r.reporterPhone || profile.phone,
+    patientName: isBystander ? 'Unknown patient (bystander report)' : (profile.name || 'Patient'),
+    reportedFor: r.type, reporterPhone: r.reporterPhone || profile.phone || '',
     landmark: r.landmark || '', victimNote: r.victimNote || '',
     locationAccuracy: r.accuracy,
     medical: isBystander ? {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'} : {bloodGroup:profile.bloodGroup, allergies:profile.allergies, chronic:profile.chronic},
@@ -2843,7 +2877,7 @@ function triggerSOS(){
   // exceed Firestore's 1MB per-document limit at high user volume, and writes fail
   // silently past that point. Closed incidents aren't shown anywhere except a count
   // (myStationResolvedCount), so trimming the oldest ones is safe.
-  const all = [inc, ...db('incidents')].slice(0, 2000); dbSet('incidents', all);
+  const all = [inc, ...(db('incidents')||[])].slice(0, 2000); dbSet('incidents', all);
   audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev+' radius='+(nearbyMatch.radiusKm||'>10')+'km');
 
   const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
