@@ -579,8 +579,9 @@ function etaMinutes(km, speedKmh=32){ return Math.max(2, Math.round(km/speedKmh*
    available unit anywhere so a case never gets stranded. Returns every matching
    unit plus the radius tier that was actually used (null when we had to fall back
    beyond 10km). The *time-based* escalation — pulling in the 5-10km ring if nobody
-   in the initial batch accepts within 60s — is handled separately by
-   escalateStaleSosIncidents() below. */
+   in the initial batch accepts within 60s — is handled server-side by the SOS
+   Worker's alarm(), with the client-side widening reaction in
+   widenEscalatedIncident() below. */
 function findNearbyAvailableResponders(lat, lng, fallbackCount=3){
   const RADIUS_TIERS_KM = [5, 10];
   const available = (db('responders')||[]).filter(r=>r.status==='available')
@@ -594,58 +595,208 @@ function findNearbyAvailableResponders(lat, lng, fallbackCount=3){
 }
 
 // How long we wait for someone in the initial notified batch to accept before
-// pulling in additional available ambulances out to 10km.
+// pulling in additional available ambulances out to 10km. Mirrors ESCALATE_AFTER_MS
+// in the SOS Worker (sosHub.js) — the Worker's alarm() is what actually fires the
+// escalation now (real, server-side, fires whether any device is open or not);
+// this constant is only used client-side for the *widening* follow-up (see
+// widenEscalatedIncident() below), since only the client has the responder
+// location data needed to compute the wider match.
 const SOS_ESCALATE_AFTER_MS = 60*1000;
 
-/* Time-based escalation: any incident still 'broadcasting' 60s after creation,
-   that hasn't been escalated yet, gets widened to pull in every available
-   responder within 10km who wasn't already notified (this matters most when the
-   initial match was a tight 5km ring). Idempotent via inc.escalatedAt so repeated
-   calls (this runs on a poll loop, not a single timer) never double-notify.
-   Called from the global watcher below and from the live-tracking tick, so it
-   fires whether the escalation is due while a patient/responder/police screen is
-   open or not. */
-function escalateStaleSosIncidents(){
-  const all = db('incidents');
-  let changed = false;
-  all.forEach(inc=>{
-    if(inc.status!=='broadcasting' || inc.escalatedAt) return;
-    if(now() - inc.createdAt < SOS_ESCALATE_AFTER_MS) return;
-    const already = new Set(inc.notifiedResponders);
-    const wider = db('responders').filter(r=>r.status==='available' && !already.has(r.id))
-      .map(r=>({...r, distKm: haversineKm(inc.lat, inc.lng, r.lat, r.lng)}))
-      .filter(r=>r.distKm<=10)
-      .sort((a,b)=>a.distKm-b.distKm);
-    inc.escalatedAt = now();
-    if(wider.length){
-      inc.notifiedResponders = [...inc.notifiedResponders, ...wider.map(r=>r.id)];
-      inc.searchRadiusKm = 10;
-      inc.timeline.push({ts:now(), text:`No unit accepted within 1 minute — escalated to ${wider.length} more ambulance(s) within 10km.`});
-      wider.forEach(r=>{
-        pushNotification('responder:'+r.id, 'Dispatch escalation', `${inc.severity.toUpperCase()} case ${r.distKm.toFixed(1)}km away · ETA ${etaMinutes(r.distKm)} min. No unit accepted within 1 min — please respond if you're available.`, 'danger', inc.id);
-      });
-    } else {
-      inc.timeline.push({ts:now(), text:'No unit accepted within 1 minute — no additional ambulances available within 10km.'});
-    }
-    changed = true;
+/* ============================================================
+   SOS WORKER CLIENT — real backend (Cloudflare Durable Object) instead of
+   the local db()/dbSet() simulation. See sosHub.js for the server side.
+
+   - sosApi()/dispatchIncidentToWorker() write through to the Worker.
+   - openSosSocket() opens one live WebSocket per role and keeps a local
+     mirror of `incidents` in sync so every existing render function that
+     reads db('incidents') keeps working unmodified.
+   - handleIncidentEvent() is the single place that reacts to a change,
+     whichever device it came from (this one or a remote one), and decides
+     whether *this* device should show a notification for it.
+   ============================================================ */
+const SOS_WORKER_URL = 'https://arogyabot-sos.kritzaararogyabot.workers.dev';
+
+async function sosApi(path, body){
+  const res = await fetch(`${SOS_WORKER_URL}${path}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})
   });
-  if(changed) dbSet('incidents', all);
-  return changed;
+  if(!res.ok) throw new Error('SOS API '+path+' failed: '+res.status);
+  return res.json();
 }
 
-// One global watcher, started the first time any console is entered, independent
-// of which view is open — so escalation still fires while a responder is sitting
-// on the Dashboard or Dispatch Queue rather than only on the Active Case screen.
-let sosEscalationWatcherStarted = false;
-function beginSosEscalationWatcher(){
-  if(sosEscalationWatcherStarted) return;
-  sosEscalationWatcherStarted = true;
-  setInterval(()=>{
-    if(escalateStaleSosIncidents() && currentRole){
-      softRefreshCurrentView();
-      refreshBell();
+// Merges an incident from the Worker into the local db('incidents') mirror so
+// every existing db('incidents').find/.filter() call site keeps working as-is.
+function mirrorIncident(inc){
+  const all = db('incidents')||[];
+  const idx = all.findIndex(i=>i.id===inc.id);
+  if(idx>=0) all[idx] = {...all[idx], ...inc}; else all.unshift(inc);
+  dbSet('incidents', all.slice(0,2000));
+}
+
+// Dedupe: the device that performs an action gets the result directly from its
+// own fetch AND (a beat later) an echo of the same event over its own socket.
+// Track the last updatedAt we've reacted to per incident so we mirror the data
+// every time (harmless/idempotent) but only run notification fan-out once.
+window.__sosSeenUpdatedAt = window.__sosSeenUpdatedAt || {};
+function handleIncidentEvent(type, inc){
+  if(!inc) return;
+  const seen = window.__sosSeenUpdatedAt[inc.id];
+  const isNew = !seen || inc.updatedAt > seen;
+  mirrorIncident(inc);
+  window.__sosSeenUpdatedAt[inc.id] = inc.updatedAt;
+  if(isNew) notifyForIncidentEvent(type, inc);
+  if(currentRole){ softRefreshCurrentView(); refreshBell(); }
+}
+
+window.__sosSockets = window.__sosSockets || {};
+function openSosSocket(role, userId, patientId){
+  const key = role+':'+userId;
+  const existing = window.__sosSockets[key];
+  if(existing && existing.readyState <= 1) return existing; // CONNECTING or OPEN
+  const ws = new WebSocket(`${SOS_WORKER_URL.replace('https','wss')}/api/sos/ws?role=${encodeURIComponent(role)}&userId=${encodeURIComponent(userId)}&patientId=${encodeURIComponent(patientId||userId)}`);
+  ws.onmessage = (e)=>{
+    let msg; try{ msg = JSON.parse(e.data); }catch{ return; }
+    if(msg.type==='snapshot'){
+      (msg.incidents||[]).forEach(inc=>mirrorIncident(inc));
+      if(currentRole){ softRefreshCurrentView(); refreshBell(); }
+      return;
     }
-  }, 10000);
+    if(msg.incident) handleIncidentEvent(msg.type, msg.incident);
+  };
+  ws.onclose = ()=>{
+    if(window.__sosSockets[key]===ws) delete window.__sosSockets[key];
+    // Auto-reconnect as long as this device is still in that role.
+    setTimeout(()=>{
+      if(currentRole===role || (role==='patient' && currentRole)) openSosSocket(role, userId, patientId);
+    }, 3000);
+  };
+  window.__sosSockets[key] = ws;
+  return ws;
+}
+
+/* Escalation widening: the Worker's alarm() fires 'incident_escalated' for any
+   incident still 'broadcasting' 60s after creation (real, server-side timer —
+   fires even with no device open) but doesn't know responder locations, so it
+   can't pick the wider set itself. The patient's own connected device (the one
+   with a live socket open on that incident) does the distance match, same as
+   the old escalateStaleSosIncidents(), and PATCHes the result back so everyone
+   sees the widened set and the new responders get notified.
+   Known limitation: if the patient has no device connected when this fires,
+   the widening step is skipped until one reconnects — escalation itself still
+   happened server-side (inc.escalated=true), just the wider notify is deferred. */
+async function widenEscalatedIncident(inc){
+  if(inc.searchRadiusKm===10) return; // already widened
+  const already = new Set(inc.notifiedResponders||[]);
+  const wider = (db('responders')||[]).filter(r=>r.status==='available' && !already.has(r.id))
+    .map(r=>({...r, distKm: haversineKm(inc.lat, inc.lng, r.lat, r.lng)}))
+    .filter(r=>r.distKm<=10)
+    .sort((a,b)=>a.distKm-b.distKm);
+  const timelineText = wider.length
+    ? `No unit accepted within 1 minute — escalated to ${wider.length} more ambulance(s) within 10km.`
+    : 'No unit accepted within 1 minute — no additional ambulances available within 10km.';
+  try{
+    const {incident} = await sosApi(`/api/sos/${inc.id}/update`, {
+      patch: { notifiedResponders: [...(inc.notifiedResponders||[]), ...wider.map(r=>r.id)], searchRadiusKm: 10 },
+      timelineText
+    });
+    handleIncidentEvent('incident_widened', incident);
+  }catch(e){ console.error('widen escalation failed', e); }
+}
+
+// Central notification fan-out — the single place that decides, for THIS
+// device's role/identity, whether an incident event should surface a local
+// pushNotification. Runs identically whether the event was this device's own
+// action or a remote one, so behavior no longer depends on being the initiator.
+function notifyForIncidentEvent(type, inc){
+  const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
+  const bystNote = inc.isBystander ? ` Reported by a bystander (not the patient) — call ${inc.reporterPhone} for on-ground details.` : '';
+  const isMine = { patient: currentRole==='patient' && inc.patientId===currentPatientId(),
+    responder: currentRole==='responder' && CURRENT_RESPONDER_ID,
+    hospital: currentRole==='hospital' && CURRENT_HOSPITAL_ID,
+    police: currentRole==='police' && CURRENT_POLICE_STATION_ID };
+
+  if(type==='incident_created'){
+    if(isMine.hospital && (inc.notifiedHospitals||[]).includes(CURRENT_HOSPITAL_ID)){
+      const h = db('hospitals').find(x=>x.id===CURRENT_HOSPITAL_ID);
+      const d = h ? haversineKm(inc.lat,inc.lng,h.lat,h.lng) : 0;
+      pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Incoming emergency alert', `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km away · ETA ${etaMinutes(d)} min.${locNote}${bystNote} Awaiting responder assignment.`, 'danger', inc.id);
+    }
+    if(isMine.responder && (inc.notifiedResponders||[]).includes(CURRENT_RESPONDER_ID)){
+      const r = db('responders').find(x=>x.id===CURRENT_RESPONDER_ID);
+      const d = r ? haversineKm(inc.lat,inc.lng,r.lat,r.lng) : 0;
+      pushNotification('responder:'+CURRENT_RESPONDER_ID, 'New dispatch request', `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km away · ETA ${etaMinutes(d)} min.${locNote}${bystNote} Tap Accept in your queue.`, 'danger', inc.id);
+    }
+    if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID){
+      const p = db('police').find(x=>x.id===CURRENT_POLICE_STATION_ID);
+      const d = p ? haversineKm(inc.lat,inc.lng,p.lat,p.lng) : 0;
+      pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Emergency reported near '+(p?p.name:'station'), `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
+    }
+    if(isMine.patient){
+      pushNotification('patient', 'Help is on the way', `Notified ${(inc.notifiedHospitals||[]).length} hospitals, ${(inc.notifiedResponders||[]).length} ambulances${inc.searchRadiusKm?' within '+inc.searchRadiusKm+'km':(inc.notifiedResponders&&inc.notifiedResponders.length?' (closest available, beyond 10km)':'')} and local police simultaneously.`, 'info', inc.id);
+    }
+  } else if(type==='incident_escalated'){
+    if(isMine.patient && inc.status==='broadcasting') widenEscalatedIncident(inc);
+  } else if(type==='incident_widened'){
+    if(isMine.responder && (inc.notifiedResponders||[]).includes(CURRENT_RESPONDER_ID) && inc.assignedResponderId!==CURRENT_RESPONDER_ID){
+      const r = db('responders').find(x=>x.id===CURRENT_RESPONDER_ID);
+      const d = r ? haversineKm(inc.lat,inc.lng,r.lat,r.lng) : 0;
+      pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Dispatch escalation', `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km away · ETA ${etaMinutes(d)} min. No unit accepted within 1 min — please respond if you're available.`, 'danger', inc.id);
+    }
+  } else if(type==='incident_accept'){
+    if(isMine.responder && inc.assignedResponderId===CURRENT_RESPONDER_ID){
+      const resp = db('responders').find(r=>r.id===CURRENT_RESPONDER_ID)||{};
+      pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Case confirmed', `You're assigned to ${inc.id}. Head to patient location now — you'll pick the receiving hospital once you've got the patient on board.`, 'success', inc.id);
+    } else if(isMine.responder && (inc.notifiedResponders||[]).includes(CURRENT_RESPONDER_ID)){
+      pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Case no longer available', `${inc.id} was accepted by another unit and removed from your queue.`, 'info', inc.id);
+    }
+    if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID){
+      const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
+      pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Unit dispatched', `${resp?resp.vehicle:'Ambulance'} dispatched to ${inc.id}. Consider clearing the route.`, 'dispatch', inc.id);
+    }
+    if(isMine.patient){
+      const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
+      pushNotification('patient', 'Ambulance is on its way', `${resp?resp.name:'A responder'} (${resp?resp.vehicle:''}) accepted your case.${resp?' Driver contact: '+resp.phone+'.':''}`, 'success', inc.id);
+    }
+  } else if(type==='incident_decline'){
+    // Decline only removes the declining responder from their own queue — no
+    // one else needs to hear about it, so there's nothing to notify here.
+  } else if(type==='incident_picked_up'){
+    if(isMine.patient) pushNotification('patient', 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', inc.id);
+  } else if(type==='incident_choose_hospital'){
+    const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
+    const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
+    if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID){
+      const med = inc.medical||{bloodGroup:'Unknown',allergies:'Unknown',chronic:'Unknown'};
+      pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Incoming patient confirmed', `${inc.id} · ETA ${etaMinutes(haversineKm(inc.lat,inc.lng,hosp.lat,hosp.lng))} min · Ambulance ${resp?resp.vehicle:''} · Blood group ${med.bloodGroup} · Allergies: ${med.allergies}${inc.reportedFor==='other'?' · Patient identity unknown (bystander report) — reporter: '+inc.reporterPhone:''}`, 'danger', inc.id);
+    } else if(isMine.hospital && (inc.notifiedHospitals||[]).includes(CURRENT_HOSPITAL_ID)){
+      pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Case routed elsewhere — stand down', `${inc.id} was taken to another hospital. No action needed.`, 'info', inc.id);
+    }
+    if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID){
+      pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Destination confirmed', `${resp?resp.vehicle:'Ambulance'} is heading to ${hosp?hosp.name:'the hospital'} with ${inc.id}.`, 'dispatch', inc.id);
+    }
+    if(isMine.patient) pushNotification('patient', 'Heading to hospital', `You're being taken to ${hosp?hosp.name:'the hospital'}.`, 'success', inc.id);
+  } else if(type==='incident_arrived'){
+    const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
+    if(isMine.patient) pushNotification('patient', 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', inc.id);
+    if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID) pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Patient arrived', 'Case '+inc.id+' has arrived at your facility and needs to be admitted to close the case.', 'success', inc.id);
+    if(isMine.responder && inc.assignedResponderId===CURRENT_RESPONDER_ID) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Handoff pending', 'Patient dropped off'+(hosp?' at '+hosp.name:'')+'. You\'ll be marked available once the hospital confirms admission.', 'info', inc.id);
+    if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID) pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Case resolved', 'Ambulance completed transport for '+inc.id+'.', 'info', inc.id);
+  } else if(type==='incident_update'){
+    if(isMine.patient) return; // patient's own edit — no self-notify needed
+    if(isMine.responder && inc.assignedResponderId===CURRENT_RESPONDER_ID) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Details updated', `${inc.id}: ${inc.landmark?'Landmark — '+inc.landmark:'Notes updated'}${inc.victimNote?' · '+inc.victimNote:''}`, 'info', inc.id);
+    if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID) pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Case details updated', `${inc.id} details were updated by the patient.`, 'info', inc.id);
+  } else if(type==='incident_close' || type==='incident_cancel'){
+    const wasCancelled = type==='incident_cancel';
+    if(isMine.responder){
+      if(inc.assignedResponderId===CURRENT_RESPONDER_ID && wasCancelled) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Case cancelled', 'The patient cancelled this emergency. Case closed — you\'re available again.', 'info', inc.id);
+      else if((inc.notifiedResponders||[]).includes(CURRENT_RESPONDER_ID) && inc.assignedResponderId!==CURRENT_RESPONDER_ID && wasCancelled) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Case cancelled', inc.id+' was cancelled by the patient.', 'info', inc.id);
+    }
+    if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID && wasCancelled) pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Case cancelled', 'The patient cancelled this emergency before arrival.', 'info', inc.id);
+    if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID && wasCancelled) pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Case cancelled', inc.id+' was cancelled by the patient.', 'info', inc.id);
+  }
 }
 
 /* Real road-following routing via OSRM's free public routing API (no key required).
@@ -1252,7 +1403,13 @@ function enterConsole(role){
   refreshBell();
   audit(role, 'session', role+' console opened'+unitTag);
   saveActiveSession(role);
-  beginSosEscalationWatcher();
+  // One live SOS socket per role — replaces the old Firestore onSnapshot /
+  // local-poll watcher. The server (sosHub.js alarm()) now owns escalation
+  // timing for real, independent of whether any device is connected.
+  if(role==='patient') openSosSocket('patient', currentPatientId(), currentPatientId());
+  else if(role==='responder') openSosSocket('responder', CURRENT_RESPONDER_ID, null);
+  else if(role==='hospital') openSosSocket('hospital', CURRENT_HOSPITAL_ID, null);
+  else if(role==='police') openSosSocket('police', CURRENT_POLICE_STATION_ID, null);
 
   // Ask for location permission up front for every role so tracking/matching works from
   // the moment they're in, rather than only when a patient happens to trigger an SOS.
@@ -2245,6 +2402,14 @@ function switchFamilyMember(memberId){
   u.activeMemberId = memberId;
   saveUser(u);
   loadActiveMemberIntoProfile(u);
+  // The active SOS socket is keyed by patientId, so switching the active family
+  // member means re-opening it under the new member's id — otherwise this device
+  // would keep listening for the previous member's incidents only.
+  Object.keys(window.__sosSockets||{}).filter(k=>k.startsWith('patient:')).forEach(k=>{
+    try{ window.__sosSockets[k].close(); }catch{}
+    delete window.__sosSockets[k];
+  });
+  if(currentRole==='patient') openSosSocket('patient', currentPatientId(), currentPatientId());
   buildSideNav('patient');
   closeModal();
   const targetView = (currentView==='p-women' && (db('profile')||{}).gender==='Male') ? 'p-dash' : currentView;
@@ -2823,7 +2988,7 @@ function startVoiceSOS(){
 //      from creating two incidents or racing itself.
 // --------------------------------------------------------------------------
 let __sosDispatchInFlight = false;
-function triggerSOS(btnEl){
+async function triggerSOS(btnEl){
   if(__sosDispatchInFlight) return; // ignore a second tap while the first is still processing
   __sosDispatchInFlight = true;
   let restoreBtn = null;
@@ -2834,9 +2999,12 @@ function triggerSOS(btnEl){
     restoreBtn = ()=>{ btnEl.disabled = false; btnEl.innerHTML = originalHtml; };
   }
   try{
-    triggerSOSCore();
+    await triggerSOSCore();
     // On success triggerSOSCore() re-renders the p-sos view (a new stepper
     // replaces this button entirely), so there is nothing left to restore.
+    // window.__sosClientRequestId is only cleared on confirmed success, so a
+    // failed attempt below reuses the SAME clientRequestId on retry — the
+    // Worker dedupes on it, so a flaky network never creates two incidents.
   }catch(e){
     console.error('SOS dispatch failed:', e);
     showToast('Dispatch didn\'t go through', 'Something interrupted sending your SOS. Your details were kept — please tap Confirm & Dispatch again.', 'danger');
@@ -2845,7 +3013,7 @@ function triggerSOS(btnEl){
     __sosDispatchInFlight = false;
   }
 }
-function triggerSOSCore(){
+async function triggerSOSCore(){
   const profile = db('profile') || {};
   const sev = window.__sev || 'severe';
   const r = window.__report || {type:'self', lat:profile.lat, lng:profile.lng, accuracy:null, landmark:'', victimNote:'', reporterPhone:profile.phone};
@@ -2858,42 +3026,31 @@ function triggerSOSCore(){
   const nearestResponders = nearbyMatch.responders;
   const police = (db('police')||[]).map(p=>({...p, distKm: haversineKm(patientLat,patientLng,p.lat,p.lng)})).sort((a,b)=>a.distKm-b.distKm)[0];
 
-  const inc = {
-    id: uid('INC'), patientId: isBystander ? 'UNKNOWN' : currentPatientId(),
-    patientName: isBystander ? 'Unknown patient (bystander report)' : (profile.name || 'Patient'),
+  const patientId = isBystander ? 'UNKNOWN' : currentPatientId();
+  const initialTimelineText = (isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')+(nearbyMatch.radiusKm?` · ${nearestResponders.length} ambulance(s) found within ${nearbyMatch.radiusKm}km`:(nearestResponders.length?' · nearest available ambulances notified (none within 10km)':' · no ambulances currently available'));
+
+  // clientRequestId is generated once per report attempt and only cleared on
+  // confirmed success, so a retry after a failed tap reuses the same id — the
+  // Worker's /trigger is idempotent on it (see sosHub.js findByClientRequestId).
+  if(!window.__sosClientRequestId) window.__sosClientRequestId = uid('REQ');
+
+  const {incident: inc} = await sosApi('/api/sos/trigger', {
+    clientRequestId: window.__sosClientRequestId,
+    patientId, patientName: isBystander ? 'Unknown patient (bystander report)' : (profile.name || 'Patient'),
     reportedFor: r.type, reporterPhone: r.reporterPhone || profile.phone || '',
-    landmark: r.landmark || '', victimNote: r.victimNote || '',
+    isBystander, severity: sev,
+    lat: patientLat, lng: patientLng, landmark: r.landmark || '', victimNote: r.victimNote || '',
     locationAccuracy: r.accuracy,
     medical: isBystander ? {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'} : {bloodGroup:profile.bloodGroup, allergies:profile.allergies, chronic:profile.chronic},
-    severity: sev,
-    lat: patientLat, lng: patientLng, status:'broadcasting', createdAt: now(),
     notifiedHospitals: nearestHospitals.map(h=>h.id), notifiedResponders: nearestResponders.map(r=>r.id),
     notifiedPoliceId: police ? police.id : null,
-    searchRadiusKm: nearbyMatch.radiusKm, escalatedAt: null,
-    assignedResponderId: null, assignedHospitalId: null,
-    timeline: [{ts:now(), text:(isBystander?'SOS reported by bystander':'SOS triggered by patient')+' · severity: '+sev+(r.landmark?' · near '+r.landmark:'')+(nearbyMatch.radiusKm?` · ${nearestResponders.length} ambulance(s) found within ${nearbyMatch.radiusKm}km`:(nearestResponders.length?' · nearest available ambulances notified (none within 10km)':' · no ambulances currently available'))}]
-  };
-  // Capped like notifications/audit — an unbounded incidents array will eventually
-  // exceed Firestore's 1MB per-document limit at high user volume, and writes fail
-  // silently past that point. Closed incidents aren't shown anywhere except a count
-  // (myStationResolvedCount), so trimming the oldest ones is safe.
-  const all = [inc, ...(db('incidents')||[])].slice(0, 2000); dbSet('incidents', all);
+    searchRadiusKm: nearbyMatch.radiusKm,
+    initialTimelineText
+  });
+  window.__sosClientRequestId = null; // clear only on confirmed success
+
+  handleIncidentEvent('incident_created', inc);
   audit(isBystander?'bystander':'patient', 'sos_trigger', inc.id+' severity='+sev+' radius='+(nearbyMatch.radiusKm||'>10')+'km');
-
-  const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
-  const bystNote = isBystander ? ` Reported by a bystander (not the patient) — call ${inc.reporterPhone} for on-ground details.` : '';
-
-  // Multicast notifications — many hospitals, not one; police always included.
-  nearestHospitals.forEach(h=>{
-    pushNotification('hospital:'+h.id, 'Incoming emergency alert', `${inc.severity.toUpperCase()} case ${h.distKm.toFixed(1)}km away · ETA ${etaMinutes(h.distKm)} min.${locNote}${bystNote} Awaiting responder assignment.`, 'danger', inc.id);
-  });
-  nearestResponders.forEach(r=>{
-    pushNotification('responder:'+r.id, 'New dispatch request', `${inc.severity.toUpperCase()} case ${r.distKm.toFixed(1)}km away · ETA ${etaMinutes(r.distKm)} min.${locNote}${bystNote} Tap Accept in your queue.`, 'danger', inc.id);
-  });
-  if(police){
-    pushNotification('police:'+police.id, 'Emergency reported near '+police.name, `${inc.severity.toUpperCase()} case ${police.distKm.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
-  }
-  pushNotification('patient', 'Help is on the way', `Notified ${nearestHospitals.length} hospitals, ${nearestResponders.length} ambulances${nearbyMatch.radiusKm?' within '+nearbyMatch.radiusKm+'km':(nearestResponders.length?' (closest available, beyond 10km)':'')} and ${police?police.name:'local police'} simultaneously.`, 'info', inc.id);
 
   window.__report = null;
   window.__sev = null;
@@ -2972,10 +3129,15 @@ function patchActiveSosTracking(inc){
     if(driverEl.innerHTML!==html) driverEl.innerHTML = html;
   }
 }
-function closeIncidentPatientSide(id){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===id);
-  if(inc){ inc.status='closed'; inc.timeline.push({ts:now(),text:'Case closed by patient'}); creditResponderCase(inc); dbSet('incidents',all); }
+async function closeIncidentPatientSide(id){
+  const inc = db('incidents').find(i=>i.id===id);
+  if(inc){
+    try{
+      const {incident} = await sosApi(`/api/sos/${id}/close`, { timelineText: 'Case closed by patient' });
+      creditResponderCase(incident);
+      handleIncidentEvent('incident_close', incident);
+    }catch(e){ console.error('close failed', e); showToast('Close failed', 'Please try again.', 'danger'); return; }
+  }
   audit('patient','incident_close', id);
   renderCurrentView('p-dash');
 }
@@ -2988,8 +3150,9 @@ function closeIncidentPatientSide(id){
 // cancellation. inc.responderCredited guards against double-counting if both
 // sides somehow race to close the same incident.
 function creditResponderCase(inc){
-  if(!inc || !inc.assignedResponderId || inc.responderCredited) return;
-  inc.responderCredited = true;
+  if(!inc || !inc.assignedResponderId || (inc.flags&&inc.flags.responderCredited)) return;
+  inc.flags = {...(inc.flags||{}), responderCredited: true};
+  sosApi(`/api/sos/${inc.id}/update`, { patchFlags: {responderCredited:true} }).catch(()=>{});
   const responders = db('responders');
   const r = responders.find(x=>x.id===inc.assignedResponderId);
   if(r){ r.casesHelped = (r.casesHelped||0) + 1; dbSet('responders', responders); }
@@ -3049,47 +3212,37 @@ function viewResponderQueue(){
   }).join('') : `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>No pending requests right now.</p></div>`}`;
 }
 function SEED_RESPONDER(id){ return db('responders').find(r=>r.id===id) || {lat:BASE.lat,lng:BASE.lng}; }
-function declineIncident(incId, respId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
-  inc.notifiedResponders = inc.notifiedResponders.filter(r=>r!==respId);
-  dbSet('incidents', all);
+async function declineIncident(incId, respId){
+  const inc = db('incidents').find(i=>i.id===incId);
+  if(!inc) return;
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/update`, {
+      patch: { notifiedResponders: (inc.notifiedResponders||[]).filter(r=>r!==respId) }
+    });
+    handleIncidentEvent('incident_decline', incident);
+  }catch(e){ console.error('decline failed', e); showToast('Decline failed', 'Please try again.', 'danger'); return; }
   audit('responder:'+respId, 'decline', incId);
   showToast('Declined', 'Case passed to next nearest unit.', 'info');
   renderCurrentView('r-queue');
 }
 
-function acceptIncident(incId, respId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+async function acceptIncident(incId, respId){
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc || inc.status!=='broadcasting') return;
   const responders = db('responders');
   const resp = responders.find(r=>r.id===respId);
 
-  inc.assignedResponderId = respId;
-  inc.status = 'accepted';
-  inc.timeline.push({ts:now(), text:`${resp.name} (${resp.vehicle}) accepted the case · heading to patient. Hospital will be chosen after pickup.`});
-
-  resp.status = 'busy';
-  dbSet('responders', responders);
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/ack`, {
+      event: 'accept',
+      patch: { status: 'accepted', assignedResponderId: respId },
+      timelineText: `${resp.name} (${resp.vehicle}) accepted the case · heading to patient. Hospital will be chosen after pickup.`
+    });
+    resp.status = 'busy';
+    dbSet('responders', responders);
+    handleIncidentEvent('incident_accept', incident);
+  }catch(e){ console.error('accept failed', e); showToast('Accept failed', 'Please try again.', 'danger'); return; }
   audit('responder:'+respId, 'accept', incId);
-
-  // Notify the responder who accepted
-  pushNotification('responder:'+respId, 'Case confirmed', `You're assigned to ${incId}. Head to patient location now — you'll pick the receiving hospital once you've got the patient on board.`, 'success', incId);
-
-  // Notify OTHER notified responders — remove from their queues
-  inc.notifiedResponders.filter(id=>id!==respId).forEach(id=>{
-    pushNotification('responder:'+id, 'Case no longer available', `${incId} was accepted by another unit and removed from your queue.`, 'info', incId);
-  });
-
-  // Police always gets the dispatch confirmation, not silence
-  if(inc.notifiedPoliceId){
-    pushNotification('police:'+inc.notifiedPoliceId, 'Unit dispatched', `${resp.vehicle} dispatched to ${incId}. Consider clearing the route.`, 'dispatch', incId);
-  }
-
-  // Give the patient the driver's phone number directly, per the real-world flow
-  pushNotification('patient', 'Ambulance is on its way', `${resp.name} (${resp.vehicle}) accepted your case. Driver contact: ${resp.phone}.`, 'success', incId);
 
   if(currentRole==='responder') renderCurrentView('r-active');
   else if(currentRole==='patient' && currentView==='p-sos') renderCurrentView('p-sos');
@@ -3098,40 +3251,39 @@ function acceptIncident(incId, respId){
   startLiveIncidentTracking();
 }
 
-function markPickedUp(incId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+async function markPickedUp(incId){
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc || inc.status!=='accepted' || inc.assignedResponderId!==CURRENT_RESPONDER_ID) return;
-  inc.status = 'picked_up';
-  inc.timeline.push({ts:now(), text:'Patient picked up — ambulance crew selecting nearest hospital'});
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/ack`, {
+      event: 'picked_up',
+      patch: { status: 'picked_up' },
+      timelineText: 'Patient picked up — ambulance crew selecting nearest hospital'
+    });
+    handleIncidentEvent('incident_picked_up', incident);
+  }catch(e){ console.error('pickup failed', e); showToast('Update failed', 'Please try again.', 'danger'); return; }
   audit('responder:'+CURRENT_RESPONDER_ID, 'picked_up', incId);
-  pushNotification('patient', 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', incId);
   if(currentRole==='responder') renderCurrentView('r-active');
 }
 
-function markArrivedAtHospital(incId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+async function markArrivedAtHospital(incId){
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc || inc.status!=='enroute_hospital' || inc.assignedResponderId!==CURRENT_RESPONDER_ID) return;
-  const responders = db('responders');
-  const resp = responders.find(r=>r.id===inc.assignedResponderId);
   const hosp = inc.assignedHospitalId ? db('hospitals').find(h=>h.id===inc.assignedHospitalId) : null;
 
-  inc.status = 'arrived';
-  inc.timeline.push({ts:now(), text:'Arrived at '+(hosp?hosp.name:'the hospital')+' — awaiting hospital admission confirmation'});
-  dbSet('incidents', all);
-  // NOTE: the responder is deliberately NOT freed up here. Arriving at the hospital
-  // isn't the end of the case — the crew is still responsible for the patient until
-  // the hospital actually confirms admission (see closeIncidentHospitalSide), so the
-  // unit stays 'busy' and this stays the responder's active case until then.
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/ack`, {
+      event: 'arrived',
+      patch: { status: 'arrived' },
+      timelineText: 'Arrived at '+(hosp?hosp.name:'the hospital')+' — awaiting hospital admission confirmation'
+    });
+    // NOTE: the responder is deliberately NOT freed up here. Arriving at the hospital
+    // isn't the end of the case — the crew is still responsible for the patient until
+    // the hospital actually confirms admission (see closeIncidentHospitalSide), so the
+    // unit stays 'busy' and this stays the responder's active case until then.
+    handleIncidentEvent('incident_arrived', incident);
+  }catch(e){ console.error('arrived failed', e); showToast('Update failed', 'Please try again.', 'danger'); return; }
   audit('responder:'+CURRENT_RESPONDER_ID, 'arrived', incId);
-
-  pushNotification('patient', 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', incId);
-  if(hosp) pushNotification('hospital:'+hosp.id, 'Patient arrived', 'Case '+incId+' has arrived at your facility and needs to be admitted to close the case.', 'success', incId);
-  if(resp) pushNotification('responder:'+resp.id, 'Handoff pending', 'Patient dropped off'+(hosp?' at '+hosp.name:'')+'. You\'ll be marked available once the hospital confirms admission.', 'info', incId);
-  if(inc.notifiedPoliceId) pushNotification('police:'+inc.notifiedPoliceId, 'Case resolved', 'Ambulance completed transport for '+incId+'.', 'info', incId);
-
   if(currentRole==='responder') renderCurrentView('r-active');
 }
 
@@ -3156,78 +3308,57 @@ function openEditSosDetails(incId){
     </div>
   </div>`;
 }
-function saveSosDetails(incId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+async function saveSosDetails(incId){
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc) return;
   const landmark = document.getElementById('edit-sos-landmark').value.trim();
   const note = document.getElementById('edit-sos-note').value.trim();
   const changed = landmark!==(inc.landmark||'') || note!==(inc.victimNote||'');
-  inc.landmark = landmark;
-  inc.victimNote = note;
-  if(changed) inc.timeline.push({ts:now(), text:'Patient updated emergency details'+(landmark?': '+landmark:'')});
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/update`, {
+      patch: { landmark, victimNote: note },
+      timelineText: changed ? 'Patient updated emergency details'+(landmark?': '+landmark:'') : undefined
+    });
+    handleIncidentEvent('incident_update', incident);
+  }catch(e){ console.error('save details failed', e); showToast('Update failed', 'Please try again.', 'danger'); return; }
   audit(inc.reportedFor==='other'?'bystander':'patient', 'incident_update', incId);
-  if(inc.assignedResponderId) pushNotification('responder:'+inc.assignedResponderId, 'Details updated', `${incId}: ${landmark?'Landmark — '+landmark:'Notes updated'}${note?' · '+note:''}`, 'info', incId);
-  if(inc.assignedHospitalId) pushNotification('hospital:'+inc.assignedHospitalId, 'Case details updated', `${incId} details were updated by the patient.`, 'info', incId);
   showToast('Updated', 'The crew will see your update.', 'success');
   renderCurrentView('p-sos');
 }
-function cancelIncident(incId){
+async function cancelIncident(incId){
   if(!confirm('Cancel this emergency? Any assigned ambulance, hospital and police will be notified it\'s no longer needed.')) return;
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc) return;
-  inc.status = 'closed';
-  inc.timeline.push({ts:now(), text:'Cancelled by patient'});
-  dbSet('incidents', all);
-
-  if(inc.assignedResponderId){
-    const responders = db('responders');
-    const r = responders.find(x=>x.id===inc.assignedResponderId);
-    if(r){ r.status='available'; dbSet('responders', responders); }
-    pushNotification('responder:'+inc.assignedResponderId, 'Case cancelled', 'The patient cancelled this emergency. Case closed — you\'re available again.', 'info', incId);
-  }
-  (inc.notifiedResponders||[]).filter(rid=>rid!==inc.assignedResponderId).forEach(rid=>{
-    pushNotification('responder:'+rid, 'Case cancelled', incId+' was cancelled by the patient.', 'info', incId);
-  });
-  if(inc.assignedHospitalId){
-    pushNotification('hospital:'+inc.assignedHospitalId, 'Case cancelled', 'The patient cancelled this emergency before arrival.', 'info', incId);
-  }
-  if(inc.notifiedPoliceId){
-    pushNotification('police:'+inc.notifiedPoliceId, 'Case cancelled', incId+' was cancelled by the patient.', 'info', incId);
-  }
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/close`, { timelineText: 'Cancelled by patient' });
+    if(inc.assignedResponderId){
+      const responders = db('responders');
+      const r = responders.find(x=>x.id===inc.assignedResponderId);
+      if(r){ r.status='available'; dbSet('responders', responders); }
+    }
+    handleIncidentEvent('incident_cancel', incident);
+  }catch(e){ console.error('cancel failed', e); showToast('Cancel failed', 'Please try again.', 'danger'); return; }
   audit('patient', 'incident_cancel', incId);
   showToast('Cancelled', 'Emergency cancelled and everyone notified.', 'success');
   if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
   renderCurrentView('p-dash');
 }
 
-function chooseHospitalForIncident(incId, hospId){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===incId);
+async function chooseHospitalForIncident(incId, hospId){
+  const inc = db('incidents').find(i=>i.id===incId);
   if(!inc || inc.status!=='picked_up') return;
-  const hospitals = db('hospitals');
-  const hosp = hospitals.find(h=>h.id===hospId);
+  const hosp = db('hospitals').find(h=>h.id===hospId);
   if(!hosp) return;
-  const responders = db('responders');
-  const resp = responders.find(r=>r.id===inc.assignedResponderId);
 
-  inc.assignedHospitalId = hospId;
-  inc.status = 'enroute_hospital';
-  inc.timeline.push({ts:now(), text:`Ambulance crew selected ${hosp.name} as the receiving hospital`});
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${incId}/ack`, {
+      event: 'choose_hospital',
+      patch: { status: 'enroute_hospital', assignedHospitalId: hospId },
+      timelineText: `Ambulance crew selected ${hosp.name} as the receiving hospital`
+    });
+    handleIncidentEvent('incident_choose_hospital', incident);
+  }catch(e){ console.error('choose hospital failed', e); showToast('Update failed', 'Please try again.', 'danger'); return; }
   audit('responder:'+inc.assignedResponderId, 'select_hospital', incId+' -> '+hospId);
-
-  const inc_medical = inc.medical || {bloodGroup:'Unknown', allergies:'Unknown', chronic:'Unknown'};
-  pushNotification('hospital:'+hosp.id, 'Incoming patient confirmed', `${incId} · ETA ${etaMinutes(haversineKm(inc.lat,inc.lng,hosp.lat,hosp.lng))} min · Ambulance ${resp?resp.vehicle:''} · Blood group ${inc_medical.bloodGroup} · Allergies: ${inc_medical.allergies}${inc.reportedFor==='other'?' · Patient identity unknown (bystander report) — reporter: '+inc.reporterPhone:''}`, 'danger', incId);
-  (inc.notifiedHospitals||[]).filter(id=>id!==hospId).forEach(id=>{
-    pushNotification('hospital:'+id, 'Case routed elsewhere — stand down', `${incId} was taken to another hospital. No action needed.`, 'info', incId);
-  });
-  if(inc.notifiedPoliceId){
-    pushNotification('police:'+inc.notifiedPoliceId, 'Destination confirmed', `${resp?resp.vehicle:'Ambulance'} is heading to ${hosp.name} with ${incId}.`, 'dispatch', incId);
-  }
-  pushNotification('patient', 'Heading to hospital', `You're being taken to ${hosp.name}.`, 'success', incId);
 
   if(currentRole==='responder') renderCurrentView('r-active');
   else refreshBell();
@@ -3242,7 +3373,8 @@ function chooseHospitalForIncident(incId, hospId){
 function startLiveIncidentTracking(){
   if(liveTrackingTimer) clearInterval(liveTrackingTimer);
   liveTrackingTimer = setInterval(()=>{
-    escalateStaleSosIncidents(); // widen to 10km if 60s passed with no accept — see escalateStaleSosIncidents()
+    // Escalation timing now lives server-side (sosHub.js alarm()); widening is
+    // reactive off the 'incident_escalated' WS event — see widenEscalatedIncident().
     let stillActive = false;
     if(currentView==='p-sos'){
       const inc = currentIncident();
@@ -3365,10 +3497,10 @@ function patchResponderActive(inc){
 // so a station's "Active Cases Nearby" count could stay stuck/inflated
 // forever with nothing the officer could do about it.
 function myStationIncidents(){
-  return db('incidents').filter(i=>i.status!=='closed' && !i.policeResolved && i.notifiedPoliceId===CURRENT_POLICE_STATION_ID);
+  return db('incidents').filter(i=>i.status!=='closed' && !(i.flags&&i.flags.policeResolved) && i.notifiedPoliceId===CURRENT_POLICE_STATION_ID);
 }
 function myStationResolvedCount(){
-  return db('incidents').filter(i=>i.notifiedPoliceId===CURRENT_POLICE_STATION_ID && (i.status==='closed' || i.policeResolved)).length;
+  return db('incidents').filter(i=>i.notifiedPoliceId===CURRENT_POLICE_STATION_ID && (i.status==='closed' || (i.flags&&i.flags.policeResolved))).length;
 }
 function viewPoliceDash(){
   const active = myStationIncidents();
@@ -3408,7 +3540,7 @@ function renderPoliceFeedList(incidents){
       </div>
       <span class="status-tag status-info">${incidentStatusLabel(inc.status)}</span>
       <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-        ${inc.policeAcked
+        ${(inc.flags&&inc.flags.policeAcked)
           ? `<span class="status-tag status-ok"><i class="fa-solid fa-check"></i> Acknowledged — route support logged</span>`
           : `<button class="btn btn-sm btn-secondary" onclick="ackPolice('${inc.id}')"><i class="fa-solid fa-flag-checkered"></i> Acknowledge / Clear route</button>`}
         <button class="btn btn-sm" onclick="closePoliceCase('${inc.id}')"><i class="fa-solid fa-box-archive"></i> Close case</button>
@@ -3427,16 +3559,19 @@ function patchPoliceFeed(){
     if(el.innerHTML!==html) el.innerHTML = html;
   }
 }
-function ackPolice(id){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===id);
+async function ackPolice(id){
+  const inc = db('incidents').find(i=>i.id===id);
   if(!inc || inc.notifiedPoliceId!==CURRENT_POLICE_STATION_ID) return;
   // Persist the acknowledgment on the incident itself so it's a real, lasting record —
   // not just a one-off toast that vanishes and can be fired over and over.
-  inc.policeAcked = true;
   const stationLabel = (db('policeProfile')||{}).station || 'Local police';
-  inc.timeline.push({ts:now(), text:stationLabel+' acknowledged and is clearing the route'});
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${id}/update`, {
+      patchFlags: {policeAcked:true},
+      timelineText: stationLabel+' acknowledged and is clearing the route'
+    });
+    mirrorIncident(incident);
+  }catch(e){ console.error('police ack failed', e); showToast('Acknowledge failed', 'Please try again.', 'danger'); return; }
   pushNotification('patient','Route support','Local police acknowledged and is helping clear the route.','info',id);
   showToast('Acknowledged','Logged as active route support.','success');
   audit('police:'+CURRENT_POLICE_STATION_ID,'acknowledge',id);
@@ -3446,16 +3581,19 @@ function ackPolice(id){
 // independent of whether the patient or hospital has closed it on their end.
 // This is what was missing: without it, a station had no way to end its
 // involvement, so "Active Cases Nearby" only ever grew and never came down.
-function closePoliceCase(id){
-  const all = db('incidents');
-  const inc = all.find(i=>i.id===id);
+async function closePoliceCase(id){
+  const inc = db('incidents').find(i=>i.id===id);
   if(!inc || inc.notifiedPoliceId!==CURRENT_POLICE_STATION_ID) return;
-  if(inc.policeResolved) return;
+  if(inc.flags && inc.flags.policeResolved) return;
   if(!confirm('Close this case on your station\'s side? It will move out of your active feed.')) return;
-  inc.policeResolved = true;
   const stationLabel = (db('policeProfile')||{}).station || 'Local police';
-  inc.timeline.push({ts:now(), text:stationLabel+' closed the case on their end'});
-  dbSet('incidents', all);
+  try{
+    const {incident} = await sosApi(`/api/sos/${id}/update`, {
+      patchFlags: {policeResolved:true},
+      timelineText: stationLabel+' closed the case on their end'
+    });
+    mirrorIncident(incident);
+  }catch(e){ console.error('police close failed', e); showToast('Close failed', 'Please try again.', 'danger'); return; }
   audit('police:'+CURRENT_POLICE_STATION_ID,'close',id);
   showToast('Case closed', 'Removed from your active feed and logged as resolved.', 'success');
   renderCurrentView('po-feed');
@@ -3523,26 +3661,36 @@ function viewHospitalIncoming(){
   }).join('') : `<div class="empty-state"><i class="fa-solid fa-bed-pulse"></i><p>No incoming patients right now.</p></div>`}`;
 }
 function confirmBedReady(id){
+  // Notification-only (no status change) — kept local like before, plus a
+  // best-effort timeline entry so it's visible on the patient's live tracking
+  // feed on other devices too.
   pushNotification('patient','Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
   const resp = db('incidents').find(i=>i.id===id).assignedResponderId;
   if(resp) pushNotification('responder:'+resp,'Bed confirmed','Destination hospital confirmed bed readiness.','info',id);
+  sosApi(`/api/sos/${id}/update`, { timelineText: 'Hospital confirmed a bed is ready' })
+    .then(({incident})=>mirrorIncident(incident)).catch(()=>{});
   showToast('Confirmed','Patient and responder notified.','success');
   audit('hospital:'+CURRENT_HOSPITAL_ID,'bed_ready',id);
 }
-function closeIncidentHospitalSide(id){
-  const all = db('incidents'); const inc = all.find(i=>i.id===id);
-  inc.status='closed'; inc.timeline.push({ts:now(),text:'Admitted and case closed by hospital'}); creditResponderCase(inc); dbSet('incidents',all);
-  audit('hospital:'+CURRENT_HOSPITAL_ID,'close',id);
-  // This is the real end of the case — only now is the ambulance crew freed up.
-  if(inc.assignedResponderId){
-    const responders = db('responders');
-    const resp = responders.find(r=>r.id===inc.assignedResponderId);
-    if(resp){
-      resp.status = 'available';
-      dbSet('responders', responders);
-      pushNotification('responder:'+resp.id, 'Case closed — you\'re available', 'Hospital confirmed admission for '+id+'. You\'re free for new dispatches.', 'success', id);
+async function closeIncidentHospitalSide(id){
+  const inc = db('incidents').find(i=>i.id===id);
+  if(!inc) return;
+  try{
+    const {incident} = await sosApi(`/api/sos/${id}/close`, { timelineText: 'Admitted and case closed by hospital' });
+    creditResponderCase(incident);
+    // This is the real end of the case — only now is the ambulance crew freed up.
+    if(incident.assignedResponderId){
+      const responders = db('responders');
+      const resp = responders.find(r=>r.id===incident.assignedResponderId);
+      if(resp){
+        resp.status = 'available';
+        dbSet('responders', responders);
+        pushNotification('responder:'+resp.id, 'Case closed — you\'re available', 'Hospital confirmed admission for '+id+'. You\'re free for new dispatches.', 'success', id);
+      }
     }
-  }
+    handleIncidentEvent('incident_close', incident);
+  }catch(e){ console.error('hospital close failed', e); showToast('Close failed', 'Please try again.', 'danger'); return; }
+  audit('hospital:'+CURRENT_HOSPITAL_ID,'close',id);
   showToast('Case closed', 'Patient admitted. Ambulance crew has been released for new dispatches.', 'success');
   renderCurrentView('h-incoming');
 }
