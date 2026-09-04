@@ -791,7 +791,7 @@ function notifyForIncidentEvent(type, inc){
       pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Emergency reported near '+(p?p.name:'station'), `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
     }
     if(isMine.patient){
-      pushNotification('patient', 'Help is on the way', `Notified ${(inc.notifiedHospitals||[]).length} hospitals, ${(inc.notifiedResponders||[]).length} ambulances${inc.searchRadiusKm?' within '+inc.searchRadiusKm+'km':(inc.notifiedResponders&&inc.notifiedResponders.length?' (closest available, beyond 10km)':'')} and local police simultaneously.`, 'info', inc.id);
+      pushNotification('patient:'+inc.patientId, 'Help is on the way', `Notified ${(inc.notifiedHospitals||[]).length} hospitals, ${(inc.notifiedResponders||[]).length} ambulances${inc.searchRadiusKm?' within '+inc.searchRadiusKm+'km':(inc.notifiedResponders&&inc.notifiedResponders.length?' (closest available, beyond 10km)':'')} and local police simultaneously.`, 'info', inc.id);
     }
   } else if(type==='incident_escalated'){
     if(isMine.patient && inc.status==='broadcasting') widenEscalatedIncident(inc);
@@ -814,13 +814,13 @@ function notifyForIncidentEvent(type, inc){
     }
     if(isMine.patient){
       const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
-      pushNotification('patient', 'Ambulance is on its way', `${resp?resp.name:'A responder'} (${resp?resp.vehicle:''}) accepted your case.${resp?' Driver contact: '+resp.phone+'.':''}`, 'success', inc.id);
+      pushNotification('patient:'+inc.patientId, 'Ambulance is on its way', `${resp?resp.name:'A responder'} (${resp?resp.vehicle:''}) accepted your case.${resp?' Driver contact: '+resp.phone+'.':''}`, 'success', inc.id);
     }
   } else if(type==='incident_decline'){
     // Decline only removes the declining responder from their own queue — no
     // one else needs to hear about it, so there's nothing to notify here.
   } else if(type==='incident_picked_up'){
-    if(isMine.patient) pushNotification('patient', 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', inc.id);
   } else if(type==='incident_choose_hospital'){
     const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
     const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
@@ -833,10 +833,10 @@ function notifyForIncidentEvent(type, inc){
     if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID){
       pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Destination confirmed', `${resp?resp.vehicle:'Ambulance'} is heading to ${hosp?hosp.name:'the hospital'} with ${inc.id}.`, 'dispatch', inc.id);
     }
-    if(isMine.patient) pushNotification('patient', 'Heading to hospital', `You're being taken to ${hosp?hosp.name:'the hospital'}.`, 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Heading to hospital', `You're being taken to ${hosp?hosp.name:'the hospital'}.`, 'success', inc.id);
   } else if(type==='incident_arrived'){
     const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
-    if(isMine.patient) pushNotification('patient', 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', inc.id);
     if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID) pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Patient arrived', 'Case '+inc.id+' has arrived at your facility and needs to be admitted to close the case.', 'success', inc.id);
     if(isMine.responder && inc.assignedResponderId===CURRENT_RESPONDER_ID) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Handoff pending', 'Patient dropped off'+(hosp?' at '+hosp.name:'')+'. You\'ll be marked available once the hospital confirms admission.', 'info', inc.id);
     if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID) pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Case resolved', 'Ambulance completed transport for '+inc.id+'.', 'info', inc.id);
@@ -1262,7 +1262,10 @@ function initializeDataStore(){
   // status and claims never leak into another's — see getInsuranceRecord() below.
   if(!db('insurance')) dbSet('insurance', {});
   if(!db('documents')) dbSet('documents', []);
-  if(!db('policeProfile')) dbSet('policeProfile', {name:'', badge:'', station:'', phone:''});
+  // Keyed by stationId, same pattern as insurance — otherwise the most recent
+  // police login anywhere in the room overwrites every other officer's name/
+  // badge/station/phone shown on their own session.
+  if(!db('policeProfile')) dbSet('policeProfile', {});
   if(!db('auth')) dbSet('auth', {verified:false, consent:false});
 }
 initializeDataStore();
@@ -1292,7 +1295,7 @@ function pushNotification(scope, title, body, type, incidentId){
 }
 function scopeMatchesCurrent(scope){
   if(!currentRole) return false;
-  if(scope === currentRole) return true; // e.g. 'patient' === 'patient'
+  if(currentRole==='patient' && scope === 'patient:'+currentPatientId()) return true;
   if(scope === currentRole+':*') return true;
   if(currentRole==='responder' && scope === 'responder:'+CURRENT_RESPONDER_ID) return true;
   if(currentRole==='hospital' && scope === 'hospital:'+CURRENT_HOSPITAL_ID) return true;
@@ -1302,7 +1305,7 @@ function scopeMatchesCurrent(scope){
 function notificationsForCurrentScope(){
   const n = db('notifications');
   return n.filter(x=>{
-    if(x.scope===currentRole) return true;
+    if(currentRole==='patient' && x.scope==='patient:'+currentPatientId()) return true;
     if(x.scope===currentRole+':*') return true;
     if(currentRole==='responder' && x.scope==='responder:'+CURRENT_RESPONDER_ID) return true;
     if(currentRole==='hospital' && x.scope==='hospital:'+CURRENT_HOSPITAL_ID) return true;
@@ -1550,7 +1553,7 @@ function currentIdentity(){
   if(currentRole==='patient'){ const p=db('profile')||{}; const u=currentUserRecord(); return {name:p.name||'Patient', sub:(u&&u.email)||p.phone||'', unit:p.relation&&p.relation!=='Self'?p.relation:''}; }
   if(currentRole==='responder'){ const r=(db('responders')||[]).find(x=>x.id===CURRENT_RESPONDER_ID)||{}; const u=findRoleUserByEmail('responder', roleAuthData.loggedEmail); return {name:r.name||'Responder', sub:(u&&u.email)||r.phone||'', unit:r.vehicle||CURRENT_RESPONDER_ID}; }
   if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; const u=findRoleUserByEmail('hospital', roleAuthData.loggedEmail); return {name:h.name||'Hospital', sub:(u&&u.email)||h.phone||'', unit:h.id}; }
-  if(currentRole==='police'){ const po=db('policeProfile')||{}; return {name:po.name||'Officer', sub:po.email||po.phone||'', unit:po.station||''}; }
+  if(currentRole==='police'){ const po=(db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}; return {name:po.name||'Officer', sub:po.email||po.phone||'', unit:po.station||''}; }
   return {name:'—', sub:'', unit:''};
 }
 function toggleProfileMenu(e){
@@ -2117,7 +2120,9 @@ function ensureHospitalRecord(user){
   CURRENT_HOSPITAL_ID = h.id;
 }
 function applyPoliceProfile(user){
-  dbSet('policeProfile', {name:user.name||'Officer', badge:user.badge||'', station:user.station||'', phone:user.phone||'', email:user.email});
+  const all = db('policeProfile')||{};
+  all[user.stationId] = {name:user.name||'Officer', badge:user.badge||'', station:user.station||'', phone:user.phone||'', email:user.email};
+  dbSet('policeProfile', all);
 }
 // Real station record so this officer's station actually shows up in nearest-police
 // matching and on the live map — mirrors ensureResponderRecord/ensureHospitalRecord.
@@ -2135,7 +2140,8 @@ function ensurePoliceStationRecord(user){
 function applyRoleUserToSession(role, user){
   if(role==='responder') ensureResponderRecord(user);
   else if(role==='hospital') ensureHospitalRecord(user);
-  else if(role==='police'){ applyPoliceProfile(user); ensurePoliceStationRecord(user); }
+  // Station record first so applyPoliceProfile always has a real stationId to key on.
+  else if(role==='police'){ ensurePoliceStationRecord(user); applyPoliceProfile(user); }
 }
 
 function renderRoleAuthCard(){
@@ -2727,8 +2733,9 @@ async function adminDeleteUser(role, email){
   } else if(role==='police' && user.stationId){
     dbSet('police', (db('police')||[]).filter(p=>p.id!==user.stationId));
     dbSet('notifications', (db('notifications')||[]).filter(n=>n.scope!=='police:'+user.stationId));
-    const pp = db('policeProfile');
-    if(pp && pp.email===email) dbSet('policeProfile', {});
+    const pp = db('policeProfile')||{};
+    delete pp[user.stationId];
+    dbSet('policeProfile', pp);
   } else if(role==='patient' && Array.isArray(user.members)){
     // Cycle-tracking entries are keyed by memberId (see cycEntry()/the migration
     // note near line 1216) — safe to purge for every member on this account.
@@ -2747,6 +2754,8 @@ async function adminDeleteUser(role, email){
     dbSet('prescriptions', (db('prescriptions')||[]).filter(r=>!memberIds.includes(r.ownerId)));
     dbSet('appointments', (db('appointments')||[]).filter(a=>!memberIds.includes(a.ownerId)));
     dbSet('claims', (db('claims')||[]).filter(c=>!memberIds.includes(c.ownerId)));
+    dbSet('reminders', (db('reminders')||[]).filter(r=>!memberIds.includes(r.ownerId)));
+    dbSet('notifications', (db('notifications')||[]).filter(n=>!memberIds.some(mid=>n.scope==='patient:'+mid)));
     const ins = db('insurance')||{};
     memberIds.forEach(mid=>delete ins[mid]);
     dbSet('insurance', ins);
@@ -3731,7 +3740,7 @@ function myStationResolvedCount(){
 }
 function viewPoliceDash(){
   const active = myStationIncidents();
-  const stationName = (db('policeProfile')||{}).station || 'Your Station';
+  const stationName = ((db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}).station || 'Your Station';
   return `
   ${viewHeader('Police Console', stationName, 'Every emergency dispatch nearest to your station — ambulance and hospital — auto-notifies you. No more silent SOS calls.')}
   <div class="grid-3">
@@ -3791,7 +3800,7 @@ async function ackPolice(id){
   if(!inc || inc.notifiedPoliceId!==CURRENT_POLICE_STATION_ID) return;
   // Persist the acknowledgment on the incident itself so it's a real, lasting record —
   // not just a one-off toast that vanishes and can be fired over and over.
-  const stationLabel = (db('policeProfile')||{}).station || 'Local police';
+  const stationLabel = ((db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}).station || 'Local police';
   try{
     const {incident} = await sosApi(`/api/sos/${id}/update`, {
       patchFlags: {policeAcked:true},
@@ -3802,7 +3811,7 @@ async function ackPolice(id){
     if(e.status===404){ dropUnknownLocalIncident(id); showToast('Case already gone', 'That case no longer exists — removed from your feed.', 'info'); renderCurrentView('po-feed'); return; }
     console.error('police ack failed', e); showToast('Acknowledge failed', 'Please try again.', 'danger'); return;
   }
-  pushNotification('patient','Route support','Local police acknowledged and is helping clear the route.','info',id);
+  pushNotification('patient:'+inc.patientId,'Route support','Local police acknowledged and is helping clear the route.','info',id);
   showToast('Acknowledged','Logged as active route support.','success');
   audit('police:'+CURRENT_POLICE_STATION_ID,'acknowledge',id);
   renderCurrentView('po-feed');
@@ -3816,7 +3825,7 @@ async function closePoliceCase(id){
   if(!inc || inc.notifiedPoliceId!==CURRENT_POLICE_STATION_ID) return;
   if(inc.flags && inc.flags.policeResolved) return;
   if(!confirm('Close this case on your station\'s side? It will move out of your active feed.')) return;
-  const stationLabel = (db('policeProfile')||{}).station || 'Local police';
+  const stationLabel = ((db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}).station || 'Local police';
   try{
     const {incident} = await sosApi(`/api/sos/${id}/update`, {
       patchFlags: {policeResolved:true},
@@ -3897,8 +3906,9 @@ function confirmBedReady(id){
   // Notification-only (no status change) — kept local like before, plus a
   // best-effort timeline entry so it's visible on the patient's live tracking
   // feed on other devices too.
-  pushNotification('patient','Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
-  const resp = db('incidents').find(i=>i.id===id).assignedResponderId;
+  const inc = db('incidents').find(i=>i.id===id);
+  pushNotification('patient:'+(inc&&inc.patientId), 'Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
+  const resp = inc && inc.assignedResponderId;
   if(resp) pushNotification('responder:'+resp,'Bed confirmed','Destination hospital confirmed bed readiness.','info',id);
   sosApi(`/api/sos/${id}/update`, { timelineText: 'Hospital confirmed a bed is ready' })
     .then(({incident})=>mirrorIncident(incident)).catch(()=>{});
@@ -3982,7 +3992,7 @@ function hospitalCancelAppt(id){
   a.status = 'Cancelled';
   dbSet('appointments', appts);
   audit('hospital:'+CURRENT_HOSPITAL_ID, 'appointment_cancel', a.doctor+' @ '+a.slot);
-  pushNotification('patient', 'Appointment cancelled', `Your ${a.slot} consultation with ${a.doctor} was cancelled by the hospital.`, 'danger', null);
+  pushNotification('patient:'+a.ownerId, 'Appointment cancelled', `Your ${a.slot} consultation with ${a.doctor} was cancelled by the hospital.`, 'danger', null);
   showToast('Cancelled', 'Patient notified. That slot is free again.', 'success');
   renderCurrentView('h-tele');
 }
@@ -4826,7 +4836,7 @@ function sendToPharmacy(id){ showToast('Sent to pharmacy','Nearest pharmacy noti
    PATIENT — PHARMACY & REMINDERS
    ============================================================ */
 function viewPatientPharmacy(){
-  const reminders = db('reminders');
+  const reminders = (db('reminders')||[]).filter(r=>r.ownerId===currentPatientId());
   const pharmacies = db('pharmacies');
   return `${viewHeader('Pharmacy &amp; Medicine Reminders','Never miss a dose','')}
   <div class="card">
@@ -4848,11 +4858,11 @@ function addReminder(){
   const med = document.getElementById('rem-med').value.trim();
   const time = document.getElementById('rem-time').value;
   if(!med || !time){ showToast('Missing info','Enter both medicine and time.','danger'); return; }
-  const r = db('reminders'); r.push({id:uid('REM'), med, time, on:true}); dbSet('reminders', r);
+  const r = db('reminders'); r.push({id:uid('REM'), ownerId: currentPatientId(), med, time, on:true}); dbSet('reminders', r);
   audit('patient','reminder_add', med+' @ '+time);
   renderCurrentView('p-pharmacy');
 }
-function toggleReminder(id){ const r=db('reminders'); const item=r.find(x=>x.id===id); item.on=!item.on; dbSet('reminders',r); renderCurrentView('p-pharmacy'); }
+function toggleReminder(id){ const r=db('reminders'); const item=r.find(x=>x.id===id && x.ownerId===currentPatientId()); if(!item) return; item.on=!item.on; dbSet('reminders',r); renderCurrentView('p-pharmacy'); }
 
 /* ============================================================
    PATIENT — WOMEN'S HEALTH (with PIN lock)
@@ -5538,7 +5548,7 @@ function submitClaim(){
   showToast('Claim submitted', c.id+' is now under review.', 'success');
   renderCurrentView('p-insurance');
   setTimeout(()=>{ c.status='Under Review'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); }, 4000);
-  setTimeout(()=>{ c.status='Approved'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); pushNotification('patient','Claim approved', c.id+' approved for ₹'+amt, 'success'); }, 9000);
+  setTimeout(()=>{ c.status='Approved'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); pushNotification('patient:'+c.ownerId,'Claim approved', c.id+' approved for ₹'+amt, 'success'); }, 9000);
 }
 
 /* ============================================================
