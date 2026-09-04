@@ -1257,7 +1257,10 @@ function initializeDataStore(){
     }
   }
   if(!db('claims')) dbSet('claims', []);
-  if(!db('insurance')) dbSet('insurance', {aadhaar_verified:false});
+  // Keyed by patient memberId ('_walkin' = hospital front-desk demo screen, which
+  // has no real patient context of its own) so one account's/member's verification
+  // status and claims never leak into another's — see getInsuranceRecord() below.
+  if(!db('insurance')) dbSet('insurance', {});
   if(!db('documents')) dbSet('documents', []);
   if(!db('policeProfile')) dbSet('policeProfile', {name:'', badge:'', station:'', phone:''});
   if(!db('auth')) dbSet('auth', {verified:false, consent:false});
@@ -1673,6 +1676,13 @@ function findUserByPhone(phone, excludeEmail){
 }
 function currentUserRecord(){ return patientAuthData.loggedEmail ? findUserByEmail(patientAuthData.loggedEmail) : null; }
 function currentPatientId(){ const u = currentUserRecord(); return (u && u.activeMemberId) ? u.activeMemberId : 'ME'; }
+// ---- Per-patient scoping helpers for documents/prescriptions/appointments/
+// claims/insurance — these collections are shared/synced room-wide, so every
+// record needs an ownerId (a memberId) written on creation and filtered on
+// read. Without this, a brand-new signup (or any other account) would see
+// every other patient's — including a deleted patient's — old records. ----
+function getInsuranceRecord(pid){ const ins=db('insurance')||{}; return ins[pid] || {aadhaar_verified:false}; }
+function setInsuranceVerified(pid, val){ const ins=db('insurance')||{}; ins[pid] = Object.assign({}, ins[pid]||{}, {aadhaar_verified: val}); dbSet('insurance', ins); }
 function saveUser(u){ const list=usersDb(); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users', list); }
 function isGmail(email){ return /^[^\s@]+@gmail\.com$/i.test((email||'').trim()); }
 
@@ -2728,11 +2738,18 @@ async function adminDeleteUser(role, email){
       memberIds.forEach(mid=>delete cyc.entries[mid]);
       dbSet('cycle', cyc);
     }
-    // NOTE: documents/prescriptions/appointments/claims/insurance are NOT purged
-    // here — those collections currently have no owner/member field at all in
-    // this app (they're shared room-wide, not per-patient), so there's nothing
-    // to safely attribute to this specific account. That's a separate, bigger
-    // gap than account deletion — see the conversation notes.
+    // documents/prescriptions/appointments/claims/insurance are now tagged with
+    // an ownerId (a memberId) when created — see getInsuranceRecord() and the
+    // patient-side view/create functions — so they can be purged per-member here
+    // too, instead of silently surviving deletion and leaking into other/future
+    // accounts.
+    dbSet('documents', (db('documents')||[]).filter(d=>!memberIds.includes(d.ownerId)));
+    dbSet('prescriptions', (db('prescriptions')||[]).filter(r=>!memberIds.includes(r.ownerId)));
+    dbSet('appointments', (db('appointments')||[]).filter(a=>!memberIds.includes(a.ownerId)));
+    dbSet('claims', (db('claims')||[]).filter(c=>!memberIds.includes(c.ownerId)));
+    const ins = db('insurance')||{};
+    memberIds.forEach(mid=>delete ins[mid]);
+    dbSet('insurance', ins);
   }
 
   // If the deleted account happens to be logged in on THIS device right now,
@@ -2927,9 +2944,9 @@ function viewPatientDash(){
   </div>` : ''}
   <div class="grid-4" style="margin-bottom:8px;">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-droplet"></i></div><div><div class="dash-stat-num">${profile.bloodGroup}</div><div class="dash-stat-label">Blood Group</div></div></div>
-    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-file-medical"></i></div><div><div class="dash-stat-num">${db('appointments').length}</div><div class="dash-stat-label">Appointments</div></div></div>
-    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div><div><div class="dash-stat-num">${db('prescriptions').length}</div><div class="dash-stat-label">Prescriptions</div></div></div>
-    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-shield-heart"></i></div><div><div class="dash-stat-num">${db('insurance').aadhaar_verified?'Linked':'Unlinked'}</div><div class="dash-stat-label">Govt. Scheme ID</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-file-medical"></i></div><div><div class="dash-stat-num">${(db('appointments')||[]).filter(a=>a.ownerId===currentPatientId()).length}</div><div class="dash-stat-label">Appointments</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div><div><div class="dash-stat-num">${(db('prescriptions')||[]).filter(r=>r.ownerId===currentPatientId()).length}</div><div class="dash-stat-label">Prescriptions</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-shield-heart"></i></div><div><div class="dash-stat-num">${getInsuranceRecord(currentPatientId()).aadhaar_verified?'Linked':'Unlinked'}</div><div class="dash-stat-label">Govt. Scheme ID</div></div></div>
   </div>
   <div class="grid-2">
     <div class="card">
@@ -3970,16 +3987,20 @@ function hospitalCancelAppt(id){
   renderCurrentView('h-tele');
 }
 function viewHospitalVerify(){
-  const ins = db('insurance');
+  // '_walkin' — this desk screen has no selected-patient context of its own
+  // (it's a walk-up OTP simulation), so it intentionally uses its own bucket
+  // rather than any real patient's record, and its claims table shows all
+  // claims across patients (a hospital front-desk view, not a private one).
+  const ins = getInsuranceRecord('_walkin');
   return `${viewHeader('Aadhaar &amp; Scheme Verification','Government ID + insurance pre-authorization','Real deployments call the UIDAI sandbox OTP API; this view simulates the same UX.')}
   <div class="card">
     <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
-    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Verified</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="resetVerification()">Reset</button>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Verified</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="hospitalResetVerification()">Reset</button>` : `<button class="btn" onclick="hospitalVerifyAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
   </div>
   <div class="card"><h3 style="margin-top:0;">Insurance claims</h3>${renderClaimsTable()}</div>`;
 }
-function verifyPatientAadhaar(){ const ins=db('insurance'); ins.aadhaar_verified=true; dbSet('insurance',ins); audit('hospital:'+CURRENT_HOSPITAL_ID,'aadhaar_verify','OTP confirmed'); renderCurrentView('h-verify'); showToast('Verified','Government scheme data unlocked.','success'); }
-function resetVerification(){ const ins=db('insurance'); ins.aadhaar_verified=false; dbSet('insurance',ins); renderCurrentView('h-verify'); }
+function hospitalVerifyAadhaar(){ setInsuranceVerified('_walkin', true); audit('hospital:'+CURRENT_HOSPITAL_ID,'aadhaar_verify','OTP confirmed'); renderCurrentView('h-verify'); showToast('Verified','Government scheme data unlocked.','success'); }
+function hospitalResetVerification(){ setInsuranceVerified('_walkin', false); renderCurrentView('h-verify'); }
 function viewHospitalAudit(){
   const logs = db('audit');
   return `${viewHeader('Audit Trail','Immutable access &amp; dispatch log','Every record access, verification lookup, and dispatch event is logged for compliance.')}
@@ -4627,7 +4648,7 @@ const DOC_CATEGORIES = {
   other:     {label:'Other', icon:'fa-file'},
 };
 function viewPatientDocuments(){
-  const docs = (db('documents')||[]).slice().sort((a,b)=>b.uploadedAt-a.uploadedAt);
+  const docs = (db('documents')||[]).filter(d=>d.ownerId===currentPatientId()).slice().sort((a,b)=>b.uploadedAt-a.uploadedAt);
   return `${viewHeader('My Documents','Insurance papers &amp; medical history','Upload insurance cards, discharge summaries, or old medical history so they\'re on hand if you ever need them in an emergency.')}
   <div class="card">
     <h3 style="margin-top:0;">Upload a document</h3>
@@ -4676,6 +4697,7 @@ function handleDocUpload(evt){
     const docs = db('documents') || [];
     docs.push({
       id: uid('DOC'),
+      ownerId: currentPatientId(),
       name: file.name,
       category,
       sizeKB: Math.round(file.size/1024),
@@ -4694,7 +4716,9 @@ function handleDocUpload(evt){
   reader.readAsDataURL(file);
 }
 function deleteDocument(id){
-  const docs = (db('documents')||[]).filter(d=>d.id!==id);
+  // Guard ownership too, not just id — a patient should never be able to
+  // delete another account's document even if an id were somehow guessed.
+  const docs = (db('documents')||[]).filter(d=>!(d.id===id && d.ownerId===currentPatientId()));
   dbSet('documents', docs);
   audit('patient', 'document_delete', id);
   showToast('Document removed', '', 'success');
@@ -4707,7 +4731,7 @@ function deleteDocument(id){
 function viewPatientTele(){
   const docs = db('doctors').filter(d=>d.available);
   const allAppts = db('appointments');
-  const myAppts = allAppts.filter(a=>a.patient===db('profile').name && a.status==='Confirmed');
+  const myAppts = allAppts.filter(a=>a.ownerId===currentPatientId() && a.status==='Confirmed');
   const inCall = db('activeCall');
   if(inCall){
     return `${viewHeader('Telemedicine','Live consultation','')}
@@ -4751,7 +4775,7 @@ function bookAppt(doctor, hospital, slot){
     renderCurrentView('p-tele');
     return;
   }
-  appts.push({id:uid('APT'), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed'});
+  appts.push({id:uid('APT'), ownerId: currentPatientId(), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed'});
   dbSet('appointments', appts);
   audit('patient','appointment_book', doctor+' @ '+slot);
   pushNotification('hospital:'+hospital, 'New telemedicine booking', `${db('profile').name} booked ${doctor} at ${slot}.`, 'info', null);
@@ -4760,7 +4784,7 @@ function bookAppt(doctor, hospital, slot){
 }
 function patientCancelAppt(id){
   const appts = db('appointments');
-  const a = appts.find(x=>x.id===id);
+  const a = appts.find(x=>x.id===id && x.ownerId===currentPatientId());
   if(!a) return;
   if(!confirm('Cancel your '+a.slot+' consultation with '+a.doctor+'?')) return;
   a.status = 'Cancelled';
@@ -4778,11 +4802,11 @@ function endCall(){
   // permanently occupying that doctor's slot and cluttering "Upcoming consultations".
   if(inCall){
     const appts = db('appointments');
-    const a = appts.find(x=>x.patient===db('profile').name && x.doctor===inCall.doctor && x.status==='Confirmed');
+    const a = appts.find(x=>x.ownerId===currentPatientId() && x.doctor===inCall.doctor && x.status==='Confirmed');
     if(a){ a.status = 'Completed'; dbSet('appointments', appts); }
   }
   const rx = db('prescriptions');
-  rx.push({id:uid('RX'), doctor: (inCall&&inCall.doctor) || 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
+  rx.push({id:uid('RX'), ownerId: currentPatientId(), doctor: (inCall&&inCall.doctor) || 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
   dbSet('prescriptions', rx);
   showToast('Consultation ended','e-Prescription issued.','success');
   renderCurrentView('p-rx');
@@ -4792,7 +4816,7 @@ function endCall(){
    PATIENT — E-PRESCRIPTIONS
    ============================================================ */
 function viewPatientRx(){
-  const rx = db('prescriptions');
+  const rx = db('prescriptions').filter(r=>r.ownerId===currentPatientId());
   return `${viewHeader('e-Prescriptions','Digitally signed prescriptions','')}
   ${rx.length ? rx.map(r=>`<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button></div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
 }
@@ -5476,11 +5500,12 @@ function renderCycAwareness(){
    PATIENT — INSURANCE / GOVT SCHEMES
    ============================================================ */
 function viewPatientInsurance(){
-  const ins = db('insurance');
+  const pid = currentPatientId();
+  const ins = getInsuranceRecord(pid);
   return `${viewHeader('Government Schemes &amp; Insurance','Ayushman Bharat / PM-JAY &amp; private cover','')}
   <div class="card">
     <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
-    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — Scheme data unlocked</span>` : `<button class="btn" onclick="verifyPatientAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — Scheme data unlocked</span>` : `<button class="btn" onclick="patientVerifyAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
   </div>
   ${ins.aadhaar_verified ? `<div class="card"><h3 style="margin-top:0;">PM-JAY Eligibility</h3><p style="color:var(--text-muted);">Coverage up to ₹5,00,000/year for your household. Cashless treatment at empaneled hospitals.</p></div>` : ''}
   <div class="card">
@@ -5491,10 +5516,13 @@ function viewPatientInsurance(){
     </div>
     <button class="btn" onclick="submitClaim()"><i class="fa-solid fa-file-invoice"></i> Submit claim</button>
   </div>
-  <div class="card"><h3 style="margin-top:0;">Claim status</h3>${renderClaimsTable()}</div>`;
+  <div class="card"><h3 style="margin-top:0;">Claim status</h3>${renderClaimsTable(pid)}</div>`;
 }
-function renderClaimsTable(){
-  const claims = db('claims');
+function patientVerifyAadhaar(){ setInsuranceVerified(currentPatientId(), true); audit('patient','aadhaar_verify','OTP confirmed'); renderCurrentView('p-insurance'); showToast('Verified','Government scheme data unlocked.','success'); }
+// ownerId omitted (undefined) => show every patient's claims, used by the
+// hospital front-desk screen which isn't tied to one patient's record.
+function renderClaimsTable(ownerId){
+  const claims = (db('claims')||[]).filter(c=>ownerId===undefined || c.ownerId===ownerId);
   if(!claims.length) return `<p style="color:var(--text-muted);margin:0;">No claims submitted yet.</p>`;
   return `<table class="data-table"><thead><tr><th>Claim ID</th><th>Hospital</th><th>Amount</th><th>Status</th></tr></thead><tbody>
   ${claims.map(c=>`<tr><td>${c.id}</td><td>${db('hospitals').find(h=>h.id===c.hosp)?.name||c.hosp}</td><td>₹${c.amt}</td><td><span class="status-tag ${c.status==='Approved'?'status-ok':c.status==='Under Review'?'status-warn':'status-info'}">${c.status}</span></td></tr>`).join('')}
@@ -5504,7 +5532,7 @@ function submitClaim(){
   const hosp = document.getElementById('claim-hosp').value;
   const amt = document.getElementById('claim-amt').value || '0';
   const claims = db('claims');
-  const c = {id: uid('CLM'), hosp, amt, status:'Submitted'};
+  const c = {id: uid('CLM'), ownerId: currentPatientId(), hosp, amt, status:'Submitted'};
   claims.push(c); dbSet('claims', claims);
   audit('patient','claim_submit', c.id);
   showToast('Claim submitted', c.id+' is now under review.', 'success');
