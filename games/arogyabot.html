@@ -617,6 +617,37 @@ const SOS_ESCALATE_AFTER_MS = 60*1000;
    ============================================================ */
 const SOS_WORKER_URL = 'https://arogyabot-sos.kritzaararogyabot.workers.dev';
 
+// Deletes the underlying Firebase Auth credential — the one thing a
+// browser-only client can't do on its own. See arogyabot-admin-worker/README.md
+// for setup. If this Worker is unreachable/misconfigured, account deletion
+// still fully works via the revokedEmails blocklist (see adminDeleteUser()) —
+// this is purely the extra step of removing the login itself, not a
+// dependency for the lockout to be effective.
+const ADMIN_WORKER_URL = 'https://arogyabot-admin.kritzaararogyabot.workers.dev';
+let __adminApiToken = null; // cached in memory only for this session — never persisted
+async function deleteFirebaseAuthAccount(email){
+  if(!__adminApiToken){
+    __adminApiToken = prompt('Enter the admin worker token to permanently delete this login (leave blank to skip):');
+    if(!__adminApiToken) return {deleted:false, reason:'skipped'};
+  }
+  try{
+    const res = await fetch(`${ADMIN_WORKER_URL}/delete-user`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, token: __adminApiToken})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      if(res.status===401) __adminApiToken = null; // bad token — ask again next time
+      return {deleted:false, reason: data.error||'failed'};
+    }
+    return data;
+  }catch(e){
+    return {deleted:false, reason:'network_error'};
+  }
+}
+
+
 async function sosApi(path, body){
   const res = await fetch(`${SOS_WORKER_URL}${path}`, {
     method: 'POST',
@@ -2640,7 +2671,7 @@ function renderAdminUsersTab(){
 // signup actually disappears from things like "Nearby help right now" — not just
 // from the admin list. Writes go through dbSet, so this syncs the deletion to every
 // other device in the same Firestore room too, not just this browser.
-function adminDeleteUser(role, email){
+async function adminDeleteUser(role, email){
   const key = complaintUsersKey(role);
   const list = db(key) || [];
   const idx = list.findIndex(u=>u.email===email);
@@ -2650,8 +2681,8 @@ function adminDeleteUser(role, email){
   dbSet(key, list);
 
   // Permanently locks this email out everywhere — see the block comment above
-  // isEmailRevoked()/enforceRevokedEmailLockout() for why this, rather than an
-  // actual Auth-account delete, is what a browser-only client can do.
+  // isEmailRevoked()/enforceRevokedEmailLockout() for why this is the reliable
+  // part regardless of whether the Auth-delete step below succeeds.
   revokeEmailEverywhere(email, role, 'Deleted by admin');
 
   if(role==='responder' && user.responderId){
@@ -2675,10 +2706,10 @@ function adminDeleteUser(role, email){
       dbSet('cycle', cyc);
     }
     // NOTE: documents/prescriptions/appointments/claims/insurance are NOT purged
-    // here — their linkage to a specific member/account wasn't confirmed from
-    // the code available, and guessing wrong risks either leaving real data
-    // behind or deleting the wrong person's records. Flag for follow-up if
-    // those need to be included too.
+    // here — those collections currently have no owner/member field at all in
+    // this app (they're shared room-wide, not per-patient), so there's nothing
+    // to safely attribute to this specific account. That's a separate, bigger
+    // gap than account deletion — see the conversation notes.
   }
 
   // If the deleted account happens to be logged in on THIS device right now,
@@ -2686,8 +2717,21 @@ function adminDeleteUser(role, email){
   if(currentRole===role && normEmail(currentSessionEmail())===normEmail(email)) forceSignOutRevoked();
 
   audit('admin', 'user_delete', email+' ('+role+') removed and permanently deactivated');
-  showToast('Account deleted', email+' was removed and permanently locked out — it can\'t log in or re-register.', 'success');
   renderAdminScreen();
+
+  const authResult = await deleteFirebaseAuthAccount(email);
+  if(authResult.deleted){
+    audit('admin', 'auth_delete', email+' Firebase Auth credential permanently deleted');
+    showToast('Account deleted', email+' was removed, blocklisted, and its login credential permanently deleted.', 'success');
+  } else if(authResult.reason==='not_found'){
+    showToast('Account deleted', email+' had no separate Auth credential to remove. Fully blocklisted.', 'success');
+  } else if(authResult.reason==='skipped'){
+    showToast('Account deleted', email+' was removed and permanently blocklisted — it can\'t log in or re-register. (Login credential itself left in place; skipped.)', 'success');
+  } else {
+    // The blocklist above already fully prevents re-entry regardless of this
+    // step's outcome — see isEmailRevoked()/enforceRevokedEmailLockout().
+    showToast('Account deleted (partial)', email+' was removed and blocklisted — fully locked out either way — but deleting the underlying login credential failed ('+authResult.reason+'). Check the admin worker is deployed and reachable.', 'danger');
+  }
 }
 async function adminSendReset(email){
   const fa = fbAuth();
