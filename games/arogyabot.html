@@ -2618,12 +2618,35 @@ function renderAdminScreen(){
   box.innerHTML = `
     <button class="btn-secondary btn-sm" style="margin-bottom:14px;" onclick="backToRoleSelectFromAdmin()"><i class="fa-solid fa-arrow-left"></i> Back</button>
     <h3>Admin desk</h3>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
       <button class="btn btn-sm ${adminTab==='complaints'?'':'btn-secondary'}" onclick="adminTab='complaints';renderAdminScreen();">Phone complaints</button>
       <button class="btn btn-sm ${adminTab==='users'?'':'btn-secondary'}" onclick="adminTab='users';renderAdminScreen();">Users</button>
+      <button class="btn btn-sm ${adminTab==='deactivated'?'':'btn-secondary'}" onclick="adminTab='deactivated';renderAdminScreen();">Deactivated</button>
     </div>
-    ${adminTab==='users' ? renderAdminUsersTab() : renderAdminComplaintsTab()}
+    ${adminTab==='users' ? renderAdminUsersTab() : adminTab==='deactivated' ? renderAdminDeactivatedTab() : renderAdminComplaintsTab()}
   `;
+}
+function renderAdminDeactivatedTab(){
+  const list = (db('revokedEmails')||[]).slice().sort((a,b)=>(b.revokedAt||0)-(a.revokedAt||0));
+  return `
+    <p>${list.length} email${list.length===1?'':'s'} permanently locked out. Un-revoking only lifts the app-side blocklist — it does NOT restore any of the deleted account's old data (that was already wiped) or its old Firebase Auth login if that was deleted too; the person would need to register fresh.</p>
+    ${list.length ? list.map(r=>`
+      <div class="card" style="margin-bottom:12px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+          <strong>${r.email}</strong>
+          <span class="status-tag status-danger">${r.role||'unknown role'}</span>
+        </div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin:8px 0;">${r.reason||'Deactivated'} · ${r.revokedAt?fmtTime(r.revokedAt):''}</p>
+        <button class="btn btn-secondary btn-sm" onclick="adminUnrevokeEmail('${r.email}')"><i class="fa-solid fa-unlock"></i> Allow this email to register again</button>
+      </div>`).join('') : `<p style="color:var(--text-muted);">No deactivated accounts.</p>`}
+  `;
+}
+function adminUnrevokeEmail(email){
+  if(!confirm(email+' will be able to log in or register again. Continue?')) return;
+  unrevokeEmail(email);
+  audit('admin', 'email_unrevoke', email+' un-blocklisted');
+  showToast('Un-revoked', email+' can now register or log in again.', 'success');
+  renderAdminScreen();
 }
 function complaintUsersKey(role){ return (role||'patient')==='patient' ? 'users' : 'users_'+role; }
 function renderAdminComplaintsTab(){
