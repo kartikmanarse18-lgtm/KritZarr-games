@@ -39,6 +39,11 @@
   --text-main:#f1f0f8; --text-muted:#9d9bc4; --border-color:rgba(241,240,248,.12);
   --brand-primary:#6366f1; --brand-primary-hover:#4f46e5; --brand-secondary:#f59e0b;
 }
+[data-role="pharmacy"]{
+  --bg-main:#f6f9f2; --bg-surface:#ffffff; --bg-subtle:#eaf2e2;
+  --text-main:#182b17; --text-muted:#54694f; --border-color:rgba(24,43,23,.12);
+  --brand-primary:#16a34a; --brand-primary-hover:#15803d; --brand-secondary:#0d9488;
+}
 *,*::before,*::after{box-sizing:border-box;}
 body,html{margin:0;padding:0;font-family:var(--ff-sans);background:var(--bg-main);color:var(--text-main);-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none;}
@@ -612,6 +617,10 @@ function applyLiveLocation(kind, lat, lng, accuracy){
     const list = db('police');
     const p = list.find(x=>x.id===CURRENT_POLICE_STATION_ID);
     if(p){ p.lat=lat; p.lng=lng; dbSet('police', list); }
+  } else if(kind==='pharmacy' && CURRENT_PHARMACY_ID){
+    const list = db('pharmacies');
+    const ph = list.find(x=>x.id===CURRENT_PHARMACY_ID);
+    if(ph){ ph.lat=lat; ph.lng=lng; dbSet('pharmacies', list); }
   }
 }
 
@@ -1016,7 +1025,7 @@ const FIREBASE_CONFIG = {
 // Everyone who opens the app with the same ?room= link shares one live incident feed.
 // Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
 const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
-const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','phoneComplaints','revokedEmails'];
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','phoneComplaints','revokedEmails'];
 // NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
 // account/family-member is currently logged in on THIS device, refreshed from that
 // account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
@@ -1352,6 +1361,7 @@ function scopeMatchesCurrent(scope){
   if(currentRole==='responder' && scope === 'responder:'+CURRENT_RESPONDER_ID) return true;
   if(currentRole==='hospital' && scope === 'hospital:'+CURRENT_HOSPITAL_ID) return true;
   if(currentRole==='police' && CURRENT_POLICE_STATION_ID && scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
+  if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
   return false;
 }
 function notificationsForCurrentScope(){
@@ -1362,6 +1372,7 @@ function notificationsForCurrentScope(){
     if(currentRole==='responder' && x.scope==='responder:'+CURRENT_RESPONDER_ID) return true;
     if(currentRole==='hospital' && x.scope==='hospital:'+CURRENT_HOSPITAL_ID) return true;
     if(currentRole==='police' && CURRENT_POLICE_STATION_ID && x.scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
+    if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && x.scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
     return false;
   });
 }
@@ -1429,7 +1440,7 @@ function clearAllNotifications(e){
 // somewhere instead of just sitting in the panel.
 function openNotificationTarget(incidentId){
   document.getElementById('bell-panel').classList.add('hidden');
-  const targetByRole = {patient:'p-sos', responder:'r-active', police:'po-feed', hospital:'h-incoming'};
+  const targetByRole = {patient:'p-sos', responder:'r-active', police:'po-feed', hospital:'h-incoming', pharmacy:'ph-orders'};
   const target = targetByRole[currentRole];
   if(target) renderCurrentView(target);
 }
@@ -1456,6 +1467,7 @@ let currentRole = null;
 let CURRENT_RESPONDER_ID = null;
 let CURRENT_HOSPITAL_ID = null;
 let CURRENT_POLICE_STATION_ID = null;
+let CURRENT_PHARMACY_ID = null;
 let currentView = null;
 let liveTrackingTimer = null;
 let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue can re-render itself
@@ -1464,7 +1476,8 @@ const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
   responder: {icon:'fa-truck-medical', title:'Ambulance / Responder', id:'ROLE // RS-01', desc:'Live dispatch queue broadcast from Command, patient medical summary on accept, turn-by-turn navigation simulation.'},
   police:    {icon:'fa-shield-halved', title:'Police', id:'ROLE // PO-01', desc:'Every SOS auto-notifies the nearest station. Track dispatch status, acknowledge, and clear the route.'},
-  hospital:  {icon:'fa-hospital', title:'Hospital', id:'ROLE // HP-01', desc:'Incoming-patient alerts the moment a responder accepts a case, bed &amp; ICU capacity, doctor roster, telemedicine and insurance verification.'}
+  hospital:  {icon:'fa-hospital', title:'Hospital', id:'ROLE // HP-01', desc:'Incoming-patient alerts the moment a responder accepts a case, bed &amp; ICU capacity, doctor roster, telemedicine and insurance verification.'},
+  pharmacy:  {icon:'fa-mortar-pestle', title:'Pharmacy', id:'ROLE // PH-01', desc:'Keep your live stock status visible to nearby patients, and receive prescriptions patients send your way for fulfillment.'}
 };
 
 function renderLandingBadges(){
@@ -1518,7 +1531,8 @@ function saveActiveSession(role){
       loggedEmail: role==='patient' ? patientAuthData.loggedEmail : roleAuthData.loggedEmail,
       responderId: CURRENT_RESPONDER_ID,
       hospitalId: CURRENT_HOSPITAL_ID,
-      policeStationId: CURRENT_POLICE_STATION_ID
+      policeStationId: CURRENT_POLICE_STATION_ID,
+      pharmacyId: CURRENT_PHARMACY_ID
     }));
   }catch(e){ console.warn('Could not persist session', e); }
 }
@@ -1541,6 +1555,7 @@ function restoreActiveSession(){
   CURRENT_RESPONDER_ID = s.responderId || null;
   CURRENT_HOSPITAL_ID = s.hospitalId || null;
   CURRENT_POLICE_STATION_ID = s.policeStationId || null;
+  CURRENT_PHARMACY_ID = s.pharmacyId || null;
   if(s.role==='patient'){
     patientAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false;
@@ -1566,7 +1581,7 @@ function enterConsole(role){
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
   document.body.setAttribute('data-role', role);
-  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : '';
+  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : '';
   document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
   pruneStaleLocalIncidents();
   buildSideNav(role);
@@ -1582,6 +1597,7 @@ function enterConsole(role){
   else if(role==='responder') openSosSocket('responder', CURRENT_RESPONDER_ID, null);
   else if(role==='hospital') openSosSocket('hospital', CURRENT_HOSPITAL_ID, null);
   else if(role==='police') openSosSocket('police', CURRENT_POLICE_STATION_ID, null);
+  // Pharmacies don't take part in emergency dispatch, so no SOS socket for them.
 
   // Ask for location permission up front for every role so tracking/matching works from
   // the moment they're in, rather than only when a patient happens to trigger an SOS.
@@ -1594,6 +1610,8 @@ function enterConsole(role){
     captureOneTimeLocation('hospital');
   } else if(role==='police'){
     captureOneTimeLocation('police');
+  } else if(role==='pharmacy'){
+    captureOneTimeLocation('pharmacy');
   }
 }
 
@@ -1699,6 +1717,11 @@ const SIGNUP_FIELDS = {
     {key:'beds', label:'Total beds', placeholder:'e.g. 120'},
     {key:'icu', label:'ICU beds', placeholder:'e.g. 15'},
     {key:'specialties', label:'Specialties (comma separated)', placeholder:'e.g. Cardiology, Trauma, Pediatrics'},
+  ],
+  pharmacy: [
+    {key:'name', label:'Pharmacy name', placeholder:'e.g. Apollo Pharmacy — MG Road'},
+    {key:'license', label:'Drug license number', placeholder:'e.g. KA-B-2024-01234'},
+    {key:'phone', label:'Phone number', placeholder:'+91 98xxxxxxxx'},
   ],
 };
 function roleExtraFields(role){ return (SIGNUP_FIELDS[role]||[]).filter(f=>f.key!=='name' && f.key!=='phone'); }
@@ -2189,9 +2212,24 @@ function ensurePoliceStationRecord(user){
   }
   CURRENT_POLICE_STATION_ID = p.id;
 }
+// Real pharmacy record so this account shows up in the patient-side "Nearby
+// pharmacies" list and can receive prescriptions — mirrors the pattern above.
+// Starts with 'high' stock; the pharmacy updates it from their own dashboard.
+function ensurePharmacyRecord(user){
+  const list = db('pharmacies') || [];
+  let p = list.find(x=>x.id===user.pharmacyId);
+  if(!p){
+    p = {id: user.pharmacyId || uid('PHM'), name:user.name||'Pharmacy', license:user.license||'', phone:user.phone||'', lat:BASE.lat+rnd(-0.02,0.02), lng:BASE.lng+rnd(-0.02,0.02), stock:'high'};
+    user.pharmacyId = p.id;
+    list.push(p);
+    dbSet('pharmacies', list);
+  }
+  CURRENT_PHARMACY_ID = p.id;
+}
 function applyRoleUserToSession(role, user){
   if(role==='responder') ensureResponderRecord(user);
   else if(role==='hospital') ensureHospitalRecord(user);
+  else if(role==='pharmacy') ensurePharmacyRecord(user);
   // Station record first so applyPoliceProfile always has a real stationId to key on.
   else if(role==='police'){ ensurePoliceStationRecord(user); applyPoliceProfile(user); }
 }
@@ -2946,6 +2984,10 @@ const SIDENAV = {
     {id:'h-tele', label:'Telemedicine Schedule', icon:'fa-calendar-check'},
     {id:'h-verify', label:'Aadhaar &amp; Scheme Verify', icon:'fa-id-card'},
     {id:'h-audit', label:'Audit Trail', icon:'fa-clipboard-list'},
+  ],
+  pharmacy: [
+    {id:'ph-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'ph-orders', label:'Incoming Prescriptions', icon:'fa-file-prescription'},
   ]
 };
 function buildSideNav(role){
@@ -2975,6 +3017,7 @@ function renderCurrentView(navId){
     'r-dash': viewResponderDash, 'r-queue': viewResponderQueue, 'r-active': viewResponderActive,
     'po-dash': viewPoliceDash, 'po-feed': viewPoliceFeed,
     'h-dash': viewHospitalDash, 'h-incoming': viewHospitalIncoming, 'h-roster': viewHospitalRoster, 'h-tele': viewHospitalTele, 'h-verify': viewHospitalVerify, 'h-audit': viewHospitalAudit,
+    'ph-dash': viewPharmacyDash, 'ph-orders': viewPharmacyOrders,
   };
   c.innerHTML = renderers[navId] ? renderers[navId]() : '<div class="empty-state">View not found</div>';
   postRenderHooks(navId);
@@ -4829,6 +4872,81 @@ function viewHospitalAudit(){
 }
 
 /* ============================================================
+   PHARMACY CONSOLE
+   A pharmacy signs up like any other role (see ensurePharmacyRecord).
+   Their listing then appears automatically in the patient-side "Nearby
+   pharmacies" list, and any prescription a patient sends is routed here.
+   ============================================================ */
+const STOCK_LEVELS = [
+  {id:'high', label:'High — well stocked'},
+  {id:'medium', label:'Medium — limited stock'},
+  {id:'low', label:'Low — mostly out of stock'}
+];
+function viewPharmacyDash(){
+  const p = db('pharmacies').find(x=>x.id===CURRENT_PHARMACY_ID);
+  if(!p) return `<div class="empty-state"><p>Pharmacy record not found.</p></div>`;
+  const orders = db('prescriptions').filter(r=>r.targetPharmacyId===CURRENT_PHARMACY_ID);
+  const pending = orders.filter(r=>r.pharmacyStatus==='sent').length;
+  return `
+  ${viewHeader('Pharmacy Console', p.name, 'Your live stock status is what patients see in "Nearby pharmacies" — keep it current.')}
+  <div class="grid-4">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-boxes-stacked"></i></div><div><div class="dash-stat-num" style="text-transform:capitalize;">${p.stock}</div><div class="dash-stat-label">Current Stock Status</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-file-prescription"></i></div><div><div class="dash-stat-num">${pending}</div><div class="dash-stat-label">Pending Prescriptions</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-clipboard-check"></i></div><div><div class="dash-stat-num">${orders.length-pending}</div><div class="dash-stat-label">Fulfilled (all time)</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-id-badge"></i></div><div><div class="dash-stat-num" style="font-size:1rem;">${p.license||'—'}</div><div class="dash-stat-label">Drug License</div></div></div>
+  </div>
+  ${pending ? `<div class="card"><h3 style="margin-top:0;">Action needed</h3><button class="btn btn-danger" onclick="renderCurrentView('ph-orders')">View ${pending} pending prescription${pending>1?'s':''}</button></div>` : `<div class="card"><p style="color:var(--text-muted);margin:0;">No pending prescriptions right now.</p></div>`}
+  <div class="card">
+    <h3 style="margin-top:0;">Update stock status</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0 0 14px;">This is the live status patients see when browsing nearby pharmacies. Keep it current as stock changes.</p>
+    <div class="fit-row">
+      <label>Stock status</label>
+      <select class="fit-num" id="pharm-stock-select" style="flex:1;">
+        ${STOCK_LEVELS.map(s=>`<option value="${s.id}" ${p.stock===s.id?'selected':''}>${s.label}</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn" onclick="updatePharmacyStock()"><i class="fa-solid fa-rotate"></i> Update status</button>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Your listing</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin:0;"><strong>${p.name}</strong><br>${p.phone||'No phone on file'}${p.license?' · License '+p.license:''}</p>
+  </div>`;
+}
+function updatePharmacyStock(){
+  const stock = document.getElementById('pharm-stock-select').value;
+  const list = db('pharmacies');
+  const p = list.find(x=>x.id===CURRENT_PHARMACY_ID);
+  if(!p) return;
+  p.stock = stock;
+  dbSet('pharmacies', list);
+  audit('pharmacy:'+CURRENT_PHARMACY_ID, 'update_stock', 'stock='+stock);
+  showToast('Stock status updated', 'Now showing "'+stock+'" to nearby patients.', 'success');
+  renderCurrentView('ph-dash');
+}
+function viewPharmacyOrders(){
+  const orders = db('prescriptions').filter(r=>r.targetPharmacyId===CURRENT_PHARMACY_ID).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  return `${viewHeader('Incoming Prescriptions','Sent to you by patients nearby','')}
+  ${orders.length ? orders.map(r=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div><strong>${r.date||''}</strong> · ${r.doctor||'Unknown prescriber'}<p style="margin:8px 0 0;">${r.medicines}</p></div>
+        <span class="status-tag ${r.pharmacyStatus==='fulfilled'?'status-ok':'status-warn'}">${r.pharmacyStatus==='fulfilled'?'Fulfilled':'Pending'}</span>
+      </div>
+      ${r.pharmacyStatus!=='fulfilled' ? `<button class="btn btn-sm" style="margin-top:12px;" onclick="markPharmacyOrderFulfilled('${r.id}')"><i class="fa-solid fa-check"></i> Mark fulfilled</button>` : ''}
+    </div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-file-prescription"></i><p>No prescriptions sent to you yet.</p></div>`}`;
+}
+function markPharmacyOrderFulfilled(id){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===id);
+  if(!rx) return;
+  rx.pharmacyStatus = 'fulfilled';
+  dbSet('prescriptions', list);
+  audit('pharmacy:'+CURRENT_PHARMACY_ID, 'rx_fulfilled', id);
+  showToast('Marked fulfilled', 'This prescription is now marked as fulfilled.', 'success');
+  renderCurrentView('ph-orders');
+}
+
+/* ============================================================
    PATIENT — AI CHAT (symptom checker)
    ============================================================ */
 // ----------------------------------------------------------------------
@@ -5637,9 +5755,31 @@ function endCall(){
 function viewPatientRx(){
   const rx = db('prescriptions').filter(r=>r.ownerId===currentPatientId());
   return `${viewHeader('e-Prescriptions','Digitally signed prescriptions','')}
-  ${rx.length ? rx.map(r=>`<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button></div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
+  ${rx.length ? rx.map(r=>`<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p>${r.targetPharmacyId ? `<span class="status-tag ${r.pharmacyStatus==='fulfilled'?'status-ok':'status-warn'}">${r.pharmacyStatus==='fulfilled'?'Fulfilled by pharmacy':'Sent — awaiting fulfillment'}</span>` : `<button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button>`}</div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
 }
-function sendToPharmacy(id){ showToast('Sent to pharmacy','Nearest pharmacy notified for fulfillment.','success'); audit('patient','rx_send_pharmacy', id); }
+function sendToPharmacy(id){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===id);
+  if(!rx) return;
+  const pharmacies = db('pharmacies')||[];
+  if(!pharmacies.length){
+    showToast('No pharmacies registered yet', 'No pharmacy has signed up in your area yet — check back soon.', 'danger');
+    return;
+  }
+  const profile = db('profile')||{};
+  let nearest = pharmacies[0], nearestDist = Infinity;
+  pharmacies.forEach(p=>{
+    const dist = (profile.lat && profile.lng) ? haversineKm(profile.lat, profile.lng, p.lat, p.lng) : 0;
+    if(dist < nearestDist){ nearestDist = dist; nearest = p; }
+  });
+  rx.targetPharmacyId = nearest.id;
+  rx.pharmacyStatus = 'sent';
+  dbSet('prescriptions', list);
+  pushNotification('pharmacy:'+nearest.id, 'New prescription received', `${rx.medicines} — sent by a patient nearby for fulfillment.`, 'info', null);
+  audit('patient','rx_send_pharmacy', id+' -> '+nearest.name);
+  showToast('Sent to pharmacy', nearest.name+' has been notified for fulfillment.', 'success');
+  renderCurrentView('p-rx');
+}
 
 /* ============================================================
    PATIENT — PHARMACY & REMINDERS
@@ -5649,8 +5789,37 @@ function viewPatientPharmacy(){
   return `${viewHeader('Pharmacy &amp; Medicine Reminders','Never miss a dose','')}
   ${remindersCardHTML()}
   <div class="card"><h3 style="margin-top:0;">Nearby pharmacies</h3>
-  ${pharmacies.length ? pharmacies.map(p=>`<div class="reminder-row"><div><strong>${p.name}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${haversineKm(db('profile').lat,db('profile').lng,p.lat,p.lng).toFixed(1)} km away</span></div><span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock} stock</span></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No pharmacy data available yet.</p>`}
+  ${pharmacies.length ? pharmacies.map(p=>`<div class="reminder-row" style="cursor:pointer;" onclick="openPharmacyDetail('${p.id}')"><div><strong>${p.name}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${haversineKm(db('profile').lat,db('profile').lng,p.lat,p.lng).toFixed(1)} km away</span></div><span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock} stock</span></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No pharmacy has registered in your area yet — pharmacies show up here once they sign up through the Pharmacy role.</p>`}
   </div>`;
+}
+// Tapping a pharmacy card now actually does something: shows its live stock
+// status, a one-tap call link, and lets the patient route their most recent
+// unsent prescription straight there.
+function openPharmacyDetail(id){
+  const p = db('pharmacies').find(x=>x.id===id);
+  if(!p) return;
+  const unsent = db('prescriptions').filter(r=>r.ownerId===currentPatientId() && !r.targetPharmacyId);
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3 style="margin-top:0;">${p.name}</h3>
+    <p class="modal-sub">Stock status: <span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock}</span></p>
+    ${p.phone ? `<a href="tel:${p.phone}" class="btn btn-block" style="margin-bottom:10px;text-decoration:none;text-align:center;"><i class="fa-solid fa-phone"></i> Call ${p.phone}</a>` : ''}
+    ${unsent.length ? `<button class="btn-secondary btn-block" onclick="sendSpecificPrescriptionToPharmacy('${unsent[0].id}','${p.id}')"><i class="fa-solid fa-pills"></i> Send my latest prescription here</button>` : `<p style="color:var(--text-muted);font-size:.82rem;margin:0;">No unsent prescriptions to route here right now.</p>`}
+  `);
+}
+function sendSpecificPrescriptionToPharmacy(rxId, pharmacyId){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===rxId);
+  const p = db('pharmacies').find(x=>x.id===pharmacyId);
+  if(!rx || !p) return;
+  rx.targetPharmacyId = p.id;
+  rx.pharmacyStatus = 'sent';
+  dbSet('prescriptions', list);
+  pushNotification('pharmacy:'+p.id, 'New prescription received', `${rx.medicines} — sent by a patient nearby for fulfillment.`, 'info', null);
+  audit('patient','rx_send_pharmacy', rxId+' -> '+p.name);
+  closeModal();
+  showToast('Sent to pharmacy', p.name+' has been notified for fulfillment.', 'success');
+  if(currentView==='p-rx') renderCurrentView('p-rx');
 }
 // Shared reminders widget — used on both the Pharmacy page and the Medication & Dosage page,
 // since they read/write the same 'reminders' record keyed by ownerId.
