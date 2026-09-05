@@ -2806,6 +2806,24 @@ async function adminDeleteUser(role, email){
   const idx = list.findIndex(u=>u.email===email);
   if(idx===-1){ showToast('Not found', 'That account no longer exists.', 'danger'); return; }
   const user = list[idx];
+
+  if(!confirm('Permanently delete '+email+' ('+role+')? This removes their account, documents, appointments and other records, and cannot be undone.')) return;
+
+  // Gate the destructive wipe below on the admin worker token FIRST, instead of
+  // asking for it afterward (previously deleteFirebaseAuthAccount() was only
+  // called at the very end, by which point the account and its data were
+  // already gone — the prompt looked like a safety check but guarded nothing).
+  // 'not_found' still means the token was valid and the worker was reached —
+  // it just means this account has no separate Auth credential — so that case
+  // is allowed to proceed. Anything else (skipped/wrong token/unreachable
+  // worker) blocks the deletion entirely rather than partially wiping data.
+  const authResult = await deleteFirebaseAuthAccount(email);
+  if(!authResult.deleted && authResult.reason!=='not_found'){
+    const reasonMsg = authResult.reason==='skipped' ? 'No admin token was entered.' : ('Admin worker error: '+authResult.reason+'.');
+    showToast('Deletion blocked', reasonMsg+' '+email+' was NOT deleted.', 'danger');
+    return;
+  }
+
   list.splice(idx, 1);
   dbSet(key, list);
 
@@ -2856,20 +2874,15 @@ async function adminDeleteUser(role, email){
   if(currentRole===role && normEmail(currentSessionEmail())===normEmail(email)) forceSignOutRevoked();
 
   audit('admin', 'user_delete', email+' ('+role+') removed and permanently deactivated');
+  if(authResult.deleted) audit('admin', 'auth_delete', email+' Firebase Auth credential permanently deleted');
   renderAdminScreen();
 
-  const authResult = await deleteFirebaseAuthAccount(email);
   if(authResult.deleted){
-    audit('admin', 'auth_delete', email+' Firebase Auth credential permanently deleted');
     showToast('Account deleted', email+' was removed, blocklisted, and its login credential permanently deleted.', 'success');
-  } else if(authResult.reason==='not_found'){
-    showToast('Account deleted', email+' had no separate Auth credential to remove. Fully blocklisted.', 'success');
-  } else if(authResult.reason==='skipped'){
-    showToast('Account deleted', email+' was removed and permanently blocklisted — it can\'t log in or re-register. (Login credential itself left in place; skipped.)', 'success');
   } else {
-    // The blocklist above already fully prevents re-entry regardless of this
-    // step's outcome — see isEmailRevoked()/enforceRevokedEmailLockout().
-    showToast('Account deleted (partial)', email+' was removed and blocklisted — fully locked out either way — but deleting the underlying login credential failed ('+authResult.reason+'). Check the admin worker is deployed and reachable.', 'danger');
+    // authResult.reason === 'not_found' — token was valid, worker was reached,
+    // this account just never had a separate Auth credential to remove.
+    showToast('Account deleted', email+' had no separate Auth credential to remove. Fully blocklisted.', 'success');
   }
 }
 async function adminSendReset(email){
