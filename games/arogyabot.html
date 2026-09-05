@@ -5326,11 +5326,17 @@ function viewDoctorDash(){
   const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID && a.doctor===d.name);
   const upcoming = appts.filter(a=>a.status==='Confirmed');
   const completed = appts.filter(a=>a.status==='Completed');
+  const totalReceived = appts.filter(a=>a.paymentStatus==='paid').reduce((s,a)=>s+(+a.amountPaid||0),0);
   return `${viewHeader('Doctor Console', 'Welcome, '+(d.name||'Doctor'), h.name?('At '+h.name):'')}
   <div class="grid-3">
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-calendar-check"></i></div><div><div class="dash-stat-num">${upcoming.length}</div><div class="dash-stat-label">Upcoming Consultations</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-clock"></i></div><div><div class="dash-stat-num">${(d.slots||[]).length}</div><div class="dash-stat-label">Open Slots</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div><div><div class="dash-stat-num">${completed.length}</div><div class="dash-stat-label">Consultations Completed</div></div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-indian-rupee-sign"></i> Payments received</h3>
+    <p style="font-family:var(--ff-display);font-size:1.8rem;font-weight:800;margin:0;">&#8377;${totalReceived.toFixed(2)}</p>
+    <p style="color:var(--text-muted);font-size:.82rem;margin:6px 0 0;">Across ${appts.filter(a=>a.paymentStatus==='paid').length} paid consultation${appts.filter(a=>a.paymentStatus==='paid').length===1?'':'s'}. See each booking's status in My Appointments.</p>
   </div>
   <div class="card">
     <h3 style="margin-top:0;">Your profile summary</h3>
@@ -5351,7 +5357,10 @@ function viewDoctorAppts(){
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <div><strong>${a.patient}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${a.slot}</span></div>
-        <span class="status-tag ${a.status==='Completed'?'status-muted':a.status==='Cancelled'?'status-danger':'status-ok'}">${a.status}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="status-tag ${a.status==='Completed'?'status-muted':a.status==='Cancelled'?'status-danger':'status-ok'}">${a.status}</span>
+          ${a.paymentStatus==='paid' ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Payment received · &#8377;${(+a.amountPaid||0).toFixed(2)}</span>` : a.status==='Confirmed' ? `<span class="status-tag status-warn">Payment pending</span>` : ''}
+        </div>
       </div>
       ${a.status==='Confirmed' ? `<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
         <button class="btn btn-sm" onclick="doctorJoinCall('${a.id}')"><i class="fa-solid fa-video"></i> Join call</button>
@@ -5544,6 +5553,9 @@ function viewPharmacyDash(){
   const lowStock = invAll.filter(m=>m.qty<=(m.reorderLevel||10));
   const expiringSoon = invAll.filter(m=>{ const d=daysUntilDate(m.expiry); return d!==null && d>=0 && d<=90; });
   const expired = invAll.filter(m=>{ const d=daysUntilDate(m.expiry); return d!==null && d<0; });
+  const bills = (db('pharmacyBills')||[]).filter(b=>b.pharmacyId===CURRENT_PHARMACY_ID);
+  const paidRxIds = new Set(orders.filter(r=>r.paymentStatus==='paid').map(r=>r.id));
+  const totalReceived = bills.filter(b=>b.rxId && paidRxIds.has(b.rxId)).reduce((s,b)=>s+b.grandTotal,0);
   return `
   ${viewHeader('Pharmacy Console', p.name, 'Your live stock status is what patients see in "Nearby pharmacies" — keep it current.')}
   <div class="grid-4">
@@ -5551,6 +5563,11 @@ function viewPharmacyDash(){
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-file-prescription"></i></div><div><div class="dash-stat-num">${pending}</div><div class="dash-stat-label">Pending Prescriptions</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-clipboard-check"></i></div><div><div class="dash-stat-num">${orders.length-pending}</div><div class="dash-stat-label">Fulfilled (all time)</div></div></div>
     <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-pills"></i></div><div><div class="dash-stat-num">${invAll.length}</div><div class="dash-stat-label">Medicines Tracked</div></div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-indian-rupee-sign"></i> Payments received</h3>
+    <p style="font-family:var(--ff-display);font-size:1.8rem;font-weight:800;margin:0;">&#8377;${totalReceived.toFixed(2)}</p>
+    <p style="color:var(--text-muted);font-size:.82rem;margin:6px 0 0;">From ${paidRxIds.size} patient app payment${paidRxIds.size===1?'':'s'} — in-person/cash sales are recorded separately in Billing &amp; Sales. See each order's status in Incoming Prescriptions.</p>
   </div>
   ${pending ? `<div class="card"><h3 style="margin-top:0;">Action needed</h3><button class="btn btn-danger" onclick="renderCurrentView('ph-orders')">View ${pending} pending prescription${pending>1?'s':''}</button></div>` : ''}
   ${(lowStock.length||expiringSoon.length||expired.length) ? `<div class="card">
@@ -5608,18 +5625,25 @@ function savePharmacyBusinessDetails(){
 }
 function viewPharmacyOrders(){
   const orders = db('prescriptions').filter(r=>r.targetPharmacyId===CURRENT_PHARMACY_ID).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const bills = db('pharmacyBills')||[];
   return `${viewHeader('Incoming Prescriptions','Sent to you by patients nearby','Bill a prescription to bring its patient details into the billing screen automatically and mark it fulfilled the moment the sale is completed.')}
-  ${orders.length ? orders.map(r=>`
+  ${orders.length ? orders.map(r=>{
+    const bill = bills.find(b=>b.rxId===r.id);
+    return `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div><strong>${r.date||''}</strong> · ${r.doctor||'Unknown prescriber'}<p style="margin:8px 0 0;">${r.medicines}</p></div>
-        <span class="status-tag ${r.pharmacyStatus==='fulfilled'?'status-ok':'status-warn'}">${r.pharmacyStatus==='fulfilled'?'Fulfilled':'Pending'}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="status-tag ${r.pharmacyStatus==='fulfilled'?'status-ok':'status-warn'}">${r.pharmacyStatus==='fulfilled'?'Fulfilled':'Pending'}</span>
+          ${bill ? (r.paymentStatus==='paid' ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Payment received · &#8377;${bill.grandTotal.toFixed(2)}</span>` : `<span class="status-tag status-warn">Awaiting payment · &#8377;${bill.grandTotal.toFixed(2)}</span>`) : ''}
+        </div>
       </div>
       ${r.pharmacyStatus!=='fulfilled' ? `<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn btn-sm" onclick="loadRxIntoBilling('${r.id}')"><i class="fa-solid fa-receipt"></i> Bill this prescription</button>
         <button class="btn btn-sm btn-secondary" onclick="markPharmacyOrderFulfilled('${r.id}')">Mark fulfilled without billing</button>
       </div>` : ''}
-    </div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-file-prescription"></i><p>No prescriptions sent to you yet.</p></div>`}`;
+    </div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-file-prescription"></i><p>No prescriptions sent to you yet.</p></div>`}`;
 }
 function markPharmacyOrderFulfilled(id){
   const list = db('prescriptions');
@@ -6867,10 +6891,10 @@ function viewPatientTele(){
 // once the (simulated) payment succeeds, via confirmPayment() calling
 // bookAppt() back as the onConfirm callback.
 function openBookingPayment(doctor, hospital, slot, fee){
-  if(!fee){ bookAppt(doctor, hospital, slot); return; } // free/unspecified fee — skip checkout
-  openPaymentModal(fee, `Consultation with ${doctor} · ${slot}`, 'bookAppt', [doctor, hospital, slot]);
+  if(!fee){ bookAppt(doctor, hospital, slot, 0); return; } // free/unspecified fee — skip checkout
+  openPaymentModal(fee, `Consultation with ${doctor} · ${slot}`, 'bookAppt', [doctor, hospital, slot, fee]);
 }
-function bookAppt(doctor, hospital, slot){
+function bookAppt(doctor, hospital, slot, feePaid){
   const appts = db('appointments');
   // Guard against a double-booking race (e.g. two tabs open at once) — the
   // buttons already hide booked slots, but this is the real source of truth.
@@ -6879,12 +6903,13 @@ function bookAppt(doctor, hospital, slot){
     renderCurrentView('p-tele');
     return;
   }
-  appts.push({id:uid('APT'), ownerId: currentPatientId(), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed'});
+  feePaid = +feePaid || 0;
+  appts.push({id:uid('APT'), ownerId: currentPatientId(), patient: db('profile').name, doctor, hospital, slot, status:'Confirmed', paymentStatus: feePaid>0 ? 'paid' : 'n/a', amountPaid: feePaid});
   dbSet('appointments', appts);
-  audit('patient','appointment_book', doctor+' @ '+slot);
-  pushNotification('hospital:'+hospital, 'New telemedicine booking', `${db('profile').name} booked ${doctor} at ${slot}.`, 'info', null);
+  audit('patient','appointment_book', doctor+' @ '+slot+(feePaid>0 ? ' — ₹'+feePaid.toFixed(2)+' paid':''));
+  pushNotification('hospital:'+hospital, 'New telemedicine booking', `${db('profile').name} booked ${doctor} at ${slot}.${feePaid>0 ? ' Payment received: ₹'+feePaid.toFixed(2)+'.' : ''}`, 'info', null);
   const d = (db('doctors')||[]).find(x=>x.name===doctor && x.hospital===hospital);
-  if(d) pushNotification('doctor:'+d.id, 'New telemedicine booking', `${db('profile').name} booked you at ${slot}.`, 'info', null);
+  if(d) pushNotification('doctor:'+d.id, 'New telemedicine booking', `${db('profile').name} booked you at ${slot}.${feePaid>0 ? ' Payment received: ₹'+feePaid.toFixed(2)+'.' : ''}`, 'info', null);
   showToast('Booked', `Confirmed with ${doctor} at ${slot}.`, 'success');
   renderCurrentView('p-tele');
 }
@@ -6955,6 +6980,9 @@ function confirmMedicinePayment(rxId){
   rx.paymentStatus = 'paid';
   dbSet('prescriptions', list);
   audit('patient','medicine_payment', rxId);
+  const bills = db('pharmacyBills')||[];
+  const bill = bills.find(b=>b.rxId===rxId);
+  if(rx.targetPharmacyId) pushNotification('pharmacy:'+rx.targetPharmacyId, 'Payment received', `${db('profile').name} paid ₹${(bill?bill.grandTotal:0).toFixed(2)} for their medicines${bill?' (Bill '+bill.billNo+')':''}.`, 'success', null);
   renderCurrentView('p-rx');
 }
 function sendToPharmacy(id){
