@@ -508,11 +508,6 @@ table.data-table tr:last-child td{border-bottom:none;}
     <p class="hero-desc">Tell us who's signing in. Each console has its own sign-up and verification, and every emergency still broadcasts to the nearest hospitals, ambulances, and police simultaneously — no single point of failure.</p>
   </div>
   <div class="badge-grid" id="badge-grid"></div>
-  <div style="margin-top:26px;position:relative;z-index:2;">
-    <a href="#" onclick="openDoctorLoginScreen();return false;" style="display:inline-flex;align-items:center;gap:8px;color:#e2e8f0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);padding:10px 20px;border-radius:999px;font-size:.88rem;font-weight:600;text-decoration:none;">
-      <i class="fa-solid fa-user-doctor"></i> Already on a hospital's roster as a doctor? Log in here
-    </a>
-  </div>
 </div>
 
 <!-- ============================================================
@@ -1147,6 +1142,72 @@ function openModal(html){
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
 function closeModal(){ document.getElementById('modal-overlay').classList.add('hidden'); }
+
+/* ============================================================
+   PAYMENTS (front-end only, for now)
+   ------------------------------------------------------------
+   Shared checkout modal used by BOTH patient -> doctor consultation
+   fees and patient -> pharmacy medicine bills. This only collects
+   the payment method and simulates a short "processing" delay —
+   there is no real gateway wired up yet. To go live, replace the
+   body of confirmPayment() with a real call (Razorpay/Stripe/UPI
+   intent, etc.) from your backend and only run onConfirm() once
+   that backend confirms the payment actually succeeded. Nothing
+   else in the app needs to change — every caller just does
+   openPaymentModal(amount, label, 'someGlobalFnName', [args...]).
+   ============================================================ */
+let pendingPayment = null;
+function openPaymentModal(amount, label, onConfirmFnName, onConfirmArgs){
+  amount = +amount || 0;
+  pendingPayment = {amount, label, onConfirmFnName, onConfirmArgs: onConfirmArgs||[]};
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3 style="margin-top:0;"><i class="fa-solid fa-indian-rupee-sign"></i> Payment</h3>
+    <p class="modal-sub">${label}</p>
+    <div style="background:var(--bg-subtle);border-radius:14px;padding:18px;margin-bottom:18px;text-align:center;">
+      <div style="font-size:.76rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Amount payable</div>
+      <div style="font-family:var(--ff-display);font-size:2.1rem;font-weight:800;">&#8377;${amount.toFixed(2)}</div>
+    </div>
+    <div class="form-group">
+      <label>Pay with</label>
+      <select class="form-control" id="pay-method" onchange="renderPayMethodFields()">
+        <option value="upi">UPI (Google Pay / PhonePe / Paytm)</option>
+        <option value="card">Credit / Debit Card</option>
+        <option value="netbanking">Net Banking</option>
+      </select>
+    </div>
+    <div id="pay-fields"></div>
+    <button class="btn btn-block" id="pay-confirm-btn" onclick="confirmPayment()"><i class="fa-solid fa-lock"></i> Pay &#8377;${amount.toFixed(2)}</button>
+    <p style="font-size:.72rem;color:var(--text-muted);text-align:center;margin:12px 0 0;">Payments are simulated for this demo — no money actually moves yet. Real gateway integration will be connected on the backend.</p>
+  `);
+  renderPayMethodFields();
+}
+function renderPayMethodFields(){
+  const method = document.getElementById('pay-method') ? document.getElementById('pay-method').value : 'upi';
+  const el = document.getElementById('pay-fields');
+  if(!el) return;
+  if(method==='upi'){
+    el.innerHTML = `<div class="form-group"><label>UPI ID</label><input class="form-control" id="pay-upi" placeholder="yourname@upi"></div>`;
+  } else if(method==='card'){
+    el.innerHTML = `<div class="form-group"><label>Card number</label><input class="form-control" id="pay-card" placeholder="1234 5678 9012 3456" maxlength="19"></div>
+    <div class="grid-2"><div class="form-group"><label>Expiry</label><input class="form-control" id="pay-exp" placeholder="MM/YY" maxlength="5"></div><div class="form-group"><label>CVV</label><input class="form-control" id="pay-cvv" placeholder="123" maxlength="3" type="password"></div></div>`;
+  } else {
+    el.innerHTML = `<div class="form-group"><label>Bank</label><select class="form-control" id="pay-bank"><option>State Bank of India</option><option>HDFC Bank</option><option>ICICI Bank</option><option>Axis Bank</option><option>Punjab National Bank</option></select></div>`;
+  }
+}
+function confirmPayment(){
+  if(!pendingPayment) return;
+  const payment = pendingPayment;
+  pendingPayment = null;
+  const btn = document.getElementById('pay-confirm-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…'; }
+  setTimeout(()=>{
+    closeModal();
+    showToast('Payment successful', `&#8377;${payment.amount.toFixed(2)} paid — ${payment.label}.`, 'success');
+    const fn = window[payment.onConfirmFnName];
+    if(typeof fn === 'function') fn(...payment.onConfirmArgs);
+  }, 900);
+}
 let fbEnabled = false, fbRoomRef = null;
 
 /* Real password storage — Firebase Authentication (Spark/free plan).
@@ -1401,7 +1462,7 @@ function rtcToggleCam(btn){
 // function name ('endCall' for patient, 'doctorEndCall' for doctor).
 function videoCallHtml(peerLabel, endFn){
   return `<div class="video-call">
-    <span class="call-status" id="rtc-status">Connecting…</span>
+    <span class="call-status" id="rtc-status"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:6px;animation:pulse 1.4s infinite;"></span>Connecting…</span>
     <video id="rtc-remote-video" autoplay playsinline></video>
     <video id="rtc-local-video" autoplay playsinline muted></video>
     <div style="position:absolute;top:14px;right:14px;left:14px;text-align:right;color:#fff;font-size:.78rem;text-shadow:0 1px 4px rgba(0,0,0,.6);">${peerLabel}</div>
@@ -1410,7 +1471,8 @@ function videoCallHtml(peerLabel, endFn){
       <button id="rtc-cam-btn" onclick="rtcToggleCam(this)"><i class="fa-solid fa-video"></i></button>
       <button class="end" onclick="${endFn}()"><i class="fa-solid fa-phone-slash"></i></button>
     </div>
-  </div>`;
+  </div>
+  <p style="font-size:.76rem;color:var(--text-muted);text-align:center;margin:10px 0 0;"><i class="fa-solid fa-lock"></i> This is a real, live peer-to-peer video call (WebRTC) — not a recording or simulation. Allow camera/microphone access when your browser asks, and keep this tab open until the call ends.</p>`;
 }
 
 // Multiple Firestore keys can update within the same instant (e.g. an ambulance
@@ -1737,6 +1799,7 @@ function renderLandingBadges(){
       <div class="badge-title">${m.title}</div>
       <div class="badge-body">${m.desc}</div>
       <div class="badge-footer"><span>Sign in / Sign up</span><i class="fa-solid fa-arrow-right"></i></div>
+      ${r==='hospital' ? `<a href="#" onclick="event.stopPropagation();openDoctorLoginScreen();return false;" style="display:flex;align-items:center;gap:6px;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.18);font-size:.76rem;color:#94a3b8;text-decoration:none;"><i class="fa-solid fa-user-doctor"></i> On this hospital's roster as a doctor? <strong style="color:#5eead4;">Log in here</strong></a>` : ''}
     </div>`;
   }).join('');
 }
@@ -6787,10 +6850,17 @@ function viewPatientTele(){
     ${d.bio ? `<p style="margin:10px 0 0;font-size:.85rem;">${d.bio}</p>` : ''}
     <h3 style="margin:18px 0 10px;">Available slots</h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      ${openSlots.length ? openSlots.map(t=>`<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t.replace(/'/g,"\\'")}')">${t}</button>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;margin:0;">No open slots right now — check back later.</p>`}
+      ${openSlots.length ? openSlots.map(t=>`<button class="btn btn-sm btn-secondary" onclick="openBookingPayment('${d.name.replace(/'/g,"\\'")}','${d.hospital}','${t.replace(/'/g,"\\'")}',${+d.fee||0})">${t}</button>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;margin:0;">No open slots right now — check back later.</p>`}
     </div>
   </div>
   ${teleUpcomingHtml()}`;
+}
+// Consultation fee is collected up front — booking only actually happens
+// once the (simulated) payment succeeds, via confirmPayment() calling
+// bookAppt() back as the onConfirm callback.
+function openBookingPayment(doctor, hospital, slot, fee){
+  if(!fee){ bookAppt(doctor, hospital, slot); return; } // free/unspecified fee — skip checkout
+  openPaymentModal(fee, `Consultation with ${doctor} · ${slot}`, 'bookAppt', [doctor, hospital, slot]);
 }
 function bookAppt(doctor, hospital, slot){
   const appts = db('appointments');
@@ -6845,8 +6915,39 @@ function endCall(){
    ============================================================ */
 function viewPatientRx(){
   const rx = db('prescriptions').filter(r=>r.ownerId===currentPatientId());
+  const bills = db('pharmacyBills')||[];
   return `${viewHeader('e-Prescriptions','Digitally signed prescriptions','')}
-  ${rx.length ? rx.map(r=>`<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p>${r.targetPharmacyId ? `<span class="status-tag ${r.pharmacyStatus==='fulfilled'?'status-ok':'status-warn'}">${r.pharmacyStatus==='fulfilled'?'Fulfilled by pharmacy':'Sent — awaiting fulfillment'}</span>` : `<button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button>`}</div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
+  ${rx.length ? rx.map(r=>{
+    const bill = r.targetPharmacyId ? bills.find(b=>b.rxId===r.id) : null;
+    let statusHtml;
+    if(!r.targetPharmacyId){
+      statusHtml = `<button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button>`;
+    } else if(r.pharmacyStatus!=='fulfilled'){
+      statusHtml = `<span class="status-tag status-warn">Sent — awaiting fulfillment</span>`;
+    } else if(bill && r.paymentStatus!=='paid'){
+      statusHtml = `<span class="status-tag status-ok">Fulfilled by pharmacy</span> <button class="btn btn-sm" style="margin-top:8px;" onclick="openMedicinePayment('${r.id}',${bill.grandTotal})"><i class="fa-solid fa-indian-rupee-sign"></i> Pay &#8377;${bill.grandTotal.toFixed(2)} for medicines</button>`;
+    } else if(bill && r.paymentStatus==='paid'){
+      statusHtml = `<span class="status-tag status-ok">Paid &#8377;${bill.grandTotal.toFixed(2)} · Fulfilled</span>`;
+    } else {
+      statusHtml = `<span class="status-tag status-ok">Fulfilled by pharmacy</span>`;
+    }
+    return `<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">${statusHtml}</div></div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
+}
+// Medicine payment (patient -> pharmacy) — same simulated checkout as the
+// consultation fee. Marks the prescription paid on this device once the
+// (fake) payment succeeds; wire this to a real gateway + backend later.
+function openMedicinePayment(rxId, amount){
+  openPaymentModal(amount, 'Medicine bill payment', 'confirmMedicinePayment', [rxId]);
+}
+function confirmMedicinePayment(rxId){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===rxId);
+  if(!rx) return;
+  rx.paymentStatus = 'paid';
+  dbSet('prescriptions', list);
+  audit('patient','medicine_payment', rxId);
+  renderCurrentView('p-rx');
 }
 function sendToPharmacy(id){
   const list = db('prescriptions');
