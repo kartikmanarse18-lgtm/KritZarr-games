@@ -1799,7 +1799,6 @@ function renderLandingBadges(){
       <div class="badge-title">${m.title}</div>
       <div class="badge-body">${m.desc}</div>
       <div class="badge-footer"><span>Sign in / Sign up</span><i class="fa-solid fa-arrow-right"></i></div>
-      ${r==='hospital' ? `<a href="#" onclick="event.stopPropagation();openDoctorLoginScreen();return false;" style="display:flex;align-items:center;gap:6px;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.18);font-size:.76rem;color:#94a3b8;text-decoration:none;"><i class="fa-solid fa-user-doctor"></i> On this hospital's roster as a doctor? <strong style="color:#5eead4;">Log in here</strong></a>` : ''}
     </div>`;
   }).join('');
 }
@@ -1986,7 +1985,7 @@ function renderProfileMenu(){
       <button class="profile-menu-logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
     </div>`;
 }
-function logout(){
+function logout(silent){
   cycSessionUnlocked = false; // re-lock Women's Health so the next person to open this device must re-enter the PIN
   if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
   stopAllLiveLocationTracking();
@@ -2012,7 +2011,16 @@ function logout(){
   document.getElementById('screen-doctor-login').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
   renderLandingBadges();
-  showToast('Logged out', 'Come back any time — your data stays saved on this device.');
+  if(!silent) showToast('Logged out', 'Come back any time — your data stays saved on this device.');
+}
+// Doctor accounts are a separate identity from the hospital's own login, so
+// jumping here from inside the hospital console first ends the hospital's
+// session quietly (no "Logged out" toast — this isn't really a logout from
+// the hospital staff's point of view, just a handover) and drops straight
+// into doctor sign-in instead of bouncing through role selection.
+function openDoctorLoginFromHospital(){
+  logout(true);
+  openDoctorLoginScreen();
 }
 
 /* ============================================================
@@ -3399,7 +3407,7 @@ const SIDENAV = {
     {id:'h-dash', label:'Dashboard', icon:'fa-gauge-high'},
     {id:'h-incoming', label:'Incoming Patients', icon:'fa-bed-pulse'},
     {id:'h-roster', label:'Doctor Roster', icon:'fa-user-doctor'},
-    {id:'h-tele', label:'Telemedicine Schedule', icon:'fa-calendar-check'},
+    {id:'h-doctor-login', label:'Doctor Login', icon:'fa-right-to-bracket'},
     {id:'h-verify', label:'Aadhaar &amp; Scheme Verify', icon:'fa-id-card'},
     {id:'h-audit', label:'Audit Trail', icon:'fa-clipboard-list'},
   ],
@@ -3423,7 +3431,7 @@ function buildSideNav(role){
     const gender = (db('profile')||{}).gender;
     if(gender==='Male') items = items.filter(item=>item.id!=='p-women');
   }
-  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="renderCurrentView('${item.id}')"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
+  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="${item.id==='h-doctor-login' ? 'openDoctorLoginFromHospital()' : `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
 }
 function setActiveNav(navId){
   document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
