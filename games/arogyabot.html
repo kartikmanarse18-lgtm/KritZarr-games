@@ -508,7 +508,11 @@ table.data-table tr:last-child td{border-bottom:none;}
     <p class="hero-desc">Tell us who's signing in. Each console has its own sign-up and verification, and every emergency still broadcasts to the nearest hospitals, ambulances, and police simultaneously — no single point of failure.</p>
   </div>
   <div class="badge-grid" id="badge-grid"></div>
-  <p style="text-align:center;margin-top:22px;color:var(--text-muted);font-size:.85rem;">Already added to a hospital's roster as a doctor? <a href="#" onclick="openDoctorLoginScreen();return false;" style="color:var(--brand-primary);font-weight:600;">Doctor login</a></p>
+  <div style="margin-top:26px;position:relative;z-index:2;">
+    <a href="#" onclick="openDoctorLoginScreen();return false;" style="display:inline-flex;align-items:center;gap:8px;color:#e2e8f0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);padding:10px 20px;border-radius:999px;font-size:.88rem;font-weight:600;text-decoration:none;">
+      <i class="fa-solid fa-user-doctor"></i> Already on a hospital's roster as a doctor? Log in here
+    </a>
+  </div>
 </div>
 
 <!-- ============================================================
