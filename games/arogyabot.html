@@ -460,9 +460,14 @@ table.data-table tr:last-child td{border-bottom:none;}
 
 .video-mock{background:#0f172a;border-radius:var(--radius-lg);aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;position:relative;overflow:hidden;}
 .video-mock .avatar{width:90px;height:90px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:12px;}
-.video-controls{position:absolute;bottom:16px;display:flex;gap:12px;}
+.video-call{background:#0f172a;border-radius:var(--radius-lg);aspect-ratio:16/9;position:relative;overflow:hidden;}
+.video-call #rtc-remote-video{width:100%;height:100%;object-fit:cover;background:#000;display:block;}
+.video-call #rtc-local-video{position:absolute;top:14px;right:14px;width:104px;height:78px;object-fit:cover;background:#000;border-radius:10px;border:2px solid rgba(255,255,255,.25);box-shadow:0 6px 16px rgba(0,0,0,.4);}
+.video-call .call-status{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.5);color:#fff;font-size:.76rem;padding:4px 10px;border-radius:20px;}
+.video-controls{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;gap:12px;}
 .video-controls button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
 .video-controls button.end{background:var(--brand-danger);}
+.video-controls button.off{background:var(--brand-danger);}
 
 .audit-row{font-family:var(--ff-mono);font-size:.76rem;}
 .severity-picker{display:flex;gap:10px;flex-wrap:wrap;}
@@ -1232,6 +1237,178 @@ function initFirebaseSync(){
   }
 }
 
+/* ============================================================
+   REAL-TIME VIDEO CALL (WebRTC) — patient <-> doctor telemedicine.
+   The audio/video streams go directly between the two browsers
+   (peer-to-peer); Firestore is used ONLY as a signaling channel to
+   exchange the one-time SDP offer/answer and ICE candidates for a
+   given appointment — same 'arogya_rooms/{ROOM_ID}' room already
+   used for every other cross-device sync in this app.
+
+   Whichever side opens the call screen FIRST becomes the caller
+   (creates the offer); the second side to open it sees the offer
+   already sitting in Firestore and becomes the callee (creates the
+   answer) — so it works no matter who joins first.
+
+   Needs: (1) a secure context (https, or localhost) for
+   getUserMedia — browsers block camera/mic access otherwise; and
+   (2) Firebase configured (fbEnabled), since two different devices
+   can't otherwise find each other. Without Firebase this still
+   shows the local camera as a preview, but there is no channel to
+   reach the other participant, so it says so rather than pretending
+   to connect.
+   ============================================================ */
+let rtcPeerConnection = null;
+let rtcLocalStream = null;
+let rtcCurrentApptId = null;
+let rtcCandidateUnsubs = [];
+let rtcCallUnsub = null;
+
+const RTC_ICE_SERVERS = { iceServers: [
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'}
+]};
+
+function rtcCallDocRef(apptId){
+  if(!fbEnabled) return null;
+  return firebase.firestore().collection('arogya_rooms').doc(ROOM_ID).collection('calls').doc(apptId);
+}
+
+function rtcTeardown(){
+  if(rtcPeerConnection){ try{ rtcPeerConnection.close(); }catch(e){} rtcPeerConnection = null; }
+  if(rtcLocalStream){ rtcLocalStream.getTracks().forEach(t=>t.stop()); rtcLocalStream = null; }
+  if(rtcCallUnsub){ rtcCallUnsub(); rtcCallUnsub = null; }
+  rtcCandidateUnsubs.forEach(u=>u && u());
+  rtcCandidateUnsubs = [];
+}
+
+// Ends the call for good (both sides hung up, or the call is being abandoned) —
+// also deletes the signaling doc so a future call on this same appointment
+// starts clean instead of finding a stale offer/answer from last time.
+function rtcHangUp(){
+  const apptId = rtcCurrentApptId;
+  rtcTeardown();
+  if(fbEnabled && apptId){
+    const ref = rtcCallDocRef(apptId);
+    ref && ref.delete().catch(()=>{});
+  }
+  rtcCurrentApptId = null;
+}
+
+function rtcSetStatus(text){
+  const el = document.getElementById('rtc-status');
+  if(el) el.textContent = text;
+}
+
+// localVideoElId/remoteVideoElId are the <video> element ids already in the
+// DOM for the console currently rendering the call (patient or doctor side).
+async function rtcJoinCall(apptId, localVideoElId, remoteVideoElId){
+  if(rtcCurrentApptId===apptId) return; // already joined (or joining) this same call — rtcHangUp() clears this to allow a fresh join
+  rtcTeardown();
+  rtcCurrentApptId = apptId;
+
+  let stream;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+  }catch(e){
+    rtcSetStatus('Camera/mic unavailable — check permissions.');
+    showToast('Camera/mic blocked', 'Allow camera and microphone access in your browser to join the video call.', 'danger');
+    return;
+  }
+  rtcLocalStream = stream;
+  const localEl = document.getElementById(localVideoElId);
+  if(localEl){ localEl.srcObject = stream; localEl.play && localEl.play().catch(()=>{}); }
+
+  if(!fbEnabled){
+    rtcSetStatus('Local preview only — live sync isn\'t connected on this device, so this call can\'t reach the other side.');
+    return;
+  }
+
+  rtcSetStatus('Connecting…');
+  const pc = new RTCPeerConnection(RTC_ICE_SERVERS);
+  rtcPeerConnection = pc;
+  stream.getTracks().forEach(t=>pc.addTrack(t, stream));
+  const remoteStream = new MediaStream();
+  const remoteEl = document.getElementById(remoteVideoElId);
+  if(remoteEl) remoteEl.srcObject = remoteStream;
+  pc.ontrack = (event)=>{
+    event.streams[0].getTracks().forEach(t=>remoteStream.addTrack(t));
+    if(remoteEl) remoteEl.play && remoteEl.play().catch(()=>{});
+  };
+  pc.onconnectionstatechange = ()=>{
+    if(pc.connectionState==='connected') rtcSetStatus('Connected');
+    else if(pc.connectionState==='disconnected' || pc.connectionState==='failed') rtcSetStatus('Connection lost — try re-joining.');
+  };
+
+  const callRef = rtcCallDocRef(apptId);
+  const snap = await callRef.get();
+
+  if(!snap.exists || !snap.data().offer){
+    // We're first here — become the caller.
+    const callerCandidates = callRef.collection('callerCandidates');
+    pc.onicecandidate = (e)=>{ if(e.candidate) callerCandidates.add(e.candidate.toJSON()).catch(()=>{}); };
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await callRef.set({offer:{sdp:offer.sdp, type:offer.type}, updatedAt: Date.now()}, {merge:true});
+    rtcSetStatus('Waiting for the other side to join…');
+    rtcCallUnsub = callRef.onSnapshot(async docSnap=>{
+      const data = docSnap.data();
+      if(data && data.answer && pc.signalingState!=='stable' && !pc.currentRemoteDescription){
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(()=>{});
+      }
+    });
+    rtcCandidateUnsubs.push(callRef.collection('calleeCandidates').onSnapshot(qs=>{
+      qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{}); });
+    }));
+  } else {
+    // An offer is already waiting — become the callee.
+    const data = snap.data();
+    const calleeCandidates = callRef.collection('calleeCandidates');
+    pc.onicecandidate = (e)=>{ if(e.candidate) calleeCandidates.add(e.candidate.toJSON()).catch(()=>{}); };
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await callRef.set({answer:{sdp:answer.sdp, type:answer.type}, updatedAt: Date.now()}, {merge:true});
+    rtcCandidateUnsubs.push(callRef.collection('callerCandidates').onSnapshot(qs=>{
+      qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{}); });
+    }));
+  }
+}
+
+function rtcToggleMic(btn){
+  if(!rtcLocalStream) return;
+  const track = rtcLocalStream.getAudioTracks()[0];
+  if(!track) return;
+  track.enabled = !track.enabled;
+  btn.classList.toggle('off', !track.enabled);
+  btn.innerHTML = `<i class="fa-solid ${track.enabled?'fa-microphone':'fa-microphone-slash'}"></i>`;
+}
+function rtcToggleCam(btn){
+  if(!rtcLocalStream) return;
+  const track = rtcLocalStream.getVideoTracks()[0];
+  if(!track) return;
+  track.enabled = !track.enabled;
+  btn.classList.toggle('off', !track.enabled);
+  btn.innerHTML = `<i class="fa-solid ${track.enabled?'fa-video':'fa-video-slash'}"></i>`;
+}
+
+// Shared markup for both the patient and doctor call screens — peerLabel is
+// the other participant's display name, endFn is the console-specific hang-up
+// function name ('endCall' for patient, 'doctorEndCall' for doctor).
+function videoCallHtml(peerLabel, endFn){
+  return `<div class="video-call">
+    <span class="call-status" id="rtc-status">Connecting…</span>
+    <video id="rtc-remote-video" autoplay playsinline></video>
+    <video id="rtc-local-video" autoplay playsinline muted></video>
+    <div style="position:absolute;top:14px;right:14px;left:14px;text-align:right;color:#fff;font-size:.78rem;text-shadow:0 1px 4px rgba(0,0,0,.6);">${peerLabel}</div>
+    <div class="video-controls">
+      <button id="rtc-mic-btn" onclick="rtcToggleMic(this)"><i class="fa-solid fa-microphone"></i></button>
+      <button id="rtc-cam-btn" onclick="rtcToggleCam(this)"><i class="fa-solid fa-video"></i></button>
+      <button class="end" onclick="${endFn}()"><i class="fa-solid fa-phone-slash"></i></button>
+    </div>
+  </div>`;
+}
+
 // Multiple Firestore keys can update within the same instant (e.g. an ambulance
 // moving updates both 'responders' and 'incidents'). Batch those into a single
 // screen refresh instead of re-rendering once per key, and prefer a lightweight
@@ -1538,7 +1715,7 @@ let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue
 // Fixed specialty list — used for the hospital's "Add doctor" dropdown AND
 // to group doctors on the patient telemedicine screen, so a doctor never
 // ends up in a specialty bucket of one because of free-text typos.
-const DOCTOR_SPECIALTIES = ['Physiotherapist','General Physician','Cardiology','Dermatology','Pediatrics','Gynecology','Orthopedics','ENT (Ear, Nose &amp; Throat)','Neurology','Psychiatry','Dentistry','Ophthalmology','Gastroenterology','Pulmonology','Urology','Endocrinology','Oncology'];
+const DOCTOR_SPECIALTIES = ['General Physician','Cardiology','Dermatology','Pediatrics','Gynecology','Orthopedics','ENT (Ear, Nose &amp; Throat)','Neurology','Psychiatry','Dentistry','Ophthalmology','Gastroenterology','Pulmonology','Urology','Endocrinology','Oncology','Physiotherapy'];
 const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
   responder: {icon:'fa-truck-medical', title:'Ambulance / Responder', id:'ROLE // RS-01', desc:'Live dispatch queue broadcast from Command, patient medical summary on accept, turn-by-turn navigation simulation.'},
@@ -3220,6 +3397,19 @@ function postRenderHooks(navId){
   if(navId==='p-vitals') renderVitalsAll();
   if(navId==='p-meds'){ renderChildDose(); }
   if(navId==='p-lifestyle'){ renderSleepTool(); renderStepCalc(); renderPackYears(); }
+  if(navId==='p-tele'){
+    const inCall = db('activeCall');
+    if(inCall && inCall.ownerId===currentPatientId() && document.getElementById('rtc-remote-video')){
+      rtcJoinCall(inCall.apptId, 'rtc-local-video', 'rtc-remote-video');
+    }
+  }
+  if(navId==='d-appts'){
+    const inCall = db('activeCall');
+    const dRec = currentDoctorRecord();
+    if(inCall && dRec && inCall.doctor===dRec.name && document.getElementById('rtc-remote-video')){
+      rtcJoinCall(inCall.apptId, 'rtc-local-video', 'rtc-remote-video');
+    }
+  }
 }
 function viewHeader(eyebrow,title,sub){
   return `<div class="view-header"><div class="view-eyebrow">${eyebrow}</div><h1 class="view-title">${title}</h1><p class="view-subtitle">${sub||''}</p></div>`;
@@ -5080,15 +5270,7 @@ function viewDoctorAppts(){
   const inCall = db('activeCall');
   return `${viewHeader('My Appointments','Consultations booked with you','Join the call, then write the e-prescription when you\'re done — it lands straight in the patient\'s records and can be sent on to any pharmacy.')}
   ${inCall && inCall.doctor===d.name ? `<div class="card">
-    <div class="video-mock">
-      <div class="avatar"><i class="fa-solid fa-user-injured"></i></div>
-      <div>${inCall.patientName||'Patient'} · connected</div>
-      <div class="video-controls">
-        <button><i class="fa-solid fa-microphone"></i></button>
-        <button><i class="fa-solid fa-video"></i></button>
-        <button class="end" onclick="doctorEndCall()"><i class="fa-solid fa-phone-slash"></i></button>
-      </div>
-    </div>
+    ${videoCallHtml(inCall.patientName||'Patient', 'doctorEndCall')}
   </div>` : ''}
   ${appts.length ? appts.map(a=>`
     <div class="card">
@@ -5122,6 +5304,7 @@ function doctorJoinCall(apptId){
   renderCurrentView('d-appts');
 }
 function doctorEndCall(){
+  rtcHangUp();
   dbSet('activeCall', null);
   renderCurrentView('d-appts');
 }
@@ -5138,7 +5321,7 @@ function doctorSubmitRx(apptId){
   rx.push({id:uid('RX'), ownerId:a.ownerId, doctor:a.doctor, medicines:text, date:new Date().toLocaleDateString(), hospital:a.hospital});
   dbSet('prescriptions', rx);
   const inCall = db('activeCall');
-  if(inCall && inCall.apptId===apptId) dbSet('activeCall', null);
+  if(inCall && inCall.apptId===apptId){ rtcHangUp(); dbSet('activeCall', null); }
   audit('doctor:'+CURRENT_DOCTOR_ID, 'prescription_write', a.doctor+' -> '+a.patient);
   pushNotification('patient:'+a.ownerId, 'e-Prescription ready', `${a.doctor} sent you a prescription after your ${a.slot} consultation.`, 'success', null);
   doctorRxDraftApptId = null;
@@ -6543,15 +6726,7 @@ function viewPatientTele(){
   if(inCall && inCall.ownerId===currentPatientId()){
     return `${viewHeader('Telemedicine','Live consultation','')}
     <div class="card">
-      <div class="video-mock">
-        <div class="avatar"><i class="fa-solid fa-user-doctor"></i></div>
-        <div>${inCall.doctor} · connected</div>
-        <div class="video-controls">
-          <button><i class="fa-solid fa-microphone"></i></button>
-          <button><i class="fa-solid fa-video"></i></button>
-          <button class="end" onclick="endCall()"><i class="fa-solid fa-phone-slash"></i></button>
-        </div>
-      </div>
+      ${videoCallHtml(inCall.doctor, 'endCall')}
     </div>`;
   }
   const allDocs = db('doctors').filter(d=>d.available);
@@ -6654,6 +6829,7 @@ function endCall(){
   // marks the consultation Completed and issues the e-prescription from
   // their own console (My Appointments -> Write prescription), so there's
   // a single source of truth for what was actually prescribed.
+  rtcHangUp();
   const inCall = db('activeCall');
   if(inCall && inCall.ownerId===currentPatientId()) dbSet('activeCall', null);
   showToast('Call ended','Your doctor will send an e-prescription once the consultation is wrapped up on their end.','info');
