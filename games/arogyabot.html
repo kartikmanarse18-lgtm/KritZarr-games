@@ -44,6 +44,11 @@
   --text-main:#182b17; --text-muted:#54694f; --border-color:rgba(24,43,23,.12);
   --brand-primary:#16a34a; --brand-primary-hover:#15803d; --brand-secondary:#0d9488;
 }
+[data-role="doctor"]{
+  --bg-main:#f5f3ff; --bg-surface:#ffffff; --bg-subtle:#ece7fc;
+  --text-main:#1e1b30; --text-muted:#5c5578; --border-color:rgba(30,27,48,.12);
+  --brand-primary:#7c3aed; --brand-primary-hover:#6d28d9; --brand-secondary:#0d9488;
+}
 *,*::before,*::after{box-sizing:border-box;}
 body,html{margin:0;padding:0;font-family:var(--ff-sans);background:var(--bg-main);color:var(--text-main);-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none;}
@@ -500,6 +505,20 @@ table.data-table tr:last-child td{border-bottom:none;}
     <p class="hero-desc">Tell us who's signing in. Each console has its own sign-up and verification, and every emergency still broadcasts to the nearest hospitals, ambulances, and police simultaneously — no single point of failure.</p>
   </div>
   <div class="badge-grid" id="badge-grid"></div>
+  <p style="text-align:center;margin-top:22px;color:var(--text-muted);font-size:.85rem;">Already added to a hospital's roster as a doctor? <a href="#" onclick="openDoctorLoginScreen();return false;" style="color:var(--brand-primary);font-weight:600;">Doctor login</a></p>
+</div>
+
+<!-- ============================================================
+     DOCTOR LOGIN — simple email + password only. Doctor accounts
+     are provisioned by a hospital from its Doctor Roster screen,
+     not self-registered, so there is no signup/OTP flow here.
+     ============================================================ -->
+<div id="screen-doctor-login" class="hidden">
+  <div class="landing-hero">
+    <div class="hero-logo"><i class="fa-solid fa-user-doctor"></i>ArogyaBot</div>
+    <div class="hero-tagline">Doctor sign-in</div>
+  </div>
+  <div class="auth-card" id="doctor-login-card-box"></div>
 </div>
 
 <!-- ============================================================
@@ -1061,7 +1080,7 @@ const FIREBASE_CONFIG = {
 // Everyone who opens the app with the same ?room= link shares one live incident feed.
 // Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
 const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
-const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills'];
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','users_doctor','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills'];
 // NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
 // account/family-member is currently logged in on THIS device, refreshed from that
 // account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
@@ -1405,6 +1424,7 @@ function scopeMatchesCurrent(scope){
   if(currentRole==='hospital' && scope === 'hospital:'+CURRENT_HOSPITAL_ID) return true;
   if(currentRole==='police' && CURRENT_POLICE_STATION_ID && scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
   if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
+  if(currentRole==='doctor' && CURRENT_DOCTOR_ID && scope==='doctor:'+CURRENT_DOCTOR_ID) return true;
   return false;
 }
 function notificationsForCurrentScope(){
@@ -1416,6 +1436,7 @@ function notificationsForCurrentScope(){
     if(currentRole==='hospital' && x.scope==='hospital:'+CURRENT_HOSPITAL_ID) return true;
     if(currentRole==='police' && CURRENT_POLICE_STATION_ID && x.scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
     if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && x.scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
+    if(currentRole==='doctor' && CURRENT_DOCTOR_ID && x.scope==='doctor:'+CURRENT_DOCTOR_ID) return true;
     return false;
   });
 }
@@ -1511,10 +1532,15 @@ let CURRENT_RESPONDER_ID = null;
 let CURRENT_HOSPITAL_ID = null;
 let CURRENT_POLICE_STATION_ID = null;
 let CURRENT_PHARMACY_ID = null;
+let CURRENT_DOCTOR_ID = null;
 let currentView = null;
 let liveTrackingTimer = null;
 let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue can re-render itself
 
+// Fixed specialty list — used for the hospital's "Add doctor" dropdown AND
+// to group doctors on the patient telemedicine screen, so a doctor never
+// ends up in a specialty bucket of one because of free-text typos.
+const DOCTOR_SPECIALTIES = ['General Physician','Cardiology','Dermatology','Pediatrics','Gynecology','Orthopedics','ENT (Ear, Nose &amp; Throat)','Neurology','Psychiatry','Dentistry','Ophthalmology','Gastroenterology','Pulmonology','Urology','Endocrinology','Oncology'];
 const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
   responder: {icon:'fa-truck-medical', title:'Ambulance / Responder', id:'ROLE // RS-01', desc:'Live dispatch queue broadcast from Command, patient medical summary on accept, turn-by-turn navigation simulation.'},
@@ -1571,11 +1597,12 @@ function saveActiveSession(role){
   try{
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       role,
-      loggedEmail: role==='patient' ? patientAuthData.loggedEmail : roleAuthData.loggedEmail,
+      loggedEmail: role==='patient' ? patientAuthData.loggedEmail : role==='doctor' ? doctorAuthData.loggedEmail : roleAuthData.loggedEmail,
       responderId: CURRENT_RESPONDER_ID,
       hospitalId: CURRENT_HOSPITAL_ID,
       policeStationId: CURRENT_POLICE_STATION_ID,
-      pharmacyId: CURRENT_PHARMACY_ID
+      pharmacyId: CURRENT_PHARMACY_ID,
+      doctorId: CURRENT_DOCTOR_ID
     }));
   }catch(e){ console.warn('Could not persist session', e); }
 }
@@ -1593,18 +1620,26 @@ function loadActiveSession(){
 // back to role selection.
 function restoreActiveSession(){
   const s = loadActiveSession();
-  if(!s || !s.role || !ROLE_META[s.role]) return false;
+  if(!s || !s.role || (s.role!=='doctor' && !ROLE_META[s.role])) return false;
   currentRole = s.role;
   CURRENT_RESPONDER_ID = s.responderId || null;
   CURRENT_HOSPITAL_ID = s.hospitalId || null;
   CURRENT_POLICE_STATION_ID = s.policeStationId || null;
   CURRENT_PHARMACY_ID = s.pharmacyId || null;
+  CURRENT_DOCTOR_ID = s.doctorId || null;
   if(s.role==='patient'){
     patientAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false;
     const u = s.loggedEmail ? findUserByEmail(s.loggedEmail) : null;
     if(!u) return false; // stale/corrupt session — fall back to landing
     loadActiveMemberIntoProfile(u);
+  } else if(s.role==='doctor'){
+    doctorAuthData = {loggedEmail: s.loggedEmail};
+    if(isEmailRevoked(s.loggedEmail)) return false;
+    const u = s.loggedEmail ? findDoctorUserByEmail(s.loggedEmail) : null;
+    if(!u) return false;
+    const docRecord = (db('doctors')||[]).find(d=>d.id===u.doctorId);
+    if(!docRecord) return false;
   } else {
     roleAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false; // deactivated since last session — bounce to landing
@@ -1624,7 +1659,7 @@ function enterConsole(role){
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
   document.body.setAttribute('data-role', role);
-  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : '';
+  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : role==='doctor' ? ' · '+CURRENT_DOCTOR_ID : '';
   document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
   pruneStaleLocalIncidents();
   buildSideNav(role);
@@ -1667,6 +1702,7 @@ function currentIdentity(){
   if(currentRole==='responder'){ const r=(db('responders')||[]).find(x=>x.id===CURRENT_RESPONDER_ID)||{}; const u=findRoleUserByEmail('responder', roleAuthData.loggedEmail); return {name:r.name||'Responder', sub:(u&&u.email)||r.phone||'', unit:r.vehicle||CURRENT_RESPONDER_ID}; }
   if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; const u=findRoleUserByEmail('hospital', roleAuthData.loggedEmail); return {name:h.name||'Hospital', sub:(u&&u.email)||h.phone||'', unit:h.id}; }
   if(currentRole==='police'){ const po=(db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}; return {name:po.name||'Officer', sub:po.email||po.phone||'', unit:po.station||''}; }
+  if(currentRole==='doctor'){ const d=(db('doctors')||[]).find(x=>x.id===CURRENT_DOCTOR_ID)||{}; const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; return {name:d.name||'Doctor', sub:doctorAuthData.loggedEmail||'', unit:h.name||CURRENT_HOSPITAL_ID}; }
   return {name:'—', sub:'', unit:''};
 }
 function toggleProfileMenu(e){
@@ -1723,7 +1759,10 @@ function logout(){
   roleAuthData = {};
   roleAuthMode = null;
   rolePendingOtp = null;
+  doctorAuthData = {};
+  CURRENT_DOCTOR_ID = null;
   document.getElementById('screen-auth').classList.add('hidden');
+  document.getElementById('screen-doctor-login').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
   renderLandingBadges();
   showToast('Logged out', 'Come back any time — your data stays saved on this device.');
@@ -2287,6 +2326,70 @@ function applyRoleUserToSession(role, user){
   else if(role==='pharmacy') ensurePharmacyRecord(user);
   // Station record first so applyPoliceProfile always has a real stationId to key on.
   else if(role==='police'){ ensurePoliceStationRecord(user); applyPoliceProfile(user); }
+}
+
+/* ============================================================
+   DOCTOR LOGIN — a doctor account is created BY a hospital (see
+   addDoctorToRoster in the Hospital console), never self-signed-up.
+   Because the hospital already vouches for the doctor's identity,
+   this is deliberately a simple email+password login — no OTP, no
+   phone verification, no consent step. Doctor sessions are scoped
+   to CURRENT_DOCTOR_ID + CURRENT_HOSPITAL_ID so a doctor only ever
+   sees their own patients/appointments, never another doctor's.
+   ============================================================ */
+let doctorAuthData = {};      // {loggedEmail}
+let doctorLoginError = '';
+function doctorUsersDb(){ return db('users_doctor') || []; }
+function findDoctorUserByEmail(email){ return doctorUsersDb().find(u=>u.email===(email||'').trim().toLowerCase()); }
+function saveDoctorUser(u){ const list=doctorUsersDb(); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users_doctor', list); }
+
+function openDoctorLoginScreen(){
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-doctor-login').classList.remove('hidden');
+  doctorLoginError = '';
+  renderDoctorLoginCard();
+}
+function backToRoleSelectFromDoctorLogin(){
+  document.getElementById('screen-doctor-login').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+}
+function renderDoctorLoginCard(){
+  const box = document.getElementById('doctor-login-card-box');
+  if(!box) return;
+  box.innerHTML = `
+    <h3>Doctor sign-in</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">Use the email and password your hospital admin gave you.</p>
+    <div class="form-group"><label>Email</label><input class="form-control" id="doc-login-email" placeholder="you@hospital.com" onkeydown="if(event.key==='Enter')doctorLoginSubmit();"></div>
+    <div class="form-group"><label>Password</label><input class="form-control" type="password" id="doc-login-password" placeholder="Password" onkeydown="if(event.key==='Enter')doctorLoginSubmit();"></div>
+    ${doctorLoginError ? `<div class="field-err">${doctorLoginError}</div>` : ''}
+    <button class="btn btn-block" onclick="doctorLoginSubmit()"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+    <p style="text-align:center;margin-top:14px;"><a href="#" onclick="backToRoleSelectFromDoctorLogin();return false;" style="color:var(--text-muted);font-size:.82rem;">&larr; Back</a></p>
+  `;
+}
+async function doctorLoginSubmit(){
+  const email = (document.getElementById('doc-login-email').value||'').trim().toLowerCase();
+  const pw = document.getElementById('doc-login-password').value||'';
+  if(!email || !pw){ doctorLoginError='Enter both email and password.'; renderDoctorLoginCard(); return; }
+  if(isEmailRevoked(email)){ doctorLoginError='This account has been deactivated. Contact your hospital admin.'; renderDoctorLoginCard(); return; }
+  const u = findDoctorUserByEmail(email);
+  if(!u){ doctorLoginError='No doctor account found for this email — ask your hospital admin to add you on their Doctor Roster.'; renderDoctorLoginCard(); return; }
+  const hash = await hashPassword(pw);
+  if(hash !== u.passwordHash){ doctorLoginError='Incorrect password.'; renderDoctorLoginCard(); return; }
+  const docRecord = (db('doctors')||[]).find(d=>d.id===u.doctorId);
+  if(!docRecord){ doctorLoginError='Your doctor record no longer exists — contact your hospital admin.'; renderDoctorLoginCard(); return; }
+  doctorLoginError='';
+  loginAsDoctor(u);
+}
+function loginAsDoctor(u){
+  currentRole = 'doctor';
+  CURRENT_DOCTOR_ID = u.doctorId;
+  CURRENT_HOSPITAL_ID = u.hospitalId;
+  doctorAuthData = {loggedEmail: u.email};
+  dbSet('auth', {verified:true, consent:true});
+  document.getElementById('screen-doctor-login').classList.add('hidden');
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'auth', 'Doctor logged in: '+u.email);
+  saveActiveSession('doctor');
+  enterConsole('doctor');
 }
 
 function renderRoleAuthCard(){
@@ -3058,6 +3161,12 @@ const SIDENAV = {
     {id:'ph-orders', label:'Incoming Prescriptions', icon:'fa-file-prescription'},
     {id:'ph-inventory', label:'Medicine Inventory', icon:'fa-boxes-stacked'},
     {id:'ph-billing', label:'Billing &amp; Sales', icon:'fa-receipt'},
+  ],
+  doctor: [
+    {id:'d-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'d-appts', label:'My Appointments', icon:'fa-calendar-check'},
+    {id:'d-slots', label:'My Availability', icon:'fa-clock'},
+    {id:'d-profile', label:'My Profile', icon:'fa-id-badge'},
   ]
 };
 function buildSideNav(role){
@@ -3088,6 +3197,7 @@ function renderCurrentView(navId){
     'po-dash': viewPoliceDash, 'po-feed': viewPoliceFeed,
     'h-dash': viewHospitalDash, 'h-incoming': viewHospitalIncoming, 'h-roster': viewHospitalRoster, 'h-tele': viewHospitalTele, 'h-verify': viewHospitalVerify, 'h-audit': viewHospitalAudit,
     'ph-dash': viewPharmacyDash, 'ph-orders': viewPharmacyOrders, 'ph-inventory': viewPharmacyInventory, 'ph-billing': viewPharmacyBilling,
+    'd-dash': viewDoctorDash, 'd-appts': viewDoctorAppts, 'd-slots': viewDoctorSlots, 'd-profile': viewDoctorProfile,
   };
   c.innerHTML = renderers[navId] ? renderers[navId]() : '<div class="empty-state">View not found</div>';
   postRenderHooks(navId);
@@ -4864,43 +4974,248 @@ async function closeIncidentHospitalSide(id){
 }
 function viewHospitalRoster(){
   const docs = db('doctors').filter(d=>d.hospital===CURRENT_HOSPITAL_ID);
-  return `${viewHeader('Doctor Roster','On-duty specialists','Add your real doctors below, then toggle availability — reflected instantly on the patient telemedicine booking screen.')}
+  return `${viewHeader('Doctor Roster','On-duty specialists','Add your real doctors below — each gets their own login to join calls, manage their own slots and write prescriptions. Toggling availability is reflected instantly on the patient telemedicine booking screen.')}
   <div class="card">
     <h3 style="margin-top:0;">Add doctor</h3>
     <div class="grid-2">
       <div class="form-group"><label>Doctor name</label><input class="form-control" id="doc-name" placeholder="e.g. Dr. Anil Kapoor"></div>
-      <div class="form-group"><label>Specialty</label><input class="form-control" id="doc-specialty" placeholder="e.g. Cardiologist"></div>
+      <div class="form-group"><label>Specialty</label><select class="form-control" id="doc-specialty">${DOCTOR_SPECIALTIES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Degree / qualification</label><input class="form-control" id="doc-degree" placeholder="e.g. MBBS, MD (Cardiology)"></div>
+      <div class="form-group"><label>Years of experience</label><input class="form-control" type="number" min="0" id="doc-experience" placeholder="e.g. 8"></div>
+      <div class="form-group"><label>Consultation fee (&#8377;)</label><input class="form-control" type="number" min="0" id="doc-fee" placeholder="e.g. 500"></div>
+      <div class="form-group"><label>Login email</label><input class="form-control" id="doc-login-email-new" placeholder="doctor@example.com"></div>
+      <div class="form-group"><label>Login password</label><div style="display:flex;gap:8px;"><input class="form-control" id="doc-login-password-new" placeholder="Set a password"><button type="button" class="btn btn-secondary btn-sm" onclick="generateDoctorPassword()" title="Generate a random password"><i class="fa-solid fa-shuffle"></i></button></div></div>
     </div>
-    <button class="btn" onclick="addDoctorToRoster()"><i class="fa-solid fa-user-doctor"></i> Add to roster</button>
+    <button class="btn" onclick="addDoctorToRoster()"><i class="fa-solid fa-user-doctor"></i> Add to roster &amp; create login</button>
   </div>
   <div class="card">
-  ${docs.length ? `<table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Status</th><th></th></tr></thead><tbody>
-  ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td style="display:flex;gap:6px;"><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button><button class="btn btn-sm btn-danger" onclick="removeDoctor('${d.id}')" title="Remove from roster"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}
+  ${docs.length ? `<table class="data-table"><thead><tr><th>Doctor</th><th>Specialty</th><th>Degree</th><th>Exp.</th><th>Fee</th><th>Login email</th><th>Status</th><th></th></tr></thead><tbody>
+  ${docs.map(d=>`<tr><td>${d.name}</td><td>${d.specialty}</td><td>${d.degree||'—'}</td><td>${d.experience?d.experience+' yrs':'—'}</td><td>${d.fee?'&#8377;'+d.fee:'—'}</td><td style="font-family:var(--ff-mono);font-size:.78rem;">${d.loginEmail||'—'}</td><td><span class="status-tag ${d.available?'status-ok':'status-muted'}">${d.available?'Available':'Off duty'}</span></td><td style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm btn-secondary" onclick="toggleDoc('${d.id}')">Toggle</button><button class="btn btn-sm btn-secondary" onclick="resetDoctorPassword('${d.id}')" title="Reset login password"><i class="fa-solid fa-key"></i></button><button class="btn btn-sm btn-danger" onclick="removeDoctor('${d.id}')" title="Remove from roster"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}
   </tbody></table>` : `<p style="color:var(--text-muted);margin:0;">No doctors added yet — add your first one above.</p>`}
   </div>`;
 }
-function addDoctorToRoster(){
+function generateDoctorPassword(){
+  const pw = Math.random().toString(36).slice(-4) + Math.floor(1000+Math.random()*9000);
+  document.getElementById('doc-login-password-new').value = pw;
+}
+async function addDoctorToRoster(){
   const name = document.getElementById('doc-name').value.trim();
-  const specialty = document.getElementById('doc-specialty').value.trim();
-  if(!name || !specialty){ showToast('Missing info','Enter both the doctor\'s name and specialty.','danger'); return; }
+  const specialty = document.getElementById('doc-specialty').value;
+  const degree = document.getElementById('doc-degree').value.trim();
+  const experience = parseInt(document.getElementById('doc-experience').value, 10) || 0;
+  const fee = parseInt(document.getElementById('doc-fee').value, 10) || 0;
+  const loginEmail = (document.getElementById('doc-login-email-new').value||'').trim().toLowerCase();
+  const loginPassword = document.getElementById('doc-login-password-new').value||'';
+  if(!name || !specialty){ showToast('Missing info','Enter the doctor\'s name and specialty.','danger'); return; }
+  if(!loginEmail || !loginPassword){ showToast('Missing login info','A login email and password are required so this doctor can sign in.','danger'); return; }
+  if(loginPassword.length<4){ showToast('Weak password','Use at least 4 characters for the doctor\'s password.','danger'); return; }
+  if(findDoctorUserByEmail(loginEmail)){ showToast('Email already used','Another doctor already has a login with that email.','danger'); return; }
   const docs = db('doctors');
-  docs.push({id:uid('DOC'), name, specialty, hospital:CURRENT_HOSPITAL_ID, available:true});
+  const doctorId = uid('DOC');
+  docs.push({id:doctorId, name, specialty, hospital:CURRENT_HOSPITAL_ID, available:true, degree, experience, fee, loginEmail, bio:'', slots:[]});
   dbSet('doctors', docs);
-  audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_add', name+' ('+specialty+')');
-  showToast('Doctor added', name+' is now on your roster.', 'success');
+  const passwordHash = await hashPassword(loginPassword);
+  saveDoctorUser({email:loginEmail, passwordHash, doctorId, hospitalId:CURRENT_HOSPITAL_ID, name});
+  audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_add', name+' ('+specialty+') · login: '+loginEmail);
+  showToast('Doctor added', name+' can now log in with '+loginEmail+' — share the password with them securely.', 'success');
   renderCurrentView('h-roster');
 }
 function removeDoctor(id){
   const docs = db('doctors');
   const d = docs.find(x=>x.id===id);
   if(!d) return;
-  if(!confirm('Remove '+d.name+' from the roster? Any of their upcoming bookings will need to be rescheduled with someone else.')) return;
+  if(!confirm('Remove '+d.name+' from the roster? This also disables their login. Any of their upcoming bookings will need to be rescheduled with someone else.')) return;
   dbSet('doctors', docs.filter(x=>x.id!==id));
+  if(d.loginEmail) dbSet('users_doctor', doctorUsersDb().filter(u=>u.doctorId!==id));
   audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_remove', d.name);
   showToast('Removed', d.name+' taken off the roster.', 'success');
   renderCurrentView('h-roster');
 }
 function toggleDoc(id){ const docs=db('doctors'); const d=docs.find(x=>x.id===id); d.available=!d.available; dbSet('doctors',docs); renderCurrentView('h-roster'); }
+async function resetDoctorPassword(id){
+  const d = (db('doctors')||[]).find(x=>x.id===id);
+  if(!d || !d.loginEmail){ showToast('No login found','This doctor has no login account to reset.','danger'); return; }
+  const newPw = prompt('Enter a new password for '+d.name+' ('+d.loginEmail+'):');
+  if(!newPw) return;
+  if(newPw.length<4){ showToast('Weak password','Use at least 4 characters.','danger'); return; }
+  const u = findDoctorUserByEmail(d.loginEmail);
+  if(!u){ showToast('Not found','No login record for that email.','danger'); return; }
+  u.passwordHash = await hashPassword(newPw);
+  saveDoctorUser(u);
+  audit('hospital:'+CURRENT_HOSPITAL_ID, 'doctor_password_reset', d.name);
+  showToast('Password reset', 'New password set for '+d.name+'. Share it with them securely.', 'success');
+}
+/* ============================================================
+   DOCTOR CONSOLE — scoped to CURRENT_DOCTOR_ID + CURRENT_HOSPITAL_ID.
+   A doctor manages their own availability slots, joins their own
+   video calls, and writes prescriptions for their own patients —
+   never sees another doctor's roster or another hospital's data.
+   ============================================================ */
+function currentDoctorRecord(){ return (db('doctors')||[]).find(x=>x.id===CURRENT_DOCTOR_ID); }
+function viewDoctorDash(){
+  const d = currentDoctorRecord() || {};
+  const h = (db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID) || {};
+  const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID && a.doctor===d.name);
+  const upcoming = appts.filter(a=>a.status==='Confirmed');
+  const completed = appts.filter(a=>a.status==='Completed');
+  return `${viewHeader('Doctor Console', 'Welcome, '+(d.name||'Doctor'), h.name?('At '+h.name):'')}
+  <div class="grid-3">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-calendar-check"></i></div><div><div class="dash-stat-num">${upcoming.length}</div><div class="dash-stat-label">Upcoming Consultations</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-clock"></i></div><div><div class="dash-stat-num">${(d.slots||[]).length}</div><div class="dash-stat-label">Open Slots</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-prescription-bottle-medical"></i></div><div><div class="dash-stat-num">${completed.length}</div><div class="dash-stat-label">Consultations Completed</div></div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Your profile summary</h3>
+    <p style="color:var(--text-muted);margin:0;">${d.specialty||'—'} · ${d.degree||'No degree on file'} · ${d.experience?d.experience+' yrs experience':'Experience not set'} · Fee &#8377;${d.fee||'—'}</p>
+    <p style="margin-top:10px;">${d.available ? '<span class="status-tag status-ok">Available for booking</span>' : '<span class="status-tag status-muted">Currently off duty — ask your hospital admin to toggle you available</span>'}</p>
+  </div>`;
+}
+let doctorRxDraftApptId = null;
+function viewDoctorAppts(){
+  const d = currentDoctorRecord() || {};
+  const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID && a.doctor===d.name).sort((a,b)=>(a.status==='Confirmed'?-1:1));
+  const inCall = db('activeCall');
+  return `${viewHeader('My Appointments','Consultations booked with you','Join the call, then write the e-prescription when you\'re done — it lands straight in the patient\'s records and can be sent on to any pharmacy.')}
+  ${inCall && inCall.doctor===d.name ? `<div class="card">
+    <div class="video-mock">
+      <div class="avatar"><i class="fa-solid fa-user-injured"></i></div>
+      <div>${inCall.patientName||'Patient'} · connected</div>
+      <div class="video-controls">
+        <button><i class="fa-solid fa-microphone"></i></button>
+        <button><i class="fa-solid fa-video"></i></button>
+        <button class="end" onclick="doctorEndCall()"><i class="fa-solid fa-phone-slash"></i></button>
+      </div>
+    </div>
+  </div>` : ''}
+  ${appts.length ? appts.map(a=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div><strong>${a.patient}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${a.slot}</span></div>
+        <span class="status-tag ${a.status==='Completed'?'status-muted':a.status==='Cancelled'?'status-danger':'status-ok'}">${a.status}</span>
+      </div>
+      ${a.status==='Confirmed' ? `<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="doctorJoinCall('${a.id}')"><i class="fa-solid fa-video"></i> Join call</button>
+        <button class="btn btn-sm btn-secondary" onclick="doctorOpenRxForm('${a.id}')"><i class="fa-solid fa-file-prescription"></i> Write prescription</button>
+      </div>` : ''}
+      ${doctorRxDraftApptId===a.id ? doctorRxFormHtml(a) : ''}
+    </div>`).join('') : `<div class="empty-state"><i class="fa-solid fa-calendar"></i><p>No bookings yet — patients will find you here once you add availability slots.</p></div>`}`;
+}
+function doctorOpenRxForm(apptId){ doctorRxDraftApptId = apptId; renderCurrentView('d-appts'); }
+function doctorCancelRxForm(){ doctorRxDraftApptId = null; renderCurrentView('d-appts'); }
+function doctorRxFormHtml(a){
+  return `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-color);">
+    <div class="form-group"><label>Medicines &amp; instructions</label><textarea class="form-control" id="doc-rx-text-${a.id}" placeholder="e.g. Paracetamol 500mg — 1 tab twice daily x3 days"></textarea></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-sm" onclick="doctorSubmitRx('${a.id}')"><i class="fa-solid fa-check"></i> Save &amp; complete consultation</button>
+      <button class="btn btn-sm btn-secondary" onclick="doctorCancelRxForm()">Cancel</button>
+    </div>
+  </div>`;
+}
+function doctorJoinCall(apptId){
+  const a = db('appointments').find(x=>x.id===apptId);
+  if(!a) return;
+  dbSet('activeCall', {doctor:a.doctor, ownerId:a.ownerId, apptId:a.id, hospital:a.hospital, patientName:a.patient});
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'call_join', a.doctor+' with '+a.patient);
+  renderCurrentView('d-appts');
+}
+function doctorEndCall(){
+  dbSet('activeCall', null);
+  renderCurrentView('d-appts');
+}
+function doctorSubmitRx(apptId){
+  const el = document.getElementById('doc-rx-text-'+apptId);
+  const text = (el ? el.value : '').trim();
+  if(!text){ showToast('Nothing entered','Add the medicines/instructions before saving.','danger'); return; }
+  const appts = db('appointments');
+  const a = appts.find(x=>x.id===apptId);
+  if(!a) return;
+  a.status = 'Completed';
+  dbSet('appointments', appts);
+  const rx = db('prescriptions');
+  rx.push({id:uid('RX'), ownerId:a.ownerId, doctor:a.doctor, medicines:text, date:new Date().toLocaleDateString(), hospital:a.hospital});
+  dbSet('prescriptions', rx);
+  const inCall = db('activeCall');
+  if(inCall && inCall.apptId===apptId) dbSet('activeCall', null);
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'prescription_write', a.doctor+' -> '+a.patient);
+  pushNotification('patient:'+a.ownerId, 'e-Prescription ready', `${a.doctor} sent you a prescription after your ${a.slot} consultation.`, 'success', null);
+  doctorRxDraftApptId = null;
+  showToast('Saved', 'Prescription sent to the patient and the consultation is marked complete.', 'success');
+  renderCurrentView('d-appts');
+}
+function viewDoctorSlots(){
+  const d = currentDoctorRecord() || {};
+  const slots = d.slots || [];
+  const appts = db('appointments');
+  return `${viewHeader('My Availability','Add the times you can take video consultations','Patients only see slots you add here — remove one and it disappears from booking immediately, unless it\'s already booked.')}
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input class="form-control" id="doc-new-slot" placeholder="e.g. Mon 10:30 AM or 12 Sept, 4:30 PM" style="flex:1;min-width:220px;" onkeydown="if(event.key==='Enter')doctorAddSlot();">
+      <button class="btn" onclick="doctorAddSlot()"><i class="fa-solid fa-plus"></i> Add slot</button>
+    </div>
+  </div>
+  <div class="card">
+  ${slots.length ? slots.map(s=>{
+    const booked = appts.some(a=>a.doctor===d.name && a.slot===s && a.status==='Confirmed');
+    return `<div class="reminder-row"><div><strong>${s}</strong></div><div style="display:flex;gap:8px;align-items:center;">${booked?'<span class="status-tag status-warn">Booked</span>':'<span class="status-tag status-ok">Open</span>'}<button class="btn btn-sm btn-danger" ${booked?'disabled title="Cancel the booking first"':''} onclick="doctorRemoveSlot('${s.replace(/'/g,"\\'")}')"><i class="fa-solid fa-trash"></i></button></div></div>`;
+  }).join('') : `<p style="color:var(--text-muted);margin:0;">No slots added yet — add your first available time above.</p>`}
+  </div>`;
+}
+function doctorAddSlot(){
+  const el = document.getElementById('doc-new-slot');
+  const val = (el.value||'').trim();
+  if(!val){ showToast('Nothing entered','Type a day/time first.','danger'); return; }
+  const docs = db('doctors');
+  const d = docs.find(x=>x.id===CURRENT_DOCTOR_ID);
+  if(!d) return;
+  d.slots = d.slots || [];
+  if(d.slots.includes(val)){ showToast('Already added','That slot is already on your list.','danger'); return; }
+  d.slots.push(val);
+  dbSet('doctors', docs);
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'slot_add', val);
+  el.value='';
+  showToast('Slot added', val+' is now bookable by patients.', 'success');
+  renderCurrentView('d-slots');
+}
+function doctorRemoveSlot(slot){
+  const docs = db('doctors');
+  const d = docs.find(x=>x.id===CURRENT_DOCTOR_ID);
+  if(!d) return;
+  const appts = db('appointments');
+  if(appts.some(a=>a.doctor===d.name && a.slot===slot && a.status==='Confirmed')){ showToast('Slot is booked','Cancel that booking first from My Appointments.','danger'); return; }
+  d.slots = (d.slots||[]).filter(s=>s!==slot);
+  dbSet('doctors', docs);
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'slot_remove', slot);
+  showToast('Removed', slot+' taken off your availability.', 'success');
+  renderCurrentView('d-slots');
+}
+function viewDoctorProfile(){
+  const d = currentDoctorRecord() || {};
+  return `${viewHeader('My Profile','What patients see when choosing you','')}
+  <div class="card">
+    <div class="grid-2">
+      <div class="form-group"><label>Specialty</label><select class="form-control" id="dp-specialty">${DOCTOR_SPECIALTIES.map(s=>`<option value="${s}" ${d.specialty===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Degree / qualification</label><input class="form-control" id="dp-degree" value="${d.degree||''}"></div>
+      <div class="form-group"><label>Years of experience</label><input class="form-control" type="number" min="0" id="dp-experience" value="${d.experience||0}"></div>
+      <div class="form-group"><label>Consultation fee (&#8377;)</label><input class="form-control" type="number" min="0" id="dp-fee" value="${d.fee||0}"></div>
+    </div>
+    <div class="form-group"><label>Short bio (optional)</label><textarea class="form-control" id="dp-bio" placeholder="A line or two patients will see">${d.bio||''}</textarea></div>
+    <button class="btn" onclick="doctorSaveProfile()"><i class="fa-solid fa-floppy-disk"></i> Save profile</button>
+  </div>`;
+}
+function doctorSaveProfile(){
+  const docs = db('doctors');
+  const d = docs.find(x=>x.id===CURRENT_DOCTOR_ID);
+  if(!d) return;
+  d.specialty = document.getElementById('dp-specialty').value;
+  d.degree = document.getElementById('dp-degree').value.trim();
+  d.experience = parseInt(document.getElementById('dp-experience').value,10)||0;
+  d.fee = parseInt(document.getElementById('dp-fee').value,10)||0;
+  d.bio = document.getElementById('dp-bio').value.trim();
+  dbSet('doctors', docs);
+  audit('doctor:'+CURRENT_DOCTOR_ID, 'profile_update', 'Profile updated');
+  showToast('Saved','Your profile is up to date.','success');
+  renderCurrentView('d-profile');
+}
 function viewHospitalTele(){
   const appts = db('appointments').filter(a=>a.hospital===CURRENT_HOSPITAL_ID);
   return `${viewHeader('Telemedicine Schedule','Booked consultations','')}
@@ -6205,12 +6520,24 @@ function deleteDocument(id){
 /* ============================================================
    PATIENT — TELEMEDICINE
    ============================================================ */
+// Which specialty/doctor the patient is currently browsing — persists across
+// re-renders (booking, cancelling) within the session, reset only via the
+// explicit "back" links so the flow feels like a normal multi-step picker.
+let teleSelectedSpecialty = null;
+let teleSelectedDoctorId = null;
+function openTeleSpecialty(spec){ teleSelectedSpecialty = spec; teleSelectedDoctorId = null; renderCurrentView('p-tele'); }
+function openTeleDoctor(id){ teleSelectedDoctorId = id; renderCurrentView('p-tele'); }
+function backToTeleSpecialties(){ teleSelectedSpecialty = null; teleSelectedDoctorId = null; renderCurrentView('p-tele'); }
+function backToTeleDoctorList(){ teleSelectedDoctorId = null; renderCurrentView('p-tele'); }
+
+function teleUpcomingHtml(){
+  const myAppts = db('appointments').filter(a=>a.ownerId===currentPatientId() && a.status==='Confirmed');
+  return `<div class="card"><h3 style="margin-top:0;">Upcoming consultations</h3>
+  ${myAppts.length ? myAppts.map(a=>`<div class="reminder-row"><div><strong>${a.doctor}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${a.slot}</span></div><div style="display:flex;gap:6px;"><button class="btn btn-sm" onclick="joinCall('${a.id}')"><i class="fa-solid fa-video"></i> Join</button><button class="btn btn-sm btn-secondary" onclick="patientCancelAppt('${a.id}')">Cancel</button></div></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No bookings yet — pick a specialty above.</p>`}</div>`;
+}
 function viewPatientTele(){
-  const docs = db('doctors').filter(d=>d.available);
-  const allAppts = db('appointments');
-  const myAppts = allAppts.filter(a=>a.ownerId===currentPatientId() && a.status==='Confirmed');
   const inCall = db('activeCall');
-  if(inCall){
+  if(inCall && inCall.ownerId===currentPatientId()){
     return `${viewHeader('Telemedicine','Live consultation','')}
     <div class="card">
       <div class="video-mock">
@@ -6224,24 +6551,64 @@ function viewPatientTele(){
       </div>
     </div>`;
   }
-  const SLOTS = ['10:30 AM','2:00 PM','5:15 PM'];
-  return `${viewHeader('Telemedicine','Book a video consultation','WebRTC-based (Agora/Daily.co/Twilio Video in production) — simulated here.')}
-  <div class="grid-2">
-    ${docs.map(d=>{
-      const bookedSlots = new Set(allAppts.filter(a=>a.doctor===d.name && a.status==='Confirmed').map(a=>a.slot));
-      return `<div class="card">
-      <strong>${d.name}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${d.specialty} · ${db('hospitals').find(h=>h.id===d.hospital).name}</span>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${SLOTS.map(t=>bookedSlots.has(t)
-          ? `<button class="btn btn-sm btn-secondary" disabled style="opacity:.4;cursor:not-allowed;">${t} · booked</button>`
-          : `<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t}')">${t}</button>`
-        ).join('')}
-      </div>
-    </div>`;
-    }).join('')}
+  const allDocs = db('doctors').filter(d=>d.available);
+  const allAppts = db('appointments');
+
+  // STEP 1 — no specialty chosen yet: show specialty cards with a live count
+  // of available doctors in each, so patients never scroll a flat wall of names.
+  if(!teleSelectedSpecialty){
+    const bySpec = {};
+    allDocs.forEach(d=>{ bySpec[d.specialty] = (bySpec[d.specialty]||0)+1; });
+    const specs = DOCTOR_SPECIALTIES.filter(s=>bySpec[s]);
+    return `${viewHeader('Telemedicine','Choose a specialty','Pick what you need help with, then choose a doctor by degree, experience and fee.')}
+    <div class="grid-3">
+      ${specs.length ? specs.map(s=>`<div class="card" style="cursor:pointer;" onclick="openTeleSpecialty('${s.replace(/'/g,"\\'")}')">
+        <div class="dash-stat-icon" style="margin-bottom:10px;"><i class="fa-solid fa-stethoscope"></i></div>
+        <strong>${s}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${bySpec[s]} doctor${bySpec[s]===1?'':'s'} available</span>
+      </div>`).join('') : `<div class="empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-user-doctor"></i><p>No doctors are available for telemedicine right now — check back soon.</p></div>`}
+    </div>
+    ${teleUpcomingHtml()}`;
+  }
+
+  // STEP 2 — specialty chosen: list matching doctors with degree/experience/fee
+  // and their own real slots (manually entered by that doctor), not a shared
+  // hardcoded list.
+  if(!teleSelectedDoctorId){
+    const docs = allDocs.filter(d=>d.specialty===teleSelectedSpecialty);
+    return `${viewHeader('Telemedicine', teleSelectedSpecialty, '')}
+    <p><a href="#" onclick="backToTeleSpecialties();return false;" style="color:var(--text-muted);font-size:.85rem;">&larr; All specialties</a></p>
+    <div class="grid-2">
+      ${docs.length ? docs.map(d=>{
+        const h = (db('hospitals')||[]).find(h=>h.id===d.hospital) || {};
+        return `<div class="card" style="cursor:pointer;" onclick="openTeleDoctor('${d.id}')">
+        <strong>${d.name}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${d.specialty} · ${h.name||'—'}</span>
+        <p style="margin:10px 0 0;font-size:.82rem;color:var(--text-muted);">${d.degree||'Degree not listed'} · ${d.experience?d.experience+' yrs experience':'Experience not listed'}</p>
+        <p style="margin:6px 0 0;font-weight:700;">Consultation fee: &#8377;${d.fee||'—'}</p>
+      </div>`;
+      }).join('') : `<div class="empty-state" style="grid-column:1/-1;"><i class="fa-solid fa-user-doctor"></i><p>No available doctors in this specialty right now.</p></div>`}
+    </div>
+    ${teleUpcomingHtml()}`;
+  }
+
+  // STEP 3 — a specific doctor chosen: show full profile + their open slots.
+  const d = allDocs.find(x=>x.id===teleSelectedDoctorId);
+  if(!d){ teleSelectedDoctorId = null; return viewPatientTele(); }
+  const h = (db('hospitals')||[]).find(h=>h.id===d.hospital) || {};
+  const bookedSlots = new Set(allAppts.filter(a=>a.doctor===d.name && a.status==='Confirmed').map(a=>a.slot));
+  const openSlots = (d.slots||[]).filter(s=>!bookedSlots.has(s));
+  return `${viewHeader('Telemedicine', d.name, '')}
+  <p><a href="#" onclick="backToTeleDoctorList();return false;" style="color:var(--text-muted);font-size:.85rem;">&larr; ${teleSelectedSpecialty} doctors</a></p>
+  <div class="card">
+    <strong>${d.name}</strong><br><span style="color:var(--text-muted);font-size:.85rem;">${d.specialty} · ${h.name||'—'}</span>
+    <p style="margin:10px 0 0;font-size:.85rem;color:var(--text-muted);">${d.degree||'Degree not listed'} · ${d.experience?d.experience+' yrs experience':'Experience not listed'}</p>
+    <p style="margin:6px 0 0;font-weight:700;">Consultation fee: &#8377;${d.fee||'—'}</p>
+    ${d.bio ? `<p style="margin:10px 0 0;font-size:.85rem;">${d.bio}</p>` : ''}
+    <h3 style="margin:18px 0 10px;">Available slots</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${openSlots.length ? openSlots.map(t=>`<button class="btn btn-sm btn-secondary" onclick="bookAppt('${d.name}','${d.hospital}','${t.replace(/'/g,"\\'")}')">${t}</button>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;margin:0;">No open slots right now — check back later.</p>`}
+    </div>
   </div>
-  <div class="card"><h3 style="margin-top:0;">Upcoming consultations</h3>
-  ${myAppts.length ? myAppts.map(a=>`<div class="reminder-row"><div><strong>${a.doctor}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${a.slot}</span></div><div style="display:flex;gap:6px;"><button class="btn btn-sm" onclick="joinCall('${a.doctor}')"><i class="fa-solid fa-video"></i> Join</button><button class="btn btn-sm btn-secondary" onclick="patientCancelAppt('${a.id}')">Cancel</button></div></div>`).join('') : `<p style="color:var(--text-muted);">No bookings yet — pick a slot above.</p>`}</div>`;
+  ${teleUpcomingHtml()}`;
 }
 function bookAppt(doctor, hospital, slot){
   const appts = db('appointments');
@@ -6256,6 +6623,8 @@ function bookAppt(doctor, hospital, slot){
   dbSet('appointments', appts);
   audit('patient','appointment_book', doctor+' @ '+slot);
   pushNotification('hospital:'+hospital, 'New telemedicine booking', `${db('profile').name} booked ${doctor} at ${slot}.`, 'info', null);
+  const d = (db('doctors')||[]).find(x=>x.name===doctor && x.hospital===hospital);
+  if(d) pushNotification('doctor:'+d.id, 'New telemedicine booking', `${db('profile').name} booked you at ${slot}.`, 'info', null);
   showToast('Booked', `Confirmed with ${doctor} at ${slot}.`, 'success');
   renderCurrentView('p-tele');
 }
@@ -6271,22 +6640,21 @@ function patientCancelAppt(id){
   showToast('Cancelled', 'That slot is free for someone else now.', 'success');
   renderCurrentView('p-tele');
 }
-function joinCall(doctor){ dbSet('activeCall',{doctor}); renderCurrentView('p-tele'); }
+function joinCall(apptId){
+  const a = db('appointments').find(x=>x.id===apptId);
+  if(!a) return;
+  dbSet('activeCall', {doctor:a.doctor, ownerId:a.ownerId, apptId:a.id, hospital:a.hospital, patientName:a.patient});
+  renderCurrentView('p-tele');
+}
 function endCall(){
+  // Just closes the patient's side of the call — the doctor is the one who
+  // marks the consultation Completed and issues the e-prescription from
+  // their own console (My Appointments -> Write prescription), so there's
+  // a single source of truth for what was actually prescribed.
   const inCall = db('activeCall');
-  dbSet('activeCall', null);
-  // Mark the underlying booking Completed — otherwise it stayed "Confirmed" forever,
-  // permanently occupying that doctor's slot and cluttering "Upcoming consultations".
-  if(inCall){
-    const appts = db('appointments');
-    const a = appts.find(x=>x.ownerId===currentPatientId() && x.doctor===inCall.doctor && x.status==='Confirmed');
-    if(a){ a.status = 'Completed'; dbSet('appointments', appts); }
-  }
-  const rx = db('prescriptions');
-  rx.push({id:uid('RX'), ownerId: currentPatientId(), doctor: (inCall&&inCall.doctor) || 'Dr. consult', medicines:'Paracetamol 500mg — 1 tab twice daily x3 days', date:new Date().toLocaleDateString()});
-  dbSet('prescriptions', rx);
-  showToast('Consultation ended','e-Prescription issued.','success');
-  renderCurrentView('p-rx');
+  if(inCall && inCall.ownerId===currentPatientId()) dbSet('activeCall', null);
+  showToast('Call ended','Your doctor will send an e-prescription once the consultation is wrapped up on their end.','info');
+  renderCurrentView('p-tele');
 }
 
 /* ============================================================
