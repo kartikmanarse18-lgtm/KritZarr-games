@@ -44,11 +44,9 @@
   --text-main:#182b17; --text-muted:#54694f; --border-color:rgba(24,43,23,.12);
   --brand-primary:#16a34a; --brand-primary-hover:#15803d; --brand-secondary:#0d9488;
 }
-[data-role="doctor"]{
-  --bg-main:#f5f3ff; --bg-surface:#ffffff; --bg-subtle:#ece7fc;
-  --text-main:#1e1b30; --text-muted:#5c5578; --border-color:rgba(30,27,48,.12);
-  --brand-primary:#7c3aed; --brand-primary-hover:#6d28d9; --brand-secondary:#0d9488;
-}
+/* Note: doctor console intentionally has no separate [data-role="doctor"]
+   theme — enterConsole() themes it as 'hospital' so it visually sits under
+   the hospital's shell instead of having its own top-level identity. */
 *,*::before,*::after{box-sizing:border-box;}
 body,html{margin:0;padding:0;font-family:var(--ff-sans);background:var(--bg-main);color:var(--text-main);-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;}
 button{font-family:inherit;cursor:pointer;border:none;outline:none;background:none;}
@@ -1658,8 +1656,13 @@ function enterConsole(role){
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
-  document.body.setAttribute('data-role', role);
-  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : role==='doctor' ? ' · '+CURRENT_DOCTOR_ID : '';
+  // A doctor's console lives under their hospital: it keeps its own role
+  // ('doctor') for session/nav/view routing, but visually themes as
+  // 'hospital' (same palette) so it reads as a tab inside the hospital's
+  // shell rather than a separate top-level identity.
+  document.body.setAttribute('data-role', role==='doctor' ? 'hospital' : role);
+  const hospForTag = role==='doctor' ? (db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID) : null;
+  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : role==='doctor' ? ' · '+(hospForTag?hospForTag.name:CURRENT_HOSPITAL_ID) : '';
   document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
   pruneStaleLocalIncidents();
   buildSideNav(role);
