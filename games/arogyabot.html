@@ -155,65 +155,15 @@ a{color:inherit;}
 .nav-link:hover{color:var(--shell-fg);background:rgba(255,255,255,.06);}
 .nav-link.active{color:#fff;background:var(--brand-primary);box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .content-area{flex:1;padding:28px 36px;overflow-y:auto;max-width:1400px;margin:0 auto;width:100%;}
-/* ============ MOBILE NAV: pinned side-scroll strip + expandable drawer ============
-   Below 900px the full vertical .sidenav (which used to just become a long
-   horizontal swipe-strip of every feature) is hidden. In its place: a short
-   side-scroll strip with only the most-used items pinned, plus a "More"
-   button that opens a bottom-sheet drawer with the rest grouped into
-   expandable sections. Desktop is untouched. */
-.mobile-nav-bar{display:none;}
-.nav-drawer-overlay{display:none;}
-.nav-drawer{display:none;}
 @media (max-width:900px){
   .app-container{flex-direction:column;}
-  .sidenav{display:none;}
-  .mobile-nav-bar{display:flex;align-items:stretch;background:var(--shell-bg);border-bottom:1px solid var(--shell-border);}
-  .mobile-nav-scroll{display:flex;gap:6px;overflow-x:auto;padding:10px 6px 10px 10px;flex:1;min-width:0;-ms-overflow-style:none;scrollbar-width:none;}
-  .mobile-nav-scroll::-webkit-scrollbar{display:none;}
-  .mobile-nav-scroll .nav-link{white-space:nowrap;padding:9px 14px;font-size:.85rem;flex-shrink:0;}
-  .mobile-nav-more{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 16px;color:var(--shell-muted);font-size:.66rem;font-weight:700;letter-spacing:.02em;border-left:1px solid var(--shell-border);}
-  .mobile-nav-more i{font-size:1.05rem;}
-  .mobile-nav-more.hidden{display:none;}
-  .mobile-nav-more.has-active{color:#fff;background:var(--brand-primary);}
-  .nav-drawer-overlay.open{display:block;position:fixed;inset:0;background:rgba(2,6,12,.55);z-index:4000;animation:fadeIn .2s ease-out;}
-  .nav-drawer.open{display:flex;}
+  .sidenav{width:100%;border-right:none;border-bottom:1px solid var(--shell-border);flex-direction:row;overflow-x:auto;padding:10px;}
+  .nav-link{white-space:nowrap;padding:9px 14px;font-size:.85rem;}
   .content-area{padding:18px;}
   .topbar{padding:0 14px;}
   .role-badge-tag{display:none;}
   .bell-panel{width:92vw;right:-40px;}
 }
-.nav-drawer{position:fixed;left:0;right:0;bottom:0;z-index:4001;background:var(--bg-surface);border-radius:20px 20px 0 0;flex-direction:column;max-height:78vh;box-shadow:0 -12px 40px rgba(0,0,0,.3);animation:slideUp .25s ease-out;}
-.nav-drawer-handle{width:40px;height:4px;background:var(--border-color);border-radius:4px;margin:10px auto 4px;flex-shrink:0;}
-.nav-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 12px;border-bottom:1px solid var(--border-color);flex-shrink:0;}
-.nav-drawer-header h3{margin:0;font-family:var(--ff-display);font-size:1.05rem;color:var(--text-main);}
-.nav-drawer-header button{width:30px;height:30px;border-radius:9px;background:var(--bg-subtle);color:var(--text-main);display:flex;align-items:center;justify-content:center;}
-.nav-drawer-body{overflow-y:auto;padding:8px 10px 22px;}
-.nav-drawer-group{border-bottom:1px solid var(--border-color);}
-.nav-drawer-group:last-child{border-bottom:none;}
-.nav-drawer-group-header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 8px;font-weight:700;font-size:.85rem;color:var(--text-main);background:transparent;}
-.nav-drawer-group-header i.chev{transition:transform .2s ease;color:var(--text-muted);font-size:.8rem;}
-.nav-drawer-group.open .nav-drawer-group-header i.chev{transform:rotate(180deg);}
-.nav-drawer-group-body{max-height:0;overflow:hidden;transition:max-height .25s ease;}
-.nav-drawer-group.open .nav-drawer-group-body{max-height:600px;}
-.nav-drawer-link{display:flex;align-items:center;gap:12px;padding:11px 10px 11px 6px;border-radius:10px;color:var(--text-muted);font-size:.86rem;font-weight:600;width:100%;text-align:left;}
-.nav-drawer-link i{width:20px;text-align:center;color:var(--text-muted);}
-.nav-drawer-link:hover{background:var(--bg-subtle);}
-.nav-drawer-link.active{background:var(--brand-primary);color:#fff;}
-.nav-drawer-link.active i{color:#fff;}
-.nav-drawer-flat{padding:6px 4px;}
-
-/* ============ SOS SYSTEM STATUS ============ */
-.sos-status-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;background:var(--bg-subtle);border:1px solid var(--border-color);margin-bottom:16px;font-size:.85rem;}
-.sos-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.18);}
-.sos-status-dot.ok{background:var(--brand-success);box-shadow:0 0 0 4px rgba(16,185,129,.18);animation:pulseGreen 2s infinite;}
-.sos-status-dot.checking{background:var(--brand-accent);box-shadow:0 0 0 4px rgba(245,158,11,.18);animation:pulseAmber 1s infinite;}
-.sos-status-dot.down{background:var(--brand-danger);box-shadow:0 0 0 4px rgba(239,68,68,.18);}
-.sos-status-text{flex:1;min-width:0;}
-.sos-status-title{font-weight:700;color:var(--text-main);}
-.sos-status-sub{color:var(--text-muted);font-size:.76rem;margin-top:1px;}
-.sos-status-retry{flex-shrink:0;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:9px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--text-main);}
-@keyframes pulseGreen{0%,100%{box-shadow:0 0 0 4px rgba(16,185,129,.18);}50%{box-shadow:0 0 0 8px rgba(16,185,129,.05);}}
-@keyframes pulseAmber{0%,100%{box-shadow:0 0 0 4px rgba(245,158,11,.18);}50%{box-shadow:0 0 0 8px rgba(245,158,11,.05);}}
 
 /* ============ COMPONENTS ============ */
 .view-header{margin-bottom:26px;animation:slideDown .4s ease-out;}
@@ -618,22 +568,8 @@ table.data-table tr:last-child td{border-bottom:none;}
   </div>
   <div class="app-container">
     <nav class="sidenav" id="app-sidenav"></nav>
-    <div class="mobile-nav-bar" id="mobile-nav-bar">
-      <div class="mobile-nav-scroll" id="mobile-nav-scroll"></div>
-      <button class="mobile-nav-more" id="mobile-nav-more-btn" onclick="toggleNavDrawer()"><i class="fa-solid fa-bars"></i><span>More</span></button>
-    </div>
     <main class="content-area"><div id="active-view-container"></div></main>
   </div>
-</div>
-
-<!-- Mobile-only expandable nav drawer: everything not pinned to the side-scroll
-     strip lives here, grouped into collapsible sections so people can jump
-     straight to a category instead of swiping through every feature. -->
-<div class="nav-drawer-overlay" id="nav-drawer-overlay" onclick="closeNavDrawer()"></div>
-<div class="nav-drawer" id="nav-drawer">
-  <div class="nav-drawer-handle"></div>
-  <div class="nav-drawer-header"><h3>All features</h3><button onclick="closeNavDrawer()"><i class="fa-solid fa-xmark"></i></button></div>
-  <div class="nav-drawer-body" id="nav-drawer-body"></div>
 </div>
 
 <div class="toast-container" id="toast-stack"></div>
@@ -830,56 +766,6 @@ async function deleteFirebaseAuthAccount(email){
 }
 
 
-// Drives the SOS status bar on the patient's Emergency SOS screen. Checks two
-// independent things the SOS flow actually depends on: (1) the dispatch
-// Worker is reachable at all — a non-2xx response still proves the network
-// path works, only a network-level failure means it's actually down — and
-// (2) location permission isn't hard-blocked, since responders need a real
-// position. Never assumes "working"; always verifies on each render/retap.
-async function checkSosSystemStatus(){
-  const bar = document.getElementById('sos-status-bar');
-  if(!bar) return; // navigated away already
-  const dot = document.getElementById('sos-status-dot');
-  const title = document.getElementById('sos-status-title');
-  const sub = document.getElementById('sos-status-sub');
-  dot.className = 'sos-status-dot checking';
-  title.textContent = 'Checking SOS system…';
-  sub.textContent = 'Verifying dispatch network and location access';
-
-  let dispatchOk = false;
-  try{
-    await fetch(`${SOS_WORKER_URL}/api/sos/health`, {method:'GET'});
-    dispatchOk = true;
-  }catch(e){
-    dispatchOk = false;
-  }
-
-  let locState = 'unknown';
-  try{
-    if(navigator.permissions && navigator.permissions.query){
-      const p = await navigator.permissions.query({name:'geolocation'});
-      locState = p.state; // 'granted' | 'prompt' | 'denied'
-    }
-  }catch(e){ /* Permissions API unsupported — not a failure, just unknown */ }
-
-  // The view may have been navigated away from while these awaits were in flight.
-  if(!document.getElementById('sos-status-bar')) return;
-  const stamp = 'Checked ' + fmtTime(now());
-
-  if(!dispatchOk){
-    dot.className = 'sos-status-dot down';
-    title.textContent = 'Dispatch network unreachable';
-    sub.textContent = `Falling back to SMS-based location reporting · ${stamp}`;
-  } else if(locState==='denied'){
-    dot.className = 'sos-status-dot down';
-    title.textContent = 'Location access is blocked';
-    sub.textContent = `Enable location for this site so responders can find you · ${stamp}`;
-  } else {
-    dot.className = 'sos-status-dot ok';
-    title.textContent = 'SOS is ready';
-    sub.textContent = (locState==='granted' ? 'Dispatch network reachable · Location on' : 'Dispatch network reachable · Location requested when you tap SOS') + ` · ${stamp}`;
-  }
-}
 async function sosApi(path, body){
   const res = await fetch(`${SOS_WORKER_URL}${path}`, {
     method: 'POST',
@@ -1001,7 +887,9 @@ async function widenEscalatedIncident(inc){
 function notifyForIncidentEvent(type, inc){
   const locNote = inc.landmark ? ` Landmark: ${inc.landmark}.` : '';
   const bystNote = inc.isBystander ? ` Reported by a bystander (not the patient) — call ${inc.reporterPhone} for on-ground details.` : '';
-  const isMine = { patient: currentRole==='patient' && inc.patientId===currentPatientId(),
+  // A bystander's reporterId is what identifies "this device", since inc.patientId
+  // is 'UNKNOWN' for bystander reports (see currentIncident()/reporterId above).
+  const isMine = { patient: currentRole==='patient' && (inc.patientId===currentPatientId() || inc.reporterId===currentPatientId()),
     responder: currentRole==='responder' && CURRENT_RESPONDER_ID,
     hospital: currentRole==='hospital' && CURRENT_HOSPITAL_ID,
     police: currentRole==='police' && CURRENT_POLICE_STATION_ID };
@@ -1023,7 +911,7 @@ function notifyForIncidentEvent(type, inc){
       pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Emergency reported near '+(p?p.name:'station'), `${inc.severity.toUpperCase()} case ${d.toFixed(1)}km from station.${locNote}${bystNote} Ambulance + hospital dispatch in progress.`, 'danger', inc.id);
     }
     if(isMine.patient){
-      pushNotification('patient:'+inc.patientId, 'Help is on the way', `Notified ${(inc.notifiedHospitals||[]).length} hospitals, ${(inc.notifiedResponders||[]).length} ambulances${inc.searchRadiusKm?' within '+inc.searchRadiusKm+'km':(inc.notifiedResponders&&inc.notifiedResponders.length?' (closest available, beyond 10km)':'')} and local police simultaneously.`, 'info', inc.id);
+      pushNotification('patient:'+(inc.reporterId||inc.patientId), 'Help is on the way', `Notified ${(inc.notifiedHospitals||[]).length} hospitals, ${(inc.notifiedResponders||[]).length} ambulances${inc.searchRadiusKm?' within '+inc.searchRadiusKm+'km':(inc.notifiedResponders&&inc.notifiedResponders.length?' (closest available, beyond 10km)':'')} and local police simultaneously.`, 'info', inc.id);
     }
   } else if(type==='incident_escalated'){
     if(isMine.patient && inc.status==='broadcasting') widenEscalatedIncident(inc);
@@ -1046,13 +934,13 @@ function notifyForIncidentEvent(type, inc){
     }
     if(isMine.patient){
       const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
-      pushNotification('patient:'+inc.patientId, 'Ambulance is on its way', `${resp?resp.name:'A responder'} (${resp?resp.vehicle:''}) accepted your case.${resp?' Driver contact: '+resp.phone+'.':''}`, 'success', inc.id);
+      pushNotification('patient:'+(inc.reporterId||inc.patientId), 'Ambulance is on its way', `${resp?resp.name:'A responder'} (${resp?resp.vehicle:''}) accepted your case.${resp?' Driver contact: '+resp.phone+'.':''}`, 'success', inc.id);
     }
   } else if(type==='incident_decline'){
     // Decline only removes the declining responder from their own queue — no
     // one else needs to hear about it, so there's nothing to notify here.
   } else if(type==='incident_picked_up'){
-    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+(inc.reporterId||inc.patientId), 'Picked up', 'You are on board. The crew is now selecting the nearest hospital with capacity.', 'success', inc.id);
   } else if(type==='incident_choose_hospital'){
     const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
     const resp = db('responders').find(r=>r.id===inc.assignedResponderId);
@@ -1065,10 +953,10 @@ function notifyForIncidentEvent(type, inc){
     if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID){
       pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Destination confirmed', `${resp?resp.vehicle:'Ambulance'} is heading to ${hosp?hosp.name:'the hospital'} with ${inc.id}.`, 'dispatch', inc.id);
     }
-    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Heading to hospital', `You're being taken to ${hosp?hosp.name:'the hospital'}.`, 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+(inc.reporterId||inc.patientId), 'Heading to hospital', `You're being taken to ${hosp?hosp.name:'the hospital'}.`, 'success', inc.id);
   } else if(type==='incident_arrived'){
     const hosp = db('hospitals').find(h=>h.id===inc.assignedHospitalId);
-    if(isMine.patient) pushNotification('patient:'+inc.patientId, 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', inc.id);
+    if(isMine.patient) pushNotification('patient:'+(inc.reporterId||inc.patientId), 'Arrived', 'You have arrived at '+(hosp?hosp.name:'the hospital')+'.', 'success', inc.id);
     if(isMine.hospital && inc.assignedHospitalId===CURRENT_HOSPITAL_ID) pushNotification('hospital:'+CURRENT_HOSPITAL_ID, 'Patient arrived', 'Case '+inc.id+' has arrived at your facility and needs to be admitted to close the case.', 'success', inc.id);
     if(isMine.responder && inc.assignedResponderId===CURRENT_RESPONDER_ID) pushNotification('responder:'+CURRENT_RESPONDER_ID, 'Handoff pending', 'Patient dropped off'+(hosp?' at '+hosp.name:'')+'. You\'ll be marked available once the hospital confirms admission.', 'info', inc.id);
     if(isMine.police && inc.notifiedPoliceId===CURRENT_POLICE_STATION_ID) pushNotification('police:'+CURRENT_POLICE_STATION_ID, 'Case resolved', 'Ambulance completed transport for '+inc.id+'.', 'info', inc.id);
@@ -3494,10 +3382,10 @@ const SIDENAV = {
     {id:'p-dash', label:'Dashboard', icon:'fa-gauge-high'},
     {id:'p-sos', label:'Emergency SOS', icon:'fa-triangle-exclamation'},
     {id:'p-chat', label:'AI Symptom Checker', icon:'fa-comment-medical'},
-    {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
     {id:'p-fitness', label:'Fitness Tools', icon:'fa-heart-pulse'},
     {id:'p-nutrition', label:'Nutrition', icon:'fa-apple-whole'},
     {id:'p-vitals', label:'Vitals &amp; Risk Screening', icon:'fa-heart-circle-check'},
+    {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
     {id:'p-records', label:'Medical Records', icon:'fa-file-medical'},
     {id:'p-tele', label:'Telemedicine', icon:'fa-video'},
     {id:'p-rx', label:'e-Prescriptions', icon:'fa-prescription'},
@@ -3538,106 +3426,17 @@ const SIDENAV = {
     {id:'d-profile', label:'My Profile', icon:'fa-id-badge'},
   ]
 };
-// Mobile only: which items stay pinned to the always-visible side-scroll strip
-// (kept short on purpose so swiping to find them never happens), and how the
-// rest are grouped inside the expandable "More" drawer instead of one long
-// horizontal list. Roles not listed here (short menus) just pin everything.
-const MOBILE_NAV_PINNED = {
-  patient: ['p-dash','p-sos','p-chat','p-history'],
-  responder: ['r-dash','r-queue','r-active'],
-  police: ['po-dash','po-feed'],
-  hospital: ['h-dash','h-incoming'],
-  pharmacy: ['ph-dash','ph-orders'],
-  doctor: ['d-dash','d-appts'],
-};
-const MOBILE_NAV_GROUPS = {
-  patient: [
-    {label:'Health &amp; Fitness', items:['p-fitness','p-nutrition','p-vitals','p-meds','p-lifestyle']},
-    {label:'Care &amp; Records', items:['p-records','p-tele','p-rx','p-pharmacy','p-documents']},
-    {label:"Women's Health &amp; Schemes", items:['p-women','p-insurance']},
-  ],
-};
-function navLinkHtml(item, isDrawer){
-  const cls = isDrawer ? 'nav-drawer-link' : 'nav-link';
-  const action = item.id==='h-doctor-login' ? 'openDoctorLoginFromHospital();closeNavDrawer();' : `renderCurrentView('${item.id}');closeNavDrawer();`;
-  return `<button class="${cls}" data-nav="${item.id}" onclick="${action}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`;
-}
-function visiblePatientNavItems(){
-  let items = SIDENAV.patient;
-  const gender = (db('profile')||{}).gender;
-  if(gender==='Male') items = items.filter(item=>item.id!=='p-women');
-  return items;
-}
 function buildSideNav(role){
   const nav = document.getElementById('app-sidenav');
-  const items = role==='patient' ? visiblePatientNavItems() : SIDENAV[role];
-  nav.innerHTML = items.map(item=>navLinkHtml(item,false)).join('');
-  buildMobileNav(role, items);
-}
-// Renders the mobile side-scroll strip (pinned items only) plus the
-// expandable "More" drawer (everything else, grouped where we have groups
-// defined). Desktop keeps the full vertical .sidenav untouched — this only
-// changes what mobile sees, so nobody has to swipe through 16 icons to find
-// one feature.
-function buildMobileNav(role, itemsIn){
-  const scrollEl = document.getElementById('mobile-nav-scroll');
-  const moreBtn = document.getElementById('mobile-nav-more-btn');
-  const drawerBody = document.getElementById('nav-drawer-body');
-  if(!scrollEl || !moreBtn || !drawerBody) return;
-  const items = itemsIn || (role==='patient' ? visiblePatientNavItems() : SIDENAV[role]) || [];
-  const byId = Object.fromEntries(items.map(i=>[i.id,i]));
-  const pinnedIds = (MOBILE_NAV_PINNED[role]||items.map(i=>i.id)).filter(id=>byId[id]);
-  scrollEl.innerHTML = pinnedIds.map(id=>navLinkHtml(byId[id],false)).join('');
-  const pinnedSet = new Set(pinnedIds);
-  const remaining = items.filter(i=>!pinnedSet.has(i.id));
-  if(remaining.length===0){
-    moreBtn.classList.add('hidden');
-    drawerBody.innerHTML = '';
-    return;
+  let items = SIDENAV[role];
+  if(role==='patient'){
+    const gender = (db('profile')||{}).gender;
+    if(gender==='Male') items = items.filter(item=>item.id!=='p-women');
   }
-  moreBtn.classList.remove('hidden');
-  const groupDefs = MOBILE_NAV_GROUPS[role];
-  let bodyHtml = '';
-  if(groupDefs){
-    const grouped = new Set();
-    bodyHtml += groupDefs.map((g,gi)=>{
-      const groupItems = g.items.map(id=>byId[id]).filter(Boolean);
-      if(groupItems.length===0) return '';
-      groupItems.forEach(i=>grouped.add(i.id));
-      return `<div class="nav-drawer-group ${gi===0?'open':''}">
-        <button class="nav-drawer-group-header" onclick="toggleDrawerGroup(this)">${g.label}<i class="fa-solid fa-chevron-down chev"></i></button>
-        <div class="nav-drawer-group-body">${groupItems.map(item=>navLinkHtml(item,true)).join('')}</div>
-      </div>`;
-    }).join('');
-    const leftovers = remaining.filter(i=>!grouped.has(i.id));
-    if(leftovers.length) bodyHtml += `<div class="nav-drawer-flat">${leftovers.map(item=>navLinkHtml(item,true)).join('')}</div>`;
-  } else {
-    bodyHtml = `<div class="nav-drawer-flat">${remaining.map(item=>navLinkHtml(item,true)).join('')}</div>`;
-  }
-  drawerBody.innerHTML = bodyHtml;
-}
-function toggleDrawerGroup(btn){ btn.parentElement.classList.toggle('open'); }
-function openNavDrawer(){
-  document.getElementById('nav-drawer')?.classList.add('open');
-  document.getElementById('nav-drawer-overlay')?.classList.add('open');
-}
-function closeNavDrawer(){
-  document.getElementById('nav-drawer')?.classList.remove('open');
-  document.getElementById('nav-drawer-overlay')?.classList.remove('open');
-}
-function toggleNavDrawer(){
-  const d = document.getElementById('nav-drawer');
-  if(d && d.classList.contains('open')) closeNavDrawer(); else openNavDrawer();
+  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="${item.id==='h-doctor-login' ? 'openDoctorLoginFromHospital()' : `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
 }
 function setActiveNav(navId){
-  document.querySelectorAll('.nav-link, .nav-drawer-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
-  // If the active screen only lives inside the drawer (not the pinned mobile
-  // strip), highlight the "More" button so it's obvious something in there is active.
-  const moreBtn = document.getElementById('mobile-nav-more-btn');
-  if(moreBtn){
-    const inPinnedStrip = document.querySelector(`#mobile-nav-scroll .nav-link[data-nav="${navId}"]`);
-    moreBtn.classList.toggle('has-active', !inPinnedStrip);
-  }
+  document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
 }
 
 /* ============================================================
@@ -3662,7 +3461,7 @@ function renderCurrentView(navId){
   refreshBell();
 }
 function postRenderHooks(navId){
-  if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); rehydrateInProgressSOS(); checkSosSystemStatus(); }
+  if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); rehydrateInProgressSOS(); }
   if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
   if(navId==='r-queue'){
     lastRQueueSnapshot = db('incidents').filter(i=>i.status==='broadcasting' && i.notifiedResponders.includes(CURRENT_RESPONDER_ID)).map(i=>i.id).sort().join(',');
@@ -3703,8 +3502,7 @@ function calcInfo(title, html){
    ============================================================ */
 function viewPatientDash(){
   const profile = db('profile');
-  const incidents = db('incidents').filter(i=>i.patientId===currentPatientId());
-  const active = incidents.find(i=>i.status!=='closed');
+  const active = currentIncident(); // matches self-reports and bystander reports alike
   return `
   ${viewHeader('Patient Console','Welcome back, '+profile.name.split(' ')[0],'Your emergency profile is verified and ready. One tap broadcasts to every nearby hospital, ambulance and police station at once.')}
   ${active ? `<div class="card" style="border-color:#ef4444;background:rgba(239,68,68,.06);">
@@ -4542,21 +4340,19 @@ async function refreshNearbyWithGPS(){
    PATIENT — SOS
    ============================================================ */
 function currentIncident(){
-  return db('incidents').find(i=>i.patientId===currentPatientId() && i.status!=='closed');
+  // Match on patientId (self-reports) OR reporterId (bystander reports, where
+  // patientId is 'UNKNOWN' since the victim's identity isn't known). Without the
+  // reporterId check, a bystander who just submitted an SOS had no way to find
+  // their own incident again — the p-sos screen would just show a blank SOS
+  // button, with no tracking and no way to cancel what they'd just reported.
+  const me = currentPatientId();
+  return db('incidents').find(i=>(i.patientId===me || i.reporterId===me) && i.status!=='closed');
 }
 function viewPatientSOS(){
   const inc = currentIncident();
   if(!inc){
     return `
     ${viewHeader('Emergency SOS','One tap. Every nearby responder knows.','This immediately alerts the nearest hospitals, ambulances, and police — not just a single hospital.')}
-    <div class="sos-status-bar" id="sos-status-bar">
-      <div class="sos-status-dot checking" id="sos-status-dot"></div>
-      <div class="sos-status-text">
-        <div class="sos-status-title" id="sos-status-title">Checking SOS system…</div>
-        <div class="sos-status-sub" id="sos-status-sub">Verifying dispatch network and location access</div>
-      </div>
-      <button class="sos-status-retry" onclick="checkSosSystemStatus()" title="Re-check now"><i class="fa-solid fa-arrows-rotate"></i></button>
-    </div>
     <div class="card" style="padding:0;">
       <div class="sos-banner">
         <div style="font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.1em;font-size:.8rem;opacity:.85;">Press and hold is not required — one tap dispatches help</div>
@@ -4777,6 +4573,12 @@ async function triggerSOSCore(){
 
   const {incident: inc} = await sosApi('/api/sos/trigger', {
     clientRequestId: window.__sosClientRequestId,
+    // reporterId is the device/account that actually submitted this SOS — for a
+    // self-report it's the same as patientId, but for a bystander report
+    // patientId is 'UNKNOWN' (we don't know who the victim is), so reporterId is
+    // the ONLY way the reporting device can find its way back to this incident
+    // afterward to track status or cancel it. See currentIncident() below.
+    reporterId: currentPatientId(),
     patientId, patientName: isBystander ? 'Unknown patient (bystander report)' : (profile.name || 'Patient'),
     reportedFor: r.type, reporterPhone: r.reporterPhone || profile.phone || '',
     isBystander, severity: sev,
@@ -4834,25 +4636,32 @@ function renderSosDriverBlock(inc, assignedResp, assignedHosp){
   </div>` : ''}
   ${inc.status==='arrived'
     ? `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="closeIncidentPatientSide('${inc.id}')">Close case</button>`
-    : renderCancelControl(inc)}`;
+    : `<button class="btn btn-secondary btn-block" id="cancel-emergency-btn" style="margin-top:14px;" onclick="openCancelConfirm('${inc.id}')"><i class="fa-solid fa-ban"></i> Cancel emergency</button>`}`;
 }
-// Two minutes of free, no-second-guessing cancellation right after a trigger
-// (covers accidental taps / a mistaken SOS) — after that, cancelling still
-// works, but the copy makes clear a responder may already be en route.
-const SOS_CANCEL_GRACE_MS = 2*60*1000;
-function sosIncidentCreatedAt(inc){
-  return inc.createdAt || (inc.timeline && inc.timeline[0] && inc.timeline[0].ts) || now();
+// Shown in place of the "Cancel emergency" button. This is used identically for
+// a patient's own SOS and for a bystander's report — renderSosDriverBlock() is
+// the same shared markup for both, so fixing it here covers both cases. A plain
+// browser confirm() used to be the only guard here; this replaces it with an
+// in-app card so there's always a visible, explicit "no, don't cancel" option
+// alongside the confirm action, for both self-reports and bystander reports.
+function openCancelConfirm(incId){
+  const inc = db('incidents').find(i=>i.id===incId);
+  const slot = document.getElementById('sos-edit-slot');
+  if(!slot || !inc) return;
+  const forSomeoneElse = inc.reportedFor==='other';
+  slot.innerHTML = `
+  <div class="card" style="border-color:#ef4444;background:rgba(239,68,68,.06);">
+    <h3 style="margin-top:0;color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Cancel this emergency?</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">${forSomeoneElse ? 'Any assigned ambulance, hospital and police will be told the person you reported no longer needs help.' : 'Any assigned ambulance, hospital and police will be notified it\'s no longer needed.'}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-danger" onclick="confirmCancelIncident('${incId}')"><i class="fa-solid fa-ban"></i> Yes, cancel emergency</button>
+      <button class="btn btn-secondary" onclick="closeCancelConfirm()">No, don't cancel</button>
+    </div>
+  </div>`;
 }
-function renderCancelControl(inc){
-  const remainingMs = SOS_CANCEL_GRACE_MS - (now() - sosIncidentCreatedAt(inc));
-  if(remainingMs > 0){
-    const mm = Math.floor(remainingMs/60000);
-    const ss = String(Math.floor((remainingMs%60000)/1000)).padStart(2,'0');
-    return `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="cancelIncident('${inc.id}')"><i class="fa-solid fa-ban"></i> Cancel emergency <span style="opacity:.7;font-family:var(--ff-mono);">(${mm}:${ss})</span></button>
-    <p style="color:var(--text-muted);font-size:.72rem;margin:6px 2px 0;text-align:center;">Free one-tap cancel for the next ${mm>0?mm+'m ':''}${ss}s, in case this was triggered by mistake.</p>`;
-  }
-  return `<button class="btn btn-secondary btn-block" style="margin-top:14px;" onclick="cancelIncident('${inc.id}')"><i class="fa-solid fa-ban"></i> Cancel emergency</button>
-  <p style="color:var(--text-muted);font-size:.72rem;margin:6px 2px 0;text-align:center;">It's been over 2 minutes — a responder may already be on the way. They'll be notified immediately if you cancel.</p>`;
+function closeCancelConfirm(){
+  const slot = document.getElementById('sos-edit-slot');
+  if(slot) slot.innerHTML = '';
 }
 /* Called on every simulation tick instead of re-rendering the whole card: rewriting the
    full innerHTML every 1.4s destroyed and recreated #leaflet-map-box each time, which
@@ -5087,16 +4896,14 @@ async function saveSosDetails(incId){
   showToast('Updated', 'The crew will see your update.', 'success');
   renderCurrentView('p-sos');
 }
-async function cancelIncident(incId){
+// Runs only after openCancelConfirm()'s "Yes, cancel emergency" is tapped —
+// consent was already gathered by the inline card, so no browser confirm() here.
+async function confirmCancelIncident(incId){
   const inc = db('incidents').find(i=>i.id===incId);
   if(!inc) return;
-  const withinGrace = (now() - sosIncidentCreatedAt(inc)) < SOS_CANCEL_GRACE_MS;
-  const confirmMsg = withinGrace
-    ? 'Cancel this emergency? Any assigned ambulance, hospital and police will be notified it\'s no longer needed.'
-    : 'It\'s been over 2 minutes, so a responder may already be on the way. Cancel anyway? They will be notified immediately.';
-  if(!confirm(confirmMsg)) return;
+  const reportedByBystander = inc.reportedFor==='other';
   try{
-    const {incident} = await sosApi(`/api/sos/${incId}/close`, { timelineText: 'Cancelled by patient' });
+    const {incident} = await sosApi(`/api/sos/${incId}/close`, { timelineText: reportedByBystander ? 'Cancelled by bystander' : 'Cancelled by patient' });
     if(inc.assignedResponderId){
       const responders = db('responders');
       const r = responders.find(x=>x.id===inc.assignedResponderId);
@@ -5107,7 +4914,7 @@ async function cancelIncident(incId){
     if(e.status===404){ dropUnknownLocalIncident(incId); showToast('Already gone', 'That case no longer exists.', 'info'); renderCurrentView('p-dash'); return; }
     console.error('cancel failed', e); showToast('Cancel failed', 'Please try again.', 'danger'); return;
   }
-  audit('patient', 'incident_cancel', incId);
+  audit(reportedByBystander ? 'bystander' : 'patient', 'incident_cancel', incId);
   showToast('Cancelled', 'Emergency cancelled and everyone notified.', 'success');
   if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
   renderCurrentView('p-dash');
@@ -5344,7 +5151,7 @@ async function ackPolice(id){
     if(e.status===404){ dropUnknownLocalIncident(id); showToast('Case already gone', 'That case no longer exists — removed from your feed.', 'info'); renderCurrentView('po-feed'); return; }
     console.error('police ack failed', e); showToast('Acknowledge failed', 'Please try again.', 'danger'); return;
   }
-  pushNotification('patient:'+inc.patientId,'Route support','Local police acknowledged and is helping clear the route.','info',id);
+  pushNotification('patient:'+(inc.reporterId||inc.patientId),'Route support','Local police acknowledged and is helping clear the route.','info',id);
   showToast('Acknowledged','Logged as active route support.','success');
   audit('police:'+CURRENT_POLICE_STATION_ID,'acknowledge',id);
   renderCurrentView('po-feed');
@@ -5440,7 +5247,7 @@ function confirmBedReady(id){
   // best-effort timeline entry so it's visible on the patient's live tracking
   // feed on other devices too.
   const inc = db('incidents').find(i=>i.id===id);
-  pushNotification('patient:'+(inc&&inc.patientId), 'Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
+  pushNotification('patient:'+(inc&&(inc.reporterId||inc.patientId)), 'Bed ready','Your hospital has confirmed a bed is prepared for you.','success',id);
   const resp = inc && inc.assignedResponderId;
   if(resp) pushNotification('responder:'+resp,'Bed confirmed','Destination hospital confirmed bed readiness.','info',id);
   sosApi(`/api/sos/${id}/update`, { timelineText: 'Hospital confirmed a bed is ready' })
