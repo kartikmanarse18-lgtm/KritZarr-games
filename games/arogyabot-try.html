@@ -1466,11 +1466,37 @@ function fbAuth(){
         a.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
         new Promise(resolve=>setTimeout(resolve, 3000))
       ]).catch(e=>console.warn('setPersistence failed', e));
+      // Fires once Firebase Auth has actually determined whether a persisted
+      // session exists (a User, or definitively null) — see waitForAuthReady()
+      // and its use in boot() below, which fixes the race where
+      // restoreActiveSession() used to render the console and fire Firestore
+      // calls synchronously, before this had a chance to run even once.
+      a.onAuthStateChanged(()=>{ markAuthReady(); });
     }
     return a;
   }catch(e){ console.warn('Firebase Auth unavailable', e); return null; }
 }
 function authBackendActive(){ return !!fbAuth(); }
+// ------------------------------------------------------------
+// AUTH-READY GATE — see the onAuthStateChanged hook inside fbAuth() above.
+// boot() awaits this before calling restoreActiveSession() / initFirebaseSync(),
+// so nothing tries a Firestore read/write while Firebase Auth is still restoring
+// its session from storage (that race was the actual cause of the "Missing or
+// insufficient permissions" flood on every reload — request.auth was still null
+// at that instant even for a genuinely logged-in user). The 4s timeout is a
+// safety net in case onAuthStateChanged never fires (e.g. offline/misconfigured),
+// so a broken Auth setup can't block the app from loading at all.
+let _authReadyResolve = null;
+let _authReadyDone = false;
+const _authReadyPromise = new Promise(resolve=>{ _authReadyResolve = resolve; });
+function markAuthReady(){
+  if(!_authReadyDone){ _authReadyDone = true; _authReadyResolve(); }
+}
+function waitForAuthReady(){
+  const a = fbAuth();
+  if(!a){ markAuthReady(); return Promise.resolve(); } // no Auth configured — nothing to wait for
+  return Promise.race([_authReadyPromise, new Promise(resolve=>setTimeout(resolve, 4000))]);
+}
 function friendlyAuthError(e){
   const code = (e && e.code) || '';
   const map = {
@@ -9598,7 +9624,14 @@ window.addEventListener('hashchange', checkSecretHashRoute);
 /* ============================================================
    BOOTSTRAP
    ============================================================ */
-(function boot(){
+(async function boot(){
+  // Wait for Firebase Auth to finish restoring its persisted session (or confirm
+  // there isn't one) BEFORE touching Firestore at all. Skipping this used to let
+  // restoreActiveSession() render the console and fire dbSet()/audit() calls
+  // while request.auth was still null, causing "Missing or insufficient
+  // permissions" on nearly every read/write right after a reload — even for a
+  // genuinely logged-in user. See waitForAuthReady()/markAuthReady() above.
+  await waitForAuthReady();
   initFirebaseSync();
   // If a console session was saved (from a previous login on this device), restore it
   // straight into the console instead of bouncing back to role selection. Otherwise,
