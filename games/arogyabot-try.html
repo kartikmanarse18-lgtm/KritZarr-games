@@ -1608,8 +1608,24 @@ function initPublicDirectories(){
 // on a live listener. Cheap — costs 5 reads total, not 5 reads × every device.
 function refreshPublicDirectories(){
   if(!fbEnabled || !fbRoomRef){ showToast('Offline', 'Connect to sync to refresh directories.', 'danger'); return; }
-  initPublicDirectories();
   showToast('Refreshing…', 'Pulling the latest hospitals, doctors, pharmacies, and responders.', 'success');
+  const fs = firebase.firestore();
+  Promise.all(PUBLIC_DIRECTORY_KEYS.map(key=>
+    fs.collection('public').doc(key).collection('items').get().then(snap=>{
+      if(!snap.empty){
+        const arr = snap.docs.map(d=>d.data());
+        LOCAL_CACHE[key] = arr;
+        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[String(r.id), r]));
+        try{ localStorage.setItem('abot2_'+key, JSON.stringify(arr)); }catch(e){}
+      }
+    }).catch(e=>console.warn('Directory refresh failed for', key, e))
+  )).then(()=>{
+    // Re-render whatever screen is currently open so newly-added doctor slots
+    // (or any other directory change) actually show up without a full page
+    // reload — this is the piece that was missing: initPublicDirectories()
+    // only ever updated LOCAL_CACHE, it never told the UI to re-draw.
+    if(currentView) renderCurrentView(currentView);
+  });
 }
 
 /* ============================================================
@@ -7997,6 +8013,7 @@ function viewPatientTele(){
     allDocs.forEach(d=>{ bySpec[d.specialty] = (bySpec[d.specialty]||0)+1; });
     const specs = DOCTOR_SPECIALTIES.filter(s=>bySpec[s]);
     return `${viewHeader('Telemedicine','Choose a specialty','Pick what you need help with, then choose a doctor by degree, experience and fee.')}
+    <p style="margin:-6px 0 12px;"><a href="#" onclick="refreshPublicDirectories();return false;" style="color:var(--text-muted);font-size:.82rem;"><i class="fa-solid fa-rotate"></i> Refresh doctor list &amp; slots</a></p>
     <div class="grid-3">
       ${specs.length ? specs.map(s=>`<div class="card" style="cursor:pointer;" onclick="openTeleSpecialty('${s.replace(/'/g,"\\'")}')">
         <div class="dash-stat-icon" style="margin-bottom:10px;"><i class="fa-solid fa-stethoscope"></i></div>
@@ -8039,7 +8056,7 @@ function viewPatientTele(){
     <p style="margin:10px 0 0;font-size:.85rem;color:var(--text-muted);">${d.degree||'Degree not listed'} · ${d.experience?d.experience+' yrs experience':'Experience not listed'}</p>
     <p style="margin:6px 0 0;font-weight:700;">Consultation fee: &#8377;${d.fee||'—'}</p>
     ${d.bio ? `<p style="margin:10px 0 0;font-size:.85rem;">${d.bio}</p>` : ''}
-    <h3 style="margin:18px 0 10px;">Available slots</h3>
+    <h3 style="margin:18px 0 6px;">Available slots <a href="#" onclick="refreshPublicDirectories();return false;" style="color:var(--text-muted);font-size:.78rem;font-weight:400;"><i class="fa-solid fa-rotate"></i> Refresh</a></h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       ${openSlots.length ? openSlots.map(t=>`<button class="btn btn-sm btn-secondary" onclick="openBookingPayment('${d.name.replace(/'/g,"\\'")}','${d.hospital}','${t.replace(/'/g,"\\'")}',${+d.fee||0})">${t}</button>`).join('') : `<p style="color:var(--text-muted);font-size:.85rem;margin:0;">No open slots right now — check back later.</p>`}
     </div>
