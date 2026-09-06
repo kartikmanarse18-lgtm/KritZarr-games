@@ -1452,9 +1452,20 @@ function fbAuth(){
       _authPersistenceSet = true;
       // IndexedDB-backed persistence can hang indefinitely on opaque/local origins
       // (e.g. a file opened via a downloads/content:// viewer instead of being hosted
-      // at a real http(s) URL). In-memory persistence sidesteps that storage layer —
-      // the tradeoff is the user has to log in again after a full page reload.
-      a.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(e=>console.warn('setPersistence failed', e));
+      // at a real http(s) URL). We used to sidestep that entirely with in-memory
+      // (NONE) persistence, but that had a worse side effect: this app's own
+      // "am I logged in" state (see SESSION_KEY / restoreActiveSession()) DOES
+      // survive a reload, so the dashboard would render as logged-in while the
+      // real Firebase Auth session was gone — every subsequent Firestore write
+      // then failed Firestore's signedIn() rule with permission-denied, which
+      // showed up to the user as a confusing "Sync failed" toast right after
+      // "Live sync connected". Using LOCAL persistence keeps the two in sync
+      // across reloads; the timeout race below is what actually protects
+      // against the IndexedDB hang, instead of avoiding persistence outright.
+      Promise.race([
+        a.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
+        new Promise(resolve=>setTimeout(resolve, 3000))
+      ]).catch(e=>console.warn('setPersistence failed', e));
     }
     return a;
   }catch(e){ console.warn('Firebase Auth unavailable', e); return null; }
