@@ -1593,7 +1593,7 @@ function initPublicDirectories(){
       if(!snap.empty){
         const arr = snap.docs.map(d=>d.data());
         LOCAL_CACHE[key] = arr;
-        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[String(r.id), r]));
+        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[String(r.id), phase1bClone(r)]));
         try{ localStorage.setItem('abot2_'+key, JSON.stringify(arr)); }catch(e){}
       } else if(Array.isArray(LOCAL_CACHE[key]) && LOCAL_CACHE[key].length){
         // First device ever to connect — seed /public/{key}/items from our
@@ -1615,7 +1615,7 @@ function refreshPublicDirectories(){
       if(!snap.empty){
         const arr = snap.docs.map(d=>d.data());
         LOCAL_CACHE[key] = arr;
-        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[String(r.id), r]));
+        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[String(r.id), phase1bClone(r)]));
         try{ localStorage.setItem('abot2_'+key, JSON.stringify(arr)); }catch(e){}
       }
     }).catch(e=>console.warn('Directory refresh failed for', key, e))
@@ -1760,6 +1760,18 @@ function phase1bDocRefs(key, record){
 // the record(s) that actually changed. Accounts (Phase 1C) are keyed by
 // email via accountRecordId() instead of record.id — see phase1RecordKey().
 const PHASE1B_LAST_WRITE = {};
+// BUGFIX: every snapshot stored in PHASE1B_LAST_WRITE must be an independent
+// deep copy, never a live reference into LOCAL_CACHE[key]. Every record in
+// this app is fetched once and then mutated in place (e.g. doctorAddSlot does
+// `d.slots.push(val)` on the very object living inside LOCAL_CACHE['doctors'],
+// then calls dbSet('doctors', docs)). If PHASE1B_LAST_WRITE held that same
+// object reference as its "previous" snapshot, the mutation would silently
+// change prev and next at once, so diffAndPersistPhase1b's
+// `prevJson === JSON.stringify(record)` check always saw "no change" and
+// skipped the Firestore write entirely — the UI (reading the same mutated
+// local object) looked updated, but nothing ever reached Firestore, so every
+// other device's refresh never saw the new data.
+function phase1bClone(r){ return r==null ? r : JSON.parse(JSON.stringify(r)); }
 function phase1RecordKey(key, r){
   if(!r) return null;
   return PHASE1C_KEYS.includes(key) ? (accountRecordId(r) || null) : (r.id!=null ? String(r.id) : null);
@@ -1782,7 +1794,13 @@ function diffAndPersistPhase1b(key, newArr){
       ref.delete().catch(e=>console.warn('Phase1b delete failed for', key, id, e));
     });
   });
-  PHASE1B_LAST_WRITE[key] = next;
+  // Store CLONES as the new "previous" snapshot, not the live objects from
+  // newArr — those are the same objects sitting in LOCAL_CACHE[key] and will
+  // keep getting mutated in place by future dbSet(key, ...) calls. See
+  // phase1bClone() comment above for why this matters.
+  const clonedNext = new Map();
+  next.forEach((record, id)=>clonedNext.set(id, phase1bClone(record)));
+  PHASE1B_LAST_WRITE[key] = clonedNext;
 }
 
 /* ============================================================
@@ -1822,7 +1840,7 @@ function initUsersAccountSync(){
       if(!snap.empty){
         const arr = snap.docs.map(d=>d.data());
         LOCAL_CACHE[key] = arr;
-        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[accountRecordId(r), r]));
+        PHASE1B_LAST_WRITE[key] = new Map(arr.map(r=>[accountRecordId(r), phase1bClone(r)]));
         try{ localStorage.setItem('abot2_'+key, JSON.stringify(arr)); }catch(e){}
       } else if(Array.isArray(LOCAL_CACHE[key]) && LOCAL_CACHE[key].length){
         // First device ever to connect — seed /accounts/{key}/items from local defaults.
@@ -1850,7 +1868,7 @@ function mergeAccountIntoLocalCache(key, record){
   if(i>-1) list[i] = record; else list.push(record);
   LOCAL_CACHE[key] = list;
   const prevMap = PHASE1B_LAST_WRITE[key] || new Map();
-  prevMap.set(id, record);
+  prevMap.set(id, phase1bClone(record));
   PHASE1B_LAST_WRITE[key] = prevMap; // mark as already-synced so it isn't re-written verbatim
   try{ localStorage.setItem('abot2_'+key, JSON.stringify(list)); }catch(e){}
 }
@@ -1875,14 +1893,14 @@ let PHASE1B_RX_CACHE = new Map();
 function mergePhase1bAppts(){
   const arr = Array.from(PHASE1B_APPT_CACHE.values());
   LOCAL_CACHE['appointments'] = arr;
-  PHASE1B_LAST_WRITE['appointments'] = new Map(arr.map(r=>[String(r.id), r]));
+  PHASE1B_LAST_WRITE['appointments'] = new Map(arr.map(r=>[String(r.id), phase1bClone(r)]));
   try{ localStorage.setItem('abot2_appointments', JSON.stringify(arr)); }catch(e){}
   scheduleRemoteRefresh();
 }
 function mergePhase1bRx(){
   const arr = Array.from(PHASE1B_RX_CACHE.values());
   LOCAL_CACHE['prescriptions'] = arr;
-  PHASE1B_LAST_WRITE['prescriptions'] = new Map(arr.map(r=>[String(r.id), r]));
+  PHASE1B_LAST_WRITE['prescriptions'] = new Map(arr.map(r=>[String(r.id), phase1bClone(r)]));
   try{ localStorage.setItem('abot2_prescriptions', JSON.stringify(arr)); }catch(e){}
   scheduleRemoteRefresh();
 }
@@ -2524,7 +2542,7 @@ let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue
 // Fixed specialty list — used for the hospital's "Add doctor" dropdown AND
 // to group doctors on the patient telemedicine screen, so a doctor never
 // ends up in a specialty bucket of one because of free-text typos.
-const DOCTOR_SPECIALTIES = ['General Physician','Cardiology','Dermatology','Pediatrics','Gynecology','Orthopedics','ENT (Ear, Nose &amp; Throat)','Neurology','Psychiatry','Dentistry','Ophthalmology','Gastroenterology','Pulmonology','Urology','Endocrinology','Oncology','Physiotherapy'];
+const DOCTOR_SPECIALTIES = ['Physiotherapy','General Physician','Cardiology','Dermatology','Pediatrics','Gynecology','Orthopedics','ENT (Ear, Nose &amp; Throat)','Neurology','Psychiatry','Dentistry','Ophthalmology','Gastroenterology','Pulmonology','Urology','Endocrinology','Oncology'];
 const ROLE_META = {
   patient:   {icon:'fa-user-injured', title:'Patient', id:'ROLE // PT-01', desc:'Symptom checker, one-tap SOS with live multi-agency dispatch, records, telemedicine, pharmacy, women\'s health and government schemes.'},
   responder: {icon:'fa-truck-medical', title:'Ambulance / Responder', id:'ROLE // RS-01', desc:'Live dispatch queue broadcast from Command, patient medical summary on accept, turn-by-turn navigation simulation.'},
