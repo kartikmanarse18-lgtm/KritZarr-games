@@ -149,21 +149,39 @@ a{color:inherit;}
 .bell-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-size:.85rem;}
 
 .app-container{flex:1;display:flex;min-height:calc(100vh - 64px);}
+.sidenav-wrap{position:relative;flex-shrink:0;}
 .sidenav{width:250px;background:var(--shell-bg);border-right:1px solid var(--shell-border);padding:20px 14px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
 .nav-link{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;color:var(--shell-muted);text-decoration:none;font-size:.9rem;font-weight:600;transition:all .2s ease;background:transparent;width:100%;text-align:left;}
 .nav-link i{font-size:1.05rem;width:22px;text-align:center;}
 .nav-link:hover{color:var(--shell-fg);background:rgba(255,255,255,.06);}
 .nav-link.active{color:#fff;background:var(--brand-primary);box-shadow:0 4px 16px rgba(0,0,0,.2);}
 .content-area{flex:1;padding:28px 36px;overflow-y:auto;max-width:1400px;margin:0 auto;width:100%;}
+.sidenav-scroll-hint{display:none;}
 @media (max-width:900px){
   .app-container{flex-direction:column;}
-  .sidenav{width:100%;border-right:none;border-bottom:1px solid var(--shell-border);flex-direction:row;overflow-x:auto;padding:10px;}
+  .sidenav-wrap{width:100%;}
+  .sidenav{width:100%;border-right:none;border-bottom:1px solid var(--shell-border);flex-direction:row;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
   .nav-link{white-space:nowrap;padding:9px 14px;font-size:.85rem;}
   .content-area{padding:18px;}
   .topbar{padding:0 14px;}
   .role-badge-tag{display:none;}
   .bell-panel{width:92vw;right:-40px;}
+  /* Peek-and-fade cue so a horizontally-scrollable nav doesn't look like a
+     complete, fixed row of tabs — the next item is visibly cut off under a
+     gradient with a nudging chevron, so people notice there's more to the
+     side. Disappears once they've actually scrolled to the end (see
+     updateSidenavScrollHint()), so it doesn't linger once discovered. */
+  .sidenav-scroll-hint{
+    display:flex; align-items:center; justify-content:flex-end;
+    position:absolute; top:0; right:0; bottom:1px; width:46px;
+    padding-right:4px;
+    background:linear-gradient(to right, transparent, var(--shell-bg) 60%);
+    color:var(--shell-muted); pointer-events:none; z-index:2;
+  }
+  .sidenav-scroll-hint i{ animation:sidenavHintNudge 1.4s ease-in-out infinite; }
+  .sidenav-scroll-hint.hidden{ display:none; }
 }
+@keyframes sidenavHintNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(4px); opacity:1; } }
 
 /* ============ COMPONENTS ============ */
 .view-header{margin-bottom:26px;animation:slideDown .4s ease-out;}
@@ -524,6 +542,20 @@ table.data-table tr:last-child td{border-bottom:none;}
 </div>
 
 <!-- ============================================================
+     DELIVERY LOGIN — simple email + password only. Delivery boy
+     accounts are provisioned by a pharmacy from its Delivery Boys
+     screen, not self-registered, so there is no signup/OTP flow here.
+     ============================================================ -->
+<div id="screen-delivery-login" class="hidden">
+  <div class="landing-hero">
+    <div class="hero-logo"><i class="fa-solid fa-motorcycle"></i>ArogyaBot</div>
+    <div class="hero-tagline">Delivery sign-in</div>
+  </div>
+  <div class="auth-card" id="delivery-login-card-box"></div>
+</div>
+
+
+<!-- ============================================================
      ADMIN — reviews phone-number-conflict complaints
      ============================================================ -->
 <div id="screen-admin" class="hidden">
@@ -567,7 +599,10 @@ table.data-table tr:last-child td{border-bottom:none;}
     </div>
   </div>
   <div class="app-container">
-    <nav class="sidenav" id="app-sidenav"></nav>
+    <div class="sidenav-wrap">
+      <nav class="sidenav" id="app-sidenav"></nav>
+      <div class="sidenav-scroll-hint hidden" id="sidenav-scroll-hint"><i class="fa-solid fa-chevron-right"></i></div>
+    </div>
     <main class="content-area"><div id="active-view-container"></div></main>
   </div>
 </div>
@@ -678,6 +713,10 @@ function applyLiveLocation(kind, lat, lng, accuracy){
     const list = db('pharmacies');
     const ph = list.find(x=>x.id===CURRENT_PHARMACY_ID);
     if(ph){ ph.lat=lat; ph.lng=lng; dbSet('pharmacies', list); }
+  } else if(kind==='delivery' && CURRENT_DELIVERY_ID){
+    const list = db('deliveryBoys')||[];
+    const bwy = list.find(x=>x.id===CURRENT_DELIVERY_ID);
+    if(bwy){ bwy.lat=lat; bwy.lng=lng; bwy.locAccuracy=acc; dbSet('deliveryBoys', list); }
   }
 }
 
@@ -1668,6 +1707,7 @@ function scopeMatchesCurrent(scope){
   if(currentRole==='police' && CURRENT_POLICE_STATION_ID && scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
   if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
   if(currentRole==='doctor' && CURRENT_DOCTOR_ID && scope==='doctor:'+CURRENT_DOCTOR_ID) return true;
+  if(currentRole==='delivery' && CURRENT_DELIVERY_ID && scope==='delivery:'+CURRENT_DELIVERY_ID) return true;
   return false;
 }
 function notificationsForCurrentScope(){
@@ -1680,6 +1720,7 @@ function notificationsForCurrentScope(){
     if(currentRole==='police' && CURRENT_POLICE_STATION_ID && x.scope==='police:'+CURRENT_POLICE_STATION_ID) return true;
     if(currentRole==='pharmacy' && CURRENT_PHARMACY_ID && x.scope==='pharmacy:'+CURRENT_PHARMACY_ID) return true;
     if(currentRole==='doctor' && CURRENT_DOCTOR_ID && x.scope==='doctor:'+CURRENT_DOCTOR_ID) return true;
+    if(currentRole==='delivery' && CURRENT_DELIVERY_ID && x.scope==='delivery:'+CURRENT_DELIVERY_ID) return true;
     return false;
   });
 }
@@ -1776,6 +1817,7 @@ let CURRENT_HOSPITAL_ID = null;
 let CURRENT_POLICE_STATION_ID = null;
 let CURRENT_PHARMACY_ID = null;
 let CURRENT_DOCTOR_ID = null;
+let CURRENT_DELIVERY_ID = null;
 let currentView = null;
 let liveTrackingTimer = null;
 let lastRQueueSnapshot = null; // detects new/escalated pending cases so r-queue can re-render itself
@@ -1840,12 +1882,13 @@ function saveActiveSession(role){
   try{
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       role,
-      loggedEmail: role==='patient' ? patientAuthData.loggedEmail : role==='doctor' ? doctorAuthData.loggedEmail : roleAuthData.loggedEmail,
+      loggedEmail: role==='patient' ? patientAuthData.loggedEmail : role==='doctor' ? doctorAuthData.loggedEmail : role==='delivery' ? deliveryAuthData.loggedEmail : roleAuthData.loggedEmail,
       responderId: CURRENT_RESPONDER_ID,
       hospitalId: CURRENT_HOSPITAL_ID,
       policeStationId: CURRENT_POLICE_STATION_ID,
       pharmacyId: CURRENT_PHARMACY_ID,
-      doctorId: CURRENT_DOCTOR_ID
+      doctorId: CURRENT_DOCTOR_ID,
+      deliveryId: CURRENT_DELIVERY_ID
     }));
   }catch(e){ console.warn('Could not persist session', e); }
 }
@@ -1863,13 +1906,14 @@ function loadActiveSession(){
 // back to role selection.
 function restoreActiveSession(){
   const s = loadActiveSession();
-  if(!s || !s.role || (s.role!=='doctor' && !ROLE_META[s.role])) return false;
+  if(!s || !s.role || (s.role!=='doctor' && s.role!=='delivery' && !ROLE_META[s.role])) return false;
   currentRole = s.role;
   CURRENT_RESPONDER_ID = s.responderId || null;
   CURRENT_HOSPITAL_ID = s.hospitalId || null;
   CURRENT_POLICE_STATION_ID = s.policeStationId || null;
   CURRENT_PHARMACY_ID = s.pharmacyId || null;
   CURRENT_DOCTOR_ID = s.doctorId || null;
+  CURRENT_DELIVERY_ID = s.deliveryId || null;
   if(s.role==='patient'){
     patientAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false;
@@ -1883,6 +1927,13 @@ function restoreActiveSession(){
     if(!u) return false;
     const docRecord = (db('doctors')||[]).find(d=>d.id===u.doctorId);
     if(!docRecord) return false;
+  } else if(s.role==='delivery'){
+    deliveryAuthData = {loggedEmail: s.loggedEmail};
+    if(isEmailRevoked(s.loggedEmail)) return false;
+    const u = s.loggedEmail ? findDeliveryUserByEmail(s.loggedEmail) : null;
+    if(!u) return false;
+    const dRecord = (db('deliveryBoys')||[]).find(d=>d.id===u.deliveryId);
+    if(!dRecord) return false;
   } else {
     roleAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false; // deactivated since last session — bounce to landing
@@ -1901,13 +1952,15 @@ function enterConsole(role){
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
-  // A doctor's console lives under their hospital: it keeps its own role
-  // ('doctor') for session/nav/view routing, but visually themes as
-  // 'hospital' (same palette) so it reads as a tab inside the hospital's
-  // shell rather than a separate top-level identity.
-  document.body.setAttribute('data-role', role==='doctor' ? 'hospital' : role);
+  // A doctor's console lives under their hospital, and a delivery boy's
+  // console lives under their pharmacy: both keep their own role
+  // ('doctor'/'delivery') for session/nav/view routing, but visually theme
+  // as the parent role so it reads as a tab inside that shell rather than a
+  // separate top-level identity.
+  document.body.setAttribute('data-role', role==='doctor' ? 'hospital' : role==='delivery' ? 'pharmacy' : role);
   const hospForTag = role==='doctor' ? (db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID) : null;
-  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : role==='doctor' ? ' · '+(hospForTag?hospForTag.name:CURRENT_HOSPITAL_ID) : '';
+  const pharmForTag = role==='delivery' ? (db('pharmacies')||[]).find(x=>x.id===CURRENT_PHARMACY_ID) : null;
+  const unitTag = role==='responder' ? ' · '+CURRENT_RESPONDER_ID : role==='hospital' ? ' · '+CURRENT_HOSPITAL_ID : role==='pharmacy' ? ' · '+CURRENT_PHARMACY_ID : role==='doctor' ? ' · '+(hospForTag?hospForTag.name:CURRENT_HOSPITAL_ID) : role==='delivery' ? ' · '+(pharmForTag?pharmForTag.name:CURRENT_PHARMACY_ID) : '';
   document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
   pruneStaleLocalIncidents();
   buildSideNav(role);
@@ -1938,6 +1991,9 @@ function enterConsole(role){
     captureOneTimeLocation('police');
   } else if(role==='pharmacy'){
     captureOneTimeLocation('pharmacy');
+  } else if(role==='delivery'){
+    beginLiveLocationTracking('delivery');
+    showToast('Live location on', 'Your position now updates in real time so the patient can track their delivery.', 'info');
   }
 }
 
@@ -1951,6 +2007,7 @@ function currentIdentity(){
   if(currentRole==='hospital'){ const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; const u=findRoleUserByEmail('hospital', roleAuthData.loggedEmail); return {name:h.name||'Hospital', sub:(u&&u.email)||h.phone||'', unit:h.id}; }
   if(currentRole==='police'){ const po=(db('policeProfile')||{})[CURRENT_POLICE_STATION_ID]||{}; return {name:po.name||'Officer', sub:po.email||po.phone||'', unit:po.station||''}; }
   if(currentRole==='doctor'){ const d=(db('doctors')||[]).find(x=>x.id===CURRENT_DOCTOR_ID)||{}; const h=(db('hospitals')||[]).find(x=>x.id===CURRENT_HOSPITAL_ID)||{}; return {name:d.name||'Doctor', sub:doctorAuthData.loggedEmail||'', unit:h.name||CURRENT_HOSPITAL_ID}; }
+  if(currentRole==='delivery'){ const dv=(db('deliveryBoys')||[]).find(x=>x.id===CURRENT_DELIVERY_ID)||{}; const ph=(db('pharmacies')||[]).find(x=>x.id===CURRENT_PHARMACY_ID)||{}; return {name:dv.name||'Delivery', sub:deliveryAuthData.loggedEmail||'', unit:ph.name||CURRENT_PHARMACY_ID}; }
   return {name:'—', sub:'', unit:''};
 }
 function toggleProfileMenu(e){
@@ -2009,8 +2066,11 @@ function logout(silent){
   rolePendingOtp = null;
   doctorAuthData = {};
   CURRENT_DOCTOR_ID = null;
+  deliveryAuthData = {};
+  CURRENT_DELIVERY_ID = null;
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-doctor-login').classList.add('hidden');
+  document.getElementById('screen-delivery-login').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
   renderLandingBadges();
   if(!silent) showToast('Logged out', 'Come back any time — your data stays saved on this device.');
@@ -2023,6 +2083,11 @@ function logout(silent){
 function openDoctorLoginFromHospital(){
   logout(true);
   openDoctorLoginScreen();
+}
+// Same handover pattern, for a pharmacy's delivery boys.
+function openDeliveryLoginFromPharmacy(){
+  logout(true);
+  openDeliveryLoginScreen();
 }
 
 /* ============================================================
@@ -2649,6 +2714,68 @@ function loginAsDoctor(u){
   enterConsole('doctor');
 }
 
+/* ============================================================
+   DELIVERY LOGIN — a delivery boy account is created BY a pharmacy
+   (see addDeliveryBoyToRoster in the Pharmacy console), never
+   self-signed-up. Mirrors the doctor login pattern exactly: simple
+   email+password, no OTP/consent, sessions scoped to
+   CURRENT_DELIVERY_ID + CURRENT_PHARMACY_ID.
+   ============================================================ */
+let deliveryAuthData = {};    // {loggedEmail}
+let deliveryLoginError = '';
+function deliveryUsersDb(){ return db('users_delivery') || []; }
+function findDeliveryUserByEmail(email){ return deliveryUsersDb().find(u=>u.email===(email||'').trim().toLowerCase()); }
+function saveDeliveryUser(u){ const list=deliveryUsersDb(); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users_delivery', list); }
+
+function openDeliveryLoginScreen(){
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-delivery-login').classList.remove('hidden');
+  deliveryLoginError = '';
+  renderDeliveryLoginCard();
+}
+function backToRoleSelectFromDeliveryLogin(){
+  document.getElementById('screen-delivery-login').classList.add('hidden');
+  document.getElementById('screen-landing').classList.remove('hidden');
+}
+function renderDeliveryLoginCard(){
+  const box = document.getElementById('delivery-login-card-box');
+  if(!box) return;
+  box.innerHTML = `
+    <h3>Delivery sign-in</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;">Use the email and password your pharmacy gave you.</p>
+    <div class="form-group"><label>Email</label><input class="form-control" id="dlv-login-email" placeholder="you@pharmacy.com" onkeydown="if(event.key==='Enter')deliveryLoginSubmit();"></div>
+    <div class="form-group"><label>Password</label><input class="form-control" type="password" id="dlv-login-password" placeholder="Password" onkeydown="if(event.key==='Enter')deliveryLoginSubmit();"></div>
+    ${deliveryLoginError ? `<div class="field-err">${deliveryLoginError}</div>` : ''}
+    <button class="btn btn-block" onclick="deliveryLoginSubmit()"><i class="fa-solid fa-right-to-bracket"></i> Log in</button>
+    <p style="text-align:center;margin-top:14px;"><a href="#" onclick="backToRoleSelectFromDeliveryLogin();return false;" style="color:var(--text-muted);font-size:.82rem;">&larr; Back</a></p>
+  `;
+}
+async function deliveryLoginSubmit(){
+  const email = (document.getElementById('dlv-login-email').value||'').trim().toLowerCase();
+  const pw = document.getElementById('dlv-login-password').value||'';
+  if(!email || !pw){ deliveryLoginError='Enter both email and password.'; renderDeliveryLoginCard(); return; }
+  if(isEmailRevoked(email)){ deliveryLoginError='This account has been deactivated. Contact your pharmacy.'; renderDeliveryLoginCard(); return; }
+  const u = findDeliveryUserByEmail(email);
+  if(!u){ deliveryLoginError='No delivery account found for this email — ask your pharmacy to add you on their Delivery Boys screen.'; renderDeliveryLoginCard(); return; }
+  const hash = await hashPassword(pw);
+  if(hash !== u.passwordHash){ deliveryLoginError='Incorrect password.'; renderDeliveryLoginCard(); return; }
+  const dRecord = (db('deliveryBoys')||[]).find(x=>x.id===u.deliveryId);
+  if(!dRecord){ deliveryLoginError='Your delivery record no longer exists — contact your pharmacy.'; renderDeliveryLoginCard(); return; }
+  deliveryLoginError='';
+  loginAsDelivery(u);
+}
+function loginAsDelivery(u){
+  currentRole = 'delivery';
+  CURRENT_DELIVERY_ID = u.deliveryId;
+  CURRENT_PHARMACY_ID = u.pharmacyId;
+  deliveryAuthData = {loggedEmail: u.email};
+  dbSet('auth', {verified:true, consent:true});
+  document.getElementById('screen-delivery-login').classList.add('hidden');
+  audit('delivery:'+CURRENT_DELIVERY_ID, 'auth', 'Delivery boy logged in: '+u.email);
+  saveActiveSession('delivery');
+  enterConsole('delivery');
+}
+
 function renderRoleAuthCard(){
   const box = document.getElementById('auth-card-box');
   const role = currentRole;
@@ -3073,7 +3200,7 @@ function switchFamilyMember(memberId){
   if(currentRole==='patient') openSosSocket('patient', currentPatientId(), currentPatientId());
   buildSideNav('patient');
   closeModal();
-  const targetView = (currentView==='p-women' && (db('profile')||{}).gender==='Male') ? 'p-dash' : currentView;
+  const targetView = (currentView==='p-women' && (db('profile')||{}).gender!=='Female') ? 'p-dash' : currentView;
   if(targetView) renderCurrentView(targetView);
   refreshBell();
   showToast('Switched profile', 'Now viewing '+ (u.members.find(m=>m.id===memberId)||{}).name, 'success');
@@ -3418,25 +3545,65 @@ const SIDENAV = {
     {id:'ph-orders', label:'Incoming Prescriptions', icon:'fa-file-prescription'},
     {id:'ph-inventory', label:'Medicine Inventory', icon:'fa-boxes-stacked'},
     {id:'ph-billing', label:'Billing &amp; Sales', icon:'fa-receipt'},
+    {id:'ph-delivery-roster', label:'Delivery Boys', icon:'fa-motorcycle'},
+    {id:'ph-delivery-login', label:'Delivery Login', icon:'fa-right-to-bracket'},
   ],
   doctor: [
     {id:'d-dash', label:'Dashboard', icon:'fa-gauge-high'},
     {id:'d-appts', label:'My Appointments', icon:'fa-calendar-check'},
     {id:'d-slots', label:'My Availability', icon:'fa-clock'},
     {id:'d-profile', label:'My Profile', icon:'fa-id-badge'},
+  ],
+  delivery: [
+    {id:'dl-dash', label:'Dashboard', icon:'fa-gauge-high'},
+    {id:'dl-orders', label:'My Deliveries', icon:'fa-motorcycle'},
+    {id:'dl-profile', label:'My Profile', icon:'fa-id-badge'},
   ]
+};
+// Nav items that hand off to a totally separate login screen instead of
+// rendering a normal view — mirrors 'h-doctor-login' for the pharmacy's
+// delivery boys.
+const SIDENAV_HANDOFFS = {
+  'h-doctor-login': 'openDoctorLoginFromHospital()',
+  'ph-delivery-login': 'openDeliveryLoginFromPharmacy()'
 };
 function buildSideNav(role){
   const nav = document.getElementById('app-sidenav');
   let items = SIDENAV[role];
   if(role==='patient'){
+    // Women's Health is a dedicated section, not a general-purpose tab — only
+    // surfaced once the active profile is actually switched to a female
+    // member, rather than showing by default for everyone who isn't Male.
     const gender = (db('profile')||{}).gender;
-    if(gender==='Male') items = items.filter(item=>item.id!=='p-women');
+    if(gender!=='Female') items = items.filter(item=>item.id!=='p-women');
   }
-  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="${item.id==='h-doctor-login' ? 'openDoctorLoginFromHospital()' : `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
+  nav.innerHTML = items.map(item=>`<button class="nav-link" data-nav="${item.id}" onclick="${SIDENAV_HANDOFFS[item.id] || `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`).join('');
+  updateSidenavScrollHint();
 }
+// Mobile's sidenav scrolls horizontally (see the max-width:900px rule), which
+// isn't obvious at a glance — this shows a fading "there's more" chevron on
+// the right edge whenever the nav actually overflows, and hides it again
+// once the user has scrolled all the way to the end (or if it never
+// overflowed in the first place, e.g. a short list or a wide screen).
+function updateSidenavScrollHint(){
+  const nav = document.getElementById('app-sidenav');
+  const hint = document.getElementById('sidenav-scroll-hint');
+  if(!nav || !hint) return;
+  const overflowing = nav.scrollWidth > nav.clientWidth + 4;
+  const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 4;
+  hint.classList.toggle('hidden', !overflowing || atEnd);
+}
+(function initSidenavScrollHintListeners(){
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const nav = document.getElementById('app-sidenav');
+    if(!nav) return;
+    nav.addEventListener('scroll', updateSidenavScrollHint, {passive:true});
+    window.addEventListener('resize', updateSidenavScrollHint);
+  });
+})();
 function setActiveNav(navId){
   document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active', b.dataset.nav===navId));
+  updateSidenavScrollHint();
 }
 
 /* ============================================================
@@ -3453,8 +3620,9 @@ function renderCurrentView(navId){
     'r-dash': viewResponderDash, 'r-queue': viewResponderQueue, 'r-active': viewResponderActive,
     'po-dash': viewPoliceDash, 'po-feed': viewPoliceFeed,
     'h-dash': viewHospitalDash, 'h-incoming': viewHospitalIncoming, 'h-roster': viewHospitalRoster, 'h-tele': viewHospitalTele, 'h-verify': viewHospitalVerify, 'h-audit': viewHospitalAudit,
-    'ph-dash': viewPharmacyDash, 'ph-orders': viewPharmacyOrders, 'ph-inventory': viewPharmacyInventory, 'ph-billing': viewPharmacyBilling,
+    'ph-dash': viewPharmacyDash, 'ph-orders': viewPharmacyOrders, 'ph-inventory': viewPharmacyInventory, 'ph-billing': viewPharmacyBilling, 'ph-delivery-roster': viewPharmacyDeliveryRoster,
     'd-dash': viewDoctorDash, 'd-appts': viewDoctorAppts, 'd-slots': viewDoctorSlots, 'd-profile': viewDoctorProfile,
+    'dl-dash': viewDeliveryDash, 'dl-orders': viewDeliveryOrders, 'dl-profile': viewDeliveryProfile,
   };
   c.innerHTML = renderers[navId] ? renderers[navId]() : '<div class="empty-state">View not found</div>';
   postRenderHooks(navId);
@@ -3486,6 +3654,10 @@ function postRenderHooks(navId){
     if(inCall && dRec && inCall.doctor===dRec.name && document.getElementById('rtc-remote-video')){
       rtcJoinCall(inCall.apptId, 'rtc-local-video', 'rtc-remote-video');
     }
+  }
+  if(navId==='p-rx'){
+    const activeDelivery = db('prescriptions').filter(r=>r.ownerId===currentPatientId()).find(r=>r.deliveryStatus==='out_for_delivery');
+    if(activeDelivery && document.getElementById('leaflet-map-box')) initDeliveryTrackingMap(activeDelivery);
   }
 }
 function viewHeader(eyebrow,title,sub){
@@ -6127,6 +6299,182 @@ function renderInvoiceHtml(bill, pharmacy){
 }
 
 /* ============================================================
+   PHARMACY — DELIVERY BOYS ROSTER
+   ------------------------------------------------------------
+   Mirrors the hospital's Doctor Roster pattern exactly: a pharmacy
+   adds its real delivery staff here, each gets their own email+
+   password login (see DELIVERY LOGIN above), and can be toggled
+   available/unavailable, password-reset, or removed. A delivery
+   boy's live GPS (once they're logged in and on the road) is what
+   powers the patient-facing tracker in e-Prescriptions.
+   ============================================================ */
+function viewPharmacyDeliveryRoster(){
+  const boys = (db('deliveryBoys')||[]).filter(b=>b.pharmacyId===CURRENT_PHARMACY_ID);
+  return `${viewHeader('Delivery Boys','Home-delivery staff','Add your real delivery staff below — each gets their own login to go live on GPS and update delivery status. Patients see their name, phone, vehicle and live location once a delivery is assigned to them.')}
+  <div class="card">
+    <h3 style="margin-top:0;">Add delivery boy</h3>
+    <div class="grid-2">
+      <div class="form-group"><label>Full name</label><input class="form-control" id="dlv-name" placeholder="e.g. Ramesh Kumar"></div>
+      <div class="form-group"><label>Phone</label><input class="form-control" id="dlv-phone" placeholder="e.g. 98765 43210"></div>
+      <div class="form-group"><label>Vehicle</label><input class="form-control" id="dlv-vehicle" placeholder="e.g. Bike · MH12 AB 1234"></div>
+      <div class="form-group"><label>Login email</label><input class="form-control" id="dlv-login-email-new" placeholder="delivery@example.com"></div>
+      <div class="form-group"><label>Login password</label><div style="display:flex;gap:8px;"><input class="form-control" id="dlv-login-password-new" placeholder="Set a password"><button type="button" class="btn btn-secondary btn-sm" onclick="generateDeliveryPassword()" title="Generate a random password"><i class="fa-solid fa-shuffle"></i></button></div></div>
+    </div>
+    <button class="btn" onclick="addDeliveryBoyToRoster()"><i class="fa-solid fa-motorcycle"></i> Add to roster &amp; create login</button>
+  </div>
+  <div class="card">
+  ${boys.length ? `<table class="data-table"><thead><tr><th>Name</th><th>Phone</th><th>Vehicle</th><th>Login email</th><th>Status</th><th></th></tr></thead><tbody>
+  ${boys.map(b=>`<tr><td>${b.name}</td><td>${b.phone||'—'}</td><td>${b.vehicle||'—'}</td><td style="font-family:var(--ff-mono);font-size:.78rem;">${b.loginEmail||'—'}</td><td><span class="status-tag ${b.available?'status-ok':'status-muted'}">${b.currentRxId?'On a delivery':b.available?'Available':'Off duty'}</span></td><td style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-sm btn-secondary" onclick="toggleDeliveryBoy('${b.id}')" ${b.currentRxId?'disabled title="Busy on a delivery"':''}>Toggle</button><button class="btn btn-sm btn-secondary" onclick="resetDeliveryBoyPassword('${b.id}')" title="Reset login password"><i class="fa-solid fa-key"></i></button><button class="btn btn-sm btn-danger" onclick="removeDeliveryBoy('${b.id}')" title="Remove from roster"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}
+  </tbody></table>` : `<p style="color:var(--text-muted);margin:0;">No delivery boys added yet — add your first one above.</p>`}
+  </div>`;
+}
+function generateDeliveryPassword(){
+  const pw = Math.random().toString(36).slice(-4) + Math.floor(1000+Math.random()*9000);
+  document.getElementById('dlv-login-password-new').value = pw;
+}
+async function addDeliveryBoyToRoster(){
+  const name = document.getElementById('dlv-name').value.trim();
+  const phone = document.getElementById('dlv-phone').value.trim();
+  const vehicle = document.getElementById('dlv-vehicle').value.trim();
+  const loginEmail = (document.getElementById('dlv-login-email-new').value||'').trim().toLowerCase();
+  const loginPassword = document.getElementById('dlv-login-password-new').value||'';
+  if(!name){ showToast('Missing info','Enter the delivery boy\'s name.','danger'); return; }
+  if(!loginEmail || !loginPassword){ showToast('Missing login info','A login email and password are required so they can sign in.','danger'); return; }
+  if(loginPassword.length<4){ showToast('Weak password','Use at least 4 characters for the password.','danger'); return; }
+  if(findDeliveryUserByEmail(loginEmail)){ showToast('Email already used','Another delivery account already uses that email.','danger'); return; }
+  const boys = db('deliveryBoys')||[];
+  const deliveryId = uid('DLV');
+  const ph = (db('pharmacies')||[]).find(x=>x.id===CURRENT_PHARMACY_ID) || {};
+  boys.push({id:deliveryId, pharmacyId:CURRENT_PHARMACY_ID, name, phone, vehicle, loginEmail, available:true, currentRxId:null, lat: ph.lat, lng: ph.lng});
+  dbSet('deliveryBoys', boys);
+  const passwordHash = await hashPassword(loginPassword);
+  saveDeliveryUser({email:loginEmail, passwordHash, deliveryId, pharmacyId:CURRENT_PHARMACY_ID, name});
+  audit('pharmacy:'+CURRENT_PHARMACY_ID, 'delivery_add', name+' · login: '+loginEmail);
+  showToast('Delivery boy added', name+' can now log in with '+loginEmail+' — share the password with them securely.', 'success');
+  renderCurrentView('ph-delivery-roster');
+}
+function removeDeliveryBoy(id){
+  const boys = db('deliveryBoys')||[];
+  const b = boys.find(x=>x.id===id);
+  if(!b) return;
+  if(b.currentRxId){ showToast('Busy on a delivery', 'This delivery boy is currently on an active delivery — wait until it\'s marked delivered before removing them.', 'danger'); return; }
+  if(!confirm('Remove '+b.name+' from the roster? This also disables their login.')) return;
+  dbSet('deliveryBoys', boys.filter(x=>x.id!==id));
+  if(b.loginEmail) dbSet('users_delivery', deliveryUsersDb().filter(u=>u.deliveryId!==id));
+  audit('pharmacy:'+CURRENT_PHARMACY_ID, 'delivery_remove', b.name);
+  showToast('Removed', b.name+' taken off the roster.', 'success');
+  renderCurrentView('ph-delivery-roster');
+}
+function toggleDeliveryBoy(id){ const boys=db('deliveryBoys')||[]; const b=boys.find(x=>x.id===id); if(!b || b.currentRxId) return; b.available=!b.available; dbSet('deliveryBoys',boys); renderCurrentView('ph-delivery-roster'); }
+async function resetDeliveryBoyPassword(id){
+  const b = (db('deliveryBoys')||[]).find(x=>x.id===id);
+  if(!b || !b.loginEmail){ showToast('No login found','This delivery boy has no login account to reset.','danger'); return; }
+  const newPw = prompt('Enter a new password for '+b.name+' ('+b.loginEmail+'):');
+  if(!newPw) return;
+  if(newPw.length<4){ showToast('Weak password','Use at least 4 characters.','danger'); return; }
+  const u = findDeliveryUserByEmail(b.loginEmail);
+  if(!u){ showToast('Not found','No login record for that email.','danger'); return; }
+  u.passwordHash = await hashPassword(newPw);
+  saveDeliveryUser(u);
+  audit('pharmacy:'+CURRENT_PHARMACY_ID, 'delivery_password_reset', b.name);
+  showToast('Password reset', 'New password set for '+b.name+'. Share it with them securely.', 'success');
+}
+
+/* ============================================================
+   DELIVERY CONSOLE — scoped to CURRENT_DELIVERY_ID + CURRENT_PHARMACY_ID.
+   A delivery boy sees only the orders assigned to them, goes live on
+   GPS the moment they log in (see enterConsole -> beginLiveLocationTracking
+   ('delivery') and applyLiveLocation), and updates status as they go —
+   the patient's tracker (see patient e-Prescriptions) reflects this live.
+   ============================================================ */
+function currentDeliveryRecord(){ return (db('deliveryBoys')||[]).find(x=>x.id===CURRENT_DELIVERY_ID); }
+function viewDeliveryDash(){
+  const b = currentDeliveryRecord() || {};
+  const ph = (db('pharmacies')||[]).find(x=>x.id===CURRENT_PHARMACY_ID) || {};
+  const rx = (db('prescriptions')||[]).filter(r=>r.deliveryBoyId===CURRENT_DELIVERY_ID);
+  const active = rx.filter(r=>r.deliveryStatus && r.deliveryStatus!=='delivered');
+  const completed = rx.filter(r=>r.deliveryStatus==='delivered');
+  return `${viewHeader('Delivery Console', 'Welcome, '+(b.name||'Delivery Partner'), ph.name?('At '+ph.name):'')}
+  <div class="grid-3">
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-box-open"></i></div><div><div class="dash-stat-num">${active.length}</div><div class="dash-stat-label">Active Deliveries</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-circle-check"></i></div><div><div class="dash-stat-num">${completed.length}</div><div class="dash-stat-label">Delivered (all time)</div></div></div>
+    <div class="dash-stat-card"><div class="dash-stat-icon"><i class="fa-solid fa-location-crosshairs"></i></div><div><div class="dash-stat-num">${b.lat?'ON':'OFF'}</div><div class="dash-stat-label">Live GPS</div></div></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0;">Your profile summary</h3>
+    <p style="color:var(--text-muted);margin:0;">${b.phone||'No phone on file'} · ${b.vehicle||'Vehicle not set'}</p>
+    <p style="margin-top:10px;"><span class="status-tag status-ok"><i class="fa-solid fa-location-dot"></i> Your live location is being shared with any patient you're delivering to</span></p>
+  </div>`;
+}
+function viewDeliveryOrders(){
+  const b = currentDeliveryRecord() || {};
+  const rx = (db('prescriptions')||[]).filter(r=>r.deliveryBoyId===CURRENT_DELIVERY_ID).sort((a,b2)=>(a.deliveryStatus==='delivered'?1:-1));
+  return `${viewHeader('My Deliveries','Medicine orders assigned to you','Mark "Out for delivery" once you\'ve picked up the medicines — this switches on live tracking for the patient. Mark "Delivered" once handed over.')}
+  ${rx.length ? rx.map(r=>{
+    const patientMember = findPatientMemberById(r.ownerId);
+    const patientName = (patientMember && patientMember.member && patientMember.member.name) || 'Patient';
+    const patientPhone = (patientMember && patientMember.account && patientMember.account.phone) || '';
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div><strong>${patientName}</strong>${patientPhone?' · '+patientPhone:''}<p style="margin:8px 0 0;">${r.medicines}</p></div>
+        <span class="status-tag ${r.deliveryStatus==='delivered'?'status-muted':r.deliveryStatus==='out_for_delivery'?'status-ok':'status-warn'}">${r.deliveryStatus==='delivered'?'Delivered':r.deliveryStatus==='out_for_delivery'?'Out for delivery':'Assigned'}</span>
+      </div>
+      ${r.deliveryStatus!=='delivered' ? `<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        ${r.deliveryStatus!=='out_for_delivery' ? `<button class="btn btn-sm" onclick="deliveryStartDelivery('${r.id}')"><i class="fa-solid fa-motorcycle"></i> Start delivery (go live)</button>` : ''}
+        <button class="btn btn-sm btn-secondary" onclick="deliveryMarkDelivered('${r.id}')"><i class="fa-solid fa-check"></i> Mark delivered</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') : `<div class="empty-state"><i class="fa-solid fa-motorcycle"></i><p>No deliveries assigned yet — patients request home delivery from their e-Prescriptions screen.</p></div>`}`;
+}
+function deliveryStartDelivery(rxId){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===rxId);
+  if(!rx || rx.deliveryBoyId!==CURRENT_DELIVERY_ID) return;
+  rx.deliveryStatus = 'out_for_delivery';
+  dbSet('prescriptions', list);
+  audit('delivery:'+CURRENT_DELIVERY_ID, 'delivery_start', rxId);
+  pushNotification('patient:'+rx.ownerId, 'Out for delivery', `Your medicines are on the way — you can track your delivery boy's live location in e-Prescriptions.`, 'info', null);
+  showToast('Live tracking on', 'The patient can now see your live location until this is delivered.', 'success');
+  renderCurrentView('dl-orders');
+}
+function deliveryMarkDelivered(rxId){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===rxId);
+  if(!rx || rx.deliveryBoyId!==CURRENT_DELIVERY_ID) return;
+  rx.deliveryStatus = 'delivered';
+  dbSet('prescriptions', list);
+  const boys = db('deliveryBoys')||[];
+  const b = boys.find(x=>x.id===CURRENT_DELIVERY_ID);
+  if(b){ b.currentRxId = null; dbSet('deliveryBoys', boys); }
+  audit('delivery:'+CURRENT_DELIVERY_ID, 'delivery_complete', rxId);
+  pushNotification('patient:'+rx.ownerId, 'Delivered', 'Your medicines have been delivered. Thanks for using ArogyaBot!', 'success', null);
+  showToast('Marked delivered', 'Nice work — you\'re free for a new delivery.', 'success');
+  renderCurrentView('dl-orders');
+}
+function viewDeliveryProfile(){
+  const b = currentDeliveryRecord() || {};
+  return `${viewHeader('My Profile','What patients see once you\'re assigned to their delivery','')}
+  <div class="card">
+    <div class="grid-2">
+      <div class="form-group"><label>Phone</label><input class="form-control" id="dlp-phone" value="${attr(b.phone||'')}"></div>
+      <div class="form-group"><label>Vehicle</label><input class="form-control" id="dlp-vehicle" value="${attr(b.vehicle||'')}" placeholder="e.g. Bike · MH12 AB 1234"></div>
+    </div>
+    <button class="btn" onclick="deliverySaveProfile()"><i class="fa-solid fa-floppy-disk"></i> Save profile</button>
+  </div>`;
+}
+function deliverySaveProfile(){
+  const boys = db('deliveryBoys')||[];
+  const b = boys.find(x=>x.id===CURRENT_DELIVERY_ID);
+  if(!b) return;
+  b.phone = document.getElementById('dlp-phone').value.trim();
+  b.vehicle = document.getElementById('dlp-vehicle').value.trim();
+  dbSet('deliveryBoys', boys);
+  audit('delivery:'+CURRENT_DELIVERY_ID, 'profile_update', '');
+  showToast('Saved', 'Profile updated.', 'success');
+  renderCurrentView('dl-profile');
+}
+
+/* ============================================================
    PATIENT — AI CHAT (symptom checker)
    ============================================================ */
 // ----------------------------------------------------------------------
@@ -6989,6 +7337,8 @@ function endCall(){
 function viewPatientRx(){
   const rx = db('prescriptions').filter(r=>r.ownerId===currentPatientId());
   const bills = db('pharmacyBills')||[];
+  const boys = db('deliveryBoys')||[];
+  const activeDeliveryId = (rx.find(r=>r.deliveryStatus==='out_for_delivery')||{}).id;
   return `${viewHeader('e-Prescriptions','Digitally signed prescriptions','')}
   ${rx.length ? rx.map(r=>{
     const bill = r.targetPharmacyId ? bills.find(b=>b.rxId===r.id) : null;
@@ -7004,7 +7354,26 @@ function viewPatientRx(){
     } else {
       statusHtml = `<span class="status-tag status-ok">Fulfilled by pharmacy</span>`;
     }
-    return `<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">${statusHtml}</div></div>`;
+    let deliveryHtml = '';
+    if(r.pharmacyStatus==='fulfilled'){
+      if(!r.deliveryBoyId){
+        deliveryHtml = `<button class="btn btn-sm btn-secondary" onclick="requestMedicineDelivery('${r.id}')"><i class="fa-solid fa-motorcycle"></i> Request home delivery</button>`;
+      } else {
+        const boy = boys.find(b=>b.id===r.deliveryBoyId) || {};
+        const label = r.deliveryStatus==='delivered' ? 'Delivered' : r.deliveryStatus==='out_for_delivery' ? 'Out for delivery' : 'Assigned';
+        const tone = r.deliveryStatus==='delivered' ? 'status-muted' : r.deliveryStatus==='out_for_delivery' ? 'status-ok' : 'status-warn';
+        deliveryHtml = `<div style="background:var(--bg-subtle);border-radius:12px;padding:12px 14px;width:100%;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+            <div><i class="fa-solid fa-motorcycle"></i> <strong>${boy.name||'Delivery partner'}</strong>${boy.vehicle?' · '+boy.vehicle:''}${boy.phone?' · '+boy.phone:''}</div>
+            <span class="status-tag ${tone}">${label}</span>
+          </div>
+          ${r.deliveryStatus==='out_for_delivery' && r.id===activeDeliveryId ? `<div class="card card-flush" style="margin-top:10px;"><div class="map-container" id="leaflet-map-box"></div><div id="delivery-live-eta" style="padding:10px 14px;font-size:.85rem;color:var(--text-muted);border-top:1px solid var(--border-color);"><i class="fa-solid fa-route"></i> Calculating route…</div></div>`
+            : r.deliveryStatus==='delivered' ? `<p style="margin:8px 0 0;color:var(--text-muted);font-size:.82rem;">Delivered — thanks for using ArogyaBot.</p>`
+            : `<p style="margin:8px 0 0;color:var(--text-muted);font-size:.82rem;">Live tracking starts automatically once your delivery partner sets out.</p>`}
+        </div>`;
+      }
+    }
+    return `<div class="card"><strong>${r.date}</strong> · ${r.doctor}<p style="margin:8px 0 12px;">${r.medicines}</p><div style="display:flex;flex-direction:column;align-items:flex-start;gap:10px;">${statusHtml}${deliveryHtml}</div></div>`;
   }).join('') : `<div class="empty-state"><i class="fa-solid fa-prescription"></i><p>No prescriptions yet. Complete a telemedicine consult to receive one.</p></div>`}`;
 }
 // Medicine payment (patient -> pharmacy) — same simulated checkout as the
@@ -7023,6 +7392,34 @@ function confirmMedicinePayment(rxId){
   const bills = db('pharmacyBills')||[];
   const bill = bills.find(b=>b.rxId===rxId);
   if(rx.targetPharmacyId) pushNotification('pharmacy:'+rx.targetPharmacyId, 'Payment received', `${db('profile').name} paid ₹${(bill?bill.grandTotal:0).toFixed(2)} for their medicines${bill?' (Bill '+bill.billNo+')':''}.`, 'success', null);
+  renderCurrentView('p-rx');
+}
+// Assigns the nearest available delivery boy from the fulfilling pharmacy —
+// same nearest-match style as sendToPharmacy(). The delivery boy is marked
+// busy until they mark the order delivered, so one person is never assigned
+// two deliveries at once.
+function requestMedicineDelivery(rxId){
+  const list = db('prescriptions');
+  const rx = list.find(r=>r.id===rxId);
+  if(!rx || !rx.targetPharmacyId) return;
+  const boys = db('deliveryBoys')||[];
+  const available = boys.filter(b=>b.pharmacyId===rx.targetPharmacyId && b.available && !b.currentRxId);
+  if(!available.length){ showToast('No delivery staff available', 'This pharmacy has no delivery boy free right now — you can still pick up in person.', 'danger'); return; }
+  const profile = db('profile')||{};
+  let nearest = available[0], nearestDist = Infinity;
+  available.forEach(b=>{
+    const dist = (profile.lat && profile.lng && b.lat!=null && b.lng!=null) ? haversineKm(profile.lat, profile.lng, b.lat, b.lng) : 0;
+    if(dist < nearestDist){ nearestDist = dist; nearest = b; }
+  });
+  rx.deliveryBoyId = nearest.id;
+  rx.deliveryStatus = 'assigned';
+  dbSet('prescriptions', list);
+  nearest.currentRxId = rx.id;
+  nearest.available = false; // busy until delivered
+  dbSet('deliveryBoys', boys);
+  audit('patient','delivery_request', rxId+' -> '+nearest.name);
+  pushNotification('delivery:'+nearest.id, 'New delivery assigned', `${db('profile').name} requested home delivery for: ${rx.medicines}.`, 'info', null);
+  showToast('Delivery requested', nearest.name+' will bring your medicines — you\'ll see their live location here once they set out.', 'success');
   renderCurrentView('p-rx');
 }
 function sendToPharmacy(id){
@@ -8353,6 +8750,25 @@ function initResponderMap(update){
     pts.push([h.lat,h.lng]);
   }
   drawRoute(pts, '#ef4444', 'resp-live-eta');
+  mapInstance.fitBounds(pts, {padding:[40,40]});
+}
+// Patient-facing live delivery tracker — shows the assigned delivery boy's
+// live GPS position (updated by their own beginLiveLocationTracking('delivery')
+// while their console is open) plus the patient's own pin, with a route and
+// ETA between them. Only called from postRenderHooks when p-rx has an active
+// 'out_for_delivery' order and the #leaflet-map-box element is present.
+function initDeliveryTrackingMap(rx){
+  const boy = (db('deliveryBoys')||[]).find(x=>x.id===rx.deliveryBoyId);
+  const profile = db('profile')||{};
+  if(!boy || boy.lat==null || boy.lng==null || profile.lat==null || profile.lng==null) return;
+  if(!mapInstance){ ensureMap(); }
+  if(!mapInstance) return;
+  const pts = [[boy.lat,boy.lng],[profile.lat,profile.lng]];
+  mapMarkers.deliveryBoy && mapInstance.removeLayer(mapMarkers.deliveryBoy);
+  mapMarkers.deliveryBoy = L.marker([boy.lat,boy.lng], {icon: icon('#f59e0b')}).addTo(mapInstance).bindPopup(boy.name+(boy.vehicle?' · '+boy.vehicle:''));
+  mapMarkers.deliveryDest && mapInstance.removeLayer(mapMarkers.deliveryDest);
+  mapMarkers.deliveryDest = L.marker([profile.lat,profile.lng], {icon: icon('#0d9488')}).addTo(mapInstance).bindPopup('You');
+  drawRoute(pts, '#f59e0b', 'delivery-live-eta');
   mapInstance.fitBounds(pts, {padding:[40,40]});
 }
 function initPoliceMap(update){
