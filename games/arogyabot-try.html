@@ -183,6 +183,33 @@ a{color:inherit;}
 }
 @keyframes sidenavHintNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(4px); opacity:1; } }
 
+/* ============================================================
+   QUICK-ACCESS DRAWER — a compact, horizontally-scrolling row of
+   shortcut chips shown at the top of the dashboard (in addition to
+   the full sidenav) so the most-used sections are one tap away
+   without opening/scrolling the side nav, especially on mobile
+   where the sidenav itself is already a horizontal scroller.
+   ============================================================ */
+.quick-drawer-wrap{position:relative;margin-bottom:18px;}
+.quick-drawer{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x proximity;padding:2px 2px 10px;-ms-overflow-style:none;scrollbar-width:none;}
+.quick-drawer::-webkit-scrollbar{display:none;}
+.quick-chip{scroll-snap-align:start;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--bg-surface);border:1px solid var(--border-color);box-shadow:var(--shadow-sm);color:var(--text-main);font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .18s ease;}
+.quick-chip i{color:var(--brand-primary);font-size:.95rem;}
+.quick-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);border-color:var(--brand-primary);}
+.quick-chip.active{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff;}
+.quick-chip.active i{color:#fff;}
+.quick-drawer-hint{display:none;}
+@media (max-width:900px){
+  .quick-drawer-hint{
+    display:flex; align-items:center; justify-content:flex-end;
+    position:absolute; top:0; right:0; bottom:10px; width:40px;
+    background:linear-gradient(to right, transparent, var(--bg-main) 65%);
+    color:var(--text-muted); pointer-events:none;
+  }
+  .quick-drawer-hint i{ animation:sidenavHintNudge 1.4s ease-in-out infinite; font-size:.8rem; }
+  .quick-drawer-hint.hidden{ display:none; }
+}
+
 /* ============ COMPONENTS ============ */
 .view-header{margin-bottom:26px;animation:slideDown .4s ease-out;}
 .view-eyebrow{font-family:var(--ff-mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--brand-primary);font-weight:700;margin-bottom:6px;}
@@ -1090,11 +1117,11 @@ const STORAGE_WARNED = new Set();
    else, even though every one of them only ever belongs to ONE
    patient account (verified by checking every read/write call site —
    none of these are ever read by another role):
-     - fitness/cycle/nutrition/vitals/medsTools hold an `.entries`
-       object keyed by currentPatientId() (family-member slot, e.g.
-       'ME') — so two DIFFERENT patient accounts sharing the same room
-       and the same default slot 'ME' would silently overwrite each
-       other's data.
+     - fitness/cycle/pregnancy/nutrition/vitals/medsTools hold an
+       `.entries` object keyed by currentPatientId() (family-member
+       slot, e.g. 'ME') — so two DIFFERENT patient accounts sharing
+       the same room and the same default slot 'ME' would silently
+       overwrite each other's data.
      - documents/reminders/claims/insurance are arrays/objects filtered
        client-side by ownerId===currentPatientId() — same shared-doc
        exposure, just without the 'ME' collision risk.
@@ -1108,7 +1135,7 @@ const STORAGE_WARNED = new Set();
    by hospital/doctor name. Isolating those needs the denormalized-write
    pattern, not a simple per-uid route.)
    ============================================================ */
-const PRIVATE_ACCOUNT_KEYS = ['fitness','cycle','nutrition','vitals','medsTools','documents','reminders','claims','insurance'];
+const PRIVATE_ACCOUNT_KEYS = ['fitness','cycle','pregnancy','nutrition','vitals','medsTools','documents','reminders','claims','insurance'];
 
 // Keys that are read by everyone but only ever seeded/administered, not
 // something a single logged-in account owns — fetched once, cached, and
@@ -4264,10 +4291,10 @@ const SIDENAV = {
     {id:'p-dash', label:'Dashboard', icon:'fa-gauge-high'},
     {id:'p-sos', label:'Emergency SOS', icon:'fa-triangle-exclamation'},
     {id:'p-chat', label:'AI Symptom Checker', icon:'fa-comment-medical'},
+    {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
     {id:'p-fitness', label:'Fitness Tools', icon:'fa-heart-pulse'},
     {id:'p-nutrition', label:'Nutrition', icon:'fa-apple-whole'},
     {id:'p-vitals', label:'Vitals &amp; Risk Screening', icon:'fa-heart-circle-check'},
-    {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
     {id:'p-records', label:'Medical Records', icon:'fa-file-medical'},
     {id:'p-tele', label:'Telemedicine', icon:'fa-video'},
     {id:'p-rx', label:'e-Prescriptions', icon:'fa-prescription'},
@@ -4362,6 +4389,48 @@ function setActiveNav(navId){
 }
 
 /* ============================================================
+   QUICK-ACCESS DRAWER — sideways-scrolling shortcut chips for the
+   patient dashboard. Deliberately a short, curated list (not the
+   full sidenav) of the sections patients jump to most; tapping a
+   chip navigates the same way a sidenav link does.
+   ============================================================ */
+const QUICK_DRAWER_ITEMS = [
+  {id:'p-chat', label:'AI Symptom Checker', icon:'fa-comment-medical'},
+  {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
+  {id:'p-sos', label:'Emergency SOS', icon:'fa-triangle-exclamation'},
+  {id:'p-tele', label:'Telemedicine', icon:'fa-video'},
+  {id:'p-rx', label:'e-Prescriptions', icon:'fa-prescription'},
+  {id:'p-pharmacy', label:'Pharmacy', icon:'fa-pills'},
+  {id:'p-vitals', label:'Vitals', icon:'fa-heart-circle-check'},
+  {id:'p-records', label:'Records', icon:'fa-file-medical'},
+];
+function quickDrawer(activeId){
+  const chips = QUICK_DRAWER_ITEMS.map(item=>
+    `<button class="quick-chip${item.id===activeId?' active':''}" data-quick="${item.id}" onclick="${SIDENAV_HANDOFFS[item.id] || `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`
+  ).join('');
+  return `<div class="quick-drawer-wrap">
+    <div class="quick-drawer" id="quick-drawer">${chips}</div>
+    <div class="quick-drawer-hint hidden" id="quick-drawer-hint"><i class="fa-solid fa-chevron-right"></i></div>
+  </div>`;
+}
+// Same peek-and-fade pattern as the sidenav scroll hint — only shown while
+// the chip row actually overflows and hasn't been scrolled to the end yet.
+function updateQuickDrawerHint(){
+  const nav = document.getElementById('quick-drawer');
+  const hint = document.getElementById('quick-drawer-hint');
+  if(!nav || !hint) return;
+  const overflowing = nav.scrollWidth > nav.clientWidth + 4;
+  const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 4;
+  hint.classList.toggle('hidden', !overflowing || atEnd);
+}
+(function initQuickDrawerHintListeners(){
+  document.addEventListener('scroll', e=>{
+    if(e.target && e.target.id==='quick-drawer') updateQuickDrawerHint();
+  }, true);
+  window.addEventListener('resize', updateQuickDrawerHint);
+})();
+
+/* ============================================================
    VIEW RENDER DISPATCH
    ============================================================ */
 function renderCurrentView(navId){
@@ -4384,6 +4453,7 @@ function renderCurrentView(navId){
   refreshBell();
 }
 function postRenderHooks(navId){
+  if(navId==='p-dash') updateQuickDrawerHint();
   if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); rehydrateInProgressSOS(); }
   if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
   if(navId==='r-queue'){
@@ -4432,6 +4502,7 @@ function viewPatientDash(){
   const active = currentIncident(); // matches self-reports and bystander reports alike
   return `
   ${viewHeader('Patient Console','Welcome back, '+profile.name.split(' ')[0],'Your emergency profile is verified and ready. One tap broadcasts to every nearby hospital, ambulance and police station at once.')}
+  ${quickDrawer('p-dash')}
   ${active ? `<div class="card" style="border-color:#ef4444;background:rgba(239,68,68,.06);">
     <strong style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Active emergency in progress — ${active.id}</strong>
     <p style="margin:8px 0 12px;color:var(--text-muted);">Status: ${incidentStatusLabel(active.status)}</p>
@@ -9100,7 +9171,7 @@ function viewPatientWomen(){
 
   <div class="card">
     <h3 style="margin-top:0;"><i class="fa-solid fa-lock" style="color:var(--brand-primary);"></i> Privacy &amp; backup</h3>
-    <p style="color:var(--text-muted);font-size:.85rem;">This data stays on this device only — it is never included in the app's shared/synced data, so it is not visible to responders, hospitals or other family accounts. That also means it isn't backed up automatically: use the export button below to save a copy before clearing your browser data or switching devices.</p>
+    <p style="color:var(--text-muted);font-size:.85rem;">This data is private to your own account — it syncs only to devices where <em>you</em> are signed in, and is never visible to responders, hospitals, pharmacies, doctors or other family accounts sharing this app. It is not part of any shared/broadcast data. Even so, an export is a good idea before switching devices, clearing your browser, or if you ever want a copy outside the app.</p>
     ${c.pinLock ? `<p style="font-size:.76rem;color:var(--text-muted);">Your PIN re-locks this section every time you open the app or switch family profiles.</p><button class="btn btn-secondary btn-sm" onclick="removePin()">Remove PIN</button>` : `<div style="display:flex;gap:10px;margin-bottom:14px;"><input class="form-control" id="new-pin" maxlength="4" placeholder="Set 4-digit PIN" style="max-width:160px;"><button class="btn btn-sm" onclick="setPin()">Save</button></div>`}
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
       <button class="btn btn-secondary btn-sm" onclick="cycExportData()"><i class="fa-solid fa-download"></i> Export my data (JSON)</button>
@@ -9323,14 +9394,17 @@ function cycSaveBulk(){
 /* ---------- backup / restore ---------- */
 function cycExportData(){
   const c = cycRoot();
-  const payload = {exportedAt: new Date().toISOString(), app:'ArogyaBot Women\'s Health', data: c};
+  // Pregnancy tracker data (due date/LMP, weight-gain log) shares this backup file
+  // rather than needing its own export button — same feature, same privacy tier.
+  const p = pregRoot();
+  const payload = {exportedAt: new Date().toISOString(), app:'ArogyaBot Women\'s Health', data: c, pregnancy: p};
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'arogyabot-cycle-backup-'+isoDay(new Date())+'.json';
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
-  showToast('Exported','Your cycle data was downloaded as a JSON file.','success');
+  showToast('Exported','Your cycle and pregnancy data was downloaded as a JSON file.','success');
 }
 function cycImportData(file){
   if(!file) return;
@@ -9341,13 +9415,34 @@ function cycImportData(file){
       const incoming = parsed.data || parsed; // tolerate a raw cycle object too
       if(!incoming || typeof incoming!=='object' || !incoming.entries){ throw new Error('bad shape'); }
       const current = cycRoot();
-      // merge: incoming days win on conflict per member, but don't wipe entries not present in the file
+      // merge: incoming days win on conflict per member, but don't wipe entries not present in the file.
+      // Settings (mode/birth control/reminders/custom symptoms/period-length override) are restored
+      // too, not just the day-by-day log — a restored backup should put you back where you left off,
+      // not just bring your history back with defaults for everything else.
       Object.keys(incoming.entries).forEach(memberId=>{
-        if(!current.entries[memberId]) current.entries[memberId] = {days:{}, avgCycleLenOverride:null, avgPeriodLenOverride:null};
-        Object.assign(current.entries[memberId].days, incoming.entries[memberId].days||{});
-        if(incoming.entries[memberId].avgCycleLenOverride) current.entries[memberId].avgCycleLenOverride = incoming.entries[memberId].avgCycleLenOverride;
+        const inc = incoming.entries[memberId];
+        if(!current.entries[memberId]) current.entries[memberId] = {days:{}, avgCycleLenOverride:null, avgPeriodLenOverride:null, mode:'track', onBirthControl:false, tempUnit:'C', reminderOn:false, reminderDays:2, customSymptoms:[]};
+        const cur = current.entries[memberId];
+        Object.assign(cur.days, inc.days||{});
+        if(inc.avgCycleLenOverride) cur.avgCycleLenOverride = inc.avgCycleLenOverride;
+        if(inc.avgPeriodLenOverride) cur.avgPeriodLenOverride = inc.avgPeriodLenOverride;
+        if(inc.mode) cur.mode = inc.mode;
+        if(inc.onBirthControl!==undefined) cur.onBirthControl = inc.onBirthControl;
+        if(inc.tempUnit) cur.tempUnit = inc.tempUnit;
+        if(inc.reminderOn!==undefined) cur.reminderOn = inc.reminderOn;
+        if(inc.reminderDays) cur.reminderDays = inc.reminderDays;
+        if(inc.customSymptoms && inc.customSymptoms.length) cur.customSymptoms = [...new Set([...(cur.customSymptoms||[]), ...inc.customSymptoms])];
       });
       dbSet('cycle', current);
+      // Pregnancy data is optional in older backup files exported before this was added —
+      // only merge it in when the file actually has it.
+      if(parsed.pregnancy && parsed.pregnancy.entries){
+        const curPreg = pregRoot();
+        Object.keys(parsed.pregnancy.entries).forEach(memberId=>{
+          curPreg.entries[memberId] = Object.assign({}, curPreg.entries[memberId]||{}, parsed.pregnancy.entries[memberId]);
+        });
+        dbSet('pregnancy', curPreg);
+      }
       renderCurrentView('p-women');
       showToast('Import complete','Your backup was merged into this device.','success');
     }catch(err){
@@ -9435,7 +9530,7 @@ function renderCycAwareness(){
       </div>
     </details>
 
-    <div class="disclaimer-note"><i class="fa-solid fa-circle-info"></i> This section provides general educational information only and is not a medical diagnosis. Your logged cycle data stays on this device and is not shared with any other part of the app.</div>
+    <div class="disclaimer-note"><i class="fa-solid fa-circle-info"></i> This section provides general educational information only and is not a medical diagnosis. Your logged cycle data is private to your account and is never shared with any other role or family member on this app.</div>
   </div>`;
 }
 
