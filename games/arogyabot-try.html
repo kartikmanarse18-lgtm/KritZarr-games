@@ -170,7 +170,7 @@ a{color:inherit;}
    page's own vertical scroll. With the page itself no longer scrolling
    (#app-shell has overflow:hidden) there's only ever one active vertical
    scroll surface at a time, so that failure mode doesn't apply here. */
-.sidenav-wrap{height:100%;flex-shrink:0;}
+.sidenav-wrap{height:100%;flex-shrink:0;position:relative;}
 .sidenav{width:250px;height:100%;overflow-y:auto;background:var(--shell-bg);border-right:1px solid var(--shell-border);padding:20px 14px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
 .nav-link{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;color:var(--shell-muted);text-decoration:none;font-size:.9rem;font-weight:600;transition:all .2s ease;background:transparent;width:100%;text-align:left;}
 .nav-link i{font-size:1.05rem;width:22px;text-align:center;}
