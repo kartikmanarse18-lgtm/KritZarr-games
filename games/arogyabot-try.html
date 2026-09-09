@@ -536,6 +536,21 @@ table.data-table tr:last-child td{border-bottom:none;}
 <body>
 
 <!-- ============================================================
+     SPLASH — shown by default while boot() waits on Firebase Auth to
+     restore (or rule out) a persisted session. Previously #screen-landing
+     (role selection) was the one visible by default instead, so a
+     returning logged-in user saw it flash on-screen for a beat before
+     boot() swapped it out for their dashboard — reading as "why am I
+     being logged out on every reload?" even though the session itself
+     was fine. This shows neutral loading branding for that same beat
+     instead of a screen that implies you need to log in.
+     ============================================================ -->
+<div id="screen-splash" style="min-height:100vh;background:#0f172a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+  <div class="hero-logo"><i class="fa-solid fa-heart-pulse"></i>ArogyaBot</div>
+  <i class="fa-solid fa-circle-notch fa-spin" style="font-size:1.4rem;opacity:.7;"></i>
+</div>
+
+<!-- ============================================================
      AUTH / VERIFICATION SCREEN
      ============================================================ -->
 <div id="screen-auth" class="hidden">
@@ -549,7 +564,7 @@ table.data-table tr:last-child td{border-bottom:none;}
 <!-- ============================================================
      LANDING — ROLE SELECT (first screen)
      ============================================================ -->
-<div id="screen-landing">
+<div id="screen-landing" class="hidden">
   <div class="landing-hero">
     <div class="hero-logo"><i class="fa-solid fa-heart-pulse"></i>ArogyaBot</div>
     <div class="hero-tagline">Emergency &amp; Health Intelligence Platform</div>
@@ -2287,16 +2302,17 @@ function softRefreshCurrentView(){
   // This runs on every background sync tick — any change to fitness, cycle,
   // pregnancy, nutrition, vitals, medsTools, documents, reminders, claims or
   // insurance data reaches here via scheduleRemoteRefresh(), which is most of
-  // the app. A plain renderCurrentView() rebuilds #active-view-container's
-  // content, and since .content-area is the actual scrolling element, that
-  // reset its scrollTop to 0 every time — so a user scrolled halfway down the
-  // dashboard would get silently snapped back to the top by a sync event they
-  // never triggered themselves. Saving/restoring scrollTop around the render
-  // keeps the refresh invisible instead of fighting the user's own scrolling.
-  const scrollEl = document.querySelector('.content-area');
-  const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
+  // the app.
+  // NOTE: .content-area has `overflow-y:auto` in CSS, but nothing above it
+  // (#app-shell, .app-container) has a fixed `height` — they only use
+  // `min-height`, so in practice the box just grows to fit its content and
+  // .content-area.scrollTop never leaves 0. The page that's actually
+  // scrolling is the WINDOW. An earlier attempt at this fix saved/restored
+  // .content-area.scrollTop, which looked reasonable but was silently a
+  // no-op — it was reading and writing a value that was always 0.
+  const savedScroll = window.scrollY;
   renderCurrentView(currentView);
-  if(scrollEl) scrollEl.scrollTop = savedScroll;
+  window.scrollTo(0, savedScroll);
 }
 
 function initializeDataStore(){
@@ -2710,6 +2726,7 @@ function restoreActiveSession(){
 }
 
 function enterConsole(role){
+  document.getElementById('screen-splash').classList.add('hidden');
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
@@ -2725,7 +2742,17 @@ function enterConsole(role){
   document.getElementById('current-role-tag').textContent = role.toUpperCase()+unitTag;
   pruneStaleLocalIncidents();
   buildSideNav(role);
-  const first = SIDENAV[role][0].id;
+  // Restore whichever section the user was last on, instead of always
+  // dropping them back at the dashboard on every reload — that was forcing
+  // people to re-navigate to wherever they actually were (Nutrition, Women's
+  // Health, etc) every single time. Falls back to the normal first-item
+  // default if there's no saved view, it belongs to a different role's nav
+  // (e.g. switched accounts on this device), or it's the login/landing
+  // screens themselves.
+  let lastView = null;
+  try{ lastView = localStorage.getItem('abot2_lastView'); }catch(e){}
+  const validForRole = lastView && SIDENAV[role] && SIDENAV[role].some(item=>item.id===lastView);
+  const first = validForRole ? lastView : SIDENAV[role][0].id;
   renderCurrentView(first);
   refreshBell();
   initNotificationSync();
@@ -4447,6 +4474,7 @@ function closeQuickDrawer(){
    ============================================================ */
 function renderCurrentView(navId){
   currentView = navId;
+  try{ localStorage.setItem('abot2_lastView', navId); }catch(e){}
   setActiveNav(navId);
   cleanupMap();
   const c = document.getElementById('active-view-container');
@@ -9904,6 +9932,7 @@ window.addEventListener('hashchange', checkSecretHashRoute);
   // straight into the console instead of bouncing back to role selection. Otherwise,
   // fall back to the original behaviour: start at role selection.
   if(restoreActiveSession()){ checkSecretHashRoute(); return; }
+  document.getElementById('screen-splash').classList.add('hidden');
   document.getElementById('screen-auth').classList.add('hidden');
   document.getElementById('screen-landing').classList.remove('hidden');
   checkSecretHashRoute();
