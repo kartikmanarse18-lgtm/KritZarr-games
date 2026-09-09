@@ -184,31 +184,34 @@ a{color:inherit;}
 @keyframes sidenavHintNudge{ 0%,100%{ transform:translateX(0); opacity:.55; } 50%{ transform:translateX(4px); opacity:1; } }
 
 /* ============================================================
-   QUICK-ACCESS DRAWER — a compact, horizontally-scrolling row of
-   shortcut chips shown at the top of the dashboard (in addition to
-   the full sidenav) so the most-used sections are one tap away
-   without opening/scrolling the side nav, especially on mobile
-   where the sidenav itself is already a horizontal scroller.
+   QUICK-ACCESS DRAWER (v2) — a single trigger button that opens a
+   full grid of every section at once, so nothing needs scrolling to
+   be seen. The first version of this was a second horizontally-
+   scrolling chip row sitting right above the sidenav, which (on
+   mobile) already collapses into its own horizontal scroller — two
+   scrollers showing the same items solved nothing. This version is
+   deliberately NOT a scroller: it's a tap-to-open sheet, laid out as
+   a grid, so every shortcut is visible in one glance and one tap.
    ============================================================ */
-.quick-drawer-wrap{position:relative;margin-bottom:18px;}
-.quick-drawer{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x proximity;padding:2px 2px 10px;-ms-overflow-style:none;scrollbar-width:none;}
-.quick-drawer::-webkit-scrollbar{display:none;}
-.quick-chip{scroll-snap-align:start;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:var(--bg-surface);border:1px solid var(--border-color);box-shadow:var(--shadow-sm);color:var(--text-main);font-size:.82rem;font-weight:700;white-space:nowrap;cursor:pointer;transition:all .18s ease;}
-.quick-chip i{color:var(--brand-primary);font-size:.95rem;}
-.quick-chip:hover{transform:translateY(-1px);box-shadow:var(--shadow-md);border-color:var(--brand-primary);}
-.quick-chip.active{background:var(--brand-primary);border-color:var(--brand-primary);color:#fff;}
-.quick-chip.active i{color:#fff;}
-.quick-drawer-hint{display:none;}
-@media (max-width:900px){
-  .quick-drawer-hint{
-    display:flex; align-items:center; justify-content:flex-end;
-    position:absolute; top:0; right:0; bottom:10px; width:40px;
-    background:linear-gradient(to right, transparent, var(--bg-main) 65%);
-    color:var(--text-muted); pointer-events:none;
-  }
-  .quick-drawer-hint i{ animation:sidenavHintNudge 1.4s ease-in-out infinite; font-size:.8rem; }
-  .quick-drawer-hint.hidden{ display:none; }
-}
+.quick-drawer-trigger{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border-color);box-shadow:var(--shadow-sm);color:var(--text-main);font-size:.85rem;font-weight:700;cursor:pointer;transition:all .18s ease;margin-bottom:18px;width:100%;justify-content:center;}
+.quick-drawer-trigger:hover{border-color:var(--brand-primary);box-shadow:var(--shadow-md);}
+.quick-drawer-trigger i{color:var(--brand-primary);}
+.quick-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:900;display:flex;align-items:flex-end;justify-content:center;animation:qdFadeIn .15s ease;}
+.quick-drawer-overlay.hidden{display:none;}
+@keyframes qdFadeIn{ from{opacity:0;} to{opacity:1;} }
+.quick-drawer-sheet{background:var(--bg-main);width:100%;max-width:640px;max-height:82vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:18px 18px 26px;animation:qdSlideUp .2s ease;}
+@keyframes qdSlideUp{ from{transform:translateY(24px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+.quick-drawer-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.quick-drawer-sheet-head h3{margin:0;font-size:1.05rem;}
+.quick-drawer-close{background:none;border:none;font-size:1.2rem;color:var(--text-muted);cursor:pointer;padding:4px 8px;}
+.quick-drawer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media (max-width:520px){ .quick-drawer-grid{grid-template-columns:repeat(3,1fr);} }
+.quick-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:14px;background:var(--bg-surface);border:1px solid var(--border-color);cursor:pointer;transition:all .15s ease;text-align:center;}
+.quick-tile:hover{border-color:var(--brand-primary);transform:translateY(-2px);}
+.quick-tile.active{background:var(--brand-primary);border-color:var(--brand-primary);}
+.quick-tile.active i, .quick-tile.active span{color:#fff;}
+.quick-tile i{font-size:1.25rem;color:var(--brand-primary);}
+.quick-tile span{font-size:.72rem;font-weight:700;color:var(--text-main);line-height:1.2;}
 
 /* ============ COMPONENTS ============ */
 .view-header{margin-bottom:26px;animation:slideDown .4s ease-out;}
@@ -2279,7 +2282,21 @@ function softRefreshCurrentView(){
     initPoliceMap(true);
     return;
   }
+  // Fallback for every screen that isn't one of the special-cased ones above
+  // (dashboard, fitness, nutrition, vitals, women's health, records, etc).
+  // This runs on every background sync tick — any change to fitness, cycle,
+  // pregnancy, nutrition, vitals, medsTools, documents, reminders, claims or
+  // insurance data reaches here via scheduleRemoteRefresh(), which is most of
+  // the app. A plain renderCurrentView() rebuilds #active-view-container's
+  // content, and since .content-area is the actual scrolling element, that
+  // reset its scrollTop to 0 every time — so a user scrolled halfway down the
+  // dashboard would get silently snapped back to the top by a sync event they
+  // never triggered themselves. Saving/restoring scrollTop around the render
+  // keeps the refresh invisible instead of fighting the user's own scrolling.
+  const scrollEl = document.querySelector('.content-area');
+  const savedScroll = scrollEl ? scrollEl.scrollTop : 0;
   renderCurrentView(currentView);
+  if(scrollEl) scrollEl.scrollTop = savedScroll;
 }
 
 function initializeDataStore(){
@@ -4389,46 +4406,41 @@ function setActiveNav(navId){
 }
 
 /* ============================================================
-   QUICK-ACCESS DRAWER — sideways-scrolling shortcut chips for the
-   patient dashboard. Deliberately a short, curated list (not the
-   full sidenav) of the sections patients jump to most; tapping a
-   chip navigates the same way a sidenav link does.
+   QUICK-ACCESS DRAWER (v2) — one button, opens every section as a
+   grid so it's all visible at once instead of another thing to
+   scroll through. Reuses the same SIDENAV.patient list (and the
+   same Women's Health gender filter) so this never drifts out of
+   sync with the real nav as sections get added or renamed.
    ============================================================ */
-const QUICK_DRAWER_ITEMS = [
-  {id:'p-chat', label:'AI Symptom Checker', icon:'fa-comment-medical'},
-  {id:'p-history', label:'Symptom History', icon:'fa-clock-rotate-left'},
-  {id:'p-sos', label:'Emergency SOS', icon:'fa-triangle-exclamation'},
-  {id:'p-tele', label:'Telemedicine', icon:'fa-video'},
-  {id:'p-rx', label:'e-Prescriptions', icon:'fa-prescription'},
-  {id:'p-pharmacy', label:'Pharmacy', icon:'fa-pills'},
-  {id:'p-vitals', label:'Vitals', icon:'fa-heart-circle-check'},
-  {id:'p-records', label:'Records', icon:'fa-file-medical'},
-];
 function quickDrawer(activeId){
-  const chips = QUICK_DRAWER_ITEMS.map(item=>
-    `<button class="quick-chip${item.id===activeId?' active':''}" data-quick="${item.id}" onclick="${SIDENAV_HANDOFFS[item.id] || `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i>${item.label}</button>`
-  ).join('');
-  return `<div class="quick-drawer-wrap">
-    <div class="quick-drawer" id="quick-drawer">${chips}</div>
-    <div class="quick-drawer-hint hidden" id="quick-drawer-hint"><i class="fa-solid fa-chevron-right"></i></div>
+  return `<button class="quick-drawer-trigger" onclick="openQuickDrawer('${activeId}')"><i class="fa-solid fa-grip"></i> Quick access — jump to any section</button>
+  <div class="quick-drawer-overlay hidden" id="quick-drawer-overlay" onclick="if(event.target===this) closeQuickDrawer();">
+    <div class="quick-drawer-sheet">
+      <div class="quick-drawer-sheet-head">
+        <h3>Jump to a section</h3>
+        <button class="quick-drawer-close" onclick="closeQuickDrawer()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="quick-drawer-grid" id="quick-drawer-grid"></div>
+    </div>
   </div>`;
 }
-// Same peek-and-fade pattern as the sidenav scroll hint — only shown while
-// the chip row actually overflows and hasn't been scrolled to the end yet.
-function updateQuickDrawerHint(){
-  const nav = document.getElementById('quick-drawer');
-  const hint = document.getElementById('quick-drawer-hint');
-  if(!nav || !hint) return;
-  const overflowing = nav.scrollWidth > nav.clientWidth + 4;
-  const atEnd = nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 4;
-  hint.classList.toggle('hidden', !overflowing || atEnd);
+function openQuickDrawer(activeId){
+  const gender = (db('profile')||{}).gender;
+  let items = SIDENAV.patient;
+  if(gender!=='Female') items = items.filter(item=>item.id!=='p-women');
+  const grid = document.getElementById('quick-drawer-grid');
+  if(grid){
+    grid.innerHTML = items.map(item=>
+      `<button class="quick-tile${item.id===activeId?' active':''}" onclick="closeQuickDrawer(); ${SIDENAV_HANDOFFS[item.id] || `renderCurrentView('${item.id}')`}"><i class="fa-solid ${item.icon}"></i><span>${item.label.replace(/&amp;/g,'&')}</span></button>`
+    ).join('');
+  }
+  const overlay = document.getElementById('quick-drawer-overlay');
+  if(overlay) overlay.classList.remove('hidden');
 }
-(function initQuickDrawerHintListeners(){
-  document.addEventListener('scroll', e=>{
-    if(e.target && e.target.id==='quick-drawer') updateQuickDrawerHint();
-  }, true);
-  window.addEventListener('resize', updateQuickDrawerHint);
-})();
+function closeQuickDrawer(){
+  const overlay = document.getElementById('quick-drawer-overlay');
+  if(overlay) overlay.classList.add('hidden');
+}
 
 /* ============================================================
    VIEW RENDER DISPATCH
@@ -4453,7 +4465,6 @@ function renderCurrentView(navId){
   refreshBell();
 }
 function postRenderHooks(navId){
-  if(navId==='p-dash') updateQuickDrawerHint();
   if(navId==='p-sos'){ initSosMapIfNeeded(); startLiveIncidentTracking(); rehydrateInProgressSOS(); }
   if(navId==='r-active'){ initResponderMap(); startLiveIncidentTracking(); }
   if(navId==='r-queue'){
@@ -4947,8 +4958,23 @@ function nutRemoveMealFood(idx){
 function nutUpdateMealQty(idx, grams){
   const e = nutEntry();
   const meal = e.meal.slice();
-  meal[idx] = Object.assign({}, meal[idx], {grams: Math.max(0, parseFloat(grams)||0)});
+  const g = Math.max(0, parseFloat(grams)||0);
+  meal[idx] = Object.assign({}, meal[idx], {grams: g});
   nutSave({meal});
+  // The totals below already recalculated live via renderMealTotals() — the bug was
+  // that THIS row's own "X kcal" label next to the input only ever got set inside
+  // renderMealBuilder(), which nothing called after a gram edit, so it stayed stale
+  // until something else (add/remove a food, reload) forced a full rebuild. Fixed by
+  // updating just this row's label in place instead of full renderMealBuilder(),
+  // which would also wipe the <input> the user is actively typing in.
+  const list = document.getElementById('nut-meal-list');
+  const row = list ? list.children[idx] : null;
+  if(row){
+    const f = FOOD_DB.find(x=>x.name===meal[idx].name);
+    const kcal = f ? Math.round(f.kcal*g/100) : 0;
+    const kcalEl = row.querySelector('.nut-meal-kcal');
+    if(kcalEl) kcalEl.textContent = kcal + ' kcal';
+  }
   renderMealTotals();
 }
 function renderMealBuilder(){
@@ -5360,12 +5386,57 @@ function viewPatientSOS(){
       </div>
     </div>
     <div id="severity-picker-slot"></div>
-    <div class="card">
-      <h3 style="margin-top:0;">Offline fallback</h3>
-      <p style="color:var(--text-muted);font-size:.88rem;">If mobile data fails, ArogyaBot automatically falls back to SMS-based location reporting and serves cached first-aid instructions from the offline service worker cache.</p>
-    </div>`;
+    ${offlineFallbackCard()}`;
   }
   return renderActiveSosTracking(inc);
+}
+// --------------------------------------------------------------------------
+// OFFLINE FALLBACK — this used to just claim "automatically falls back to
+// SMS-based location reporting and serves cached first-aid instructions from
+// the offline service worker cache." None of that existed: there is no
+// service worker anywhere in this app, no cache registration, and no SMS
+// integration. A user who lost connectivity mid-emergency and believed that
+// text would have gotten nothing.
+// A browser genuinely cannot send SMS on its own — there's no API for it —
+// so the honest version is the `sms:` link below: it opens the phone's own
+// messaging app pre-addressed and pre-filled, and the user hits send. That's
+// a real, working fallback, just not a silent/automatic one, and the first-
+// aid steps beneath it are plain static content already sitting in this
+// page's own JS, so they're readable with zero network regardless of
+// whether the rest of the app can sync.
+// --------------------------------------------------------------------------
+const OFFLINE_FIRST_AID = [
+  {title:'Severe bleeding', steps:'Apply firm, direct pressure with a clean cloth. Do not remove it if it soaks through — add more on top. Keep the injured part raised above heart level if possible.'},
+  {title:'Not breathing / CPR', steps:'Call for help loudly. Push hard and fast in the center of the chest, about 2 inches deep, 100–120 pushes/minute, until help arrives or the person responds.'},
+  {title:'Choking', steps:'5 back blows between the shoulder blades, then 5 abdominal thrusts (Heimlich). Repeat until the object clears or the person can breathe/cough/speak.'},
+  {title:'Burns', steps:'Cool the burn under running water for 20 minutes. Do not apply ice, butter, or ointments. Cover loosely with a clean, non-stick cloth.'},
+  {title:'Suspected fracture', steps:'Do not try to straighten or realign the limb. Immobilize it as found using a splint or sling. Watch for numbness or loss of color beyond the injury.'},
+];
+function offlineFallbackCard(){
+  const profile = db('profile') || {};
+  return `
+    <div class="card">
+      <h3 style="margin-top:0;">If you lose connection</h3>
+      <p style="color:var(--text-muted);font-size:.88rem;">The SOS button above needs a data connection to reach hospitals and responders. If it fails, use this to send your location by text instead — your phone's own messaging app will open, pre-filled, ready to send.</p>
+      <button class="btn btn-danger btn-block" onclick="openEmergencySmsFallback()"><i class="fa-solid fa-comment-sms"></i> Send my location via SMS</button>
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer;font-weight:700;font-size:.85rem;color:var(--text-main);">First-aid quick reference (works with no signal — already loaded on this page)</summary>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+          ${OFFLINE_FIRST_AID.map(f=>`<div><strong style="font-size:.85rem;">${f.title}</strong><p style="margin:2px 0 0;color:var(--text-muted);font-size:.82rem;">${f.steps}</p></div>`).join('')}
+        </div>
+      </details>
+    </div>`;
+}
+async function openEmergencySmsFallback(){
+  const profile = db('profile') || {};
+  const loc = await getDeviceLocation();
+  const lat = loc ? loc.lat : profile.lat, lng = loc ? loc.lng : profile.lng;
+  const body = `EMERGENCY - ${profile.name||'ArogyaBot user'} needs help. Location: https://maps.google.com/?q=${lat},${lng} (Blood group: ${profile.bloodGroup||'unknown'})`;
+  // No fixed emergency number is wired up here on purpose — SMS numbers for
+  // ambulance/police vary by region, and hardcoding one would be wrong for
+  // most users. Opening the compose screen blank-addressed still saves them
+  // typing out the whole message; they just need to pick or type a number.
+  window.location.href = 'sms:?body=' + encodeURIComponent(body);
 }
 // In-progress SOS reports live in window.__report/__sev (see softRefreshCurrentView
 // for why). That's fine while the tab stays open and untouched, but it means the
@@ -5482,18 +5553,84 @@ function renderSeverityStep(){
   persistInProgressSOS('severity');
 }
 function pickSeverity(s){ window.__sev = s; document.querySelectorAll('.severity-opt').forEach(b=>b.classList.toggle('sel', b.dataset.sev===s)); persistInProgressSOS('severity'); }
+// --------------------------------------------------------------------------
+// VOICE SOS — previously this was `setTimeout(...,2500)` that ALWAYS fired a
+// real emergency dispatch 2.5s after the button was tapped, regardless of
+// whether anything was said, while telling the user "Listening... (simulated)".
+// That's a false-alarm risk (anyone curious-tapping the button silently
+// triggers a real hospital/police/ambulance dispatch) and a trust problem
+// (the UI claims live voice detection that never existed). This now uses the
+// real Web Speech API: it actually listens, only dispatches on a genuine
+// phrase match, restarts itself if the browser auto-stops on silence, and is
+// honest with the user (and can be cancelled) when the browser doesn't
+// support it at all instead of pretending to listen.
+// --------------------------------------------------------------------------
+let __voiceRecognition = null;
 function startVoiceSOS(){
-  showToast('Voice SOS armed', 'Listening for "Help, Arogya Emergency"… (simulated)', 'info');
-  setTimeout(async ()=>{
-    if(currentIncident()) return;
-    window.__sev='severe';
-    window.__report = {type:'self', landmark:'', victimNote:'', reporterPhone:(db('profile')||{}).phone||''};
-    const loc = await getDeviceLocation();
-    const profile = db('profile');
-    if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
-    else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
-    triggerSOS();
-  }, 2500);
+  if(currentIncident()){ showToast('Already dispatched', 'An SOS is already active — no need to arm voice trigger.', 'info'); return; }
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const slot = document.getElementById('severity-picker-slot');
+  if(!SpeechRec){
+    showToast('Voice SOS not supported', 'This browser doesn\'t support voice recognition — use the SOS button instead.', 'danger');
+    return;
+  }
+  if(__voiceRecognition) return; // already armed
+  const rec = new SpeechRec();
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.lang = 'en-IN';
+  __voiceRecognition = rec;
+  if(slot){
+    slot.innerHTML = `
+    <div class="card" style="border-color:var(--brand-primary);">
+      <p style="color:var(--text-muted);font-size:.85rem;"><i class="fa-solid fa-microphone" style="color:var(--brand-primary);"></i> Listening for "Help, Arogya Emergency"… speak clearly, this really is live.</p>
+      <button class="btn btn-secondary btn-block" onclick="stopVoiceSOS(true)">Cancel voice SOS</button>
+    </div>`;
+  }
+  rec.onresult = (e)=>{
+    const transcript = e.results[e.results.length-1][0].transcript.toLowerCase();
+    if(transcript.includes('help') && transcript.includes('emergency')){
+      stopVoiceSOS(false);
+      if(currentIncident()) return;
+      window.__sev = 'severe';
+      window.__report = {type:'self', lat:null, lng:null, accuracy:null, landmark:'', victimNote:'Triggered via voice SOS.', reporterPhone:(db('profile')||{}).phone||''};
+      getDeviceLocation().then(loc=>{
+        const profile = db('profile');
+        if(loc){ window.__report.lat=loc.lat; window.__report.lng=loc.lng; window.__report.accuracy=loc.accuracy; }
+        else { window.__report.lat=profile.lat; window.__report.lng=profile.lng; window.__report.accuracy=null; }
+        triggerSOS();
+      });
+    }
+  };
+  rec.onerror = (e)=>{
+    if(e.error==='not-allowed' || e.error==='service-not-allowed'){
+      showToast('Microphone blocked', 'Voice SOS needs microphone permission — allow it in your browser settings to use this.', 'danger');
+    }
+    stopVoiceSOS(true);
+  };
+  rec.onend = ()=>{
+    // Most browsers auto-stop recognition after a stretch of silence — restart
+    // automatically while still armed, so "armed" actually means armed until
+    // the user cancels or it dispatches, not just for the first pause.
+    if(__voiceRecognition===rec){ try{ rec.start(); }catch(err){} }
+  };
+  try{
+    rec.start();
+    showToast('Voice SOS armed', 'Say "Help, Arogya Emergency" clearly — this will dispatch immediately on match.', 'info');
+  }catch(err){
+    stopVoiceSOS(true);
+  }
+}
+function stopVoiceSOS(clearUI){
+  if(__voiceRecognition){
+    const rec = __voiceRecognition;
+    __voiceRecognition = null; // clear first so onend doesn't restart it
+    try{ rec.stop(); }catch(e){}
+  }
+  if(clearUI){
+    const slot = document.getElementById('severity-picker-slot');
+    if(slot) slot.innerHTML = '';
+  }
 }
 
 // --------------------------------------------------------------------------
