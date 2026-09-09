@@ -111,7 +111,12 @@ a{color:inherit;}
 .badge-card[data-role-type="hospital"]{--badge-accent:#3b82f6;}
 
 /* ============ APP SHELL ============ */
-#app-shell{min-height:100vh;display:flex;flex-direction:column;animation:fadeIn .4s;}
+/* #app-shell is now a fixed-height box pinned to the viewport (100dvh, with
+   the 100vh line first as a fallback for browsers that don't support dvh).
+   overflow:hidden here means the OUTER page itself never scrolls once the
+   app shell is showing — only .content-area (see below) scrolls, so the
+   topbar and sidenav stay visible at all times. */
+#app-shell{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;animation:fadeIn .4s;}
 .topbar{background:var(--shell-bg);color:var(--shell-fg);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--shell-border);position:sticky;top:0;z-index:1000;}
 .topbar-brand{display:flex;align-items:center;gap:12px;font-family:var(--ff-display);font-size:1.25rem;font-weight:700;text-decoration:none;color:inherit;}
 .pulse-indicator{width:10px;height:10px;border-radius:50%;background:#10b981;box-shadow:0 0 12px #10b981;animation:pulse 2s infinite;}
@@ -148,25 +153,47 @@ a{color:inherit;}
 .bell-item-time{color:var(--text-muted);font-size:.68rem;font-family:var(--ff-mono);margin-top:4px;}
 .bell-empty{padding:30px 16px;text-align:center;color:var(--text-muted);font-size:.85rem;}
 
-.app-container{flex:1;display:flex;min-height:calc(100vh - 64px);}
-/* Sidenav is sticky (not a nested scroll box) so it stays visually pinned while
-   .content-area's content scrolls past it — the window is still the only thing
-   actually scrolling, which is what keeps this mobile-webview-safe (see the
-   chat-panel note above on why per-section nested scrollers were rejected). */
-.sidenav-wrap{position:sticky;top:64px;align-self:flex-start;height:calc(100vh - 64px);flex-shrink:0;}
+/* .app-container is the row: sidenav-wrap + content-area. It fills whatever
+   height #app-shell gives it below the topbar. min-height:0 + overflow:hidden
+   are the two properties flex children need to actually respect that height
+   instead of growing to fit content (the classic flexbox scroll-container
+   trap) — without them .content-area's own overflow-y:auto below has nothing
+   to bite into and just grows forever, which was the original bug. */
+.app-container{flex:1;display:flex;min-height:0;overflow:hidden;}
+/* Sidenav no longer needs position:sticky — .app-container itself never
+   scrolls now, so the sidenav's natural height:100% keeps it fully visible
+   the whole time, while .content-area (below) is its own independent
+   scroll box. This is the deliberate nested-scroll layout: nav stays put,
+   only the section content scrolls past it.
+   Note for mobile webviews: nested scroll areas used to be flaky there, but
+   that was in combination with `overflow-x:auto` chip rows fighting the
+   page's own vertical scroll. With the page itself no longer scrolling
+   (#app-shell has overflow:hidden) there's only ever one active vertical
+   scroll surface at a time, so that failure mode doesn't apply here. */
+.sidenav-wrap{height:100%;flex-shrink:0;}
 .sidenav{width:250px;height:100%;overflow-y:auto;background:var(--shell-bg);border-right:1px solid var(--shell-border);padding:20px 14px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
 .nav-link{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;color:var(--shell-muted);text-decoration:none;font-size:.9rem;font-weight:600;transition:all .2s ease;background:transparent;width:100%;text-align:left;}
 .nav-link i{font-size:1.05rem;width:22px;text-align:center;}
 .nav-link:hover{color:var(--shell-fg);background:rgba(255,255,255,.06);}
 .nav-link.active{color:#fff;background:var(--brand-primary);box-shadow:0 4px 16px rgba(0,0,0,.2);}
-.content-area{flex:1;padding:28px 36px;overflow-y:auto;max-width:1400px;margin:0 auto;width:100%;}
+/* THE scroll container for section content. min-height:0 lets it actually
+   shrink to the flex row's height instead of pushing .app-container taller;
+   overscroll-behavior:contain stops an over-scroll at the top/bottom from
+   "leaking" into a rubber-band bounce on the (non-scrolling) page behind it;
+   -webkit-overflow-scrolling:touch keeps momentum scrolling smooth in older
+   iOS webviews. */
+.content-area{flex:1;min-height:0;padding:28px 36px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-width:1400px;margin:0 auto;width:100%;}
 .sidenav-scroll-hint{display:none;}
 @media (max-width:900px){
   .app-container{flex-direction:column;}
-  .sidenav-wrap{width:100%;position:sticky;top:64px;height:auto;z-index:900;}
+  /* On mobile the sidenav becomes a horizontal chip row pinned to its own
+     natural height at the top (flex-shrink:0 so content-area can't squeeze
+     it); content-area below it takes all remaining height and is the only
+     thing that scrolls vertically. */
+  .sidenav-wrap{width:100%;height:auto;flex-shrink:0;z-index:900;}
   .sidenav{width:100%;height:auto;overflow-y:visible;border-right:none;border-bottom:1px solid var(--shell-border);flex-direction:row;overflow-x:auto;padding:10px;scroll-behavior:smooth;}
   .nav-link{white-space:nowrap;padding:9px 14px;font-size:.85rem;}
-  .content-area{padding:18px;}
+  .content-area{padding:18px;min-height:0;}
   .topbar{padding:0 14px;}
   .role-badge-tag{display:none;}
   .bell-panel{width:92vw;right:-40px;}
@@ -652,7 +679,7 @@ table.data-table tr:last-child td{border-bottom:none;}
       <nav class="sidenav" id="app-sidenav"></nav>
       <div class="sidenav-scroll-hint hidden" id="sidenav-scroll-hint"><i class="fa-solid fa-chevron-right"></i></div>
     </div>
-    <main class="content-area"><div id="active-view-container"></div></main>
+    <main class="content-area" id="app-content-area"><div id="active-view-container"></div></main>
   </div>
 </div>
 
@@ -2307,16 +2334,14 @@ function softRefreshCurrentView(){
   // pregnancy, nutrition, vitals, medsTools, documents, reminders, claims or
   // insurance data reaches here via scheduleRemoteRefresh(), which is most of
   // the app.
-  // NOTE: .content-area has `overflow-y:auto` in CSS, but nothing above it
-  // (#app-shell, .app-container) has a fixed `height` — they only use
-  // `min-height`, so in practice the box just grows to fit its content and
-  // .content-area.scrollTop never leaves 0. The page that's actually
-  // scrolling is the WINDOW. An earlier attempt at this fix saved/restored
-  // .content-area.scrollTop, which looked reasonable but was silently a
-  // no-op — it was reading and writing a value that was always 0.
-  const savedScroll = window.scrollY;
+  // .content-area (#app-content-area) is the real scroll container now
+  // (#app-shell/.app-container are fixed-height with overflow:hidden), so a
+  // background refresh needs to save/restore ITS scrollTop, not the
+  // window's — the window itself no longer scrolls at all.
+  const scrollBox = document.getElementById('app-content-area');
+  const savedScroll = scrollBox ? scrollBox.scrollTop : 0;
   renderCurrentView(currentView);
-  window.scrollTo(0, savedScroll);
+  if(scrollBox) scrollBox.scrollTop = savedScroll;
 }
 
 function initializeDataStore(){
@@ -4477,10 +4502,18 @@ function closeQuickDrawer(){
    VIEW RENDER DISPATCH
    ============================================================ */
 function renderCurrentView(navId){
+  const isSectionSwitch = navId !== currentView;
   currentView = navId;
   try{ localStorage.setItem('abot2_lastView', navId); }catch(e){}
   setActiveNav(navId);
   cleanupMap();
+  // Jump the scroll box back to the top when landing on a different section
+  // (but not on a same-section background re-render — see scheduleRemoteRefresh,
+  // which saves/restores scrollTop itself for that case).
+  if(isSectionSwitch){
+    const scrollBox = document.getElementById('app-content-area');
+    if(scrollBox) scrollBox.scrollTop = 0;
+  }
   const c = document.getElementById('active-view-container');
   const renderers = {
     'p-dash': viewPatientDash, 'p-sos': viewPatientSOS, 'p-chat': viewPatientChat, 'p-history': viewPatientSymptomHistory, 'p-records': viewPatientRecords,
