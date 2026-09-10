@@ -1325,7 +1325,7 @@ const FIREBASE_CONFIG = {
 // Everyone who opens the app with the same ?room= link shares one live incident feed.
 // Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
 const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
-const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','users_doctor','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills'];
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','users_doctor','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills','aadhaarDirectory','accessGrants'];
 // NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
 // account/family-member is currently logged in on THIS device, refreshed from that
 // account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
@@ -2355,7 +2355,8 @@ function initializeDataStore(){
   if(!db('audit')) dbSet('audit', []);
   // Blank scaffold only — real values are written by loadActiveMemberIntoProfile()
   // the moment an actual patient account signs up or logs in.
-  if(!db('profile')) dbSet('profile', {name:'', gender:'', phone:'', bloodGroup:'', allergies:'', chronic:'', emergencyContact:'', lat:null, lng:null});
+  if(!db('profile')) dbSet('profile', {name:'', gender:'', phone:'', bloodGroup:'', allergies:'', chronic:'', emergencyContact:'', lat:null, lng:null, aadhaarNumber:''});
+  else { const pr = db('profile'); if(pr.aadhaarNumber===undefined){ pr.aadhaarNumber=''; dbSet('profile', pr); } }
   if(!db('appointments')) dbSet('appointments', []);
   if(!db('prescriptions')) dbSet('prescriptions', []);
   if(!db('reminders')) dbSet('reminders', []);
@@ -2379,6 +2380,8 @@ function initializeDataStore(){
   // status and claims never leak into another's — see getInsuranceRecord() below.
   if(!db('insurance')) dbSet('insurance', {});
   if(!db('documents')) dbSet('documents', []);
+  if(!db('aadhaarDirectory')) dbSet('aadhaarDirectory', {});
+  if(!db('accessGrants')) dbSet('accessGrants', []);
   // Per-pharmacy stock: each item tagged with pharmacyId (same pattern as
   // 'doctors' being tagged with a hospital id) so every pharmacy only ever
   // sees and edits its own stock, even though it's one shared collection.
@@ -2997,8 +3000,186 @@ function findPatientMemberById(memberId){
 // record needs an ownerId (a memberId) written on creation and filtered on
 // read. Without this, a brand-new signup (or any other account) would see
 // every other patient's — including a deleted patient's — old records. ----
-function getInsuranceRecord(pid){ const ins=db('insurance')||{}; return ins[pid] || {aadhaar_verified:false}; }
+function getInsuranceRecord(pid){
+  const ins=db('insurance')||{};
+  return ins[pid] || {aadhaar_verified:false, scheme:'', policyNumber:'', insurer:'', tpa:'', sumInsured:'', validTill:'', cghsCategory:'', esicIpNumber:''};
+}
 function setInsuranceVerified(pid, val){ const ins=db('insurance')||{}; ins[pid] = Object.assign({}, ins[pid]||{}, {aadhaar_verified: val}); dbSet('insurance', ins); }
+function setInsuranceFields(pid, patch){ const ins=db('insurance')||{}; ins[pid] = Object.assign({}, ins[pid]||{}, patch); dbSet('insurance', ins); }
+
+/* ============================================================
+   AADHAAR — VALIDATION, PATIENT DIRECTORY & HOSPITAL ACCESS GRANTS
+   ------------------------------------------------------------
+   This is a self-contained SIMULATION of the consent-based record
+   sharing pattern used by real Indian health-data systems (UIDAI
+   eKYC OTP + the ABDM/NDHM "consent manager" model, where a
+   Health Information User — a hospital — never gets a live,
+   standing connection into a patient's private records; they get
+   a time-boxed, OTP-approved copy of exactly what the patient
+   chose to share). No real UIDAI/ABDM API is called anywhere in
+   this file — there is no key or endpoint for one. Three pieces:
+
+   1. isValidAadhaar() — real Verhoeff checksum, the same digit
+      algorithm UIDAI uses, so bad numbers are caught client-side
+      (this validates FORMAT only; it says nothing about whether
+      a number is real or belongs to anyone).
+   2. aadhaarDirectory (shared, keyed by 12-digit number) — a thin
+      identity+consent-snapshot record a patient explicitly
+      publishes from their OWN session (syncMyAadhaarSharing()),
+      never written to by anyone else's account.
+   3. accessGrants (shared, array) — one row per hospital lookup:
+      starts 'otp_pending' with a freshly generated demo OTP,
+      becomes 'active' for a short window once confirmed, and
+      expires/can be revoked. Hospital code only ever reads the
+      directory snapshot + an active grant; it never reaches into
+      documents/insurance/prescriptions under another account's
+      private partition (those stay behind PRIVATE_ACCOUNT_KEYS).
+   ============================================================ */
+const ACCESS_GRANT_OTP_WINDOW_MS = 3*60*1000;   // 3 min to enter the OTP
+const ACCESS_GRANT_ACTIVE_WINDOW_MS = 15*60*1000; // 15 min unlocked once confirmed
+
+function normalizeAadhaar(v){ return (v||'').replace(/\D/g,'').slice(0,12); }
+function formatAadhaar(v){ const n = normalizeAadhaar(v); return n.replace(/(\d{4})(?=\d)/g,'$1 ').trim(); }
+// Verhoeff checksum tables (the exact digit-check algorithm UIDAI uses for Aadhaar).
+const VERHOEFF_D = [
+  [0,1,2,3,4,5,6,7,8,9],[1,2,3,4,0,6,7,8,9,5],[2,3,4,0,1,7,8,9,5,6],[3,4,0,1,2,8,9,5,6,7],
+  [4,0,1,2,3,9,5,6,7,8],[5,9,8,7,6,0,4,3,2,1],[6,5,9,8,7,1,0,4,3,2],[7,6,5,9,8,2,1,0,4,3],
+  [8,7,6,5,9,3,2,1,0,4],[9,8,7,6,5,4,3,2,1,0]
+];
+const VERHOEFF_P = [
+  [0,1,2,3,4,5,6,7,8,9],[1,5,7,6,2,8,3,0,9,4],[5,8,0,3,7,9,6,1,4,2],[8,9,1,6,0,4,3,5,2,7],
+  [9,4,5,3,1,2,6,8,7,0],[4,2,8,6,5,7,3,9,0,1],[2,7,9,3,8,0,6,4,1,5],[7,0,4,6,9,1,3,2,5,8]
+];
+function isValidAadhaar(raw){
+  const n = normalizeAadhaar(raw);
+  if(n.length!==12) return false;
+  if(/^0|^1/.test(n)) return false; // UIDAI never issues numbers starting with 0 or 1
+  let c = 0;
+  const digits = n.split('').map(Number).reverse();
+  digits.forEach((d,i)=>{ c = VERHOEFF_D[c][VERHOEFF_P[i%8][d]]; });
+  return c===0;
+}
+function maskAadhaar(n){ const v=normalizeAadhaar(n); return v.length===12 ? `XXXX XXXX ${v.slice(8)}` : ''; }
+
+function aadhaarDirectory(){ return db('aadhaarDirectory') || {}; }
+// Called ONLY from the patient's own session — builds and publishes the
+// exact snapshot a hospital would be allowed to see once a grant is active.
+// Re-running this (e.g. after uploading a new document) refreshes what's shared.
+function syncMyAadhaarSharing(){
+  const p = db('profile')||{};
+  const pid = currentPatientId();
+  const aadhaar = normalizeAadhaar(p.aadhaarNumber);
+  if(!isValidAadhaar(aadhaar)){ showToast('Invalid Aadhaar', 'Enter a valid 12-digit Aadhaar number first.', 'danger'); return; }
+  const myDocs = (db('documents')||[]).filter(d=>d.ownerId===pid);
+  // Keep the shared snapshot light: full file bytes only for reasonably small
+  // files, so this never risks the same 1MB-per-doc sync ceiling flagged
+  // elsewhere in this file. Larger files still show as an entry (name/type/
+  // size/date) — the hospital sees that it exists and can ask the patient to
+  // share it directly, exactly as a real HIU would fall back to a fetch link
+  // instead of an inline payload.
+  const docSnapshot = myDocs.map(d=>({
+    id:d.id, name:d.name, category:d.category, sizeKB:d.sizeKB, uploadedAt:d.uploadedAt,
+    dataUrl: d.sizeKB<=180 ? d.dataUrl : null
+  }));
+  const rxSnapshot = (db('prescriptions')||[]).filter(r=>r.ownerId===pid).slice(0,25)
+    .map(r=>({id:r.id, doctor:r.doctor, hospital:r.hospital, medicines:r.medicines, date:r.date}));
+  const dir = aadhaarDirectory();
+  dir[aadhaar] = {
+    aadhaar, ownerAuthUid: currentAuthUid(), patientId: pid,
+    name:p.name||'', gender:p.gender||'', bloodGroup:p.bloodGroup||'', allergies:p.allergies||'',
+    chronic:p.chronic||'', emergencyContact:p.emergencyContact||'', phone:(currentUserRecord()||{}).phone||p.phone||'',
+    insurance: getInsuranceRecord(pid),
+    documents: docSnapshot,
+    prescriptions: rxSnapshot,
+    sharingEnabled: true,
+    lastSyncedAt: now()
+  };
+  dbSet('aadhaarDirectory', dir);
+  p.aadhaarNumber = aadhaar;
+  dbSet('profile', p);
+  showToast('Shared for hospital lookup', 'Hospitals can now pull this snapshot after you approve their OTP request.', 'success');
+}
+function stopMyAadhaarSharing(){
+  const p = db('profile')||{};
+  const aadhaar = normalizeAadhaar(p.aadhaarNumber);
+  const dir = aadhaarDirectory();
+  if(dir[aadhaar]){ dir[aadhaar].sharingEnabled = false; dbSet('aadhaarDirectory', dir); }
+  showToast('Sharing turned off', 'Hospitals can no longer look up your records by Aadhaar.', 'info');
+  renderCurrentView(currentView);
+}
+
+// ---- Hospital-side access grants ----
+function accessGrants(){ return db('accessGrants') || []; }
+function activeGrantFor(aadhaar, hospitalId){
+  const n = normalizeAadhaar(aadhaar);
+  return accessGrants().find(g=>g.aadhaar===n && g.hospitalId===hospitalId && g.status==='active' && g.expiresAt>now());
+}
+function pendingGrantFor(aadhaar, hospitalId){
+  const n = normalizeAadhaar(aadhaar);
+  return accessGrants().find(g=>g.aadhaar===n && g.hospitalId===hospitalId && g.status==='otp_pending' && g.expiresAt>now());
+}
+// Hospital enters an Aadhaar number and requests a lookup. This never returns
+// record data directly — it only starts a consent request (a fresh demo OTP)
+// that must be confirmed before anything unlocks.
+function hospitalRequestAccess(){
+  const raw = document.getElementById('aadhaar-input-field').value;
+  const aadhaar = normalizeAadhaar(raw);
+  const hospId = CURRENT_HOSPITAL_ID;
+  if(!isValidAadhaar(aadhaar)){ showToast('Invalid Aadhaar', 'That number fails the checksum — double-check the 12 digits.', 'danger'); return; }
+  const entry = aadhaarDirectory()[aadhaar];
+  if(!entry || !entry.sharingEnabled){ showToast('Not found', 'No patient has linked and shared this Aadhaar number for hospital lookup.', 'danger'); return; }
+  const existingActive = activeGrantFor(aadhaar, hospId);
+  if(existingActive){ renderCurrentView('h-verify'); return; }
+  const grants = accessGrants();
+  // Drop any of this hospital's own stale pending/expired requests for the same number first.
+  const filtered = grants.filter(g=>!(g.aadhaar===aadhaar && g.hospitalId===hospId && g.status!=='active'));
+  const hosp = db('hospitals').find(h=>h.id===hospId);
+  const otp = String(Math.floor(100000+Math.random()*900000));
+  const grant = {
+    id: uid('GRANT'), aadhaar, ownerAuthUid: entry.ownerAuthUid, patientId: entry.patientId, patientName: entry.name,
+    hospitalId: hospId, hospitalName: (hosp && hosp.name) || 'This hospital',
+    otp, status:'otp_pending', requestedAt: now(), expiresAt: now()+ACCESS_GRANT_OTP_WINDOW_MS
+  };
+  filtered.push(grant);
+  dbSet('accessGrants', filtered);
+  audit('hospital:'+hospId, 'aadhaar_lookup_requested', `Requested access to ${entry.name||'patient'} (Aadhaar ****${aadhaar.slice(8)})`);
+  pushNotification('patient:'+entry.patientId, 'Hospital record request', `${grant.hospitalName} requested access to your records via Aadhaar lookup. Share the OTP only if you're at their desk.`, 'warning', null);
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3>Confirm with patient OTP</h3>
+    <p class="modal-sub">Ask the patient for the OTP just sent to their registered mobile, then enter it below. This grant unlocks their shared records for ${Math.round(ACCESS_GRANT_ACTIVE_WINDOW_MS/60000)} minutes.</p>
+    <div style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:10px 14px;font-size:.78rem;color:#92400e;margin-bottom:14px;">
+      <strong>[DEMO ONLY]</strong> No SMS gateway is wired up in this build, so the OTP is shown here instead of being sent by SMS: <span style="font-family:var(--ff-mono);font-weight:700;">${otp}</span>. A real deployment sends this only to the patient's UIDAI-linked mobile via the ABDM consent flow.
+    </div>
+    <div class="otp-boxes" style="justify-content:center;">
+      <input maxlength="6" style="width:100%;max-width:220px;height:52px;font-size:1.2rem;letter-spacing:.3em;text-align:center;border-radius:10px;border:1px solid var(--border-color);" id="access-otp-input" placeholder="••••••">
+    </div>
+    <button class="btn" style="width:100%;margin-top:10px;" onclick="hospitalConfirmAccessOtp('${grant.id}')"><i class="fa-solid fa-unlock"></i> Confirm &amp; unlock records</button>
+  `);
+}
+function hospitalConfirmAccessOtp(grantId){
+  const grants = accessGrants();
+  const g = grants.find(x=>x.id===grantId);
+  const entered = normalizeAadhaar(document.getElementById('access-otp-input').value);
+  if(!g || g.status!=='otp_pending' || g.expiresAt<now()){ showToast('Expired', 'That request expired — start the lookup again.', 'danger'); closeModal(); renderCurrentView('h-verify'); return; }
+  if(entered !== g.otp){ showToast('Incorrect OTP', 'That code doesn\'t match — ask the patient to re-check.', 'danger'); return; }
+  g.status='active'; g.grantedAt=now(); g.expiresAt=now()+ACCESS_GRANT_ACTIVE_WINDOW_MS;
+  dbSet('accessGrants', grants);
+  audit('hospital:'+g.hospitalId, 'aadhaar_lookup_granted', `Unlocked records for ${g.patientName||'patient'} (Aadhaar ****${g.aadhaar.slice(8)}), expires in ${Math.round(ACCESS_GRANT_ACTIVE_WINDOW_MS/60000)} min`);
+  pushNotification('patient:'+g.patientId, 'Records accessed', `${g.hospitalName} viewed your shared records after OTP confirmation.`, 'info', null);
+  closeModal();
+  showToast('Access granted', 'Patient records unlocked for this desk session.', 'success');
+  renderCurrentView('h-verify');
+}
+function hospitalRevokeAccess(grantId){
+  const grants = accessGrants();
+  const g = grants.find(x=>x.id===grantId);
+  if(!g) return;
+  g.status='revoked'; g.expiresAt=now();
+  dbSet('accessGrants', grants);
+  audit('hospital:'+g.hospitalId, 'aadhaar_lookup_ended', `Closed access session for ${g.patientName||'patient'}`);
+  renderCurrentView('h-verify');
+}
 function saveUser(u){ const list=usersDb(); const i=list.findIndex(x=>x.email===u.email); if(i>-1) list[i]=u; else list.push(u); dbSet('users', list); }
 function isGmail(email){ return /^[^\s@]+@gmail\.com$/i.test((email||'').trim()); }
 
@@ -6771,20 +6952,61 @@ function hospitalCancelAppt(id){
   renderCurrentView('h-tele');
 }
 function viewHospitalVerify(){
-  // '_walkin' — this desk screen has no selected-patient context of its own
-  // (it's a walk-up OTP simulation), so it intentionally uses its own bucket
-  // rather than any real patient's record, and its claims table shows all
-  // claims across patients (a hospital front-desk view, not a private one).
-  const ins = getInsuranceRecord('_walkin');
-  return `${viewHeader('Aadhaar &amp; Scheme Verification','Government ID + insurance pre-authorization','Real deployments call the UIDAI sandbox OTP API; this view simulates the same UX.')}
+  return `${viewHeader('Aadhaar Patient Lookup &amp; Scheme Verification','Government ID + insurance pre-authorization','No real UIDAI/ABDM API is wired up in this build — this simulates the same consent-based OTP flow real deployments use, so no record ever unlocks without the patient approving an OTP for this visit.')}
   <div class="card">
-    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
-    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Verified</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="hospitalResetVerification()">Reset</button>` : `<button class="btn" onclick="hospitalVerifyAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+    <div class="form-group"><label>Patient's Aadhaar number</label><input class="form-control" id="aadhaar-input-field" maxlength="14" placeholder="XXXX XXXX XXXX" oninput="this.value=formatAadhaar(this.value);"></div>
+    <button class="btn" onclick="hospitalRequestAccess()"><i class="fa-solid fa-id-card"></i> Look up &amp; request access</button>
+    <p style="color:var(--text-muted);font-size:.78rem;margin:10px 0 0;">The patient must have linked and shared this Aadhaar number from their own account first, and must approve the OTP this generates. Every lookup and every unlock is written to your Audit Trail.</p>
   </div>
-  <div class="card"><h3 style="margin-top:0;">Insurance claims</h3>${renderClaimsTable()}</div>`;
+  ${viewHospitalActiveGrants()}
+  <div class="card"><h3 style="margin-top:0;">Insurance claims (all patients)</h3>${renderClaimsTable()}</div>`;
 }
-function hospitalVerifyAadhaar(){ setInsuranceVerified('_walkin', true); audit('hospital:'+CURRENT_HOSPITAL_ID,'aadhaar_verify','OTP confirmed'); renderCurrentView('h-verify'); showToast('Verified','Government scheme data unlocked.','success'); }
-function hospitalResetVerification(){ setInsuranceVerified('_walkin', false); renderCurrentView('h-verify'); }
+// Every grant this hospital currently holds (active or recently expired),
+// each rendered as its own unlocked-record panel with its own countdown —
+// a front desk can be mid-lookup on more than one patient at once.
+function viewHospitalActiveGrants(){
+  const mine = accessGrants().filter(g=>g.hospitalId===CURRENT_HOSPITAL_ID && g.status==='active' && g.expiresAt>now());
+  if(!mine.length) return '';
+  return mine.map(g=>hospitalUnlockedRecordCard(g)).join('');
+}
+function hospitalUnlockedRecordCard(g){
+  const entry = (aadhaarDirectory()[g.aadhaar])||{};
+  const minsLeft = Math.max(0, Math.round((g.expiresAt-now())/60000));
+  const ins = entry.insurance || {};
+  return `<div class="card" style="border:1px solid var(--brand-primary);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 style="margin:0 0 4px;"><i class="fa-solid fa-user-shield" style="color:var(--brand-primary);"></i> ${entry.name||'Patient'}</h3>
+        <div style="color:var(--text-muted);font-size:.8rem;">Aadhaar ${maskAadhaar(g.aadhaar)} · ${entry.gender||'—'} · Blood group ${entry.bloodGroup||'—'}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="status-tag status-ok"><i class="fa-solid fa-lock-open"></i> Unlocked ${minsLeft} min</span><br>
+        <button class="btn btn-secondary btn-sm" style="margin-top:6px;" onclick="hospitalRevokeAccess('${g.id}')"><i class="fa-solid fa-lock"></i> Close session</button>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:14px;">
+      <div><strong>Known allergies</strong><div style="color:var(--text-muted);font-size:.85rem;">${entry.allergies||'None recorded'}</div></div>
+      <div><strong>Chronic conditions</strong><div style="color:var(--text-muted);font-size:.85rem;">${entry.chronic||'None recorded'}</div></div>
+      <div><strong>Phone</strong><div style="color:var(--text-muted);font-size:.85rem;">${entry.phone||'—'}</div></div>
+      <div><strong>Emergency contact</strong><div style="color:var(--text-muted);font-size:.85rem;">${entry.emergencyContact||'—'}</div></div>
+    </div>
+    <h4 style="margin:16px 0 6px;">Scheme &amp; insurance</h4>
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> ${schemeLabel(ins.scheme)} verified</span>` : `<span class="status-tag status-warn">Not yet verified with a scheme</span>`}
+    ${ins.scheme==='pmjay' ? `<p style="color:var(--text-muted);font-size:.82rem;">PM-JAY: cashless cover up to ₹5,00,000/year for the household at empaneled hospitals.</p>` : ''}
+    ${ins.scheme==='private' && ins.insurer ? `<p style="color:var(--text-muted);font-size:.82rem;">${ins.insurer}${ins.tpa?' via '+ins.tpa:''}${ins.sumInsured?' · Sum insured ₹'+(+ins.sumInsured).toLocaleString('en-IN'):''}${ins.validTill?' · Valid till '+ins.validTill:''}</p>` : ''}
+    <h4 style="margin:16px 0 6px;">Shared documents (${(entry.documents||[]).length})</h4>
+    ${(entry.documents||[]).length ? `<div class="doc-list">${entry.documents.map(d=>`
+      <div class="doc-row">
+        <div class="doc-row-icon"><i class="fa-solid ${DOC_CATEGORIES[d.category]?.icon||'fa-file'}"></i></div>
+        <div><div class="doc-row-name">${d.name}</div><div class="doc-row-meta">${DOC_CATEGORIES[d.category]?.label||'Other'} · ${d.sizeKB} KB · ${fmtTime(d.uploadedAt)}</div></div>
+        <div class="doc-row-actions">${d.dataUrl ? `<a class="btn btn-secondary btn-sm" href="${d.dataUrl}" download="${d.name}"><i class="fa-solid fa-download"></i></a>` : `<span class="status-tag status-muted" title="File too large to inline in this demo's shared snapshot">Ask patient to share file</span>`}</div>
+      </div>`).join('')}</div>` : `<p style="color:var(--text-muted);margin:0;">No documents shared.</p>`}
+    <h4 style="margin:16px 0 6px;">Recent prescriptions (${(entry.prescriptions||[]).length})</h4>
+    ${(entry.prescriptions||[]).length ? `<table class="data-table"><thead><tr><th>Date</th><th>Doctor</th><th>Hospital</th><th>Medicines</th></tr></thead><tbody>
+      ${entry.prescriptions.map(r=>`<tr><td>${r.date}</td><td>${r.doctor}</td><td>${r.hospital||'—'}</td><td>${r.medicines}</td></tr>`).join('')}
+    </tbody></table>` : `<p style="color:var(--text-muted);margin:0;">No prescriptions shared.</p>`}
+  </div>`;
+}
 function viewHospitalAudit(){
   // Scoped to this hospital's own actions only — this used to render the
   // entire global `audit` array unfiltered, meaning any hospital could see
@@ -8110,6 +8332,7 @@ function viewPatientRecords(){
     </div>
     <button class="btn" onclick="saveProfile()"><i class="fa-solid fa-floppy-disk"></i> Save profile</button>
   </div>
+  ${viewAadhaarLinkCard()}
   <div class="card">
     <h3 style="margin-top:0;">Upload a lab report or prescription</h3>
     <p style="color:var(--text-muted);font-size:.85rem;">Extracted live by Google Gemini's document vision, via your Cloudflare Worker backend — never processed on-device or with a key stored in this file. AI-extracted, unverified — always confirm with your doctor.</p>
@@ -8131,6 +8354,41 @@ function saveProfile(){
   persistActiveProfileBackToMember(); // writes into this account's own member record, not a shared room doc
   buildSideNav('patient'); // Women's Health visibility depends on gender
   showToast('Saved','Your emergency profile is up to date.','success');
+}
+// Aadhaar identity card shown on the patient's own Medical Records page —
+// separate card from the profile form above because linking/sharing an
+// Aadhaar number is a deliberate, explicit action, not bundled into a
+// routine profile edit.
+function viewAadhaarLinkCard(){
+  const p = db('profile')||{};
+  const aadhaar = normalizeAadhaar(p.aadhaarNumber);
+  const valid = aadhaar.length===12 && isValidAadhaar(aadhaar);
+  const dirEntry = aadhaar ? aadhaarDirectory()[aadhaar] : null;
+  const sharing = !!(dirEntry && dirEntry.sharingEnabled);
+  return `<div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-id-card" style="color:var(--brand-primary);"></i> Aadhaar linking &amp; hospital lookup</h3>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-top:0;">Link your Aadhaar so a hospital desk can pull up your records instantly during check-in — but only after you approve an OTP sent for that specific visit. Nothing is shared until you enable sharing below.</p>
+    <div class="form-group"><label>Aadhaar number</label><input class="form-control" id="rec-aadhaar" maxlength="14" value="${formatAadhaar(aadhaar)}" placeholder="XXXX XXXX XXXX" oninput="this.value=formatAadhaar(this.value);"></div>
+    ${aadhaar.length===12 && !valid ? `<p class="field-err" style="margin:-4px 0 10px;color:var(--brand-danger);">That number doesn't pass the Aadhaar checksum — please re-check the digits.</p>` : ''}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-sm" onclick="saveAadhaarNumber()"><i class="fa-solid fa-floppy-disk"></i> Save number</button>
+      ${valid ? (sharing
+        ? `<span class="status-tag status-ok"><i class="fa-solid fa-share-nodes"></i> Shared for hospital lookup</span><button class="btn btn-secondary btn-sm" onclick="syncMyAadhaarSharing()"><i class="fa-solid fa-rotate"></i> Refresh shared copy</button><button class="btn btn-secondary btn-sm" onclick="stopMyAadhaarSharing()"><i class="fa-solid fa-ban"></i> Stop sharing</button>`
+        : `<button class="btn btn-sm" onclick="syncMyAadhaarSharing()"><i class="fa-solid fa-share-nodes"></i> Enable hospital lookup</button>`) : ''}
+    </div>
+    ${sharing ? `<p style="color:var(--text-muted);font-size:.78rem;margin:10px 0 0;">Last synced ${fmtTime(dirEntry.lastSyncedAt)} · ${dirEntry.documents.length} document(s) included. Any hospital lookup still requires you to hand over a fresh OTP at the desk — see Audit-style notifications in your inbox for every access.</p>` : ''}
+  </div>`;
+}
+function saveAadhaarNumber(){
+  const p = db('profile')||{};
+  const raw = document.getElementById('rec-aadhaar').value;
+  const n = normalizeAadhaar(raw);
+  if(n.length!==12 || !isValidAadhaar(n)){ showToast('Invalid Aadhaar', 'Enter a valid 12-digit Aadhaar number.', 'danger'); return; }
+  p.aadhaarNumber = n;
+  dbSet('profile', p);
+  persistActiveProfileBackToMember();
+  showToast('Saved', 'Aadhaar number linked to this profile.', 'success');
+  renderCurrentView('p-records');
 }
 function ocrStatusMeta(status){
   return { low:{label:'Low', cls:'status-warn'}, high:{label:'High', cls:'status-danger'}, normal:{label:'Normal', cls:'status-ok'} }[status] || {label:'Unclear', cls:'status-muted'};
@@ -8584,36 +8842,137 @@ function sendSpecificPrescriptionToPharmacy(rxId, pharmacyId){
   if(currentView==='p-rx') renderCurrentView('p-rx');
 }
 // Shared reminders widget — used on both the Pharmacy page and the Medication & Dosage page,
-// since they read/write the same 'reminders' record keyed by ownerId.
+// since they read/write the same 'reminders' record keyed by ownerId. Beyond the original
+// on/off toggle, each reminder now tracks a daily taken/missed log (adherence %, streak) and
+// an optional days-of-supply countdown so refills don't get missed.
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function adherenceStats(r){
+  const log = r.log || {};
+  const days = Object.keys(log);
+  const taken = days.filter(d=>log[d]==='taken').length;
+  const pct = days.length ? Math.round((taken/days.length)*100) : null;
+  // Current streak of consecutive 'taken' days ending today/yesterday.
+  let streak = 0;
+  for(let i=0;i<60;i++){
+    const d = new Date(Date.now()-i*86400000).toISOString().slice(0,10);
+    if(log[d]==='taken') streak++;
+    else if(log[d]==='missed') break;
+    else if(i>0) break; // no entry for a past day breaks the streak; today with no entry yet doesn't
+  }
+  return {taken, total:days.length, pct, streak};
+}
+function refillStatus(r){
+  if(!r.daysSupply) return null;
+  const takenCount = Object.values(r.log||{}).filter(v=>v==='taken').length;
+  const remaining = Math.max(0, r.daysSupply - takenCount);
+  return {remaining, low: remaining<=3};
+}
 function remindersCardHTML(){
   const reminders = (db('reminders')||[]).filter(r=>r.ownerId===currentPatientId());
+  const today = todayKey();
   return `
   <div class="card">
     <h3 style="margin-top:0;"><i class="fa-solid fa-bell" style="color:var(--brand-primary);"></i> Medicine reminder / scheduler</h3>
     <div class="grid-2">
       <div class="form-group"><label>Medicine</label><input class="form-control" id="rem-med" placeholder="e.g. Metformin 500mg"></div>
       <div class="form-group"><label>Time</label><input type="time" class="form-control" id="rem-time"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Days of supply on hand (optional)</label><input type="number" min="1" class="form-control" id="rem-days" placeholder="e.g. 30 — so we can warn you before you run out"></div>
     </div>
     <button class="btn" onclick="addReminder()"><i class="fa-solid fa-plus"></i> Add reminder</button>
   </div>
+  ${medsSafetyCheckHTML(reminders)}
   <div class="card">
-    ${reminders.length ? reminders.map(r=>`<div class="reminder-row"><div><strong>${r.med}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${r.time} daily</span></div><div class="toggle-sw ${r.on?'on':''}" onclick="toggleReminder('${r.id}')"></div></div>`).join('') : `<p style="color:var(--text-muted);margin:0;">No reminders yet.</p>`}
+    ${reminders.length ? reminders.map(r=>{
+      const adh = adherenceStats(r);
+      const refill = refillStatus(r);
+      const todayStatus = (r.log||{})[today];
+      return `<div class="reminder-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div><strong>${r.med}</strong><br><span style="color:var(--text-muted);font-size:.82rem;">${r.time} daily${adh.total ? ' · '+adh.pct+'% adherence (last '+adh.total+' logged day'+(adh.total===1?'':'s')+')' : ''}${adh.streak>1?' · 🔥 '+adh.streak+'-day streak':''}</span></div>
+          <div class="toggle-sw ${r.on?'on':''}" onclick="toggleReminder('${r.id}')"></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-sm ${todayStatus==='taken'?'':'btn-secondary'}" onclick="logDose('${r.id}','taken')"><i class="fa-solid fa-check"></i> Taken today</button>
+          <button class="btn btn-sm ${todayStatus==='missed'?'btn-danger':'btn-secondary'}" onclick="logDose('${r.id}','missed')"><i class="fa-solid fa-xmark"></i> Missed today</button>
+          <button class="btn btn-sm btn-secondary" onclick="deleteReminder('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+          ${refill ? `<span class="status-tag ${refill.low?'status-danger':'status-ok'}" style="margin-left:auto;">${refill.remaining>0 ? refill.remaining+' day(s) left'+(refill.low?' — refill soon':'') : 'Out of supply — refill needed'}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('') : `<p style="color:var(--text-muted);margin:0;">No reminders yet.</p>`}
   </div>`;
 }
 function addReminder(){
   const med = document.getElementById('rem-med').value.trim();
   const time = document.getElementById('rem-time').value;
+  const daysSupply = parseInt(document.getElementById('rem-days').value, 10) || null;
   if(!med || !time){ showToast('Missing info','Enter both medicine and time.','danger'); return; }
-  const r = db('reminders'); r.push({id:uid('REM'), ownerId: currentPatientId(), med, time, on:true}); dbSet('reminders', r);
+  const r = db('reminders'); r.push({id:uid('REM'), ownerId: currentPatientId(), med, time, on:true, daysSupply, log:{}, createdAt: now()}); dbSet('reminders', r);
   renderCurrentView(currentView);
 }
 function toggleReminder(id){ const r=db('reminders'); const item=r.find(x=>x.id===id && x.ownerId===currentPatientId()); if(!item) return; item.on=!item.on; dbSet('reminders',r); renderCurrentView(currentView); }
+function deleteReminder(id){ const r=db('reminders').filter(x=>!(x.id===id && x.ownerId===currentPatientId())); dbSet('reminders', r); renderCurrentView(currentView); }
+function logDose(id, status){
+  const r = db('reminders'); const item = r.find(x=>x.id===id && x.ownerId===currentPatientId()); if(!item) return;
+  if(!item.log) item.log = {};
+  const key = todayKey();
+  item.log[key] = (item.log[key]===status) ? undefined : status; // tap again to undo
+  if(item.log[key]===undefined) delete item.log[key];
+  dbSet('reminders', r);
+  const refill = refillStatus(item);
+  if(refill && refill.remaining===0) showToast('Out of supply', item.med+' — you\'ve logged more doses than the supply you noted. Time to refill.', 'danger');
+  else if(refill && refill.low) showToast('Refill soon', item.med+' has about '+refill.remaining+' day(s) of supply left.', 'warning');
+  renderCurrentView(currentView);
+}
+// ---- Basic safety cross-checks across a patient's own active reminders:
+// same-ingredient duplication (common OTC brand overlap) + a short list of
+// well-known OTC interaction pairs + a match against the patient's own
+// recorded allergies. Pattern-matching on free-text medicine names only —
+// not a clinical decision tool, and deliberately says so.
+const DUPLICATE_INGREDIENT_GROUPS = [
+  {label:'Paracetamol / Acetaminophen', keywords:['paracetamol','acetaminophen','crocin','dolo','calpol']},
+  {label:'Ibuprofen', keywords:['ibuprofen','brufen','combiflam']},
+  {label:'Cetirizine (antihistamine)', keywords:['cetirizine','zyrtec']},
+  {label:'Diclofenac', keywords:['diclofenac','voveran']},
+];
+const OTC_INTERACTION_PAIRS = [
+  {a:['ibuprofen','diclofenac','brufen','naproxen'], b:['aspirin'], msg:'Combining an NSAID (ibuprofen/diclofenac) with aspirin raises the risk of stomach bleeding.'},
+  {a:['ibuprofen','diclofenac','naproxen'], b:['warfarin','acitrom'], msg:'NSAIDs can increase bleeding risk when combined with blood thinners — confirm with your doctor.'},
+  {a:['paracetamol','acetaminophen'], b:['warfarin','acitrom'], msg:'Regular paracetamol use can affect warfarin/blood-thinner levels — mention this to your doctor.'},
+  {a:['cetirizine','levocetirizine'], b:['alcohol'], msg:'Antihistamines can add to drowsiness from alcohol.'},
+];
+function medsSafetyCheckHTML(reminders){
+  const active = reminders.filter(r=>r.on);
+  const names = active.map(r=>({id:r.id, med:r.med, low:r.med.toLowerCase()}));
+  const warnings = [];
+  DUPLICATE_INGREDIENT_GROUPS.forEach(g=>{
+    const hits = names.filter(n=>g.keywords.some(k=>n.low.includes(k)));
+    if(hits.length>1) warnings.push({level:'danger', text:`${hits.length} active reminders (${hits.map(h=>h.med).join(', ')}) all look like they contain <strong>${g.label}</strong> — check you're not double-dosing the same ingredient.`});
+  });
+  OTC_INTERACTION_PAIRS.forEach(p=>{
+    const hitA = names.find(n=>p.a.some(k=>n.low.includes(k)));
+    const hitB = names.find(n=>p.b.some(k=>n.low.includes(k)));
+    if(hitA && hitB) warnings.push({level:'warn', text:`<strong>${hitA.med}</strong> + <strong>${hitB.med}</strong>: ${p.msg}`});
+  });
+  const allergiesRaw = ((db('profile')||{}).allergies||'').toLowerCase();
+  const allergyList = allergiesRaw.split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  names.forEach(n=>{
+    const hitAllergy = allergyList.find(a=>a.length>2 && n.low.includes(a));
+    if(hitAllergy) warnings.push({level:'danger', text:`<strong>${n.med}</strong> may match your recorded allergy to <strong>${hitAllergy}</strong> — confirm with a pharmacist before taking it.`});
+  });
+  if(!warnings.length) return '';
+  return `<div class="card safety-banner" style="border-color:var(--brand-danger);">
+    <strong><i class="fa-solid fa-triangle-exclamation"></i> Safety check on your active reminders</strong>
+    <ul>${warnings.map(w=>`<li style="${w.level==='danger'?'color:var(--brand-danger);font-weight:600;':''}">${w.text}</li>`).join('')}</ul>
+    <p style="color:var(--text-muted);font-size:.76rem;margin:8px 0 0;">Automated keyword matching on what you typed in — not a clinical review. Always confirm with a pharmacist or doctor.</p>
+  </div>`;
+}
 
 /* ============================================================
    PATIENT — MEDICATION & DOSAGE
    Weight-based OTC dosage guidance for common children's
-   medicines (paracetamol / ibuprofen), plus the shared medicine
-   reminder & scheduler widget. Estimates only — always confirm
+   medicines (paracetamol / ibuprofen), a flat-dose adult OTC
+   reference table, adherence-tracked medicine reminders, and the
+   safety cross-checks above. Estimates only — always confirm
    the dose with a pharmacist or doctor before giving anything.
    ============================================================ */
 function medsRoot(){ const m = db('medsTools'); if(m){ if(!m.entries) m.entries={}; return m; } const fresh={entries:{}}; dbSet('medsTools', fresh); return fresh; }
@@ -8645,20 +9004,31 @@ const CHILD_MED_CONFIG = {
     ageWarning: "Under 3 months old, or under 5kg: don't give without a doctor's instruction."
   }
 };
+// Flat-dose reference for common adult OTC medicines — intentionally a static
+// reference table, not an interactive "calculator", since adult OTC dosing on
+// real product labels is a fixed range rather than weight-scaled like the
+// children's syrups above.
+const ADULT_MED_REFERENCE = [
+  {name:'Paracetamol (500–650mg tablet)', dose:'1 tablet (500–650mg) every 4–6 hours', maxDay:'Max 3,000–4,000mg (6–8 tablets) in 24 hours', notes:'Reduce max dose if you have liver disease or drink alcohol regularly. Check other cold/flu products for hidden paracetamol before adding more.'},
+  {name:'Ibuprofen (200–400mg tablet)', dose:'1 tablet (200–400mg) every 6–8 hours, with food', maxDay:'Max 1,200mg (OTC ceiling) in 24 hours', notes:'Avoid if you have a peptic ulcer, kidney disease, or are in the third trimester of pregnancy. Take with food to reduce stomach irritation.'},
+  {name:'Cetirizine (10mg tablet)', dose:'1 tablet (10mg) once daily', maxDay:'Max 10mg/24 hours', notes:'Can cause drowsiness in some people — avoid driving until you know how it affects you. Halve the dose if you have reduced kidney function (ask a pharmacist).'},
+  {name:'ORS (Oral Rehydration Salts)', dose:'1 sachet dissolved in 1 litre of clean water, sipped through the day', maxDay:'Replace as needed to match fluid lost — no fixed daily ceiling', notes:'Make a fresh solution every 24 hours and discard the rest. Seek care urgently for a baby, an elderly person, or anyone who cannot keep fluids down.'},
+  {name:'Antacid (e.g. Omeprazole 20mg OTC pack)', dose:'1 capsule (20mg) once daily before breakfast, for up to 14 days', maxDay:'Max 20mg/24 hours (OTC pack)', notes:'If heartburn continues beyond 14 days, or returns often, see a doctor rather than repeating the course indefinitely.'},
+];
 
 function viewPatientMeds(){
   const e = medsEntry();
   const med = CHILD_MED_CONFIG[e.childMed];
   return `
-  ${viewHeader('Patient Console','Medication &amp; Dosage','Weight-based dosage guidance for common over-the-counter children\'s medicines, plus your medicine reminders. Estimates only — always confirm with a pharmacist or doctor before giving any medicine.')}
+  ${viewHeader('Patient Console','Medication &amp; Dosage','Dosage reference for common over-the-counter medicines, adherence-tracked reminders, and basic safety cross-checks. Estimates only — always confirm with a pharmacist or doctor before taking or giving any medicine.')}
 
   <div class="card safety-banner">
-    <strong><i class="fa-solid fa-triangle-exclamation"></i> Before you give any medicine</strong>
+    <strong><i class="fa-solid fa-triangle-exclamation"></i> Before you take or give any medicine</strong>
     <ul>
-      <li>This calculator gives a general estimate only — it's not a prescription and doesn't replace advice from a doctor or pharmacist.</li>
-      <li>Always use the measuring syringe/cup that came with the product, not a kitchen spoon.</li>
-      <li>Check that no other medicine your child is taking already contains the same ingredient (many cold &amp; fever syrups already contain paracetamol) — combining can cause an overdose.</li>
-      <li>If your child is very young, has a chronic condition, or you're at all unsure, speak to a doctor or pharmacist first.</li>
+      <li>Everything on this page is a general estimate — it's not a prescription and doesn't replace advice from a doctor or pharmacist.</li>
+      <li>Always use the measuring syringe/cup that came with a syrup, not a kitchen spoon.</li>
+      <li>Check that no other medicine already contains the same ingredient (many cold &amp; fever products already contain paracetamol) — combining can cause an overdose.</li>
+      <li>If you're pregnant, have a chronic condition, are very young/elderly, or are at all unsure, speak to a doctor or pharmacist first.</li>
       <li>If you suspect an overdose or an allergic reaction (rash, swelling, difficulty breathing), get emergency help immediately or call 112.</li>
     </ul>
   </div>
@@ -8689,6 +9059,19 @@ function viewPatientMeds(){
     </div>
     <div id="child-dose-result"></div>
     ${calcInfo('How this dosage estimate works', `Doses for children are calculated per <b>kilogram of body weight</b> rather than a flat adult dose, since a child's ability to process medicine scales with their size. This tool applies standard mg/kg ranges for the medicine and formulation you pick, then converts that into a millilitre volume for the syrup strength selected. Always double-check against the product's own leaflet, since brands can vary.`)}
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;"><i class="fa-solid fa-user" style="color:var(--brand-primary);"></i> Adult OTC dosage reference</h3>
+    <div class="card-flush" style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Medicine</th><th>Typical adult dose</th><th>Daily maximum</th><th>Notes</th></tr></thead>
+        <tbody>
+          ${ADULT_MED_REFERENCE.map(m=>`<tr><td><strong>${m.name}</strong></td><td>${m.dose}</td><td>${m.maxDay}</td><td style="color:var(--text-muted);font-size:.82rem;">${m.notes}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--text-muted);font-size:.76rem;margin:10px 0 0;">Fixed OTC reference ranges for a typical healthy adult — not adjusted for weight, kidney/liver function, pregnancy, or other medicines you're on. Prescription-only medicines (antibiotics, controlled substances, etc.) aren't listed here on purpose — those doses must come from your prescribing doctor.</p>
   </div>
 
   ${remindersCardHTML()}
@@ -9739,45 +10122,130 @@ function renderCycAwareness(){
 /* ============================================================
    PATIENT — INSURANCE / GOVT SCHEMES
    ============================================================ */
+const SCHEME_CONFIG = {
+  pmjay:   {label:'PM-JAY (Ayushman Bharat)', desc:'Cashless hospitalisation cover up to ₹5,00,000/year per household at empaneled public and private hospitals, for families identified via the SECC database or state extension schemes.', needsPolicyFields:false},
+  cghs:    {label:'CGHS (Central Govt. Health Scheme)', desc:'For serving/retired central government employees and pensioners. Cashless OPD and IPD treatment at CGHS wellness centres and empaneled hospitals, against your CGHS card.', needsPolicyFields:false, extraField:{key:'cghsCategory', label:'CGHS card / beneficiary ID', placeholder:'e.g. CGHS-DL-0123456'}},
+  esic:    {label:'ESIC (Employees\' State Insurance)', desc:'For organised-sector employees earning within the ESI wage ceiling and their dependents. Covers medical care, cash benefits during sickness, and maternity benefit.', needsPolicyFields:false, extraField:{key:'esicIpNumber', label:'Insured Person (IP) number', placeholder:'e.g. 1234567890'}},
+  state:   {label:'State Government Scheme', desc:'Many states run their own top-up or standalone cashless schemes (e.g. Mahatma Jyotiba Phule Jan Arogya Yojana in Maharashtra) layered on top of or alongside PM-JAY — check with your local health department for your state\'s scheme name and card.', needsPolicyFields:false},
+  private: {label:'Private Health Insurance', desc:'A privately purchased or employer-provided policy, settled either cashless (pre-authorised at a network hospital) or by reimbursement after discharge.', needsPolicyFields:true},
+  none:    {label:'Not enrolled in any scheme', desc:'You can still register for PM-JAY (if eligible) at any empaneled hospital\'s Aadhaar/Ayushman desk, or purchase a private policy at any time.', needsPolicyFields:false}
+};
+function schemeLabel(key){ return (SCHEME_CONFIG[key]||{}).label || 'Not verified'; }
+const CLAIM_DOC_REQUIREMENTS = {
+  cashless: ['Government ID / Aadhaar', 'Scheme card or policy card', 'Hospital pre-authorisation form'],
+  reimbursement: ['Original hospital bill', 'Discharge summary', 'Payment receipts', 'Scheme card or policy card']
+};
 function viewPatientInsurance(){
   const pid = currentPatientId();
   const ins = getInsuranceRecord(pid);
-  return `${viewHeader('Government Schemes &amp; Insurance','Ayushman Bharat / PM-JAY &amp; private cover','')}
+  const scheme = SCHEME_CONFIG[ins.scheme] || null;
+  return `${viewHeader('Government Schemes &amp; Insurance','Ayushman Bharat / PM-JAY, CGHS, ESIC &amp; private cover','')}
   <div class="card">
-    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" placeholder="XXXX-XXXX-XXXX"></div>
-    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — Scheme data unlocked</span>` : `<button class="btn" onclick="patientVerifyAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+    <h3 style="margin-top:0;">Aadhaar-based scheme verification</h3>
+    <div class="form-group"><label>Aadhaar Number</label><input class="form-control" id="aadhaar-input-field" maxlength="14" value="${formatAadhaar(db('profile').aadhaarNumber)}" placeholder="XXXX XXXX XXXX" oninput="this.value=formatAadhaar(this.value);"></div>
+    ${ins.aadhaar_verified ? `<span class="status-tag status-ok"><i class="fa-solid fa-circle-check"></i> Aadhaar Verified — ${schemeLabel(ins.scheme)}</span> <button class="btn btn-secondary btn-sm" style="margin-left:10px;" onclick="patientResetInsurance()">Reset</button>` : `<button class="btn" onclick="patientVerifyAadhaar()"><i class="fa-solid fa-id-card"></i> Verify via OTP</button>`}
+    <p style="color:var(--text-muted);font-size:.78rem;margin:10px 0 0;">This unlocks scheme eligibility info in this app only. To let a hospital desk pull your shared records by Aadhaar during a visit, use Medical Records → Aadhaar linking, and approve their OTP request each time.</p>
   </div>
-  ${ins.aadhaar_verified ? `<div class="card"><h3 style="margin-top:0;">PM-JAY Eligibility</h3><p style="color:var(--text-muted);">Coverage up to ₹5,00,000/year for your household. Cashless treatment at empaneled hospitals.</p></div>` : ''}
+  <div class="card">
+    <h3 style="margin-top:0;">Your scheme / cover</h3>
+    <div class="form-group"><label>Type</label>
+      <select class="form-control" id="ins-scheme-select" onchange="patientOnSchemeChange()">
+        <option value="">Select…</option>
+        ${Object.keys(SCHEME_CONFIG).map(k=>`<option value="${k}" ${ins.scheme===k?'selected':''}>${SCHEME_CONFIG[k].label}</option>`).join('')}
+      </select>
+    </div>
+    <div id="ins-scheme-extra">${schemeExtraFieldsHTML(ins)}</div>
+    <button class="btn btn-secondary btn-sm" onclick="patientSaveSchemeDetails()"><i class="fa-solid fa-floppy-disk"></i> Save scheme details</button>
+    ${scheme ? `<div style="background:var(--bg-subtle);border-radius:12px;padding:12px 14px;margin-top:14px;font-size:.84rem;color:var(--text-muted);">${scheme.desc}</div>` : ''}
+  </div>
   <div class="card">
     <h3 style="margin-top:0;">Submit a claim</h3>
     <div class="grid-2">
       <div class="form-group"><label>Hospital</label><select class="form-control" id="claim-hosp">${db('hospitals').map(h=>`<option value="${h.id}">${h.name}</option>`).join('')}</select></div>
-      <div class="form-group"><label>Amount (₹)</label><input class="form-control" id="claim-amt" placeholder="25000"></div>
+      <div class="form-group"><label>Claim type</label><select class="form-control" id="claim-type"><option value="cashless">Cashless pre-authorisation</option><option value="reimbursement">Reimbursement (post-discharge)</option></select></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Amount (₹)</label><input class="form-control" id="claim-amt" placeholder="25000"></div>
+    </div>
+    <div style="background:var(--bg-subtle);border-radius:12px;padding:12px 14px;font-size:.82rem;color:var(--text-muted);margin-bottom:12px;">
+      <strong>Documents usually needed:</strong> ${CLAIM_DOC_REQUIREMENTS.cashless.join(', ')} (cashless) or ${CLAIM_DOC_REQUIREMENTS.reimbursement.join(', ')} (reimbursement). Upload scans under <em>My Documents</em> so they're ready to attach.
     </div>
     <button class="btn" onclick="submitClaim()"><i class="fa-solid fa-file-invoice"></i> Submit claim</button>
   </div>
   <div class="card"><h3 style="margin-top:0;">Claim status</h3>${renderClaimsTable(pid)}</div>`;
 }
-function patientVerifyAadhaar(){ setInsuranceVerified(currentPatientId(), true); renderCurrentView('p-insurance'); showToast('Verified','Government scheme data unlocked.','success'); }
+function schemeExtraFieldsHTML(ins){
+  const scheme = SCHEME_CONFIG[ins.scheme];
+  if(!scheme) return '';
+  if(scheme.extraField){
+    const f = scheme.extraField;
+    return `<div class="form-group"><label>${f.label}</label><input class="form-control" id="ins-extra-field" value="${ins[f.key]||''}" placeholder="${f.placeholder}"></div>`;
+  }
+  if(scheme.needsPolicyFields){
+    return `<div class="grid-2">
+      <div class="form-group"><label>Insurer name</label><input class="form-control" id="ins-insurer" value="${ins.insurer||''}" placeholder="e.g. Star Health"></div>
+      <div class="form-group"><label>Policy number</label><input class="form-control" id="ins-policy" value="${ins.policyNumber||''}" placeholder="e.g. P/123456/01/2026"></div>
+      <div class="form-group"><label>TPA (Third Party Administrator)</label><input class="form-control" id="ins-tpa" value="${ins.tpa||''}" placeholder="e.g. MediAssist"></div>
+      <div class="form-group"><label>Sum insured (₹)</label><input class="form-control" id="ins-sum" value="${ins.sumInsured||''}" placeholder="500000"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Policy valid till</label><input type="date" class="form-control" id="ins-valid" value="${ins.validTill||''}"></div>
+    </div>`;
+  }
+  return '';
+}
+function patientOnSchemeChange(){
+  const box = document.getElementById('ins-scheme-extra');
+  const key = document.getElementById('ins-scheme-select').value;
+  box.innerHTML = schemeExtraFieldsHTML(Object.assign({}, getInsuranceRecord(currentPatientId()), {scheme:key}));
+}
+function patientSaveSchemeDetails(){
+  const pid = currentPatientId();
+  const scheme = document.getElementById('ins-scheme-select').value;
+  const patch = {scheme};
+  const cfg = SCHEME_CONFIG[scheme];
+  if(cfg && cfg.extraField){ patch[cfg.extraField.key] = (document.getElementById('ins-extra-field')||{}).value||''; }
+  if(cfg && cfg.needsPolicyFields){
+    patch.insurer = (document.getElementById('ins-insurer')||{}).value||'';
+    patch.policyNumber = (document.getElementById('ins-policy')||{}).value||'';
+    patch.tpa = (document.getElementById('ins-tpa')||{}).value||'';
+    patch.sumInsured = (document.getElementById('ins-sum')||{}).value||'';
+    patch.validTill = (document.getElementById('ins-valid')||{}).value||'';
+  }
+  setInsuranceFields(pid, patch);
+  showToast('Saved', 'Scheme/insurance details updated.', 'success');
+  renderCurrentView('p-insurance');
+}
+function patientVerifyAadhaar(){
+  const raw = document.getElementById('aadhaar-input-field').value;
+  const n = normalizeAadhaar(raw);
+  if(!isValidAadhaar(n)){ showToast('Invalid Aadhaar', 'Enter a valid 12-digit Aadhaar number.', 'danger'); return; }
+  const p = db('profile')||{}; p.aadhaarNumber = n; dbSet('profile', p);
+  setInsuranceVerified(currentPatientId(), true);
+  audit((currentUserRecord()||{}).email||'patient', 'aadhaar_verify', 'OTP confirmed for scheme lookup');
+  renderCurrentView('p-insurance');
+  showToast('Verified','Government scheme data unlocked.','success');
+}
+function patientResetInsurance(){ setInsuranceVerified(currentPatientId(), false); renderCurrentView('p-insurance'); }
 // ownerId omitted (undefined) => show every patient's claims, used by the
 // hospital front-desk screen which isn't tied to one patient's record.
 function renderClaimsTable(ownerId){
   const claims = (db('claims')||[]).filter(c=>ownerId===undefined || c.ownerId===ownerId);
   if(!claims.length) return `<p style="color:var(--text-muted);margin:0;">No claims submitted yet.</p>`;
-  return `<table class="data-table"><thead><tr><th>Claim ID</th><th>Hospital</th><th>Amount</th><th>Status</th></tr></thead><tbody>
-  ${claims.map(c=>`<tr><td>${c.id}</td><td>${db('hospitals').find(h=>h.id===c.hosp)?.name||c.hosp}</td><td>₹${c.amt}</td><td><span class="status-tag ${c.status==='Approved'?'status-ok':c.status==='Under Review'?'status-warn':'status-info'}">${c.status}</span></td></tr>`).join('')}
+  return `<table class="data-table"><thead><tr><th>Claim ID</th><th>Hospital</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+  ${claims.map(c=>`<tr><td>${c.id}</td><td>${db('hospitals').find(h=>h.id===c.hosp)?.name||c.hosp}</td><td>${c.type==='reimbursement'?'Reimbursement':'Cashless'}</td><td>₹${(+c.amt).toLocaleString('en-IN')}</td><td><span class="status-tag ${c.status==='Approved'?'status-ok':c.status==='Rejected'?'status-danger':c.status.indexOf('Review')>-1||c.status.indexOf('Pre-auth')>-1?'status-warn':'status-info'}">${c.status}</span></td></tr>`).join('')}
   </tbody></table>`;
 }
 function submitClaim(){
   const hosp = document.getElementById('claim-hosp').value;
+  const type = document.getElementById('claim-type').value;
   const amt = document.getElementById('claim-amt').value || '0';
   const claims = db('claims');
-  const c = {id: uid('CLM'), ownerId: currentPatientId(), hosp, amt, status:'Submitted'};
+  const c = {id: uid('CLM'), ownerId: currentPatientId(), hosp, type, amt, status:'Submitted'};
   claims.push(c); dbSet('claims', claims);
   showToast('Claim submitted', c.id+' is now under review.', 'success');
   renderCurrentView('p-insurance');
-  setTimeout(()=>{ c.status='Under Review'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); }, 4000);
-  setTimeout(()=>{ c.status='Approved'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); pushNotification('patient:'+c.ownerId,'Claim approved', c.id+' approved for ₹'+amt, 'success'); }, 9000);
+  // Realistic multi-stage TAT: documents verified -> pre-authorisation (cashless
+  // only) -> approved/settled, rather than one flat "Under Review" jump.
+  const stage2 = type==='cashless' ? 'Pre-authorisation Pending' : 'Documents Under Review';
+  setTimeout(()=>{ c.status=stage2; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); }, 4000);
+  setTimeout(()=>{ c.status='Approved'; dbSet('claims', claims); if(currentView==='p-insurance') renderCurrentView('p-insurance'); pushNotification('patient:'+c.ownerId,'Claim approved', c.id+' approved for ₹'+(+amt).toLocaleString('en-IN')+(type==='cashless'?' — cashless settlement with the hospital.':' — reimbursement will be credited to your registered bank account.'), 'success'); }, 9000);
 }
 
 /* ============================================================
