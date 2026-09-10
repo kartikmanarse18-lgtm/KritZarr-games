@@ -1325,7 +1325,7 @@ const FIREBASE_CONFIG = {
 // Everyone who opens the app with the same ?room= link shares one live incident feed.
 // Change the fallback string (or add ?room=yourname to the URL) so your demo doesn't collide with someone else's.
 const ROOM_ID = (new URLSearchParams(location.search).get('room')) || 'arogya-demo-room';
-const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','users_doctor','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills','aadhaarDirectory','accessGrants'];
+const SYNC_KEYS = ['hospitals','responders','police','doctors','pharmacies','incidents','notifications','audit','appointments','prescriptions','reminders','claims','insurance','documents','policeProfile','users','users_responder','users_police','users_hospital','users_pharmacy','users_doctor','phoneComplaints','revokedEmails','pharmacyInventory','pharmacyBills','deliveryBoys','aadhaarDirectory','accessGrants'];
 // NOTE: 'profile' is intentionally NOT in this list. It's a per-device cache of whichever
 // account/family-member is currently logged in on THIS device, refreshed from that
 // account's own record in 'users' on login/signup/switch (see loadActiveMemberIntoProfile()
@@ -1606,9 +1606,18 @@ function initFirebaseSync(){
     // / initPhase1bApptRxSync() / the SOS Worker (sosApi/openSosSocket) /
     // initAuditSync(). What's left in LEGACY_LIVE_KEYS after this filter is
     // now just: policeProfile, phoneComplaints, revokedEmails,
-    // pharmacyInventory, pharmacyBills — see the migration docs for why each
-    // is intentionally still here (none of them has the fan-out or size
-    // problems the others did).
+    // pharmacyInventory, pharmacyBills, deliveryBoys — see the migration docs
+    // for why each is intentionally still here (none of them has the fan-out
+    // or size problems the others did). BUGFIX: deliveryBoys used to be
+    // missing from SYNC_KEYS entirely — dbSet('deliveryBoys', ...) still fell
+    // through to the fbRoomRef.doc(key).set(...) branch below (nothing gated
+    // the WRITE on membership in this list), so a pharmacy's roster changes
+    // (adding staff, toggling available/busy) really were reaching Firestore —
+    // but no device, including the pharmacy's own on a reload, ever read that
+    // doc back or subscribed to it, because this LEGACY_LIVE_KEYS list (built
+    // from SYNC_KEYS) is what drives the fetch-once + onSnapshot loop just
+    // below. Patients were assigning deliveries off whatever stale local
+    // default each of their own devices happened to start with.
     const LEGACY_LIVE_KEYS = SYNC_KEYS.filter(k => !PHASE1B_KEYS.includes(k) && !PHASE1C_KEYS.includes(k) && !PRIVATE_ACCOUNT_KEYS.includes(k) && k !== 'notifications' && k !== 'incidents' && k !== 'audit');
     LEGACY_LIVE_KEYS.forEach(key=>{
       fbRoomRef.doc(key).get().then(snap=>{
