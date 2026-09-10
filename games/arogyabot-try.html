@@ -2150,38 +2150,58 @@ async function rtcJoinCall(apptId, localVideoElId, remoteVideoElId){
     else if(pc.connectionState==='disconnected' || pc.connectionState==='failed') rtcSetStatus('Connection lost — try re-joining.');
   };
 
-  const callRef = rtcCallDocRef(apptId);
-  const snap = await callRef.get();
+  // BUGFIX: this whole signaling exchange (get/set on callRef, the candidate
+  // writes below) used to run with no try/catch and no .catch() at either call
+  // site (postRenderHooks' p-tele/d-appts blocks call rtcJoinCall() fire-and-
+  // forget). A rejected promise here — most commonly Firestore denying the
+  // read/write because arogya_rooms/{roomId}/calls/{apptId} had no security
+  // rule at all — became a silent unhandled rejection: the screen just sat on
+  // "Connecting…" forever with no toast and nothing in the UI to explain why.
+  // Wrapping it means a failure here now visibly says so and resets state so
+  // re-joining (leaving and re-entering the call screen) can try again, instead
+  // of leaving rtcCurrentApptId pointing at a half-set-up call that
+  // rtcJoinCall's own "already joined" guard would otherwise block forever.
+  try{
+    const callRef = rtcCallDocRef(apptId);
+    const snap = await callRef.get();
 
-  if(!snap.exists || !snap.data().offer){
-    // We're first here — become the caller.
-    const callerCandidates = callRef.collection('callerCandidates');
-    pc.onicecandidate = (e)=>{ if(e.candidate) callerCandidates.add(e.candidate.toJSON()).catch(()=>{}); };
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await callRef.set({offer:{sdp:offer.sdp, type:offer.type}, updatedAt: Date.now()}, {merge:true});
-    rtcSetStatus('Waiting for the other side to join…');
-    rtcCallUnsub = callRef.onSnapshot(async docSnap=>{
-      const data = docSnap.data();
-      if(data && data.answer && pc.signalingState!=='stable' && !pc.currentRemoteDescription){
-        await pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(()=>{});
-      }
-    });
-    rtcCandidateUnsubs.push(callRef.collection('calleeCandidates').onSnapshot(qs=>{
-      qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{}); });
-    }));
-  } else {
-    // An offer is already waiting — become the callee.
-    const data = snap.data();
-    const calleeCandidates = callRef.collection('calleeCandidates');
-    pc.onicecandidate = (e)=>{ if(e.candidate) calleeCandidates.add(e.candidate.toJSON()).catch(()=>{}); };
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    await callRef.set({answer:{sdp:answer.sdp, type:answer.type}, updatedAt: Date.now()}, {merge:true});
-    rtcCandidateUnsubs.push(callRef.collection('callerCandidates').onSnapshot(qs=>{
-      qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{}); });
-    }));
+    if(!snap.exists || !snap.data().offer){
+      // We're first here — become the caller.
+      const callerCandidates = callRef.collection('callerCandidates');
+      pc.onicecandidate = (e)=>{ if(e.candidate) callerCandidates.add(e.candidate.toJSON()).catch(e2=>console.warn('ICE candidate write failed', e2)); };
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await callRef.set({offer:{sdp:offer.sdp, type:offer.type}, updatedAt: Date.now()}, {merge:true});
+      rtcSetStatus('Waiting for the other side to join…');
+      rtcCallUnsub = callRef.onSnapshot(async docSnap=>{
+        const data = docSnap.data();
+        if(data && data.answer && pc.signalingState!=='stable' && !pc.currentRemoteDescription){
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(e2=>console.warn('setRemoteDescription (answer) failed', e2));
+        }
+      }, e=>{ rtcSetStatus('Connection lost — try re-joining.'); console.warn('Call doc listener failed', e); });
+      rtcCandidateUnsubs.push(callRef.collection('calleeCandidates').onSnapshot(qs=>{
+        qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(e2=>console.warn('addIceCandidate failed', e2)); });
+      }, e=>console.warn('Callee candidates listener failed', e)));
+    } else {
+      // An offer is already waiting — become the callee.
+      const data = snap.data();
+      const calleeCandidates = callRef.collection('calleeCandidates');
+      pc.onicecandidate = (e)=>{ if(e.candidate) calleeCandidates.add(e.candidate.toJSON()).catch(e2=>console.warn('ICE candidate write failed', e2)); };
+      await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await callRef.set({answer:{sdp:answer.sdp, type:answer.type}, updatedAt: Date.now()}, {merge:true});
+      rtcCandidateUnsubs.push(callRef.collection('callerCandidates').onSnapshot(qs=>{
+        qs.docChanges().forEach(ch=>{ if(ch.type==='added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(e2=>console.warn('addIceCandidate failed', e2)); });
+      }, e=>console.warn('Caller candidates listener failed', e)));
+    }
+  }catch(e){
+    console.warn('Video call signaling failed for appointment', apptId, e);
+    const deniedLikely = String((e && e.code) || (e && e.message) || '').toLowerCase().includes('permission');
+    rtcSetStatus(deniedLikely ? 'Could not connect — sync permission denied.' : 'Could not connect — check your connection and try again.');
+    showToast('Call failed to connect', deniedLikely ? 'The signaling channel was blocked (Firestore permissions). Ask your admin to check firestore.rules.' : 'Something interrupted the connection — try re-joining.', 'danger');
+    rtcTeardown();
+    rtcCurrentApptId = null; // clears the "already joined" guard so re-entering this screen can retry
   }
 }
 
