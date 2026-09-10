@@ -1192,7 +1192,18 @@ const PRIVATE_ACCOUNT_KEYS = ['fitness','cycle','pregnancy','nutrition','vitals'
 // initPublicDirectories()). PHASE 1B: writes for these now go straight to
 // per-record docs at /public/{key}/items/{id} (see the PHASE 1B block
 // further down) instead of the legacy shared-room path.
-const PUBLIC_DIRECTORY_KEYS = ['hospitals','responders','police','doctors','pharmacies'];
+// deliveryBoys belongs here too, and for the same reason hospitals/
+// responders/police/pharmacies do: it's read by every role in the room
+// (patient tracking a delivery, pharmacy staffing a roster) but only ever
+// written by one device at a time (the delivery boy's own GPS tick, or the
+// pharmacy assigning/toggling someone) — see the flicker postmortem in
+// initFirebaseSync() for what putting it on the legacy live-listener path
+// instead actually cost. Live map updates for an in-progress delivery
+// come from a live listener scoped to that one delivery boy's own
+// /public/deliveryBoys/items/{id} doc (see startDeliveryBoyLiveTracking()),
+// not the whole collection — same continuous push sync as before, just
+// aimed at one record instead of everyone's.
+const PUBLIC_DIRECTORY_KEYS = ['hospitals','responders','police','doctors','pharmacies','deliveryBoys'];
 
 function currentAuthUid(){
   const a = fbAuth();
@@ -1253,12 +1264,13 @@ const StorageAdapter = {
     }
 
     // PHASE 1B: hospitals/responders/police/doctors/pharmacies/appointments/
-    // prescriptions no longer write through the shared-room doc at all. Each
-    // record is diffed against this device's last write and mirrored to its
-    // own partition doc(s) — see the PHASE 1B block above for the full
-    // rationale. This replaces the old fbRoomRef.doc(key).set(fullArray) call
-    // for these 7 keys, which used to overwrite one shared blob every time
-    // and fan the whole thing out live to every connected device.
+    // prescriptions/deliveryBoys no longer write through the shared-room doc
+    // at all. Each record is diffed against this device's last write and
+    // mirrored to its own partition doc(s) — see the PHASE 1B block above
+    // for the full rationale. This replaces the old
+    // fbRoomRef.doc(key).set(fullArray) call for these 8 keys, which used to
+    // overwrite one shared blob every time and fan the whole thing out live
+    // to every connected device.
     if(PHASE1B_KEYS.includes(key) || PHASE1C_KEYS.includes(key)){
       diffAndPersistPhase1b(key, val);
       return;
@@ -1606,18 +1618,31 @@ function initFirebaseSync(){
     // / initPhase1bApptRxSync() / the SOS Worker (sosApi/openSosSocket) /
     // initAuditSync(). What's left in LEGACY_LIVE_KEYS after this filter is
     // now just: policeProfile, phoneComplaints, revokedEmails,
-    // pharmacyInventory, pharmacyBills, deliveryBoys — see the migration docs
-    // for why each is intentionally still here (none of them has the fan-out
-    // or size problems the others did). BUGFIX: deliveryBoys used to be
-    // missing from SYNC_KEYS entirely — dbSet('deliveryBoys', ...) still fell
+    // pharmacyInventory, pharmacyBills — none of them has the fan-out or
+    // size problems the others did.
+    //
+    // POSTMORTEM — deliveryBoys and the flicker bug: deliveryBoys used to be
+    // missing from SYNC_KEYS entirely, so dbSet('deliveryBoys', ...) fell
     // through to the fbRoomRef.doc(key).set(...) branch below (nothing gated
-    // the WRITE on membership in this list), so a pharmacy's roster changes
-    // (adding staff, toggling available/busy) really were reaching Firestore —
-    // but no device, including the pharmacy's own on a reload, ever read that
-    // doc back or subscribed to it, because this LEGACY_LIVE_KEYS list (built
-    // from SYNC_KEYS) is what drives the fetch-once + onSnapshot loop just
-    // below. Patients were assigning deliveries off whatever stale local
-    // default each of their own devices happened to start with.
+    // the WRITE on membership in this list) — writes reached Firestore, but
+    // no device ever subscribed to read them back, so pharmacies were
+    // assigning deliveries off stale local defaults. The first fix added
+    // deliveryBoys to SYNC_KEYS to get it read back — but that was the wrong
+    // list to add it to: SYNC_KEYS (via LEGACY_LIVE_KEYS) is the shared
+    // ONE-DOC-PER-KEY + onSnapshot loop below, so it put deliveryBoys' entire
+    // array behind a single live listener that fires on EVERY connected
+    // device. deliveryBoys' lat/lng gets rewritten every few seconds per
+    // active delivery by applyLiveLocation('delivery', ...) — so every GPS
+    // tick from any delivery boy in the room re-triggered that listener on
+    // every device, and softRefreshCurrentView()'s fallback does a full
+    // renderCurrentView() for any screen that isn't specifically patched
+    // (p-rx, where patients watch a delivery, wasn't) — hence the flicker.
+    // hospitals/responders/police/pharmacies move just as often but never
+    // caused this, because they're PUBLIC_DIRECTORY_KEYS: per-record diffed
+    // writes (see diffAndPersistPhase1b) and a fetch-once/manual-refresh
+    // read (see initPublicDirectories()), never a live listener. deliveryBoys
+    // now lives there too — see PUBLIC_DIRECTORY_KEYS/PHASE1B_KEYS above —
+    // instead of in SYNC_KEYS's legacy live path.
     const LEGACY_LIVE_KEYS = SYNC_KEYS.filter(k => !PHASE1B_KEYS.includes(k) && !PHASE1C_KEYS.includes(k) && !PRIVATE_ACCOUNT_KEYS.includes(k) && k !== 'notifications' && k !== 'incidents' && k !== 'audit');
     LEGACY_LIVE_KEYS.forEach(key=>{
       fbRoomRef.doc(key).get().then(snap=>{
@@ -1669,6 +1694,14 @@ function initFirebaseSync(){
    Writes to these still go through the legacy shared-room path for now
    (Phase 1b denormalizes the writes themselves into /public/{type}/{id}
    sub-docs — see the migration plan).
+   deliveryBoys joined this list after the same live-listener fanout bug
+   showed up on it (see the postmortem in initFirebaseSync()) — its
+   lat/lng changes just as often as a hospital's bed count, so it gets
+   the same treatment. The difference is that a delivery in progress
+   genuinely needs to look live on the patient's screen, which a fetch-
+   once cache can't do on its own — see startDeliveryBoyLiveTracking() for
+   how p-rx gets that: a live listener on just that one delivery boy's
+   own doc, patched straight into the map, never the shared collection.
    ============================================================ */
 function initPublicDirectories(){
   if(!fbEnabled || typeof firebase==='undefined') return;
@@ -1690,10 +1723,10 @@ function initPublicDirectories(){
   });
 }
 // Call this from a "Refresh directory" button in the UI instead of relying
-// on a live listener. Cheap — costs 5 reads total, not 5 reads × every device.
+// on a live listener. Cheap — costs 6 reads total, not 6 reads × every device.
 function refreshPublicDirectories(){
   if(!fbEnabled || !fbRoomRef){ showToast('Offline', 'Connect to sync to refresh directories.', 'danger'); return; }
-  showToast('Refreshing…', 'Pulling the latest hospitals, doctors, pharmacies, and responders.', 'success');
+  showToast('Refreshing…', 'Pulling the latest hospitals, doctors, pharmacies, responders, and delivery riders.', 'success');
   const fs = firebase.firestore();
   Promise.all(PUBLIC_DIRECTORY_KEYS.map(key=>
     fs.collection('public').doc(key).collection('items').get().then(snap=>{
@@ -1797,7 +1830,7 @@ function teardownPrivateAccountSync(){
    data. Not an issue for a fresh deploy; worth a one-time backfill pass
    before cutting an existing production room over.
    ============================================================ */
-const PHASE1B_KEYS = ['hospitals','responders','police','doctors','pharmacies','appointments','prescriptions'];
+const PHASE1B_KEYS = ['hospitals','responders','police','doctors','pharmacies','appointments','prescriptions','deliveryBoys'];
 
 // Stable per-doctor partition key: doctor records in this app carry a name +
 // a hospital id, not a dedicated doctorId on the appointment record itself,
@@ -2312,6 +2345,7 @@ async function forceSignOutRevoked(){
   clearActiveSession();
   teardownPrivateAccountSync();
   teardownPhase1bApptRxSync();
+  stopDeliveryBoyLiveTracking();
   const fa = fbAuth();
   if(fa) await fa.signOut().catch(()=>{});
   currentRole = null;
@@ -2898,6 +2932,7 @@ function renderProfileMenu(){
 function logout(silent){
   cycSessionUnlocked = false; // re-lock Women's Health so the next person to open this device must re-enter the PIN
   if(liveTrackingTimer){ clearInterval(liveTrackingTimer); liveTrackingTimer=null; }
+  stopDeliveryBoyLiveTracking(); // stop listening to a tracked delivery boy's live-position doc
   stopAllLiveLocationTracking();
   cleanupMap();
   teardownPrivateAccountSync(); // stop listening to this account's fitness/cycle/vitals/etc. docs
@@ -4796,7 +4831,15 @@ function postRenderHooks(navId){
   }
   if(navId==='p-rx'){
     const activeDelivery = db('prescriptions').filter(r=>r.ownerId===currentPatientId()).find(r=>r.deliveryStatus==='out_for_delivery');
-    if(activeDelivery && document.getElementById('leaflet-map-box')) initDeliveryTrackingMap(activeDelivery);
+    if(activeDelivery && document.getElementById('leaflet-map-box')){
+      initDeliveryTrackingMap(activeDelivery); // paint immediately from cache
+      startDeliveryBoyLiveTracking(activeDelivery.deliveryBoyId); // then keep it live — see the function for why this is scoped to one doc
+    } else {
+      stopDeliveryBoyLiveTracking(); // no active delivery on screen (e.g. just got marked delivered) — nothing left to track
+    }
+  } else {
+    // Left p-rx entirely — don't keep a listener open for a screen that isn't showing.
+    stopDeliveryBoyLiveTracking();
   }
 }
 function viewHeader(eyebrow,title,sub){
@@ -10411,6 +10454,55 @@ function initDeliveryTrackingMap(rx){
   mapMarkers.deliveryDest = L.marker([profile.lat,profile.lng], {icon: icon('#0d9488')}).addTo(mapInstance).bindPopup('You');
   drawRoute(pts, '#f59e0b', 'delivery-live-eta');
   mapInstance.fitBounds(pts, {padding:[40,40]});
+}
+// deliveryBoys is a PUBLIC_DIRECTORY_KEY now (fetch-once + manual refresh,
+// no room-wide live listener — see the flicker postmortem in
+// initFirebaseSync()), so the fan-out that caused the bug is gone. But a
+// delivery actually in progress still needs to look live on the patient's
+// screen, and now that every delivery boy has their OWN doc at
+// /public/deliveryBoys/items/{id} (see phase1bDocRefs), we can subscribe to
+// just that one doc instead of the old shared blob. This is continuous
+// push sync, same as before — the fix isn't "stop syncing," it's "sync only
+// the one record that's actually relevant, and patch only the map when it
+// changes" instead of one listener for every delivery boy in the room
+// driving a full renderCurrentView() on every device.
+let DELIVERY_TRACK_UNSUB = null;
+let DELIVERY_TRACK_ID = null;
+function startDeliveryBoyLiveTracking(deliveryBoyId){
+  if(DELIVERY_TRACK_ID === deliveryBoyId) return; // already subscribed to this one
+  stopDeliveryBoyLiveTracking();
+  if(!fbEnabled || typeof firebase==='undefined' || !deliveryBoyId) return;
+  DELIVERY_TRACK_ID = deliveryBoyId;
+  DELIVERY_TRACK_UNSUB = firebase.firestore()
+    .collection('public').doc('deliveryBoys').collection('items').doc(String(deliveryBoyId))
+    .onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const fresh = snap.data();
+      const boys = db('deliveryBoys')||[];
+      const idx = boys.findIndex(b=>b.id===deliveryBoyId);
+      if(idx>=0) boys[idx] = fresh; else boys.push(fresh);
+      LOCAL_CACHE['deliveryBoys'] = boys;
+      try{ localStorage.setItem('abot2_deliveryBoys', JSON.stringify(boys)); }catch(e){}
+      // Mark this as already-synced so diffAndPersistPhase1b doesn't turn
+      // around and write this device's own read straight back to Firestore
+      // as if it were a local change (same guard the fetch side of
+      // initPublicDirectories uses via PHASE1B_LAST_WRITE).
+      const prevMap = PHASE1B_LAST_WRITE['deliveryBoys'] || new Map();
+      prevMap.set(String(deliveryBoyId), phase1bClone(fresh));
+      PHASE1B_LAST_WRITE['deliveryBoys'] = prevMap;
+      // Patch ONLY the map — never touches the rest of #app-content-area, so
+      // this can fire every couple of seconds without re-rendering the rest
+      // of the prescriptions list, let alone the rest of the app.
+      if(currentView==='p-rx' && document.getElementById('leaflet-map-box')){
+        const rx = db('prescriptions').find(r=>r.deliveryBoyId===deliveryBoyId && r.deliveryStatus==='out_for_delivery');
+        if(rx) initDeliveryTrackingMap(rx);
+      }
+    }, e=>console.warn('Delivery tracking listener failed', e));
+}
+function stopDeliveryBoyLiveTracking(){
+  if(DELIVERY_TRACK_UNSUB){ try{ DELIVERY_TRACK_UNSUB(); }catch(e){} }
+  DELIVERY_TRACK_UNSUB = null;
+  DELIVERY_TRACK_ID = null;
 }
 function initPoliceMap(update){
   const incidents = myStationIncidents();
