@@ -3704,66 +3704,31 @@ async function doctorLoginSubmit(){
   const pw = document.getElementById('doc-login-password').value||'';
   if(!email || !pw){ doctorLoginError='Enter both email and password.'; renderDoctorLoginCard(); return; }
   if(isEmailRevoked(email)){ doctorLoginError='This account has been deactivated. Contact your hospital admin.'; renderDoctorLoginCard(); return; }
-  // BUGFIX: liveAccountExists() used to run BEFORE any sign-in attempt. That
-  // read hits /accounts/users_doctor/items/{email}, and on a device that has
-  // never logged in yet (i.e. exactly the doctor's own phone, right after a
-  // hospital admin adds them) there's no authenticated Firebase user at that
-  // point. If the Firestore rules require request.auth!=null to read that
-  // path, the read comes back permission-denied, silently falls back to the
-  // LOCAL cache (empty on a fresh device), and login fails with "No doctor
-  // account found" even though the account is real. Firebase Auth sign-in
-  // itself doesn't require a prior Firestore read, so we try that FIRST —
-  // once it succeeds we're authenticated, and the account-doc read that
-  // follows is then allowed even under an auth-required rule.
-  const fa = fbAuth();
-  let signedInViaAuth = false;
-  if(fa){
-    try{
-      await withTimeout(fa.signInWithEmailAndPassword(email, pw), 12000, 'Login');
-      signedInViaAuth = true;
-    }catch(e){
-      // auth/user-not-found: this email was never given a real Firebase Auth
-      // login (pre-migration account) — fall through to the local passwordHash
-      // check below. auth/wrong-password / auth/invalid-credential: could still
-      // be a real account with a mistyped password — fall through, and let the
-      // account-doc lookup below settle it. Anything else (network, disabled
-      // provider, etc.) is a real problem — surface it immediately.
-      const fallThroughCodes = ['auth/user-not-found','auth/wrong-password','auth/invalid-credential'];
-      if(!fallThroughCodes.includes(e && e.code)){
-        doctorLoginError = friendlyAuthError(e); renderDoctorLoginCard(); return;
-      }
-    }
-  }
   // PHASE 1C: doctor accounts synced to /accounts/users_doctor/items/{email} —
   // a live doc read here is what lets a login added by the hospital on a
   // different device work immediately, instead of only after this device's
   // next one-time account fetch.
   const u = await liveAccountExists('users_doctor', email);
-  if(!u){
-    if(signedInViaAuth) await fa.signOut().catch(()=>{});
-    doctorLoginError='No doctor account found for this email — ask your hospital admin to add you on their Doctor Roster.'; renderDoctorLoginCard(); return;
-  }
+  if(!u){ doctorLoginError='No doctor account found for this email — ask your hospital admin to add you on their Doctor Roster.'; renderDoctorLoginCard(); return; }
   // PHASE 1D: accounts created after this pass carry a real Firebase Auth uid
   // instead of a local passwordHash — verify against Auth when present, and
   // fall back to the old local hash check for accounts created before this
   // migration (still perfectly valid, just not yet moved over).
-  if(!signedInViaAuth){
-    if(u.authUid){
-      if(!fa){ doctorLoginError='Connect to the internet to log in.'; renderDoctorLoginCard(); return; }
-      // Real account, but our earlier sign-in attempt above failed — that
-      // was a genuine bad-password (or a not-yet-authenticated network hiccup).
-      doctorLoginError='Incorrect password.'; renderDoctorLoginCard(); return;
-    } else {
-      const hash = await hashPassword(pw);
-      if(hash !== u.passwordHash){ doctorLoginError='Incorrect password.'; renderDoctorLoginCard(); return; }
+  if(u.authUid){
+    const fa = fbAuth();
+    if(!fa){ doctorLoginError='Connect to the internet to log in.'; renderDoctorLoginCard(); return; }
+    try{
+      await withTimeout(fa.signInWithEmailAndPassword(email, pw), 12000, 'Login');
+    }catch(e){
+      doctorLoginError = friendlyAuthError(e); renderDoctorLoginCard(); return;
     }
+  } else {
+    const hash = await hashPassword(pw);
+    if(hash !== u.passwordHash){ doctorLoginError='Incorrect password.'; renderDoctorLoginCard(); return; }
   }
   mergeAccountIntoLocalCache('users_doctor', u);
   const docRecord = (db('doctors')||[]).find(d=>d.id===u.doctorId);
-  if(!docRecord){
-    if(signedInViaAuth) await fa.signOut().catch(()=>{});
-    doctorLoginError='Your doctor record no longer exists — contact your hospital admin.'; renderDoctorLoginCard(); return;
-  }
+  if(!docRecord){ doctorLoginError='Your doctor record no longer exists — contact your hospital admin.'; renderDoctorLoginCard(); return; }
   doctorLoginError='';
   loginAsDoctor(u);
 }
@@ -3820,47 +3785,25 @@ async function deliveryLoginSubmit(){
   const pw = document.getElementById('dlv-login-password').value||'';
   if(!email || !pw){ deliveryLoginError='Enter both email and password.'; renderDeliveryLoginCard(); return; }
   if(isEmailRevoked(email)){ deliveryLoginError='This account has been deactivated. Contact your pharmacy.'; renderDeliveryLoginCard(); return; }
-  // BUGFIX: same chicken-and-egg issue as doctorLoginSubmit() above — the
-  // account-doc read at /accounts/users_delivery/items/{email} used to run
-  // before any sign-in, so on a fresh device it hit permission-denied under
-  // an auth-required Firestore rule and fell back to an empty local cache.
-  // Try Firebase Auth sign-in first (doesn't require a prior Firestore read);
-  // once authenticated, the account-doc read below is allowed through.
-  const fa = fbAuth();
-  let signedInViaAuth = false;
-  if(fa){
-    try{
-      await withTimeout(fa.signInWithEmailAndPassword(email, pw), 12000, 'Login');
-      signedInViaAuth = true;
-    }catch(e){
-      const fallThroughCodes = ['auth/user-not-found','auth/wrong-password','auth/invalid-credential'];
-      if(!fallThroughCodes.includes(e && e.code)){
-        deliveryLoginError = friendlyAuthError(e); renderDeliveryLoginCard(); return;
-      }
-    }
-  }
   // PHASE 1C: same live-read reasoning as doctorLoginSubmit() above.
   const u = await liveAccountExists('users_delivery', email);
-  if(!u){
-    if(signedInViaAuth) await fa.signOut().catch(()=>{});
-    deliveryLoginError='No delivery account found for this email — ask your pharmacy to add you on their Delivery Boys screen.'; renderDeliveryLoginCard(); return;
-  }
+  if(!u){ deliveryLoginError='No delivery account found for this email — ask your pharmacy to add you on their Delivery Boys screen.'; renderDeliveryLoginCard(); return; }
   // PHASE 1D: same Auth-vs-local-hash branch as doctorLoginSubmit() above.
-  if(!signedInViaAuth){
-    if(u.authUid){
-      if(!fa){ deliveryLoginError='Connect to the internet to log in.'; renderDeliveryLoginCard(); return; }
-      deliveryLoginError='Incorrect password.'; renderDeliveryLoginCard(); return;
-    } else {
-      const hash = await hashPassword(pw);
-      if(hash !== u.passwordHash){ deliveryLoginError='Incorrect password.'; renderDeliveryLoginCard(); return; }
+  if(u.authUid){
+    const fa = fbAuth();
+    if(!fa){ deliveryLoginError='Connect to the internet to log in.'; renderDeliveryLoginCard(); return; }
+    try{
+      await withTimeout(fa.signInWithEmailAndPassword(email, pw), 12000, 'Login');
+    }catch(e){
+      deliveryLoginError = friendlyAuthError(e); renderDeliveryLoginCard(); return;
     }
+  } else {
+    const hash = await hashPassword(pw);
+    if(hash !== u.passwordHash){ deliveryLoginError='Incorrect password.'; renderDeliveryLoginCard(); return; }
   }
   mergeAccountIntoLocalCache('users_delivery', u);
   const dRecord = (db('deliveryBoys')||[]).find(x=>x.id===u.deliveryId);
-  if(!dRecord){
-    if(signedInViaAuth) await fa.signOut().catch(()=>{});
-    deliveryLoginError='Your delivery record no longer exists — contact your pharmacy.'; renderDeliveryLoginCard(); return;
-  }
+  if(!dRecord){ deliveryLoginError='Your delivery record no longer exists — contact your pharmacy.'; renderDeliveryLoginCard(); return; }
   deliveryLoginError='';
   loginAsDelivery(u);
 }
@@ -4562,7 +4505,35 @@ function adminUnlock(){
   }
   adminFailCount = 0;
   adminUnlocked = true;
-  audit('admin', 'unlock_success', '');
+  // BUGFIX: this passcode check is purely local — it never signed the admin
+  // into Firebase, so firebase.auth().currentUser stayed null for the whole
+  // admin session. Every Firestore rule in this project gates writes on
+  // signedIn() (request.auth != null), so every admin-initiated write —
+  // adminDeleteUser()'s account-doc delete included — was silently rejected
+  // (the .catch() on that write just logs a console warning, nothing visible
+  // here). Locally the record still vanished, because dbSet() always updates
+  // LOCAL_CACHE/localStorage first regardless of whether the remote write
+  // succeeds — so the admin's own screen looked correct while the Firestore
+  // doc, and every other device's copy of it, sat untouched. Signing in
+  // anonymously gives this session a real request.auth, clearing the same
+  // bar every other role already clears via its own login — no dedicated
+  // admin Firebase Auth account or custom claims needed. Requires Anonymous
+  // sign-in to be turned on for this project under Firebase Console →
+  // Authentication → Sign-in method; if it isn't, this fails safely (admin
+  // desk still works, but stays local-only exactly as before) and now says so
+  // instead of failing silently.
+  const fa = fbAuth();
+  if(fa && !fa.currentUser){
+    fa.signInAnonymously().then(()=>{
+      audit('admin', 'unlock_success', 'signed in (anonymous)');
+    }).catch(e=>{
+      console.warn('Admin anonymous sign-in failed — admin writes will stay local-only until this succeeds.', e);
+      showToast('Admin sync not connected', 'Enable Anonymous sign-in in Firebase Console → Authentication, or deletes/edits here won\'t reach other devices.', 'danger');
+      audit('admin', 'unlock_success', 'local-only — anonymous sign-in failed: '+(e.code||e.message||e));
+    });
+  } else {
+    audit('admin', 'unlock_success', fa && fa.currentUser ? 'already signed in' : 'local demo mode — no Firebase connected');
+  }
   renderAdminScreen();
 }
 function adminResolveComplaint(id){
