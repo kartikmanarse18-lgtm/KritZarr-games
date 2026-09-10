@@ -1296,7 +1296,25 @@ const StorageAdapter = {
     // time any role logs anything. dbSet('audit', ...) below still updates the
     // local buffer exactly as before; it just no longer also re-broadcasts
     // the entire thing to every connected device on every log line.
-    if(PRIVATE_ACCOUNT_KEYS.includes(key) || key === 'notifications' || key === 'incidents' || key === 'audit') return;
+    // 'aadhaarDirectory' is PHASE 1F — same root problem as incidents/audit
+    // (one shared object every sharing patient gets merged into, then the
+    // WHOLE thing rewritten on every single share/unshare), except it also
+    // caused a correctness bug, not just a size risk: syncMyAadhaarSharing()
+    // read this device's local copy of the directory, added one entry, and
+    // wrote the full object back — so if this device's copy hadn't caught up
+    // with some OTHER patient's more recent share yet, that patient's entry
+    // silently vanished from the shared doc, and a hospital looking them up
+    // got "Not found" even though they'd genuinely linked and shared. Each
+    // patient's entry now lives at its own /aadhaarDirectory/{aadhaar} doc
+    // (see aadhaarRecordRef()), written directly by syncMyAadhaarSharing()/
+    // stopMyAadhaarSharing() — no shared object, nothing to clobber. Hospital
+    // lookups (hospitalRequestAccess()) fetch that one doc directly instead
+    // of trusting a background-synced local cache, so it's never stale.
+    // dbSet('aadhaarDirectory', ...) below still updates the local mirror
+    // exactly as before, for whatever code still reads db('aadhaarDirectory')
+    // as a convenience cache — it just no longer round-trips the whole
+    // directory through Firestore.
+    if(PRIVATE_ACCOUNT_KEYS.includes(key) || key === 'notifications' || key === 'incidents' || key === 'audit' || key === 'aadhaarDirectory') return;
     if(fbRoomRef){
       const updatedAt = Date.now();
       LAST_LOCAL_WRITE_AT[key] = updatedAt;
@@ -1643,7 +1661,7 @@ function initFirebaseSync(){
     // read (see initPublicDirectories()), never a live listener. deliveryBoys
     // now lives there too — see PUBLIC_DIRECTORY_KEYS/PHASE1B_KEYS above —
     // instead of in SYNC_KEYS's legacy live path.
-    const LEGACY_LIVE_KEYS = SYNC_KEYS.filter(k => !PHASE1B_KEYS.includes(k) && !PHASE1C_KEYS.includes(k) && !PRIVATE_ACCOUNT_KEYS.includes(k) && k !== 'notifications' && k !== 'incidents' && k !== 'audit');
+    const LEGACY_LIVE_KEYS = SYNC_KEYS.filter(k => !PHASE1B_KEYS.includes(k) && !PHASE1C_KEYS.includes(k) && !PRIVATE_ACCOUNT_KEYS.includes(k) && k !== 'notifications' && k !== 'incidents' && k !== 'audit' && k !== 'aadhaarDirectory');
     LEGACY_LIVE_KEYS.forEach(key=>{
       fbRoomRef.doc(key).get().then(snap=>{
         if(snap.exists){
@@ -3126,6 +3144,13 @@ function isValidAadhaar(raw){
 function maskAadhaar(n){ const v=normalizeAadhaar(n); return v.length===12 ? `XXXX XXXX ${v.slice(8)}` : ''; }
 
 function aadhaarDirectory(){ return db('aadhaarDirectory') || {}; }
+// PHASE 1F: each patient's shared snapshot lives at its own Firestore doc,
+// keyed by the Aadhaar number itself — see the PHASE 1D comment in
+// StorageAdapter.set for why this replaced the old shared-object pattern.
+function aadhaarRecordRef(aadhaar){
+  if(!fbEnabled || typeof firebase==='undefined' || !aadhaar) return null;
+  return firebase.firestore().collection('aadhaarDirectory').doc(aadhaar);
+}
 // Called ONLY from the patient's own session — builds and publishes the
 // exact snapshot a hospital would be allowed to see once a grant is active.
 // Re-running this (e.g. after uploading a new document) refreshes what's shared.
@@ -3147,8 +3172,7 @@ function syncMyAadhaarSharing(){
   }));
   const rxSnapshot = (db('prescriptions')||[]).filter(r=>r.ownerId===pid).slice(0,25)
     .map(r=>({id:r.id, doctor:r.doctor, hospital:r.hospital, medicines:r.medicines, date:r.date}));
-  const dir = aadhaarDirectory();
-  dir[aadhaar] = {
+  const entry = {
     aadhaar, ownerAuthUid: currentAuthUid(), patientId: pid,
     name:p.name||'', gender:p.gender||'', bloodGroup:p.bloodGroup||'', allergies:p.allergies||'',
     chronic:p.chronic||'', emergencyContact:p.emergencyContact||'', phone:(currentUserRecord()||{}).phone||p.phone||'',
@@ -3158,7 +3182,16 @@ function syncMyAadhaarSharing(){
     sharingEnabled: true,
     lastSyncedAt: now()
   };
-  dbSet('aadhaarDirectory', dir);
+  const dir = aadhaarDirectory();
+  dir[aadhaar] = entry;
+  dbSet('aadhaarDirectory', dir); // local mirror only now — see PHASE 1D note
+  const ref = aadhaarRecordRef(aadhaar);
+  if(ref){
+    ref.set(entry).catch(e=>{
+      console.warn('Aadhaar share write failed', e);
+      showToast('Sync failed', 'This device could not publish your shared record. Check your connection and try again.', 'danger');
+    });
+  }
   p.aadhaarNumber = aadhaar;
   dbSet('profile', p);
   showToast('Shared for hospital lookup', 'Hospitals can now pull this snapshot after you approve their OTP request.', 'success');
@@ -3168,6 +3201,8 @@ function stopMyAadhaarSharing(){
   const aadhaar = normalizeAadhaar(p.aadhaarNumber);
   const dir = aadhaarDirectory();
   if(dir[aadhaar]){ dir[aadhaar].sharingEnabled = false; dbSet('aadhaarDirectory', dir); }
+  const ref = aadhaarRecordRef(aadhaar);
+  if(ref) ref.set({sharingEnabled:false}, {merge:true}).catch(e=>console.warn('Aadhaar unshare write failed', e));
   showToast('Sharing turned off', 'Hospitals can no longer look up your records by Aadhaar.', 'info');
   renderCurrentView(currentView);
 }
@@ -3184,14 +3219,40 @@ function pendingGrantFor(aadhaar, hospitalId){
 }
 // Hospital enters an Aadhaar number and requests a lookup. This never returns
 // record data directly — it only starts a consent request (a fresh demo OTP)
-// that must be confirmed before anything unlocks.
-function hospitalRequestAccess(){
+// that must be confirmed before anything unlocks. The existence check itself
+// now does a direct, one-time Firestore read of that ONE patient's doc (see
+// aadhaarRecordRef()) instead of trusting this device's local cache, which
+// might never have caught up with a share that happened on another device —
+// that mismatch used to be exactly why "Not found" could show up even for a
+// patient who really had linked and shared.
+async function hospitalRequestAccess(){
   const raw = document.getElementById('aadhaar-input-field').value;
   const aadhaar = normalizeAadhaar(raw);
   const hospId = CURRENT_HOSPITAL_ID;
   if(!isValidAadhaar(aadhaar)){ showToast('Invalid Aadhaar', 'That number fails the checksum — double-check the 12 digits.', 'danger'); return; }
-  const entry = aadhaarDirectory()[aadhaar];
+  let entry = null;
+  const ref = aadhaarRecordRef(aadhaar);
+  if(ref){
+    try{
+      const snap = await ref.get();
+      if(snap.exists) entry = snap.data();
+    }catch(e){
+      console.warn('Aadhaar lookup fetch failed', e);
+      showToast('Lookup failed', 'Could not reach the shared records service — check your connection and try again.', 'danger');
+      return;
+    }
+  } else {
+    // Offline/single-device demo mode — fall back to whatever's in the local mirror.
+    entry = aadhaarDirectory()[aadhaar] || null;
+  }
   if(!entry || !entry.sharingEnabled){ showToast('Not found', 'No patient has linked and shared this Aadhaar number for hospital lookup.', 'danger'); return; }
+  // Cache the freshly-fetched entry locally so the unlocked-record card (and
+  // a page reload while the grant is still active) reads accurate data
+  // without needing another round trip — see hospitalUnlockedRecordCard().
+  const dir = aadhaarDirectory();
+  dir[aadhaar] = entry;
+  LOCAL_CACHE['aadhaarDirectory'] = dir;
+  try{ localStorage.setItem('abot2_aadhaarDirectory', JSON.stringify(dir)); }catch(e){}
   const existingActive = activeGrantFor(aadhaar, hospId);
   if(existingActive){ renderCurrentView('h-verify'); return; }
   const grants = accessGrants();
