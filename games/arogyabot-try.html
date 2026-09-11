@@ -1414,7 +1414,7 @@ function openModal(html){
   document.getElementById('modal-box').innerHTML = html;
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
-function closeModal(){ document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeModal(){ document.getElementById('modal-overlay').classList.add('hidden'); if(typeof pharmacyPickerMap!=='undefined' && pharmacyPickerMap){ pharmacyPickerMap.remove(); pharmacyPickerMap=null; } }
 
 /* ============================================================
    PAYMENTS (front-end only, for now)
@@ -8864,7 +8864,7 @@ function viewPatientRx(){
     const bill = r.targetPharmacyId ? bills.find(b=>b.rxId===r.id) : null;
     let statusHtml;
     if(!r.targetPharmacyId){
-      statusHtml = `<button class="btn btn-sm" onclick="sendToPharmacy('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button>`;
+      statusHtml = `<button class="btn btn-sm" onclick="openPharmacyPickerForRx('${r.id}')"><i class="fa-solid fa-pills"></i> Send to pharmacy</button>`;
     } else if(r.pharmacyStatus!=='fulfilled'){
       statusHtml = `<span class="status-tag status-warn">Sent — awaiting fulfillment</span>`;
     } else if(bill && r.paymentStatus!=='paid'){
@@ -8961,6 +8961,65 @@ function sendToPharmacy(id){
   pushNotification('pharmacy:'+nearest.id, 'New prescription received', `${rx.medicines} — sent by a patient nearby for fulfillment.`, 'info', null);
   showToast('Sent to pharmacy', nearest.name+' has been notified for fulfillment.', 'success');
   renderCurrentView('p-rx');
+}
+// Lets the patient actually pick which pharmacy gets the prescription, instead
+// of always auto-routing to the nearest one (sendToPharmacy() above still does
+// that silently and is kept only as a fallback). Shows every registered
+// pharmacy sorted nearest-first, each with distance + stock status, plus a
+// small live map so "location too" is visible, not just a number. Tapping a
+// row calls the existing sendSpecificPrescriptionToPharmacy(), so the actual
+// send/notify logic isn't duplicated.
+let pharmacyPickerMap = null;
+function openPharmacyPickerForRx(rxId){
+  const pharmacies = db('pharmacies')||[];
+  if(!pharmacies.length){
+    showToast('No pharmacies registered yet', 'No pharmacy has signed up in your area yet — check back soon.', 'danger');
+    return;
+  }
+  const profile = db('profile')||{};
+  const withDist = pharmacies.map(p=>({
+    ...p,
+    dist: (profile.lat!=null && profile.lng!=null && p.lat!=null && p.lng!=null) ? haversineKm(profile.lat, profile.lng, p.lat, p.lng) : null
+  })).sort((a,b)=>(a.dist==null?Infinity:a.dist)-(b.dist==null?Infinity:b.dist));
+  openModal(`
+    <button class="modal-close-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    <h3 style="margin-top:0;">Choose a pharmacy</h3>
+    <p class="modal-sub">Nearest first. Tap one to send this prescription there.</p>
+    <div class="card card-flush" style="margin-bottom:14px;"><div class="map-container" id="pharmacy-picker-map" style="min-height:180px;height:180px;"></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;max-height:40vh;overflow-y:auto;">
+      ${withDist.map(p=>`
+        <div class="reminder-row" style="cursor:pointer;" onclick="sendSpecificPrescriptionToPharmacy('${rxId}','${p.id}')">
+          <div>
+            <strong>${p.name}</strong><br>
+            <span style="color:var(--text-muted);font-size:.82rem;">${p.dist!=null ? p.dist.toFixed(1)+' km away' : 'Distance unknown'}${p.phone?' · '+p.phone:''}</span>
+          </div>
+          <span class="status-tag ${p.stock==='high'?'status-ok':p.stock==='medium'?'status-warn':'status-danger'}">${p.stock||'—'} stock</span>
+        </div>`).join('')}
+    </div>
+  `);
+  // Modal HTML is injected synchronously above but the #pharmacy-picker-map
+  // div isn't attached/laid-out until the next tick — Leaflet needs real
+  // dimensions to initialize against, hence the 0ms defer.
+  setTimeout(()=>initPharmacyPickerMap(withDist, profile), 30);
+}
+function initPharmacyPickerMap(pharmacies, profile){
+  const el = document.getElementById('pharmacy-picker-map');
+  if(!el || typeof L==='undefined') return;
+  if(pharmacyPickerMap){ pharmacyPickerMap.remove(); pharmacyPickerMap=null; }
+  const center = (profile.lat!=null && profile.lng!=null) ? [profile.lat, profile.lng] : [BASE.lat, BASE.lng];
+  pharmacyPickerMap = L.map(el, {zoomControl:false, scrollWheelZoom:false}).setView(center, 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:18}).addTo(pharmacyPickerMap);
+  const pts = [];
+  if(profile.lat!=null && profile.lng!=null){
+    L.marker([profile.lat, profile.lng], {icon: icon('#0d9488')}).addTo(pharmacyPickerMap).bindPopup('You');
+    pts.push([profile.lat, profile.lng]);
+  }
+  pharmacies.forEach(p=>{
+    if(p.lat==null || p.lng==null) return;
+    L.marker([p.lat, p.lng], {icon: icon('#2563eb')}).addTo(pharmacyPickerMap).bindPopup(p.name);
+    pts.push([p.lat, p.lng]);
+  });
+  if(pts.length>1) pharmacyPickerMap.fitBounds(pts, {padding:[30,30]});
 }
 
 /* ============================================================
