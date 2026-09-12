@@ -2823,6 +2823,17 @@ function restoreActiveSession(){
     const u = s.loggedEmail ? findUserByEmail(s.loggedEmail) : null;
     if(!u) return false; // stale/corrupt session — fall back to landing
     loadActiveMemberIntoProfile(u);
+    // FIXLOG: initPrivateAccountSync() was only ever called from the login/
+    // signup screens, never from here. That meant fitness/cycle/pregnancy/
+    // nutrition/vitals/medsTools/documents/reminders/claims/insurance only
+    // ever synced on THIS device's very first sign-in — every time the app
+    // was simply reopened afterwards (the common case, since a saved session
+    // skips the login screen entirely), this device kept reading its own
+    // stale local cache with no live listener, so another device's edits
+    // never arrived and looked like they needed re-entering. boot() awaits
+    // waitForAuthReady() before calling restoreActiveSession(), so
+    // currentAuthUid() below is already valid by this point.
+    initPrivateAccountSync();
   } else if(s.role==='doctor'){
     doctorAuthData = {loggedEmail: s.loggedEmail};
     if(isEmailRevoked(s.loggedEmail)) return false;
