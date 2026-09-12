@@ -1921,7 +1921,20 @@ function diffAndPersistPhase1b(key, newArr){
     const prevJson = prev.has(id) ? JSON.stringify(prev.get(id)) : null;
     if(prevJson === JSON.stringify(record)) return; // unchanged since our last write — skip
     phase1bDocRefs(key, record).forEach(ref=>{
-      ref.set(record).catch(e=>console.warn('Phase1b write failed for', key, id, e));
+      ref.set(record).catch(e=>{
+        console.warn('Phase1b write failed for', key, id, e);
+        // FIXLOG: this used to fail 100% silently — the local cache (and so the
+        // UI, e.g. the Delivery Boys roster) already looked correct, so an admin
+        // had no way to know the record never actually reached the server. For
+        // account keys (PHASE1C) that's exactly what caused "added here, but
+        // login says no account exists on another device" — the login-linking
+        // doc never made it to Firestore, but nothing said so at the time.
+        const warnKey = 'phase1b:'+key;
+        if(!STORAGE_WARNED.has(warnKey)){
+          STORAGE_WARNED.add(warnKey);
+          if(typeof showToast==='function') showToast('Sync failed', (PHASE1C_KEYS.includes(key) ? 'A login change' : 'A change') + " didn't reach the server — check your connection and try the action again.", 'danger');
+        }
+      });
     });
   });
   prev.forEach((record, id)=>{
@@ -3927,7 +3940,16 @@ async function deliveryLoginSubmit(){
     if(hash !== u.passwordHash){ deliveryLoginError='Incorrect password.'; renderDeliveryLoginCard(); return; }
   }
   mergeAccountIntoLocalCache('users_delivery', u);
-  const dRecord = (db('deliveryBoys')||[]).find(x=>x.id===u.deliveryId);
+  let dRecord = (db('deliveryBoys')||[]).find(x=>x.id===u.deliveryId);
+  if(!dRecord){
+    // FIXLOG: fall back to matching by email before giving up — the same
+    // anchor accountRecordId() already uses. This repairs a login whose
+    // deliveryId drifted from the roster row (e.g. from the duplicate-ID bug
+    // fixed in addDeliveryBoyToRoster above), instead of permanently locking
+    // out a delivery boy whose seat genuinely still exists.
+    dRecord = (db('deliveryBoys')||[]).find(x=>(x.loginEmail||'').toLowerCase()===email && x.pharmacyId===u.pharmacyId);
+    if(dRecord){ u.deliveryId = dRecord.id; saveDeliveryUser(u); }
+  }
   if(!dRecord){ deliveryLoginError='Your delivery record no longer exists — contact your pharmacy.'; renderDeliveryLoginCard(); return; }
   deliveryLoginError='';
   loginAsDelivery(u);
@@ -7750,7 +7772,27 @@ function renderInvoiceHtml(bill, pharmacy){
    boy's live GPS (once they're logged in and on the road) is what
    powers the patient-facing tracker in e-Prescriptions.
    ============================================================ */
+// FIXLOG: deliveryMarkDelivered makes two separate writes (the prescription,
+// then the delivery boy's currentRxId) — they aren't atomic. If the second
+// one is ever lost (closed tab mid-write, dropped connection, or the
+// previously-silent Phase1b failure fixed above), the roster keeps showing
+// "On a delivery" forever even though the prescription itself already says
+// delivered. Recompute the flag from the prescription instead of trusting it
+// blindly, and self-heal it whenever we look.
+function reconcileDeliveryBoyStatuses(pharmacyId){
+  const boys = db('deliveryBoys')||[];
+  const rx = db('prescriptions')||[];
+  let changed = false;
+  boys.forEach(b=>{
+    if(pharmacyId!=null && b.pharmacyId!==pharmacyId) return;
+    if(!b.currentRxId) return;
+    const linked = rx.find(r=>r.id===b.currentRxId);
+    if(!linked || linked.deliveryStatus==='delivered'){ b.currentRxId = null; changed = true; }
+  });
+  if(changed) dbSet('deliveryBoys', boys);
+}
 function viewPharmacyDeliveryRoster(){
+  reconcileDeliveryBoyStatuses(CURRENT_PHARMACY_ID);
   const boys = (db('deliveryBoys')||[]).filter(b=>b.pharmacyId===CURRENT_PHARMACY_ID);
   return `${viewHeader('Delivery Boys','Home-delivery staff','Add your real delivery staff below — each gets their own login to go live on GPS and update delivery status. Patients see their name, phone, vehicle and live location once a delivery is assigned to them.')}
   <div class="card">
@@ -7783,8 +7825,25 @@ async function addDeliveryBoyToRoster(){
   if(!name){ showToast('Missing info','Enter the delivery boy\'s name.','danger'); return; }
   if(!loginEmail || !loginPassword){ showToast('Missing login info','A login email and password are required so they can sign in.','danger'); return; }
   if(loginPassword.length<4){ showToast('Weak password','Use at least 4 characters for the password.','danger'); return; }
-  // PHASE 1C: live check — same race as addDoctorToRoster() above.
-  if(await liveAccountExists('users_delivery', loginEmail)){ showToast('Email already used','Another delivery account already uses that email.','danger'); return; }
+
+  const boys = db('deliveryBoys')||[];
+  // FIXLOG: reusing an existing local row by email (instead of only ever
+  // trusting the live check below) is what turns "recreate this account
+  // because login says it doesn't exist" into a repair instead of a dead end.
+  // Previously, if the earlier account's Firestore link doc never made it to
+  // the server (see diffAndPersistPhase1b's FIXLOG above), liveAccountExists
+  // would report "not found", the create-or-verify call below would then hit
+  // Firebase Auth's real "email already in use", and — if the verification
+  // sign-in happened to succeed — the old code minted a SECOND deliveryId for
+  // the same person. That orphaned the first roster row (and anything
+  // assigned to it, e.g. an in-progress delivery, which then showed
+  // "On a delivery" forever because nothing could ever log in as that ID
+  // again to clear it).
+  const existing = boys.find(b=>(b.loginEmail||'').toLowerCase()===loginEmail && b.pharmacyId===CURRENT_PHARMACY_ID);
+  if(!existing){
+    // PHASE 1C: live check — same race as addDoctorToRoster() above.
+    if(await liveAccountExists('users_delivery', loginEmail)){ showToast('Email already used','Another delivery account already uses that email.','danger'); return; }
+  }
   // PHASE 1D: same reordering as addDoctorToRoster() above — create/verify
   // the login before writing anything else.
   let authUid = null, passwordHash = null;
@@ -7795,14 +7854,21 @@ async function addDeliveryBoyToRoster(){
     showToast('Could not create login', e.message || String(e), 'danger');
     return;
   }
-  const boys = db('deliveryBoys')||[];
-  const deliveryId = uid('DLV');
   const ph = (db('pharmacies')||[]).find(x=>x.id===CURRENT_PHARMACY_ID) || {};
-  boys.push({id:deliveryId, pharmacyId:CURRENT_PHARMACY_ID, name, phone, vehicle, loginEmail, available:true, currentRxId:null, lat: ph.lat, lng: ph.lng});
-  dbSet('deliveryBoys', boys);
+  let deliveryId;
+  if(existing){
+    existing.name = name; existing.phone = phone; existing.vehicle = vehicle;
+    deliveryId = existing.id;
+    dbSet('deliveryBoys', boys);
+    showToast('Login repaired', name+'\'s login has been re-synced to the server — ask them to try logging in again.', 'success');
+  } else {
+    deliveryId = uid('DLV');
+    boys.push({id:deliveryId, pharmacyId:CURRENT_PHARMACY_ID, name, phone, vehicle, loginEmail, available:true, currentRxId:null, lat: ph.lat, lng: ph.lng});
+    dbSet('deliveryBoys', boys);
+    showToast('Delivery boy added', name+' can now log in with '+loginEmail+' — share the password with them securely.', 'success');
+  }
   saveDeliveryUser({email:loginEmail, ...(authUid?{authUid}:{passwordHash}), deliveryId, pharmacyId:CURRENT_PHARMACY_ID, name});
   audit('pharmacy:'+CURRENT_PHARMACY_ID, 'delivery_add', name+' · login: '+loginEmail);
-  showToast('Delivery boy added', name+' can now log in with '+loginEmail+' — share the password with them securely.', 'success');
   renderCurrentView('ph-delivery-roster');
 }
 function removeDeliveryBoy(id){
@@ -7872,6 +7938,7 @@ function viewDeliveryDash(){
   </div>`;
 }
 function viewDeliveryOrders(){
+  reconcileDeliveryBoyStatuses(CURRENT_PHARMACY_ID);
   const b = currentDeliveryRecord() || {};
   const rx = (db('prescriptions')||[]).filter(r=>r.deliveryBoyId===CURRENT_DELIVERY_ID).sort((a,b2)=>(a.deliveryStatus==='delivered'?1:-1));
   return `${viewHeader('My Deliveries','Medicine orders assigned to you','Mark "Out for delivery" once you\'ve picked up the medicines — this switches on live tracking for the patient. Mark "Delivered" once handed over.')}
