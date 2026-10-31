@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dev Toolbox</title>
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--tx:#191b22;--mut:#6a7080;--ac:#4361ee;--ac2:#eef1ff;--bd:#e2e5ee;--err:#c0392b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1117;--card:#181b24;--tx:#e8eaf0;--mut:#8b91a3;--ac:#7b93ff;--ac2:#232845;--bd:#2a2e3b;--err:#ff7b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1117;--card:#181b24;--tx:#e8eaf0;--mut:#8b91a3;--ac:#7b93ff;--ac2:#232845;--bd:#2a2e3b;--err:#ff7b6b;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1000px;margin:0 auto;padding:16px 14px 90px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+h1{font-size:1.35rem;margin:0}h2{font-size:1.1rem;margin:0}p.s{color:var(--mut);margin:2px 0 0;font-size:.85rem}
+.ic{width:40px;height:40px;border-radius:50%;border:1px solid var(--bd);background:var(--card);font-size:1.1rem;cursor:pointer}
+#q{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;margin-bottom:10px}
+nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin-bottom:12px}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font:inherit;font-size:.78rem;cursor:pointer;transition:.15s}
+nav button i{font-style:normal;font-size:1.2rem;line-height:1.3}nav button:hover{border-color:var(--ac)}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 4px 14px rgba(67,97,238,.3)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+#hint{color:var(--mut);font-size:.9rem;margin:2px 0 8px}
+#opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 12px}
+label{display:block;font-size:.75rem;font-weight:600;color:var(--mut);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.03em}
+textarea,input:not([type=file]),select{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:9px 10px;font:inherit;font-size:.95rem}
+textarea:focus,input:focus,select:focus,#q:focus{outline:2px solid var(--ac);outline-offset:-1px}
+textarea{min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;resize:vertical}
+.io{display:grid;gap:14px;margin-top:12px}@media(min-width:760px){.io{grid-template-columns:1fr 1fr}textarea{min-height:300px}}
+.ph{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;font-size:.85rem}.ph .sp{flex:1}#cnt{color:var(--mut);font-size:.75rem}
+button.g{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:4px 10px;font:inherit;font-size:.8rem;cursor:pointer}
+button.g:hover{background:var(--ac2);border-color:var(--ac)}
+.row{display:flex;gap:8px;margin-top:14px}
+.row button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+.row button.p{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+#st{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:.85rem;animation:f 2.2s forwards;z-index:9;pointer-events:none}
+#st:empty{display:none}@keyframes f{0%,80%{opacity:1}100%{opacity:0}}
+#st.e{position:static;transform:none;animation:none;background:transparent;color:var(--err);border:1px solid var(--err);border-radius:10px;margin-top:12px;pointer-events:auto}
+</style><style>
+:root{--ac:#3b5bdb;--ac2:color-mix(in srgb,var(--ac) 11%,var(--card))}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ac:#8aa4ff;--ac2:color-mix(in srgb,var(--ac) 14%,var(--card))}}
+:root[data-theme="dark"]{--ac:#8aa4ff;--ac2:color-mix(in srgb,var(--ac) 14%,var(--card))}
+body{background:radial-gradient(900px 320px at 50% -90px,color-mix(in srgb,var(--ac) 16%,transparent),transparent),var(--bg)}
+h1{display:flex;align-items:center;gap:12px;font-size:1.45rem;letter-spacing:-.01em}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--ac);color:#fff;display:grid;place-items:center;flex:none}.logo svg{width:23px;height:23px}
+svg{flex:none}.ic{display:grid;place-items:center}.ic svg{width:20px;height:20px}
+nav{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}@media(max-width:480px){nav{grid-template-columns:repeat(3,1fr)}}
+nav button{border-radius:14px;padding:12px 6px;gap:6px;box-shadow:0 1px 2px rgba(0,0,0,.05)}nav button i svg{width:24px;height:24px;display:block}nav button span{font-size:.8rem;font-weight:500}
+nav button.on{box-shadow:0 8px 18px color-mix(in srgb,var(--ac) 35%,transparent)}
+.cat{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 6px;border-width:1px;border-radius:999px}.cat svg{width:18px;height:18px}.cat.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.06);padding:20px}
+h2{display:flex;align-items:center;gap:8px}h2 svg{width:22px;height:22px;color:var(--ac)}
+#fz{background:var(--ac2);border-color:color-mix(in srgb,var(--ac) 45%,var(--bd));text-align:center;padding:18px}
+#fz label{display:flex;justify-content:center;align-items:center;gap:8px;font-size:.9rem;color:var(--tx);text-transform:none;font-weight:600}#fz label svg{width:22px;height:22px;color:var(--ac)}
+textarea{border-radius:12px}#out{background:var(--ac2)}
+.row button.p{padding:13px;font-size:1rem;border-radius:12px}.row button{border-radius:12px}
+#cats .cat.on{background:var(--ac);color:#fff;border-color:var(--ac)}#fz label{display:block}#fz label svg{display:inline-block;vertical-align:-5px;margin-right:6px}#fz input{margin-top:8px}
+</style>
+</head><body><main>
+<header><div><h1>🛠️ Dev Toolbox</h1><p class="s">Format JSON, test regex, decode tokens and convert timestamps and colors.</p></div><button class="ic" id="th" title="Toggle light/dark">🌓</button></header>
+<input id="q" type="search" placeholder="Search tools… (press / to focus)">
+<nav id="nav"></nav>
+<section class="card"><h2 id="tt"></h2><div id="hint"></div><div id="opts"></div>
+<div class="io">
+<div><div class="ph"><b>Input</b><span id="cnt"></span><span class="sp"></span><button class="g" id="ex">Example</button><button class="g" id="paste">Paste</button><button class="g" id="open">Open file</button></div><textarea id="in" spellcheck="false" placeholder="Type, paste, or open a file. Results update live."></textarea></div>
+<div><div class="ph"><b>Output</b><span class="sp"></span><button class="g" id="swap">Use as input</button><button class="g" id="copy">Copy</button><button class="g" id="dl">Save</button></div><textarea id="out" readonly placeholder="Result appears here"></textarea></div>
+</div>
+<input type="file" id="file" hidden>
+<div class="row"><button class="p" id="run">Run (Ctrl+Enter)</button><button id="clr">Clear all</button></div>
+<div id="st"></div></section>
+</main>
+<script>
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=u=>btoa(String.fromCharCode(...u)),unb64=s=>Uint8Array.from(atob(s.trim()),c=>c.charCodeAt(0));
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+async function key(p,salt){const k=await crypto.subtle.importKey('raw',enc.encode(p),'PBKDF2',false,['deriveKey']);
+return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+function csvParse(t){const r=[];let row=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];
+if(q){if(ch=='"'&&t[i+1]=='"'){c+='"';i++}else if(ch=='"')q=false;else c+=ch}
+else if(ch=='"')q=true;else if(ch==','){row.push(c);c=''}else if(ch=='\n'){row.push(c.replace(/\r$/,''));r.push(row);row=[];c=''}else c+=ch}
+if(c||row.length){row.push(c);r.push(row)}return r}
+const sortK=v=>Array.isArray(v)?v.map(sortK):v&&typeof v=='object'?Object.keys(v).sort().reduce((a,k)=>(a[k]=sortK(v[k]),a),{}):v;
+const words=t=>t.replace(/([a-z])([A-Z])/g,'$1 $2').split(/[^A-Za-z0-9]+/).filter(Boolean);
+const T={
+JSON:{o:[{k:'m',l:'Mode',v:['Format','Minify','Validate','Sort keys']},{k:'i',l:'Indent',v:['2','4','Tab']}],
+run:(t,o)=>{const j=JSON.parse(t),ind=o.i=='Tab'?'\t':+o.i;
+return o.m=='Minify'?JSON.stringify(j):o.m=='Validate'?'Valid JSON ✓ ('+(Array.isArray(j)?j.length+' items':typeof j=='object'&&j?Object.keys(j).length+' keys':typeof j)+')':JSON.stringify(o.m=='Sort keys'?sortK(j):j,null,ind)}},
+Slug:{o:[{k:'s',l:'Separator',v:['-','_','.']},{k:'x',l:'Max length (0 = none)',t:'0'}],
+run:(t,o)=>t.split('\n').map(l=>{let s=l.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/ß/g,'ss').toLowerCase().replace(/[^a-z0-9]+/g,o.s).replace(new RegExp('^\\'+o.s+'+|\\'+o.s+'+$','g'),'');
+if(+o.x>0)s=s.slice(0,+o.x).replace(new RegExp('\\'+o.s+'+$'),'');return s}).join('\n')},
+Protect:{o:[{k:'m',l:'Mode',v:['Encrypt','Decrypt']},{k:'p',l:'Passphrase',t:'',pw:1}],
+run:async(t,o)=>{if(!o.p)throw Error('Enter a passphrase');
+if(o.m=='Encrypt'){const s=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await key(o.p,s);
+const c=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},k,enc.encode(t)));return b64(new Uint8Array([...s,...iv,...c]))}
+const d=unb64(t),k=await key(o.p,d.slice(0,16));
+try{return dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:d.slice(16,28)},k,d.slice(28)))}catch{throw Error('Wrong passphrase or corrupted data')}}},
+Hash:{o:[{k:'a',l:'Algorithm',v:['SHA-256','SHA-512','SHA-1']}],run:async(t,o)=>hex(await crypto.subtle.digest(o.a,enc.encode(t)))},
+Encode:{o:[{k:'m',l:'Mode',v:['Base64 encode','Base64 decode','URL encode','URL decode','HTML escape','HTML unescape']}],
+run:(t,o)=>({'Base64 encode':()=>b64(enc.encode(t)),'Base64 decode':()=>dec.decode(unb64(t)),'URL encode':()=>encodeURIComponent(t),'URL decode':()=>decodeURIComponent(t),
+'HTML escape':()=>t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+'HTML unescape':()=>t.replace(/&(amp|lt|gt|quot|#39);/g,(m,e)=>({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'"}[e]))}[o.m])()},
+CSV:{o:[{k:'m',l:'Mode',v:['CSV → JSON','JSON → CSV']}],
+run:(t,o)=>{if(o.m=='CSV → JSON'){const r=csvParse(t.trim()),h=r.shift();return JSON.stringify(r.map(x=>Object.fromEntries(h.map((k,i)=>[k,x[i]??''])))  ,null,2)}
+const a=JSON.parse(t),h=[...new Set(a.flatMap(Object.keys))],q=v=>{v=v==null?'':typeof v=='object'?JSON.stringify(v):String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+return [h.map(q).join(','),...a.map(r=>h.map(k=>q(r[k])).join(','))].join('\n')}},
+Text:{o:[{k:'m',l:'Mode',v:['Stats','UPPER','lower','Title Case','camelCase','snake_case','kebab-case','Sort lines','Unique lines','Reverse lines','Trim & collapse spaces']}],
+run:(t,o)=>{const w=words(t),m=o.m;return m=='Stats'?`Characters: ${t.length}\nWords: ${(t.match(/\S+/g)||[]).length}\nLines: ${t?t.split('\n').length:0}\nReading time: ${Math.max(1,Math.round((t.match(/\S+/g)||[]).length/200))} min`
+:m=='UPPER'?t.toUpperCase():m=='lower'?t.toLowerCase():m=='Title Case'?t.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase())
+:m=='camelCase'?w.map((x,i)=>i?x[0].toUpperCase()+x.slice(1).toLowerCase():x.toLowerCase()).join(''):m=='snake_case'?w.join('_').toLowerCase():m=='kebab-case'?w.join('-').toLowerCase()
+:m=='Sort lines'?t.split('\n').sort((a,b)=>a.localeCompare(b)).join('\n'):m=='Unique lines'?[...new Set(t.split('\n'))].join('\n'):m=='Reverse lines'?t.split('\n').reverse().join('\n')
+:t.split('\n').map(l=>l.trim().replace(/\s+/g,' ')).join('\n')}},
+Regex:{o:[{k:'p',l:'Pattern',t:''},{k:'f',l:'Flags',t:'g'}],run:(t,o)=>{const f=o.f.includes('g')?o.f:o.f+'g',a=[...t.matchAll(new RegExp(o.p,f))];
+return a.length?a.length+' match(es)\n'+a.map((m,i)=>`${i+1}. "${m[0]}" @${m.index}`+(m.length>1?' groups: '+JSON.stringify(m.slice(1)):'')).join('\n'):'No matches'}},
+Diff:{o:[],run:t=>{const [x,y]=t.split(/\n---\n/);if(y===undefined)throw Error('Put A, a line with ---, then B');const a=x.split('\n'),b=y.split('\n'),n=a.length,m=b.length,d=Array.from({length:n+1},()=>Array(m+1).fill(0));
+for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i][j]=a[i]==b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+const r=[];let i=0,j=0;while(i<n&&j<m){if(a[i]==b[j]){r.push('  '+a[i]);i++;j++}else if(d[i+1][j]>=d[i][j+1])r.push('- '+a[i++]);else r.push('+ '+b[j++])}
+while(i<n)r.push('- '+a[i++]);while(j<m)r.push('+ '+b[j++]);return r.join('\n')}},
+Generate:{o:[{k:'m',l:'Type',v:['UUID v4','Password','Lorem ipsum','Random numbers']},{k:'n',l:'Count / length',t:'16'}],run:(t,o)=>{const n=Math.min(+o.n||1,1000);
+if(o.m=='UUID v4')return Array.from({length:Math.min(n,100)},()=>crypto.randomUUID()).join('\n');
+if(o.m=='Password'){const cs='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*-_=+',u=crypto.getRandomValues(new Uint32Array(n));return [...u].map(v=>cs[v%cs.length]).join('')}
+if(o.m=='Random numbers'){const u=crypto.getRandomValues(new Uint32Array(Math.min(n,100)));return [...u].map(v=>v%1000+1).join(', ')}
+const w='lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim minim veniam quis nostrud'.split(' ');return Array.from({length:Math.min(n,50)},()=>{const s=Array.from({length:8+Math.random()*8|0},()=>w[Math.random()*w.length|0]).join(' ');return s[0].toUpperCase()+s.slice(1)+'.'}).join(' ')}},
+JWT:{o:[],run:t=>{const p=t.trim().split('.');if(p.length<2)throw Error('Not a JWT');const u=s=>JSON.parse(dec.decode(unb64(s.replace(/-/g,'+').replace(/_/g,'/'))));const h=u(p[0]),b=u(p[1]);
+return 'HEADER\n'+JSON.stringify(h,null,2)+'\n\nPAYLOAD\n'+JSON.stringify(b,null,2)+(b.exp?'\n\nExpires: '+new Date(b.exp*1000).toISOString()+(b.exp*1000<Date.now()?' (EXPIRED)':' (valid)'):'')+'\n\nSignature is not verified.'}},
+Time:{o:[],run:t=>{t=t.trim();let ms;if(!t)ms=Date.now();else if(/^-?\d+$/.test(t))ms=t.length>11?+t:+t*1000;else{ms=Date.parse(t);if(isNaN(ms))throw Error('Enter a Unix timestamp or a date')}
+const dt=new Date(ms),s=Math.round((ms-Date.now())/1000),a=Math.abs(s),u=a<60?a+' sec':a<3600?(a/60|0)+' min':a<86400?(a/3600|0)+' hr':(a/86400|0)+' days';
+return `Unix (s): ${Math.floor(ms/1000)}\nUnix (ms): ${ms}\nISO/UTC: ${dt.toISOString()}\nLocal: ${dt.toString()}\nRelative: ${s<0?u+' ago':'in '+u}`}},
+Color:{o:[],run:t=>{t=t.trim();let r,g,b,m;
+if(m=t.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i)){let h=m[1];if(h.length==3)h=[...h].map(c=>c+c).join('');[r,g,b]=[0,2,4].map(i=>parseInt(h.substr(i,2),16))}
+else if(m=t.match(/^rgb\D*(\d+)\D+(\d+)\D+(\d+)/i)){[r,g,b]=m.slice(1).map(Number)}
+else if(m=t.match(/^hsl\D*([\d.]+)\D+([\d.]+)\D+([\d.]+)/i)){const h=m[1]/360,s=m[2]/100,l=m[3]/100,f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1))))};[r,g,b]=[f(0),f(8),f(4)]}
+else throw Error('Use #hex, rgb(r,g,b) or hsl(h,s%,l%)');
+const R=r/255,G=g/255,B=b/255,mx=Math.max(R,G,B),mn=Math.min(R,G,B),l=(mx+mn)/2,dl=mx-mn,s=dl?dl/(1-Math.abs(2*l-1)):0;let h=!dl?0:mx==R?((G-B)/dl+6)%6:mx==G?(B-R)/dl+2:(R-G)/dl+4;
+return `HEX: #${[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}\nRGB: rgb(${r}, ${g}, ${b})\nHSL: hsl(${Math.round(h*60)}, ${Math.round(s*100)}%, ${Math.round(l*100)}%)`}}
+};
+const $=id=>document.getElementById(id);let cur='JSON';const st=(m,e)=>{$('st').textContent=m;$('st').className=e?'e':''};
+function show(n){cur=n;[...$('nav').children].forEach(b=>b.classList.toggle('on',b.textContent==n));
+$('opts').innerHTML=T[n].o.map(o=>`<label>${o.l}</label>`+(o.v?`<select data-k="${o.k}">${o.v.map(v=>`<option>${v}</option>`).join('')}</select>`:`<input data-k="${o.k}" type="${o.pw?'password':'text'}" value="${o.t||''}" autocomplete="off">`)).join('');
+$('out').value='';st('')}
+Object.keys(T).forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>show(n);$('nav').appendChild(b)});
+$('run').onclick=async()=>{const o={};document.querySelectorAll('#opts [data-k]').forEach(e=>o[e.dataset.k]=e.value);
+try{$('out').value=await T[cur].run($('in').value,o);st('Done ✓')}catch(e){$('out').value='';st('Error: '+e.message,1)}};
+$('swap').onclick=()=>{$('in').value=$('out').value;$('out').value=''};
+$('clr').onclick=()=>{$('in').value='';$('out').value='';st('')};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('out').value);st('Copied ✓')}catch{$('out').select();document.execCommand('copy');st('Copied ✓')}};
+const H={JSON:['Format, minify, validate or sort JSON','{"name":"Ana","tags":["a","b"],"n":1}'],
+Slug:['Turn titles into clean URL slugs, one per line','Héllo Wörld! My First Post\nAnother Title Here'],
+Protect:['Encrypt or decrypt text with a passphrase (AES-256)','My secret note',{p:'my passphrase'}],
+Hash:['Create SHA hashes of text','hello world'],Encode:['Base64, URL and HTML encoding','Hello & welcome?'],
+CSV:['Convert between CSV and JSON','name,age\nAna,30\nBo,25'],Text:['Change case, count words, sort and clean lines','hello world from the toolkit'],
+Regex:['Test a regular expression and see matches','Call 555-1234 or 555-9876',{p:'\\d{3}-\\d{4}'}],
+Diff:['Compare two texts: A, a line with ---, then B','a\nb\nc\n---\na\nx\nc'],Generate:['Make UUIDs, passwords, lorem ipsum or random numbers',''],
+JWT:['Decode a JSON Web Token','eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMiLCJuYW1lIjoiQW5hIn0.sig'],
+Time:['Convert Unix timestamps and dates (empty = now)','1700000000'],Color:['Convert HEX, RGB and HSL','#2f5fd0']};
+let tm;const auto=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!$('in').value&&cur!='Generate'&&cur!='Time'){$('out').value='';st('');return}$('run').click()},250)};
+const _show=show;show=function(n){_show(n);$('hint').textContent=H[n][0];try{localStorage.setItem('tk-dev-toolbox',n)}catch(e){}if(n=='Generate'||n=='Time')auto()};
+$('in').oninput=auto;$('opts').addEventListener('input',auto);
+$('ex').onclick=()=>{$('in').value=H[cur][1];const d=H[cur][2]||{};for(const k in d){const e=document.querySelector('#opts [data-k="'+k+'"]');if(e)e.value=d[k]}auto()};
+$('paste').onclick=async()=>{try{$('in').value=await navigator.clipboard.readText();auto()}catch{st('Paste blocked by browser. Long-press the box and paste instead.',1)}};
+$('open').onclick=()=>$('file').click();
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('in').value=r.result;auto()};r.readAsText(f);e.target.value=''};
+$('dl').onclick=()=>{if(!$('out').value)return st('Nothing to download yet',1);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('out').value],{type:'text/plain'}));a.download=cur.toLowerCase()+'-output.txt';a.click();st('Downloaded ✓')};
+let last;try{last=localStorage.getItem('tk-dev-toolbox')}catch(e){}show(T[last]?last:'JSON');
+</script><script>
+const IC={JSON:'{ }',Slug:'🔗',Protect:'🔒',Hash:'#️⃣',Encode:'🔤',CSV:'📊',Text:'📝',Regex:'🎯',Diff:'↔️',Generate:'🎲',JWT:'🎫',Time:'⏱️',Color:'🎨'};
+$('nav').innerHTML='';Object.keys(T).forEach(n=>{const b=document.createElement('button');b.dataset.n=n;b.innerHTML='<i>'+IC[n]+'</i><span>'+n+'</span>';b.onclick=()=>show(n);$('nav').append(b)});
+const _s2=show,upd=()=>{$('cnt').textContent=$('in').value.length+' chars'};
+show=function(n){_s2(n);const c=[...$('opts').children];$('opts').innerHTML='';for(let i=0;i<c.length;i+=2){const d=document.createElement('div');d.append(c[i],c[i+1]);$('opts').append(d)}
+$('tt').textContent=IC[n]+' '+n;[...$('nav').children].forEach(b=>b.classList.toggle('on',b.dataset.n==n));upd()};
+$('in').addEventListener('input',upd);
+$('q').oninput=()=>{const q=$('q').value.toLowerCase();[...$('nav').children].forEach(b=>{b.style.display=(b.dataset.n+' '+H[b.dataset.n][0]).toLowerCase().includes(q)?'':'none'})};
+$('q').onkeydown=e=>{if(e.key=='Enter'){const b=[...$('nav').children].find(x=>x.style.display!='none');if(b){show(b.dataset.n);$('in').focus()}}};
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key=='Enter'){$('run').click()}else if(e.key=='/'&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();$('q').focus()}});
+$('th').onclick=()=>{const r=document.documentElement,d=r.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');r.dataset.theme=d=='dark'?'light':'dark'};
+new MutationObserver(()=>{const e=$('st'),t=e.textContent;if(t=='Done ✓'){e.textContent='';return}if(t){e.style.animation='none';void e.offsetWidth;e.style.animation=''}}).observe($('st'),{childList:true});
+show(cur);
+</script>
+<style>
+#fz{display:none;border:2px dashed var(--bd);border-radius:12px;padding:10px;margin-top:10px}#fz.drag{border-color:var(--ac);background:var(--ac2)}#fl{font-size:.8rem;color:var(--mut);margin-top:4px}
+input[type=file]{width:100%;font-size:.9rem}
+dialog{max-width:700px;width:92%;border:1px solid var(--bd);border-radius:16px;background:var(--card);color:var(--tx);max-height:86vh;padding:18px}dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h3{margin:16px 0 6px}dialog li{margin:3px 0;font-size:.9rem}dialog .t{overflow-x:auto}table{border-collapse:collapse;font-size:.78rem;min-width:520px}td,th{border:1px solid var(--bd);padding:5px 7px;text-align:left;vertical-align:top}th{background:var(--ac2)}
+</style>
+<script>
+const L={},lib=u=>L[u]||(L[u]=new Promise((r,j)=>{const e=document.createElement('script');e.src=u;e.onload=r;e.onerror=()=>{delete L[u];j(Error('Could not load a helper library. Connect to the internet (needed once per session for file tools).'))};document.head.append(e)}));
+const CD='https://cdnjs.cloudflare.com/ajax/libs/',PL='https://cdn.jsdelivr.net/npm/pdf-lib-plus-encrypt@1.1.0/dist/pdf-lib-plus-encrypt.min.js',PJ=CD+'pdf.js/3.11.174/pdf.min.js',XL=CD+'xlsx/0.18.5/xlsx.full.min.js',TS=CD+'tesseract.js/5.1.1/tesseract.min.js';
+let FILES=[];
+const save=(n,b)=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+const need=(F,k=1)=>{if(F.length<k)throw Error(k>1?'Choose at least '+k+' files first':'Choose a file first')};
+const pdfjs=async()=>{await lib(PJ);if(!pdfjsLib.GlobalWorkerOptions.workerSrc){const w=await(await fetch(CD+'pdf.js/3.11.174/pdf.worker.min.js')).text();pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([w],{type:'text/javascript'}))}return pdfjsLib};
+const rng=(s,n)=>{const r=new Set();s.split(',').forEach(p=>{p=p.trim();if(!p)return;const m=p.match(/^(\d*)-(\d*)$/);if(m){const a=+m[1]||1,b=+m[2]||n;for(let i=a;i<=Math.min(b,n);i++)r.add(i-1)}else if(+p>=1&&+p<=n)r.add(+p-1)});return[...r].sort((a,b)=>a-b)};
+const pdfBlob=async d=>new Blob([await d.save()],{type:'application/pdf'});
+Object.assign(T,{
+'PDF Merge':{f:'application/pdf',m:1,noIn:1,o:[],run:async(t,o,F)=>{need(F,2);await lib(PL);const{PDFDocument}=PDFLib,out=await PDFDocument.create();
+for(const f of F){const d=await PDFDocument.load(await f.arrayBuffer(),{ignoreEncryption:true});(await out.copyPages(d,d.getPageIndices())).forEach(p=>out.addPage(p))}
+save('merged.pdf',await pdfBlob(out));return `Merged ${F.length} files into one PDF with ${out.getPageCount()} pages. Files are joined in the order you selected.`}},
+'PDF Pages':{f:'application/pdf',noIn:1,o:[{k:'m',l:'Action',v:['Extract pages','Delete pages','Rotate pages 90°']},{k:'r',l:'Pages (e.g. 1-3,5,8-)',t:'1'}],run:async(t,o,F)=>{need(F);await lib(PL);const{PDFDocument,degrees}=PDFLib,d=await PDFDocument.load(await F[0].arrayBuffer(),{ignoreEncryption:true}),n=d.getPageCount(),ix=rng(o.r,n);
+if(!ix.length)throw Error('No valid pages in that range. The document has '+n+' pages.');let out;
+if(o.m.startsWith('Rotate')){ix.forEach(i=>{const p=d.getPage(i);p.setRotation(degrees((p.getRotation().angle+90)%360))});out=d}
+else{out=await PDFDocument.create();const keep=o.m=='Extract pages'?ix:d.getPageIndices().filter(i=>!ix.includes(i));if(!keep.length)throw Error('That would remove every page');(await out.copyPages(d,keep)).forEach(p=>out.addPage(p))}
+save('edited.pdf',await pdfBlob(out));return `Done. The original had ${n} pages and the new file has ${out.getPageCount()}.`}},
+'Img→PDF':{f:'image/*',m:1,noIn:1,o:[{k:'z',l:'Page size',v:['Fit to image','A4']}],run:async(t,o,F)=>{need(F);await lib(PL);const out=await PDFLib.PDFDocument.create();
+for(const f of F){let im;if(f.type=='image/jpeg')im=await out.embedJpg(await f.arrayBuffer());else{const b=await createImageBitmap(f),c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);im=await out.embedPng(await(await new Promise(r=>c.toBlob(r))).arrayBuffer())}
+if(o.z=='A4'){const pg=out.addPage([595,842]),k=Math.min(515/im.width,762/im.height);pg.drawImage(im,{x:(595-im.width*k)/2,y:(842-im.height*k)/2,width:im.width*k,height:im.height*k})}else out.addPage([im.width,im.height]).drawImage(im,{x:0,y:0,width:im.width,height:im.height})}
+save('images.pdf',await pdfBlob(out));return `Created a PDF with ${out.getPageCount()} pages.`}},
+'PDF→Text':{f:'application/pdf',noIn:1,o:[],run:async(t,o,F)=>{need(F);const J=await pdfjs(),d=await J.getDocument({data:await F[0].arrayBuffer()}).promise,r=[];
+for(let i=1;i<=d.numPages;i++){const c=await(await d.getPage(i)).getTextContent();r.push('--- Page '+i+' ---\n'+c.items.map(x=>x.str+(x.hasEOL?'\n':' ')).join(''))}
+const x=r.join('\n\n');return x.replace(/--- Page \d+ ---|\s/g,'')?x:'No text found. This PDF looks scanned, so use the OCR tool instead.'}},
+OCR:{f:'image/*,application/pdf',m:1,noIn:1,o:[{k:'l',l:'Language',v:['eng','spa','fra','deu','ita','por','nld','rus','hin','ara','chi_sim','jpn']}],run:async(t,o,F)=>{need(F);await lib(TS);
+const w=await Tesseract.createWorker(o.l,1,{logger:m=>{if(m.status)st(m.status+' '+Math.round((m.progress||0)*100)+'%')}}),out=[];
+try{for(const f of F){const im=[];if(f.type=='application/pdf'){const J=await pdfjs(),d=await J.getDocument({data:await f.arrayBuffer()}).promise;
+for(let i=1;i<=Math.min(d.numPages,20);i++){const p=await d.getPage(i),v=p.getViewport({scale:2}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;await p.render({canvasContext:c.getContext('2d'),viewport:v}).promise;im.push(c)}}else im.push(f);
+for(const x of im)out.push((await w.recognize(x)).data.text.trim())}}finally{await w.terminate()}
+return out.join('\n\n--- next page/image ---\n\n')||'No text recognized.'}},
+Excel:{f:'.xlsx,.xls,.csv,.ods',o:[{k:'m',l:'Mode',v:['Spreadsheet → JSON','Spreadsheet → CSV','Preview sheets','Text (JSON/CSV) → XLSX']}],run:async(t,o,F)=>{await lib(XL);const U=XLSX.utils;
+if(o.m.startsWith('Text')){if(!t.trim())throw Error('Paste JSON or CSV into the input box first');let ws;try{const j=JSON.parse(t);ws=U.json_to_sheet(Array.isArray(j)?j:[j])}catch{const b=XLSX.read(t,{type:'string'});ws=b.Sheets[b.SheetNames[0]]}
+const wb=U.book_new();U.book_append_sheet(wb,ws,'Sheet1');save('data.xlsx',new Blob([XLSX.write(wb,{type:'array',bookType:'xlsx'})]));return 'Created data.xlsx'}
+need(F);const wb=XLSX.read(await F[0].arrayBuffer());
+if(o.m.endsWith('JSON'))return JSON.stringify(Object.fromEntries(wb.SheetNames.map(n=>[n,U.sheet_to_json(wb.Sheets[n])])),null,2);
+if(o.m.endsWith('CSV'))return U.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+return wb.SheetNames.map(n=>{const sh=wb.Sheets[n];return `Sheet "${n}" (${sh['!ref']||'empty'})\n`+U.sheet_to_csv(sh).split('\n').slice(0,6).join('\n')}).join('\n\n')}}
+});
+Object.assign(IC,{'PDF Merge':'📎','PDF Pages':'✂️','Img→PDF':'🖼️','PDF→Text':'📄',OCR:'👁️',Excel:'📗'});
+Object.assign(H,{'PDF Merge':['Combine several PDFs into one. Choose 2 or more files.',''],'PDF Pages':['Extract, delete or rotate pages in a PDF',''],'Img→PDF':['Turn photos or screenshots into a PDF',''],
+'PDF→Text':['Pull the text out of a PDF',''],OCR:['Read text from images or scanned PDFs (Tesseract OCR)',''],Excel:['Read XLSX/CSV files, or make an XLSX from JSON or CSV text','[{"name":"Ana","age":30},{"name":"Bo","age":25}]',{m:'Text (JSON/CSV) → XLSX'}]});
+['PDF Merge','PDF Pages','Img→PDF','PDF→Text','OCR','Excel'].forEach(n=>{const b=document.createElement('button');b.dataset.n=n;b.innerHTML='<i>'+IC[n]+'</i><span>'+n+'</span>';b.onclick=()=>show(n);$('nav').append(b)});
+const fz=document.createElement('div');fz.id='fz';fz.innerHTML='<label>Files (drop here or choose)</label><input type="file" id="files"><div id="fl"></div>';$('opts').after(fz);
+const setF=l=>{FILES=[...l];$('fl').textContent=FILES.length?FILES.map(f=>f.name).join(', '):''};
+$('files').onchange=e=>setF(e.target.files);
+fz.ondragover=e=>{e.preventDefault();fz.classList.add('drag')};fz.ondragleave=()=>fz.classList.remove('drag');
+fz.ondrop=e=>{e.preventDefault();fz.classList.remove('drag');setF(T[cur].m?e.dataTransfer.files:[e.dataTransfer.files[0]])};
+const _s3=show;show=function(n){_s3(n);const k=T[n],io=$('in').closest('.io');setF([]);fz.style.display=k.f?'block':'none';$('files').value='';if(k.f){$('files').accept=k.f;$('files').multiple=!!k.m}
+io.children[0].style.display=k.noIn?'none':'';io.style.gridTemplateColumns=k.noIn?'1fr':'';$('run').textContent=k.f?'Run ▶ (Ctrl+Enter)':'Run (Ctrl+Enter)'};
+const RUN=async force=>{const k=T[cur];if(k.f&&!force)return;const o={};document.querySelectorAll('#opts [data-k]').forEach(e=>o[e.dataset.k]=e.value);
+try{if(k.f)st('Working…');$('out').value=await k.run($('in').value,o,FILES);st(k.f?'Finished ✓':'Done ✓')}catch(e){$('out').value='';st('Error: '+e.message,1)}};
+$('run').onclick=e=>RUN(e.isTrusted);
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key=='Enter'&&T[cur].f)RUN(true)});
+const hd=document.createElement('dialog');hd.id='hd';hd.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h2>About &amp; User Manual</h2><button class="g" onclick="hd.close()">Close ✕</button></div>
+<h3>About</h3><p style="font-size:.9rem">Universal Toolkit is a free, single-file app that bundles 24 everyday text, developer, PDF, image and spreadsheet tools. Text tools run fully on your device and offline. File tools also run on your device (your files are never uploaded), but they load helper libraries (pdf-lib, pdf.js, SheetJS, Tesseract.js) from a public CDN, so you need internet once per session, and OCR also downloads language data.</p>
+<h3>Quick manual</h3><ul>
+<li><b>Basics:</b> pick a tool card, set options, type or paste input. Results update live. Use Example to see sample data, Copy or Save to keep results, and Ctrl+Enter to run. Press / to search.</li>
+<li><b>JSON / CSV / Text / Encode / Hash / Regex / Diff / JWT / Time / Color / Generate / Slug:</b> paste input, choose a mode. For Diff, put A, then a line with ---, then B.</li>
+<li><b>Protect:</b> encrypts text with a passphrase (AES-256-GCM). Keep the passphrase safe: it cannot be recovered.</li>
+<li><b>PDF Merge:</b> choose 2 or more PDFs (selected order is kept), press Run, and the merged file downloads.</li>
+<li><b>PDF Pages:</b> choose one PDF, pick Extract, Delete or Rotate, and enter pages like 1-3,5,8-.</li>
+<li><b>Img→PDF:</b> choose images (JPG, PNG, WebP), pick page size, press Run.</li>
+<li><b>PDF→Text:</b> extracts the text layer. For scanned PDFs use OCR.</li>
+<li><b>OCR:</b> choose images or a scanned PDF (first 20 pages), pick the language, press Run. Clear, straight, high-contrast print works best. Handwriting is weak.</li>
+<li><b>Categories:</b> pick PDF, Images, Sheets, Security, Developer or Text at the top. Each shows only its own tools.</li>
+<li><b>PDF Compress:</b> rebuilds pages as images at High, Medium or Low quality. Smaller files, but text is no longer selectable.</li>
+<li><b>PDF Protect:</b> sets an open password and permissions. Keep the password safe: it cannot be recovered.</li>
+<li><b>PDF Sign:</b> draw your signature, choose page and position, press Run. This is a visual signature, not a legally certified digital signature.</li>
+<li><b>PDF Redact:</b> type words to hide (one per line) and choose a PDF. Matching text is blacked out and pages become images, so the text is truly removed. Always review the result, since phrases split across lines can be missed.</li>
+<li><b>PDF Annotate:</b> add text, a watermark or page numbers. Latin letters only.</li>
+<li><b>Excel:</b> read XLSX/XLS/CSV/ODS as JSON, CSV or a preview, or paste JSON/CSV text and create an XLSX.</li></ul>
+<h3>How it compares</h3><p style="font-size:.8rem;color:var(--mut)">A general comparison from common knowledge, not a live check. Products change, so verify current features and pricing.</p>
+<div class="t"><table><tr><th>Feature</th><th>This toolkit</th><th>Online PDF sites (e.g. Smallpdf, iLovePDF)</th><th>Desktop suites (e.g. Adobe Acrobat, Foxit)</th></tr>
+<tr><td>Cost</td><td>Free, no limits</td><td>Free tier with caps, paid plans</td><td>Paid subscription or licence</td></tr>
+<tr><td>Privacy</td><td>Files stay on your device</td><td>Files are uploaded to servers</td><td>Local, with optional cloud</td></tr>
+<tr><td>Merge, split, rotate, images to PDF</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>OCR</td><td>Yes (Tesseract, good on clean print)</td><td>Often paid</td><td>Yes, usually most accurate</td></tr>
+<tr><td>Password-protect, sign, redact, compress PDFs</td><td>Yes (basic, see limits)</td><td>Yes</td><td>Yes</td></tr><tr><td>Edit existing PDF text</td><td>No. Add text, watermark, page numbers instead</td><td>Some</td><td>Yes</td></tr>
+<tr><td>Spreadsheet conversion</td><td>Basic read and create</td><td>Some</td><td>Full in Excel</td></tr>
+<tr><td>Developer tools (JSON, regex, JWT, hashes)</td><td>Built in</td><td>No</td><td>No</td></tr>
+<tr><td>Offline</td><td>Text tools yes, file tools need internet once per session</td><td>No</td><td>Yes</td></tr></table></div>
+<h3>Known limits</h3><ul><li>Encrypted PDFs may not open in PDF tools. Real editing of existing PDF text is not possible in a browser app like this.</li><li>Very large files can be slow on phones.</li><li>JWT decoding does not verify signatures.</li></ul>`;
+document.body.append(hd);
+const hb=document.createElement('button');hb.className='ic';hb.textContent='?';hb.title='About and manual';hb.onclick=()=>hd.showModal();$('th').before(hb);
+{const g=document.createElement('div');g.style.cssText='display:flex;gap:8px';hb.after(g);g.append(hb,$('th'))}
+show(cur);
+</script>
+<style>
+#cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}@media(min-width:700px){#cats{grid-template-columns:repeat(6,1fr)}}
+.cat{padding:10px 4px;border:2px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;font:inherit;font-weight:600;font-size:.85rem;cursor:pointer}.cat.on{border-color:var(--ac);background:var(--ac2)}
+#cd{color:var(--mut);font-size:.85rem;margin:0 2px 8px}#sg{display:none;margin-top:10px}
+</style>
+<script>
+const PDFA='application/pdf',cbuf=async f=>await f.arrayBuffer();
+const pc=async(p,s)=>{const v=p.getViewport({scale:s}),c=document.createElement('canvas');c.width=v.width;c.height=v.height;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise;return[c,v]};
+const jb=(c,q)=>new Promise(r=>c.toBlob(r,'image/jpeg',q)).then(b=>b.arrayBuffer());
+const XY=[{k:'x',l:'Horizontal',v:['right','center','left']},{k:'y',l:'Vertical',v:['bottom','middle','top']}];
+Object.assign(T,{
+'PDF Compress':{f:PDFA,noIn:1,o:[{k:'q',l:'Quality',v:['High','Medium','Low']}],run:async(t,o,F)=>{need(F);await lib(PL);const J=await pdfjs(),d=await J.getDocument({data:await cbuf(F[0])}).promise,out=await PDFLib.PDFDocument.create(),q={High:[.85,2],Medium:[.65,1.5],Low:[.45,1.1]}[o.q];
+for(let i=1;i<=d.numPages;i++){const p=await d.getPage(i),v1=p.getViewport({scale:1}),[c]=await pc(p,q[1]),im=await out.embedJpg(await jb(c,q[0]));out.addPage([v1.width,v1.height]).drawImage(im,{x:0,y:0,width:v1.width,height:v1.height});st('Page '+i+' of '+d.numPages)}
+const b=await pdfBlob(out),a=F[0].size;save('compressed.pdf',b);return `Original: ${(a/1024).toFixed(0)} KB\nNew: ${(b.size/1024).toFixed(0)} KB (${Math.round(100-b.size/a*100)}% smaller)`+(b.size>=a?'\nThis file did not shrink. It may already be optimized. Try a lower quality.':'')+'\nPages are now images, so text is not selectable or searchable.'}},
+'PDF Protect':{f:PDFA,noIn:1,o:[{k:'u',l:'Open password',t:'',pw:1},{k:'a',l:'Permissions',v:['Allow printing only','Allow printing and copying','No printing or copying']}],run:async(t,o,F)=>{need(F);if(!o.u)throw Error('Enter an open password');await lib(PL);
+const d=await PDFLib.PDFDocument.load(await cbuf(F[0]),{ignoreEncryption:true}),pm={modifying:false,annotating:false,copying:o.a=='Allow printing and copying'};if(o.a!='No printing or copying')pm.printing='highResolution';
+await d.encrypt({userPassword:o.u,ownerPassword:o.u+'-owner-'+crypto.randomUUID(),permissions:pm});save('protected.pdf',await pdfBlob(d));return 'Saved protected.pdf. It now asks for the password to open. If you forget the password it cannot be recovered.'}},
+'PDF Sign':{f:PDFA,noIn:1,o:[{k:'p',l:'Pages',v:['Last page','First page','All pages']},...XY,{k:'w',l:'Width (points)',t:'150'}],run:async(t,o,F)=>{need(F);if(!hasSig)throw Error('Draw your signature in the box first');await lib(PL);
+const d=await PDFLib.PDFDocument.load(await cbuf(F[0]),{ignoreEncryption:true}),pg=d.getPages(),tg=o.p=='All pages'?pg:[o.p=='First page'?pg[0]:pg[pg.length-1]],im=await d.embedPng(await(await new Promise(r=>sc.toBlob(r))).arrayBuffer()),w=+o.w||150,h=w/3;
+tg.forEach(g=>{const{width:W,height:H}=g.getSize(),m=36;g.drawImage(im,{x:{left:m,center:(W-w)/2,right:W-w-m}[o.x],y:{bottom:m,middle:(H-h)/2,top:H-h-m}[o.y],width:w,height:h})});
+save('signed.pdf',await pdfBlob(d));return 'Signature added. This is a visual signature, not a certified digital signature.'}},
+'PDF Redact':{f:PDFA,o:[],run:async(t,o,F)=>{need(F);const tm=t.split('\n').map(x=>x.trim().toLowerCase()).filter(Boolean);if(!tm.length)throw Error('Type the words to redact in the input box, one per line');await lib(PL);
+const J=await pdfjs(),d=await J.getDocument({data:await cbuf(F[0])}).promise,out=await PDFLib.PDFDocument.create();let hits=0;
+for(let i=1;i<=d.numPages;i++){const p=await d.getPage(i),[c,v]=await pc(p,2),x=c.getContext('2d'),tc=await p.getTextContent();x.fillStyle='#000';
+for(const it of tc.items){const s=it.str,l=s.toLowerCase();if(!s.trim())continue;const m=J.Util.transform(v.transform,it.transform),w=it.width*v.scale,h=Math.hypot(m[2],m[3]);
+for(const q of tm){let k=l.indexOf(q);while(k>=0){x.fillRect(m[4]+w*k/s.length-2,m[5]-h*.9,w*q.length/s.length+4,h*1.2);hits++;k=l.indexOf(q,k+1)}}}
+const v1=p.getViewport({scale:1}),im=await out.embedJpg(await jb(c,.9));out.addPage([v1.width,v1.height]).drawImage(im,{x:0,y:0,width:v1.width,height:v1.height})}
+if(!hits)throw Error('None of those words were found, so nothing was changed. Scanned PDFs need OCR first.');save('redacted.pdf',await pdfBlob(out));
+return `Redacted ${hits} match(es). Every page was rebuilt as an image, so the hidden text is truly removed and the file is not searchable. Review the result: phrases split across lines can be missed.`}},
+'PDF Annotate':{f:PDFA,noIn:1,o:[{k:'m',l:'Action',v:['Add text','Watermark','Page numbers']},{k:'t',l:'Text (Latin letters)',t:''},{k:'r',l:'Pages for Add text',t:'1'},{k:'s',l:'Font size',t:'14'},{k:'c',l:'Color',v:['Black','Red','Blue','Gray']},...XY],run:async(t,o,F)=>{need(F);if(!o.t.trim()&&o.m!='Page numbers')throw Error('Enter the text to add');await lib(PL);
+const{PDFDocument,StandardFonts,rgb,degrees}=PDFLib,d=await PDFDocument.load(await cbuf(F[0]),{ignoreEncryption:true}),f=await d.embedFont(StandardFonts.Helvetica),pg=d.getPages(),n=pg.length,ix=o.m=='Add text'?rng(o.r,n):pg.map((_,i)=>i),
+col={Black:rgb(0,0,0),Red:rgb(.8,.1,.1),Blue:rgb(.1,.2,.8),Gray:rgb(.5,.5,.5)}[o.c],sz=+o.s||14;if(!ix.length)throw Error('No valid pages');
+try{ix.forEach(i=>{const g=pg[i],{width:W,height:H}=g.getSize();
+if(o.m=='Watermark'){const w=f.widthOfTextAtSize(o.t,60)/2*.7071;g.drawText(o.t,{x:W/2-w,y:H/2-w,size:60,font:f,color:col,opacity:.25,rotate:degrees(45)})}
+else if(o.m=='Page numbers'){const x=`Page ${i+1} of ${n}`;g.drawText(x,{x:(W-f.widthOfTextAtSize(x,10))/2,y:20,size:10,font:f,color:col})}
+else{const w=f.widthOfTextAtSize(o.t,sz);g.drawText(o.t,{x:{left:36,center:(W-w)/2,right:W-w-36}[o.x],y:{bottom:36,middle:H/2,top:H-36-sz}[o.y],size:sz,font:f,color:col})}})}catch(e){throw Error('That text has characters the PDF font cannot draw. Use Latin letters.')}
+save('annotated.pdf',await pdfBlob(d));return 'Done. Saved annotated.pdf'}}
+});
+H['PDF Compress']=['Shrink a PDF (pages become images)',''];H['PDF Protect']=['Lock a PDF with a password and permissions',''];H['PDF Sign']=['Draw a signature and place it on a PDF',''];
+H['PDF Redact']=['Black out words and truly remove them. Type words in Input, one per line',''];H['PDF Annotate']=['Add text, a watermark or page numbers to a PDF',''];
+Object.assign(IC,{'PDF Compress':'🗜️','PDF Protect':'🔒','PDF Sign':'✍️','PDF Redact':'⬛','PDF Annotate':'🖊️'});
+['PDF Compress','PDF Protect','PDF Sign','PDF Redact','PDF Annotate'].forEach(n=>{const b=document.createElement('button');b.dataset.n=n;b.innerHTML='<i>'+IC[n]+'</i><span>'+n.replace('PDF ','')+'</span>';b.onclick=()=>show(n);$('nav').append(b)});
+[...$('nav').children].forEach(b=>{if(b.dataset.n.startsWith('PDF ')||b.dataset.n=='Img→PDF')b.lastChild.textContent=b.dataset.n.replace('PDF ','')});
+const sg=document.createElement('div');sg.id='sg';sg.innerHTML='<label>Draw your signature</label><canvas id="sc" width="600" height="200" style="width:100%;max-width:400px;aspect-ratio:3/1;border:1px solid var(--bd);border-radius:10px;background:#fff;touch-action:none"></canvas><div><button class="g" id="scl">Clear signature</button></div>';fz.after(sg);
+const sc=$('sc'),cx=sc.getContext('2d');cx.lineWidth=5;cx.lineCap='round';cx.strokeStyle='#111';let dr=false,hasSig=false;
+const pt=e=>{const r=sc.getBoundingClientRect();return[(e.clientX-r.left)*sc.width/r.width,(e.clientY-r.top)*sc.height/r.height]};
+sc.onpointerdown=e=>{dr=hasSig=true;sc.setPointerCapture(e.pointerId);const[x,y]=pt(e);cx.beginPath();cx.moveTo(x,y)};
+sc.onpointermove=e=>{if(!dr)return;const[x,y]=pt(e);cx.lineTo(x,y);cx.stroke()};sc.onpointerup=()=>dr=false;
+$('scl').onclick=()=>{cx.clearRect(0,0,600,200);hasSig=false};
+const CATS=[['📄','PDF','Drop a PDF, then pick what to do with it. Files never leave your device.',['PDF Merge','PDF Pages','PDF Compress','PDF Protect','PDF Sign','PDF Redact','PDF Annotate','PDF→Text','Img→PDF']],
+['🖼️','Images','Turn pictures into PDFs or read text from images and scans.',['OCR','Img→PDF']],['📗','Sheets','Read spreadsheets or convert data to and from Excel and CSV.',['Excel','CSV']],
+['🔐','Security','Encrypt text, hash, generate passwords, inspect tokens.',['Protect','Hash','Generate','JWT']],['🛠️','Developer','Format and test JSON, regex, encodings, timestamps and colors.',['JSON','Regex','Encode','Time','Color']],
+['📝','Text','Clean, convert, compare and slugify text.',['Text','Slug','Diff']]];
+let ci=0;const cb=$('cats')||document.createElement('div');cb.id='cats';$('nav').before(cb);const cd=document.createElement('p');cd.id='cd';$('nav').before(cd);
+CATS.forEach((c,i)=>{const b=document.createElement('button');b.className='cat';b.innerHTML=c[0]+'<br>'+c[1];b.onclick=()=>{ci=i;$('q').value='';paint();const f=c[3][0];show(c[3].includes(cur)?cur:f)};cb.append(b)});
+function paint(){const q=$('q').value.toLowerCase();[...cb.children].forEach((b,i)=>b.classList.toggle('on',!q&&i==ci));cd.textContent=q?'Search results':CATS[ci][2];
+[...$('nav').children].forEach(b=>{const n=b.dataset.n;b.style.display=(q?(n+' '+H[n][0]).toLowerCase().includes(q):CATS[ci][3].includes(n))?'':'none'})}
+$('q').oninput=paint;
+const _s4=show;show=function(n){if(!CATS[ci][3].includes(n)&&!$('q').value)ci=CATS.findIndex(c=>c[3].includes(n));_s4(n);paint();sg.style.display=n=='PDF Sign'?'block':'none'};
+show(cur);
+</script>
+<script>const APP={"n": "Dev Toolbox", "i": "🛠️", "sub": "Format JSON, test regex, decode tokens and convert timestamps and colors.", "about": "Works fully offline. Nothing is uploaded.", "cmp": false, "cats": [["🧩", "Format & compare", "Tidy JSON and compare two texts.", ["JSON", "Diff"]], ["🔎", "Inspect & test", "Test regex, decode tokens, encode strings.", ["Regex", "JWT", "Encode"]], ["⚙️", "Utilities", "Convert timestamps and colors.", ["Time", "Color"]]]};</script>
+<script>
+const MAN={"PDF Merge": "choose 2 or more PDFs (selected order is kept) and press Run.", "PDF Pages": "choose one PDF, pick Extract, Delete or Rotate, and enter pages like 1-3,5,8-.", "Img→PDF": "choose JPG, PNG or WebP images, pick the page size, press Run.", "PDF→Text": "extracts the text layer. For scanned PDFs use OCR.", "PDF Compress": "rebuilds pages as images at High, Medium or Low quality. Smaller files, but text is no longer selectable.", "PDF Protect": "sets an open password and permissions. The password cannot be recovered, so keep it safe.", "PDF Sign": "draw your signature, choose page and position, press Run. A visual signature, not a certified digital one.", "PDF Redact": "type words to hide (one per line) in Input, then choose a PDF. Pages become images so the text is truly removed. Review the result: phrases split across lines can be missed.", "PDF Annotate": "add text, a watermark or page numbers. Latin letters only.", "OCR": "choose images or a scanned PDF (first 20 pages) and a language. Clear, straight print works best. Handwriting is weak.", "Excel": "read XLSX/XLS/CSV/ODS as JSON, CSV or a preview, or paste JSON/CSV and create an XLSX.", "CSV": "convert CSV to JSON or JSON to CSV.", "JSON": "format, minify, validate or sort keys.", "Diff": "put text A, then a line with ---, then text B.", "Regex": "enter a pattern and flags, paste text, see matches and groups.", "JWT": "paste a token to read its header, payload and expiry. The signature is not verified.", "Encode": "Base64, URL and HTML encode or decode.", "Time": "convert Unix timestamps and dates. Empty input shows now.", "Color": "convert HEX, RGB and HSL.", "Text": "case changes, stats, sort, dedupe and clean-up of lines.", "Slug": "turn titles into URL slugs, one per line.", "Protect": "encrypt or decrypt text with a passphrase (AES-256-GCM). The passphrase cannot be recovered.", "Hash": "SHA-1, SHA-256 or SHA-512 of text.", "Generate": "UUIDs, secure passwords, lorem ipsum or random numbers."};
+(()=>{const keep=new Set(APP.cats.flatMap(c=>c[3]));
+Object.keys(T).forEach(k=>{if(!keep.has(k)){delete T[k];delete H[k]}});
+[...$('nav').children].forEach(b=>{if(!T[b.dataset.n])b.remove()});
+CATS.length=0;APP.cats.forEach(c=>CATS.push(c));ci=0;cb.innerHTML='';
+CATS.forEach((c,i)=>{const b=document.createElement('button');b.className='cat';b.innerHTML=c[0]+'<br>'+c[1];b.onclick=()=>{ci=i;$('q').value='';paint();show(c[3].includes(cur)?cur:c[3][0])};cb.append(b)});
+cb.style.gridTemplateColumns='repeat('+CATS.length+',1fr)';
+const tb=hd.querySelector('.t'),cmp=APP.cmp&&tb?'<h3>How it compares</h3><p style="font-size:.8rem;color:var(--mut)">A general comparison from common knowledge, not a live check. Verify current features and pricing.</p><div class="t">'+tb.outerHTML+'</div>':'';
+hd.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h2>${APP.i} ${APP.n}: About &amp; Manual</h2><button class="g" onclick="hd.close()">Close ✕</button></div><h3>About</h3><p style="font-size:.9rem">${APP.sub} ${APP.about}</p><h3>Quick manual</h3><ul><li><b>Basics:</b> pick a tool, set options, add input. Results update live. Use Example for sample data, Copy or Save for results, Ctrl+Enter to run, and / to search.</li>${Object.keys(T).map(k=>MAN[k]?'<li><b>'+k+':</b> '+MAN[k]+'</li>':'').join('')}</ul>${cmp}`;
+
+let l;try{l=localStorage.getItem('tk-dev-toolbox')}catch(e){}show(T[l]?l:CATS[0][3][0]);paint()})();
+</script>
+<script>
+(()=>{const ico=p=>'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
+const D='<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>';
+const SV={'PDF Merge':'<path d="M8 6V4h8l4 4v8h-2"/><rect x="4" y="8" width="12" height="12" rx="2"/>','PDF Pages':'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+'Img→PDF':'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>','PDF→Text':D+'<path d="M9 13h6M9 17h6"/>',
+'PDF Compress':'<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>','PDF Protect':'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+'PDF Sign':'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>','PDF Redact':'<rect x="3" y="9" width="18" height="6" rx="1" fill="currentColor"/><path d="M3 5h12M3 19h8"/>','PDF Annotate':'<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+OCR:'<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
+Excel:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',CSV:'<path d="M3 5h18M3 12h18M3 19h18M8 5v14"/>',
+JSON:'<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/>',
+Diff:'<path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/>',Regex:'<path d="M17 3v10M12.5 5.5l9 5M21.5 5.5l-9 5"/><circle cx="6" cy="18" r="2" fill="currentColor"/>',
+JWT:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M16 7l3 3"/>',Encode:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',Time:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+Color:'<path d="M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4a3.6 3.6 0 0 0 3.6-3.6C21 6.8 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="11" r="1"/>',
+Text:'<path d="M13 4v16M17 4v16M19 4H9.5a4.5 4.5 0 0 0 0 9H13"/>',Slug:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+Protect:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',Hash:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+Generate:'<rect x="3" y="3" width="18" height="18" rx="3"/><g fill="currentColor"><circle cx="8" cy="8" r="1"/><circle cx="16" cy="8" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="8" cy="16" r="1"/><circle cx="16" cy="16" r="1"/></g>'};
+const SH='<path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/>',BR={doc:D,ocr:SV.OCR,encode:SV.Encode,shield:SH}['encode'];
+const CI={'Organize':SV['PDF Merge'],'Protect & shrink':SH,'Sign & mark up':SV['PDF Sign'],'Scan':SV.OCR,'Spreadsheets':SV.Excel,'Format & compare':SV.JSON,'Inspect & test':SV.Regex,'Utilities':SV.Time,'Text':SV.Text,'Privacy':SH};
+[...$('nav').children].forEach(b=>{const i=b.querySelector('i');if(i&&SV[b.dataset.n])i.innerHTML=ico(SV[b.dataset.n])});
+[...$('cats').children].forEach((b,i)=>{const c=APP.cats[i];b.innerHTML=ico(CI[c[1]]||SH)+'<span>'+c[1]+'</span>'});
+document.querySelector('h1').innerHTML='<span class="logo">'+ico(BR)+'</span>'+APP.n;
+const fv=document.createElement('link');fv.rel='icon';fv.href='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3b5bdb"/><g transform="translate(4 4) scale(.67)" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+BR+'</g></svg>');document.head.append(fv);
+$('th').innerHTML=ico('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>');hb.innerHTML=ico('<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4M12 17.5v.01"/>');
+fz.querySelector('label').innerHTML=ico('<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>')+' Drop files here or click to choose';
+const _s5=show;show=function(n){_s5(n);$('tt').innerHTML=ico(SV[n]||SH)+' '+n};show(cur)})();
+</script>
+</body></html>
