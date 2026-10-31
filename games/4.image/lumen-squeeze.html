@@ -3,7 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Lumen Squeeze — private image compressor & photo toolkit</title>
+<meta name="description" content="Free online image converter and compressor. Convert HEIC to JPG, PNG, WebP or AVIF, compress to an exact size, remove backgrounds, make favicons, resize for social media and convert PDF. No upload.">
+<link rel="canonical" href="https://kritzaar.online/tools/image-converter/">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta name="theme-color" content="#e8481c">
+<meta name="application-name" content="Lumen Squeeze">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Lumen Squeeze">
+<meta property="og:title" content="Free Image Converter, Compressor &amp; Background Remover">
+<meta property="og:description" content="HEIC to JPG, compress to exact sizes, remove backgrounds, favicons, social sizes and PDF tools. 100% private, runs in your browser.">
+<meta property="og:url" content="https://kritzaar.online/tools/image-converter/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Free Image Converter, Compressor &amp; Background Remover">
+<meta name="twitter:description" content="Convert, compress, cut out backgrounds and resize images. Nothing is uploaded.">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Lumen Squeeze", "alternateName": "Lumen Squeeze Image Converter & Compressor", "url": "https://kritzaar.online/tools/image-converter/", "description": "Free browser-based tool that converts HEIC, JPG, PNG, WebP, GIF, BMP, TIFF, AVIF and ICO images to JPG, PNG, WebP or AVIF and compresses images to a chosen quality or file size. No server upload.", "applicationCategory": "MultimediaApplication", "applicationSubCategory": "Image converter and compressor", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern browser", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "inLanguage": "en", "featureList": ["Convert HEIC to JPG", "Convert images to WebP and AVIF", "Compress images to an exact file size", "Batch conversion with ZIP download", "Crop, straighten and fix perspective", "Removes EXIF and GPS metadata", "Works offline from your device, no upload", "One-tap HEIC to JPG", "Background remover", "Favicon generator", "Social media image sizes", "Images to PDF", "PDF to images", "Bulk rename"]}</script>
+<title>Image Converter, Compressor &amp; Background Remover | Lumen Squeeze</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f6f1e7;--card:#fffdf8;--ink:#1d1a16;--mut:#7a7165;--line:#e3dac9;--acc:#e8481c;--acc2:#1f7a5c;--sh:0 6px 24px rgba(60,40,10,.08);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
@@ -77,13 +91,39 @@ select{border:none;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px va
 @media(prefers-reduced-motion:reduce){body::before,body::after{animation:none}}
 u[data-x]{cursor:pointer;color:var(--acc)}
 </style>
+<style>
+html{scroll-behavior:smooth}
+#about{margin-top:34px;scroll-margin-top:16px}
+#about h2{font:800 24px/1.1 Fraunces,Georgia,serif;margin:0 0 12px;letter-spacing:-.3px}
+.ab{background:var(--glass);border:1px solid var(--gb);border-radius:14px;box-shadow:0 10px 32px var(--nd),inset 0 1px 0 var(--gb);margin-bottom:10px;overflow:hidden}
+.ab summary{cursor:pointer;padding:14px 16px;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ab summary::-webkit-details-marker{display:none}
+.ab summary::after{content:"+";color:var(--acc);font:700 20px/1 ui-monospace,monospace}
+.ab[open] summary::after{content:"–"}
+.abc{padding:0 16px 14px;color:var(--ink)}
+.abc p{margin:0 0 10px}.abc ul,.abc ol{margin:0 0 10px;padding-left:20px}.abc li{margin:4px 0}.abc li ul{margin-top:4px}
+.tw{overflow-x:auto;margin-bottom:10px;border-radius:10px}
+.abc table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+.abc th,.abc td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+.abc th{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+</style>
+<style>
+#tools{margin-top:30px;scroll-margin-top:16px}#tools h2{font:800 24px/1.1 Fraunces,Georgia,serif;margin:0 0 8px;letter-spacing:-.3px}
+.tg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.tl{text-align:left;font:inherit;color:var(--ink);cursor:pointer;padding:12px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--gb);box-shadow:0 10px 32px var(--nd),inset 0 1px 0 var(--gb);display:flex;flex-direction:column;gap:4px}
+.tl b{font-size:15px}.tl small{color:var(--mut);font-size:12px;line-height:1.35}.tl:active{transform:scale(.98)}
+.sl select,.sl textarea{width:100%;padding:8px;border-radius:8px;border:none;background:var(--bg);color:var(--ink);font:inherit;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px var(--nl)}
+.sl{margin-top:8px}.sl input[type=checkbox]{width:auto;accent-color:var(--acc)}
+code{font:12px ui-monospace,monospace;background:var(--bg);padding:1px 5px;border-radius:5px}
+</style>
 </head>
 <body>
 <div class="wrap">
-<header><div><h1>Lumen <span>Squeeze</span></h1></div><div><span class="badge">100% on-device · nothing uploaded</span> <button class="btn" id="th">◐</button></div></header>
-<p class="sub">Shrink photos, hit exact upload limits, strip hidden location data, and see exactly where quality starts to break.</p>
+<header><div><h1>Lumen <span>Squeeze</span></h1></div><div><span class="badge">100% on-device · nothing uploaded</span> <a class="btn" href="#about" style="text-decoration:none;display:inline-block">About</a> <button class="btn" id="th" aria-label="Toggle theme">◐</button></div></header>
+<p class="sub">Free browser-based tool that converts HEIC, JPG, PNG, WebP, GIF, BMP, TIFF, AVIF and ICO images to JPG, PNG, WebP or AVIF. No server upload – conversion happens in your browser.</p>
+<p class="sub" style="margin-top:-8px">Compress and optimize your JPEG, PNG, WebP, GIF and SVG images. This free online tool uses advanced compression algorithms to reduce file sizes while maintaining quality. All processing happens in your browser – your files never leave your device.</p>
 
-<div id="drop"><b>Drop images here</b><div class="mt">or tap to browse · paste with Ctrl/⌘+V · JPG, PNG, WebP, AVIF, GIF</div><div style="margin-top:12px"><button class="btn p" id="pick">Choose images</button> <button class="btn" id="sample">Try a sample</button></div><input id="file" type="file" accept="image/*" multiple hidden></div>
+<div id="drop"><b>Drop images here</b><div class="mt">or tap to browse · paste with Ctrl/⌘+V · JPG, PNG, WebP, AVIF, GIF</div><div style="margin-top:12px"><button class="btn p" id="pick">Choose images</button> <button class="btn" id="sample">Try a sample</button></div><input id="file" type="file" accept="image/*,.heic,.heif,.tif,.tiff" multiple hidden></div>
 
 <div class="panel">
 <div class="box"><label>Quality <em id="qv">78</em></label><input type="range" id="q" min="10" max="98" value="78"><div class="mt">Ignored when a target size is set.</div></div>
@@ -95,6 +135,99 @@ u[data-x]{cursor:pointer;color:var(--acc)}
 
 <div id="sum"><div><b id="s1">0%</b><small id="s2"></small></div><div><button class="btn" id="zip">⬇ Download all (ZIP)</button> <button class="btn" id="clr">Clear</button></div></div>
 <div class="list" id="list"></div>
+<section id="tools" aria-labelledby="tt"><h2 id="tt">More tools</h2><p class="mt" style="margin-bottom:10px">Everything runs on your device. Tools that edit images use the images you added above.</p>
+<div class="tg">
+<button class="tl" data-tool="heic"><b>📱 HEIC → JPG</b><small>One tap: sets JPG at quality 92 and opens your iPhone photos</small></button>
+<button class="tl" data-tool="cut"><b>🪄 Background remover</b><small>Cut out plain backgrounds, keep transparency or fill a colour</small></button>
+<button class="tl" data-tool="fav"><b>⭐ Favicon generator</b><small>ICO, PNG, Apple touch icon and manifest in one ZIP</small></button>
+<button class="tl" data-tool="soc"><b>📣 Social media sizes</b><small>Instagram, Facebook, X, LinkedIn, YouTube, Pinterest</small></button>
+<button class="tl" data-tool="pdfi"><b>📄 Images → PDF</b><small>Combine your images into one PDF</small></button>
+<button class="tl" data-tool="pdfo"><b>🖼 PDF → images</b><small>Turn PDF pages into images, then compress them</small></button>
+<button class="tl" data-tool="ren"><b>🏷 Bulk rename</b><small>Patterns, numbering and dates for saved files</small></button>
+</div></section>
+<section id="about" aria-labelledby="abt">
+<h2 id="abt">About Lumen Squeeze</h2>
+
+<details class="ab" open><summary>What is this app?</summary><div class="abc">
+<p>Lumen Squeeze is a free image converter and compressor that runs entirely inside your browser. There is no account, no upload and no server involved: your pictures are decoded, resized, re-encoded and saved on your own device.</p>
+<ul>
+<li><b>Convert</b> between formats: pick JPG, PNG, WebP or AVIF as the output.</li>
+<li><b>Compress</b> to a quality you choose, or to an exact file size such as 100 KB or 2 MB.</li>
+<li><b>Resize and crop</b> by longest side, free-form crop, straighten and perspective fix.</li>
+<li><b>Edit lightly</b> with filters, frames and captions (passport-style borders, name and date strips).</li>
+<li><b>Batch</b> as many images or whole folders as you like, then download one ZIP.</li>
+<li><b>More tools</b>: HEIC to JPG in one tap, background remover, favicon generator, social media sizes, images to PDF, PDF to images and bulk rename.</li>
+<li><b>Protect privacy</b>: re-encoding removes EXIF data such as GPS location and camera serial numbers.</li>
+</ul></div></details>
+
+<details class="ab"><summary>User manual</summary><div class="abc">
+<ol>
+<li><b>Add images.</b> Drop files on the box, tap <i>Choose images</i>, pick a <i>Folder</i>, or paste with Ctrl/⌘+V. Not sure yet? Tap <i>Try a sample</i>.</li>
+<li><b>Choose an output format.</b> <i>Auto</i> picks the smaller of WebP and JPEG for every image. Choose JPEG, WebP, PNG or AVIF to force one format.</li>
+<li><b>Set the size.</b> Use the <i>Quality</i> slider, or set a <i>Target file size</i> (chip or any custom KB value) and the app searches for the best quality that fits. The quality slider is disabled while a target is active.</li>
+<li><b>Resize if needed.</b> <i>Max side</i> limits the longest edge in pixels (4K, 1920, 1280… or a custom number). Smaller dimensions are the biggest single way to cut file size.</li>
+<li><b>Review the result.</b> Each card shows the new size and the percentage saved. The summary bar shows your total savings.</li>
+<li><b>Fine-tune a single image</b> with the buttons on its card:
+<ul>
+<li><b>✂ Crop</b> – crop, rotate, flip, straighten, fix perspective, brightness, contrast and filters.</li>
+<li><b>🪪 Frame</b> – add a border and up to three lines of text.</li>
+<li><b>⚙ Tune</b> – give this image its own quality, format, size or target that overrides the global settings.</li>
+<li><b>🔍 Inspect</b> – drag a before/after slider and see a quality-versus-size curve with a suggested sweet spot.</li>
+<li><b>⬇ Save</b> / <b>✕ Remove</b> – download or discard that image.</li>
+</ul></li>
+<li><b>More tools.</b> Scroll to <i>More tools</i> for the favicon generator, social sizes, PDF conversion, bulk rename and the background remover (also available as 🪄 Cutout on each image).</li>
+<li><b>Download.</b> Save images one by one, or use <i>Download all (ZIP)</i>. Use <i>Clear</i> to start over.</li>
+</ol>
+<p class="mt"><b>Quick recipes</b></p>
+<ul>
+<li><i>Smaller photos for email or web:</i> Auto format, quality 70–80, Max side 1920.</li>
+<li><i>Meet an upload limit:</i> set a target size, for example 200 KB.</li>
+<li><i>Convert HEIC from an iPhone to JPG:</i> tap 📱 HEIC → JPG and pick your photos.</li>
+<li><i>Website icons:</i> add a square logo, open Favicon generator and download the ZIP.</li>
+<li><i>Post to every network:</i> open Social media sizes, tick the platforms and download.</li>
+<li><i>Screenshots, logos and transparency:</i> choose PNG or WebP.</li>
+</ul></div></details>
+
+<details class="ab"><summary>Format guide</summary><div class="abc">
+<div class="tw"><table>
+<thead><tr><th>Format</th><th>Best for</th><th>As input</th><th>As output</th></tr></thead>
+<tbody>
+<tr><td><b>JPG / JPEG</b></td><td>Photos; works everywhere</td><td>Yes</td><td>Yes. No transparency, so see-through areas become white.</td></tr>
+<tr><td><b>PNG</b></td><td>Screenshots, logos, sharp edges, transparency</td><td>Yes</td><td>Yes. Lossless, so photos can get larger. Reduce dimensions to shrink it.</td></tr>
+<tr><td><b>WebP</b></td><td>Web images; smaller than JPG and PNG</td><td>Yes</td><td>Yes. Supports transparency.</td></tr>
+<tr><td><b>AVIF</b></td><td>Smallest files at the same visual quality</td><td>Yes, in browsers that can read it</td><td>Only if your browser can encode it; otherwise the option is greyed out.</td></tr>
+<tr><td><b>HEIC</b></td><td>iPhone and iPad photos</td><td>Yes. Safari opens it directly; other browsers use a built-in converter that downloads once, so you need internet the first time.</td><td>No. Convert to JPG, PNG, WebP or AVIF.</td></tr>
+<tr><td><b>GIF</b></td><td>Simple graphics and animation</td><td>Yes. Animated GIFs become a still image (first frame).</td><td>No.</td></tr>
+<tr><td><b>BMP</b></td><td>Uncompressed legacy images; very large files</td><td>Yes</td><td>No. Typically shrinks dramatically when converted.</td></tr>
+<tr><td><b>TIFF</b></td><td>Scans and print workflows</td><td>Browser-dependent: works in Safari, usually not elsewhere</td><td>No.</td></tr>
+<tr><td><b>ICO</b></td><td>Favicons and icons</td><td>Yes, in most browsers</td><td>No.</td></tr>
+<tr><td><b>SVG</b></td><td>Vector graphics</td><td>Best effort; support varies by browser. It is turned into a pixel image.</td><td>No. Output is always a pixel format.</td></tr>
+<tr><td><b>PDF</b></td><td>Documents and scans</td><td>Yes. Each page becomes an image (PDF → images).</td><td>Yes. Combine your images into one PDF (Images → PDF).</td></tr>
+</tbody></table></div>
+<p class="mt">The app can only open what your browser can decode. If a file will not load, try another browser (Safari for HEIC and TIFF) or export it as JPG or PNG first.</p>
+</div></details>
+
+<details class="ab"><summary>Privacy, limits and good to know</summary><div class="abc">
+<ul>
+<li><b>Nothing is uploaded.</b> Files never leave your device. Closing the tab discards everything.</li>
+<li><b>Metadata is removed.</b> EXIF details (GPS, camera model, dates) are not carried into the output.</li>
+<li><b>Very large images</b> (over about 16 megapixels) are scaled down while processing to keep your browser responsive.</li>
+<li><b>Re-compressing</b> an already compressed JPG loses a little more quality each time. Keep your originals.</li>
+<li><b>Lossy vs lossless:</b> JPG, WebP and AVIF trade quality for size. PNG keeps every pixel.</li>
+<li><b>Dark mode:</b> use the ◐ button at the top to switch themes.</li>
+</ul></div></details>
+<details class="ab"><summary>Frequently asked questions</summary><div class="abc">
+<p><b>How do I convert HEIC to JPG?</b><br>Add your HEIC photos, set the output format to JPEG, raise quality to 90 or more and download. Tap the HEIC → JPG button. Safari opens HEIC directly and other browsers use a built-in converter that loads on first use.</p>
+<p><b>How do I compress an image to 100 KB?</b><br>Pick the 100 KB chip under Target file size, or type any value in KB. The app searches for the best quality that fits under that limit.</p>
+<p><b>Is Lumen Squeeze really free and private?</b><br>Yes. There is no sign-up and no upload. Conversion and compression run in your browser, so your images never leave your device.</p>
+<p><b>Will compressing reduce image quality?</b><br>WebP, JPEG and AVIF are lossy, but at quality 70–80 the difference is usually hard to see. Use Inspect to compare before and after.</p>
+<p><b>Which format is smallest: JPG, PNG, WebP or AVIF?</b><br>For photos AVIF is usually smallest, then WebP, then JPG. PNG is lossless and best for screenshots and logos.</p>
+<p><b>Can I remove a background for free?</b><br>Yes. The background remover works on plain backgrounds, keeps transparency as PNG or WebP and can fill the area with a colour. It is colour-based, not AI, so complex scenes may need manual tuning.</p>
+<p><b>How do I make a favicon from an image?</b><br>Add a square logo, open the Favicon generator and download the ZIP with favicon.ico, PNG icons, Apple touch icon, manifest and the HTML to paste.</p>
+<p><b>Can I turn images into a PDF, or a PDF into images?</b><br>Yes. Use Images → PDF to combine your images, or PDF → images to turn each page into a picture you can compress.</p>
+<p><b>Can I convert many images at once?</b><br>Yes. Drop multiple files or a whole folder and download everything as one ZIP.</p>
+</div></details>
+</section>
 <footer>Everything runs in your browser using the Canvas API. Re-encoding also removes EXIF metadata such as GPS location and camera serial numbers.</footer>
 </div>
 
@@ -144,15 +277,15 @@ async function add(files){for(const f of files){if(!f.type.startsWith('image/'))
 async function exif(f){try{if(!/jpe?g/i.test(f.type))return null;const d=new DataView(await f.slice(0,131072).arrayBuffer());if(d.getUint16(0)!==0xFFD8)return null;let o=2;while(o<d.byteLength-4){const m=d.getUint16(o),l=d.getUint16(o+2);if(m===0xFFE1&&d.getUint32(o+4)===0x45786966){const t=o+10,le=d.getUint16(t)===0x4949,g=(p,s)=>s?d.getUint16(p,le):d.getUint32(p,le),i0=t+g(t+4,0),n=g(i0,1);let gps=false,cam=false;for(let i=0;i<n;i++){const tg=g(i0+2+i*12,1);if(tg===0x8825)gps=true;if(tg===0x010F)cam=true}return{gps,cam,has:true}}if((m&0xFF00)!==0xFF00)break;o+=2+l}return{has:false}}catch(_){return null}}
 // UI
 function draw(){
- const L=$('#list');L.innerHTML=S.items.map(it=>{const p=it.out?Math.round((1-it.out.size/it.file.size)*100):0,m=it.meta&&it.meta.gps?' · <b style="color:var(--acc)">📍 GPS removed</b>':'';return `<div class="it"><img data-o="${it.id}" src="${it.th||it.src}" alt=""><div><div class="nm">${esc(it.file.name)}</div><div class="mt">${it.busy?'Compressing…':it.err?`Failed (unsupported or too large) · <u data-x="${it.id}">remove</u>`:`${fb(it.file.size)} → <b>${fb(it.out.size)}</b> · ${it.ow}×${it.oh}${it.keep?' · already optimal':''}`}${m}</div>${it.out&&!it.busy?`<div class="mt">${fidLabel(it.fid)}</div><div class="bar"><i style="width:${Math.max(0,p)}%"></i></div>`:''}</div><div class="acts">${it.out&&!it.busy?`<span class="sv">${p>0?'−'+p:'+'+Math.abs(p)}%</span><button class="btn" data-c="${it.id}" title="Crop"><b>✂</b><small>Crop</small></button><button class="btn" data-f="${it.id}" title="Frame and text"><b>🪪</b><small>Frame</small></button><button class="btn" data-t="${it.id}" title="This image’s own settings"><b>⚙</b><small>Tune</small></button><button class="btn" data-o="${it.id}" title="Inspect"><b>🔍</b><small>Inspect</small></button><button class="btn p" data-d="${it.id}" title="Save"><b>⬇</b><small>Save</small></button><button class="btn" data-x="${it.id}" title="Remove"><b>✕</b><small>Remove</small></button>`:''}</div></div>`}).join('');
+ const L=$('#list');L.innerHTML=S.items.map(it=>{const p=it.out?Math.round((1-it.out.size/it.file.size)*100):0,m=it.meta&&it.meta.gps?' · <b style="color:var(--acc)">📍 GPS removed</b>':'';return `<div class="it"><img data-o="${it.id}" src="${it.th||it.src}" alt=""><div><div class="nm">${esc(it.file.name)}</div><div class="mt">${it.busy||(!it.out&&!it.err)?'Compressing…':it.err?`Failed (unsupported or too large) · <u data-x="${it.id}">remove</u>`:`${fb(it.file.size)} → <b>${fb(it.out.size)}</b> · ${it.ow}×${it.oh}${it.keep?' · already optimal':''}`}${m}</div>${it.out&&!it.busy?`<div class="mt">${fidLabel(it.fid)}</div><div class="bar"><i style="width:${Math.max(0,p)}%"></i></div>`:''}</div><div class="acts">${it.out&&!it.busy?`<span class="sv">${p>0?'−'+p:'+'+Math.abs(p)}%</span><button class="btn" data-c="${it.id}" title="Crop"><b>✂</b><small>Crop</small></button><button class="btn" data-f="${it.id}" title="Frame and text"><b>🪪</b><small>Frame</small></button><button class="btn" data-t="${it.id}" title="This image’s own settings"><b>⚙</b><small>Tune</small></button><button class="btn" data-o="${it.id}" title="Inspect"><b>🔍</b><small>Inspect</small></button><button class="btn" data-b="${it.id}" title="Remove background"><b>🪄</b><small>Cutout</small></button><button class="btn p" data-d="${it.id}" title="Save"><b>⬇</b><small>Save</small></button><button class="btn" data-x="${it.id}" title="Remove"><b>✕</b><small>Remove</small></button>`:''}</div></div>`}).join('');
  const done=S.items.filter(i=>i.out),o=done.reduce((a,i)=>a+i.file.size,0),n=done.reduce((a,i)=>a+i.out.size,0);
  $('#sum').style.display=S.items.length?'flex':'none';
  if(done.length){const sv=o-n;$('#s1').textContent=(o?Math.round(sv/o*100):0)+'% smaller';$('#s2').textContent=`${fb(o)} → ${fb(n)} · saves ${fb(Math.max(0,sv))} ≈ ${(Math.max(0,sv)*8/6e6).toFixed(1)}s faster per load on 4G`}
 }
 $('#list').onclick=e=>{const o=e.target.closest('[data-o]'),d=e.target.closest('[data-d]'),cr=e.target.closest('[data-c]');const xr=e.target.closest('[data-x]');if(xr)return removeItem(+xr.dataset.x);if(cr)return openCrop(+cr.dataset.c);if(o)inspect(+o.dataset.o);if(d)save(S.items.find(i=>i.id==d.dataset.d))};
-const nameOf=it=>it.file.name.replace(/\.[^.]+$/,'')+'-lumen.'+it.ext;
+const nameOf=it=>typeof RN!=='undefined'&&RN.on?RN.f(it):it.file.name.replace(/\.[^.]+$/,'')+'-lumen.'+it.ext;
 function save(it){const a=document.createElement('a');a.href=it.url;a.download=nameOf(it);document.body.appendChild(a);a.click();a.remove()}
-$('#zip').onclick=async()=>{const d=S.items.filter(i=>i.out);if(!d.length)return;if(!window.JSZip){d.forEach(save);return}const z=new JSZip();d.forEach(i=>z.file(i.id+'-'+nameOf(i),i.out));const b=await z.generateAsync({type:'blob'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='lumen-squeeze.zip';a.click()};
+$('#zip').onclick=async()=>{const d=S.items.filter(i=>i.out);if(!d.length)return;if(!window.JSZip){d.forEach(save);return}const z=new JSZip();const used={};d.forEach(i=>{let n=nameOf(i);if(typeof RN!=='undefined'&&RN.on){const m=n.match(/^(.*)(\.[^.]*)$/);let k=n,c=1;while(used[k])k=m[1]+'-'+(++c)+m[2];used[k]=1;n=k}else n=i.id+'-'+n;z.file(n,i.out)});const b=await z.generateAsync({type:'blob'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='lumen-squeeze.zip';a.click()};
 $('#clr').onclick=()=>{S.items.forEach(i=>{URL.revokeObjectURL(i.src);i.url&&URL.revokeObjectURL(i.url)});S.items=[];draw()};
 // inspector
 async function inspect(id){
@@ -363,6 +496,210 @@ async function curve(it){const g=geo(it),t=it.out.type==='image/png'||(it.out.ty
  if(!$('#curve'))return;const W=300,H=130,mx=Math.max(...pts.map(p=>p[1])),X=q=>20+q*270,Y=s=>H-18-s/mx*(H-34),a=pts[0],b=pts[pts.length-1];let ki=0,kd=-1;pts.forEach((p,i)=>{const d=(p[0]-a[0])/(b[0]-a[0])-(p[1]-a[1])/(b[1]-a[1]);if(d>kd){kd=d;ki=i}});const q=pts[ki];
  $('#curve').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%"><polyline fill="none" stroke="var(--acc)" stroke-width="2.5" points="${pts.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/><circle cx="${X(q[0])}" cy="${Y(q[1])}" r="6" fill="var(--acc2)"/><text x="${X(q[0])-20}" y="${Y(q[1])-10}">sweet spot</text><text x="20" y="${H-4}">quality 10 to 97</text><text x="${W-60}" y="12">${fb(mx)}</text></svg>Best value is around <b>quality ${Math.round(q[0]*100)}</b> (about ${fb(q[1])}). Past that, size climbs fast for little visible gain.`}
 addEventListener('unhandledrejection',e=>{console.warn(e.reason);toast('Something went wrong with one image. Try again or remove it.')});
+</script>
+<script>
+// v7: toolbox - HEIC to JPG, PDF <-> images, favicon, social sizes, bulk rename, background remover
+(()=>{
+const cv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,w|0);c.height=Math.max(1,h|0);return c};
+const toB=(c,t,q)=>new Promise(r=>c.toBlob(b=>r(b),t,q));
+const safe=s=>(s||'').replace(/[^\w.\-]+/g,'-').replace(/^-+|-+$/g,'')||'image';
+const baseName=n=>n.replace(/\.[^.]+$/,'');
+const LS={},loadJS=u=>LS[u]||(LS[u]=new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete LS[u];no(new Error('Could not load '+u))};document.head.appendChild(s)}));
+const ready=()=>S.items.filter(i=>i.out&&!i.busy);
+const need=()=>{if(ready().length)return true;toast('Add an image first');return false};
+const rel=it=>{if(it.flt==='e'||!it.raw)return;try{it.raw.close&&it.raw.close()}catch(_){}it.raw=it.bmp=null};
+function openM(title,html){const m=$('#modal');m.style.display='block';$('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${title}</b><button class="btn" id="mx" aria-label="Close">✕</button></div>${html}`;const shut=()=>{m.style.display='none';m.onclick=null};$('#mx').onclick=shut;m.onclick=e=>{if(e.target===m)shut()};return shut}
+const sel=(id,label)=>`<label class="sl">${label}<select id="${id}">${S.items.filter(i=>i.out).map(i=>`<option value="${i.id}">${esc(i.file.name)}</option>`).join('')}</select></label>`;
+
+/* ---------- HEIC ---------- */
+const isHeic=f=>/\.hei[cf]$/i.test(f.name)||/^image\/hei[cf]/i.test(f.type||'');
+async function heicToJpg(f){
+ try{const b=await createImageBitmap(f);b.close&&b.close();return f}catch(_){}
+ await loadJS('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+ let o=await heic2any({blob:f,toType:'image/jpeg',quality:.95});if(Array.isArray(o))o=o[0];
+ return new File([o],baseName(f.name)+'.jpg',{type:'image/jpeg'})}
+const _add7=add;
+add=async function(files){const out=[];for(const f of [...files]){if(isHeic(f)){try{toast('Converting '+f.name+'…');out.push(await heicToJpg(f))}catch(e){toast('Could not convert '+f.name+'. Check your connection or export it as JPG.')}}else out.push(f)}return _add7(out)};
+const hin=Object.assign(document.createElement('input'),{type:'file',accept:'.heic,.heif,image/heic,image/heif',multiple:true,hidden:true});document.body.appendChild(hin);
+function heicMode(){S.fmt='jpeg';S.q=.92;S.tgt=0;$('#fmt').value='jpeg';$('#q').value=92;$('#qv').textContent='92';$('#q').disabled=false;$('#tv').textContent='Off';$('#ck').value='';[...$('#tgt').children].forEach((c,i)=>c.classList.toggle('on',i===0))}
+hin.onchange=()=>{const fs=[...hin.files];hin.value='';if(!fs.length)return;heicMode();toast('JPG, quality 92');add(fs)};
+const heicGo=()=>hin.click();
+{const b=Object.assign(document.createElement('button'),{className:'btn',id:'heicb',textContent:'📱 HEIC → JPG'});$('#sample').after(b);b.onclick=heicGo}
+
+/* ---------- Bulk rename ---------- */
+window.RN={on:false,pat:'{name}-{n}',start:1,pad:2,cs:'keep',
+ f(it){const i=S.items.indexOf(it),p=(n,l)=>String(n).padStart(l,'0');
+  let s=this.pat.replace(/\{name\}/g,baseName(it.file.name)).replace(/\{n\}/g,p(this.start+Math.max(0,i),this.pad)).replace(/\{date\}/g,new Date().toISOString().slice(0,10)).replace(/\{w\}/g,it.ow||it.w).replace(/\{h\}/g,it.oh||it.h);
+  if(this.cs==='lower')s=s.toLowerCase();else if(this.cs==='upper')s=s.toUpperCase();else if(this.cs==='slug')s=s.toLowerCase().replace(/[^a-z0-9._-]+/g,'-').replace(/^-+|-+$/g,'');
+  s=s.replace(/[\\\/:*?"<>|]+/g,'-').replace(/[. ]+$/,'').trim()||'image';return s+'.'+it.ext}};
+function openRename(){
+ const shut=openM('🏷 Bulk rename',`<p class="mt">Applies to every file you save or download as a ZIP. Tokens: <code>{name}</code> original name, <code>{n}</code> number, <code>{date}</code>, <code>{w}</code> width, <code>{h}</code> height.</p>
+ <label class="sl">Name pattern<input class="in2" id="rp" value="${esc(RN.pat)}" maxlength="80"></label>
+ <div class="chips" id="rt" style="margin:6px 0">${['{name}','{n}','{date}','{w}','{h}'].map(t=>`<button class="chip" data-tk="${t}">${t}</button>`).join('')}</div>
+ <div class="grid2"><label class="sl">Start number<input class="in2" id="rs" type="number" min="0" value="${RN.start}"></label>
+ <label class="sl">Digits<select id="rd">${[1,2,3,4,5].map(n=>`<option value="${n}"${n===RN.pad?' selected':''}>${n} (${String(1).padStart(n,'0')})</option>`).join('')}</select></label>
+ <label class="sl">Letter case<select id="rc"><option value="keep">Keep</option><option value="lower">lowercase</option><option value="upper">UPPERCASE</option><option value="slug">web-friendly-slug</option></select></label></div>
+ <div class="box" style="margin-top:10px"><label>Preview</label><div id="rv" class="mt" style="line-height:1.7"></div></div>
+ <div class="tools" style="margin-top:6px"><button class="btn p" id="rok">Use these names</button><button class="btn" id="roff">Back to default names</button></div>`);
+ $('#rc').value=RN.cs;
+ const rd=()=>{const o={pat:$('#rp').value||'{name}',start:Math.max(0,+$('#rs').value||0),pad:+$('#rd').value,cs:$('#rc').value},was=RN.on,t={};Object.assign(t,RN);Object.assign(RN,o,{on:true});
+  const names=S.items.slice(0,6).map(it=>it.out?RN.f(it):baseName(it.file.name)+'.…');$('#rv').innerHTML=names.length?names.map(esc).join('<br>')+(S.items.length>6?'<br>…':''):'Add images to see a preview.';RN.on=was};
+ $('#mbody').oninput=rd;$('#mbody').onchange=rd;
+ $('#rt').onclick=e=>{const b=e.target.closest('[data-tk]');if(!b)return;const i=$('#rp');i.value+=b.dataset.tk;rd()};
+ $('#rok').onclick=()=>{rd();RN.on=true;shut();toast('Custom names on')};
+ $('#roff').onclick=()=>{RN.on=false;shut();toast('Default names')};rd()}
+
+/* ---------- Background remover ---------- */
+function autoBg(c){const x=c.getContext('2d'),w=c.width,h=c.height,s=Math.max(1,Math.min(6,w>>3,h>>3)),pts=[[0,0],[w-s,0],[0,h-s],[w-s,h-s]].map(([a,b])=>{const d=x.getImageData(a,b,s,s).data;let r=0,g=0,bl=0;const n=d.length/4;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];bl+=d[i+2]}return[r/n,g/n,bl/n]}),dist=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
+ let best=pts[0],bs=-1;pts.forEach(p=>{const sc=pts.filter(q=>dist(p,q)<60).length;if(sc>bs){bs=sc;best=p}});
+ const g=pts.filter(q=>dist(best,q)<60);return[0,1,2].map(i=>Math.round(g.reduce((a,q)=>a+q[i],0)/g.length))}
+function cutMask(d,w,h,bg,tol,glob){const N=w*h,keep=new Uint8Array(N).fill(1),t2=(tol*2.2)**2,
+ near=i=>{const k=i*4;if(d[k+3]<10)return true;const a=d[k]-bg[0],b=d[k+1]-bg[1],c=d[k+2]-bg[2];return a*a+b*b+c*c<=t2};
+ if(glob){for(let i=0;i<N;i++)if(near(i))keep[i]=0;return keep}
+ const st=new Int32Array(N);let sp=0;const push=i=>{if(keep[i]&&near(i)){keep[i]=0;st[sp++]=i}};
+ for(let x=0;x<w;x++){push(x);push((h-1)*w+x)}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1)}
+ while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(i-1);if(x<w-1)push(i+1);if(y>0)push(i-w);if(y<h-1)push(i+w)}
+ return keep}
+function erode(k,w,h,n){for(let r=0;r<n;r++){const c=k.slice();for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(c[i]&&(!c[i-1]||!c[i+1]||!c[i-w]||!c[i+w]))k[i]=0}}}
+function cutRender(src,W,H,P,k){
+ const c=cv(W,H),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,0,0,W,H);
+ const keep=cutMask(x.getImageData(0,0,W,H).data,W,H,P.bg,P.tol,P.glob),n=Math.round(P.trim*k);if(n)erode(keep,W,H,n);
+ const sp=P.soft*k,pad=Math.ceil(sp*3)+1,PW=W+2*pad,PH=H+2*pad,m=cv(PW,PH),mx=m.getContext('2d'),mi=mx.createImageData(PW,PH);
+ for(let y=0;y<PH;y++){const sy=Math.min(H-1,Math.max(0,y-pad))*W;for(let xx=0;xx<PW;xx++)mi.data[(y*PW+xx)*4+3]=keep[sy+Math.min(W-1,Math.max(0,xx-pad))]?255:0}
+ mx.putImageData(mi,0,0);const mb=cv(PW,PH),bx=mb.getContext('2d');if(sp>.3)bx.filter=`blur(${sp}px)`;bx.drawImage(m,0,0);
+ x.globalCompositeOperation='destination-in';x.drawImage(mb,-pad,-pad);x.globalCompositeOperation='source-over';
+ if(P.fill){const o=cv(W,H),ox=o.getContext('2d');ox.fillStyle=P.fill;ox.fillRect(0,0,W,H);ox.drawImage(c,0,0);return o}
+ return c}
+async function openCut(id){
+ const it=S.items.find(i=>i.id===id);if(!it)return;await ens(it);const src=it.bmp,s=Math.min(1,1000/Math.max(src.width,src.height)),W=Math.max(1,Math.round(src.width*s)),H=Math.max(1,Math.round(src.height*s)),base=cv(W,H);base.getContext('2d',{willReadFrequently:true}).drawImage(src,0,0,W,H);
+ const P={tol:30,trim:0,soft:1,glob:false,fill:'',bg:autoBg(base)},hex=a=>'#'+a.map(v=>v.toString(16).padStart(2,'0')).join('');
+ const shut=openM('🪄 Remove background',`<p class="mt">Works best on plain backgrounds such as studio shots, products and documents. It is a colour-based tool, not AI, so busy backgrounds will need a higher tolerance or will not separate cleanly. Tap the picture to choose the background colour yourself.</p>
+ <div class="cmp" style="margin-top:8px"><canvas id="cpv" style="display:block;width:100%;height:auto;max-height:55vh;object-fit:contain;margin:auto;cursor:crosshair"></canvas></div>
+ <p class="mt" style="margin:6px 0">Background colour: <span class="sw" id="cbg"><i></i><span></span></span></p>
+ <div class="grid2"><label class="sl">Tolerance <span id="vt">${P.tol}</span><input type="range" id="ct" min="0" max="100" value="${P.tol}"></label>
+ <label class="sl">Edge trim <span id="vr">0</span><input type="range" id="cr" min="0" max="4" step="1" value="0"></label>
+ <label class="sl">Edge softness <span id="vs">${P.soft}</span><input type="range" id="cs" min="0" max="4" step="0.5" value="${P.soft}"></label></div>
+ <label class="sl" style="margin-top:8px"><span><input type="checkbox" id="cg"> Remove this colour everywhere, not only around the edges</span></label>
+ <div class="grid2"><label class="sl">Replace with<select id="cf"><option value="">Transparent</option><option value="#ffffff">White</option><option value="c">Custom colour</option></select></label><label class="sl">Custom colour<input type="color" class="in2" id="cc" value="#2f6fed"></label></div>
+ <div class="tools"><button class="btn p" id="cok">Apply</button><button class="btn" id="cun"${it.orig?'':' disabled'}>Undo cutout</button></div>`);
+ const paint=()=>{const o=cutRender(base,W,H,P,1),c=$('#cpv');c.width=W;c.height=H;c.getContext('2d').drawImage(o,0,0);const b=$('#cbg');b.querySelector('i').style.background=hex(P.bg);b.querySelector('span').textContent=hex(P.bg)};
+ let raf;const rq=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(paint)};
+ $('#ct').oninput=e=>{P.tol=+e.target.value;$('#vt').textContent=P.tol;rq()};$('#cr').oninput=e=>{P.trim=+e.target.value;$('#vr').textContent=P.trim;rq()};$('#cs').oninput=e=>{P.soft=+e.target.value;$('#vs').textContent=P.soft;rq()};
+ $('#cg').onchange=e=>{P.glob=e.target.checked;rq()};
+ const fl=()=>{const v=$('#cf').value;P.fill=v==='c'?$('#cc').value:v;rq()};$('#cf').onchange=fl;$('#cc').oninput=()=>{if($('#cf').value==='c')fl()};
+ $('#cpv').onpointerdown=e=>{const c=$('#cpv'),r=c.getBoundingClientRect(),k=Math.min(r.width/W,r.height/H),ox=(r.width-W*k)/2,oy=(r.height-H*k)/2,x=Math.floor((e.clientX-r.left-ox)/k),y=Math.floor((e.clientY-r.top-oy)/k);if(x<0||y<0||x>=W||y>=H)return;const d=base.getContext('2d').getImageData(Math.max(0,x-1),Math.max(0,y-1),3,3).data;let a=0,b=0,g=0;for(let i=0;i<d.length;i+=4){a+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4;P.bg=[Math.round(a/n),Math.round(g/n),Math.round(b/n)];rq()};
+ $('#cok').onclick=async()=>{const b=$('#cok');b.disabled=true;b.textContent='Working…';await new Promise(r=>setTimeout(r,30));
+  const sc=Math.min(1,Math.sqrt(12e6/(src.width*src.height))),FW=Math.max(1,Math.round(src.width*sc)),FH=Math.max(1,Math.round(src.height*sc)),out=cutRender(src,FW,FH,P,FW/W);
+  it.orig=it.orig||it.raw;it.raw=out;it.bmp=out;it.w=out.width;it.h=out.height;it.rot=0;it.flip=false;it.crop=null;it.flt='e';
+  const cur=(it.o&&it.o.fmt)||S.fmt;let msg='Background removed';if(!P.fill&&!['png','webp','avif'].includes(cur)){it.o={...(it.o||{}),fmt:'png'};msg+=' · output set to PNG to keep transparency'}
+  shut();queue(it);toast(msg)};
+ $('#cun').onclick=()=>{if(!it.orig)return;it.raw=it.orig;it.bmp=it.orig;it.w=it.orig.width;it.h=it.orig.height;it.orig=null;it.flt=0;shut();queue(it);toast('Original restored')};
+ paint()}
+function pickItem(title,cb){const L=ready();if(!L.length)return need();if(L.length===1)return cb(L[0].id);
+ openM(title,`<p class="mt">Choose an image.</p><div class="list" id="pk">${L.map(i=>`<div class="it" data-pk="${i.id}" style="cursor:pointer;grid-template-columns:64px 1fr!important"><img src="${i.th||i.src}" alt=""><div><div class="nm">${esc(i.file.name)}</div><div class="mt">${i.ow}×${i.oh}</div></div></div>`).join('')}</div>`);
+ $('#pk').onclick=e=>{const r=e.target.closest('[data-pk]');if(r)cb(+r.dataset.pk)}}
+
+/* ---------- Favicon ---------- */
+function mkIco(L){const n=L.length,dv=new DataView(new ArrayBuffer(6+16*n));dv.setUint16(2,1,true);dv.setUint16(4,n,true);let off=6+16*n;L.forEach((p,i)=>{const o=6+16*i,s=p.s>=256?0:p.s;dv.setUint8(o,s);dv.setUint8(o+1,s);dv.setUint16(o+4,1,true);dv.setUint16(o+6,32,true);dv.setUint32(o+8,p.d.length,true);dv.setUint32(o+12,off,true);off+=p.d.length});return new Blob([dv.buffer,...L.map(p=>p.d)],{type:'image/x-icon'})}
+function shrinkTo(c,t){let cur=c;while(cur.width/2>=t){const n=cv(cur.width>>1,cur.height>>1),x=n.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(cur,0,0,n.width,n.height);cur=n}return cur}
+function iconAt(sq,size,P,apple){const c=cv(size,size),x=c.getContext('2d'),pd=size*P.pad/100,inner=size-2*pd;x.save();
+ if(!apple){x.beginPath();if(P.shape===2)x.arc(size/2,size/2,size/2,0,7);else if(P.shape===1&&x.roundRect)x.roundRect(0,0,size,size,size*.22);else x.rect(0,0,size,size);x.clip()}
+ const bg=apple?(P.bg||'#ffffff'):P.bg;if(bg){x.fillStyle=bg;x.fillRect(0,0,size,size)}
+ x.imageSmoothingQuality='high';x.drawImage(shrinkTo(sq,inner),pd,pd,inner,inner);x.restore();return c}
+async function openFav(id){
+ const it=S.items.find(i=>i.id===id);if(!it)return;await ens(it);const cr=it.crop||{x:0,y:0,w:it.w,h:it.h},q=Math.min(cr.w,cr.h),sq=cv(Math.min(1024,Math.round(q)),Math.min(1024,Math.round(q)));
+ sq.getContext('2d').drawImage(it.bmp,cr.x+(cr.w-q)/2,cr.y+(cr.h-q)/2,q,q,0,0,sq.width,sq.height);rel(it);
+ const P={shape:1,pad:6,bg:'',name:'My Site'};
+ const shut=openM('⭐ Favicon generator',`<p class="mt">Makes favicon.ico, PNG icons, an Apple touch icon, Android icons, a web manifest and the HTML to paste. The picture is centre-cropped to a square (use ✂ Crop first to choose the area).</p>
+ <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:12px;border-radius:12px;background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px" id="fpv"></div>
+ <div class="chips" id="fsh" style="margin:10px 0"></div>
+ <div class="grid2"><label class="sl">Padding <span id="vp">${P.pad}%</span><input type="range" id="fp2" min="0" max="30" value="${P.pad}"></label>
+ <label class="sl">Background<select id="fb2"><option value="">Transparent</option><option value="#ffffff">White</option><option value="c">Custom colour</option></select></label>
+ <label class="sl">Custom colour<input type="color" class="in2" id="fc" value="#e8481c"></label>
+ <label class="sl">Site name (for the manifest)<input class="in2" id="fn" value="${P.name}" maxlength="40"></label></div>
+ <label class="sl">HTML to paste in &lt;head&gt;<textarea class="in2" id="fh" rows="6" readonly style="font:12px ui-monospace,monospace"></textarea></label>
+ <div class="tools"><button class="btn p" id="fdl">⬇ Download ZIP</button><button class="btn" id="fcp">Copy HTML</button></div>`);
+ const html='<link rel="icon" href="/favicon.ico" sizes="48x48">\n<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">\n<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">\n<link rel="apple-touch-icon" href="/apple-touch-icon.png">\n<link rel="manifest" href="/site.webmanifest">';
+ $('#fh').value=html;
+ const pv=()=>{const h=$('#fpv');h.innerHTML='';[[96,'96'],[48,'48'],[32,'32'],[16,'16']].forEach(([s])=>{const c=iconAt(sq,s,P,false);c.style.cssText=`width:${s}px;height:${s}px;image-rendering:${s<48?'pixelated':'auto'}`;h.appendChild(c)})};
+ chips($('#fsh'),[['Square',0],['Rounded',1],['Circle',2]],P.shape,v=>{P.shape=v;pv()});
+ const bg=()=>{const v=$('#fb2').value;P.bg=v==='c'?$('#fc').value:v;pv()};$('#fb2').onchange=bg;$('#fc').oninput=()=>{if($('#fb2').value==='c')bg()};
+ $('#fp2').oninput=e=>{P.pad=+e.target.value;$('#vp').textContent=P.pad+'%';pv()};$('#fn').oninput=e=>P.name=e.target.value.trim()||'My Site';
+ $('#fcp').onclick=()=>navigator.clipboard.writeText(html).then(()=>toast('HTML copied'),()=>toast('Copy blocked'));
+ $('#fdl').onclick=async()=>{if(!window.JSZip)return toast('ZIP library did not load. Check your connection.');const z=new JSZip(),png=async(s,ap)=>toB(iconAt(sq,s,P,ap),'image/png');
+  const b16=await png(16),b32=await png(32),b48=await png(48);const u8=async b=>new Uint8Array(await b.arrayBuffer());
+  z.file('favicon.ico',mkIco([{s:16,d:await u8(b16)},{s:32,d:await u8(b32)},{s:48,d:await u8(b48)}]));z.file('favicon-16x16.png',b16);z.file('favicon-32x32.png',b32);
+  z.file('apple-touch-icon.png',await png(180,true));z.file('android-chrome-192x192.png',await png(192));z.file('android-chrome-512x512.png',await png(512));
+  z.file('site.webmanifest',JSON.stringify({name:P.name,short_name:P.name.slice(0,12),icons:[{src:'/android-chrome-192x192.png',sizes:'192x192',type:'image/png'},{src:'/android-chrome-512x512.png',sizes:'512x512',type:'image/png'}],theme_color:P.bg||'#ffffff',background_color:P.bg||'#ffffff',display:'standalone'},null,2));
+  z.file('favicon-snippet.html',html);dl(await z.generateAsync({type:'blob'}),'favicons.zip');toast('Favicon pack ready')};
+ pv()}
+
+/* ---------- Social sizes ---------- */
+const SOC=[['Instagram','Post square',1080,1080,1],['Instagram','Post portrait 4:5',1080,1350,1],['Instagram','Story / Reel',1080,1920,1],['Facebook','Post / link preview',1200,630,1],['Facebook','Cover',820,312,0],['X (Twitter)','Post',1600,900,1],['X (Twitter)','Header',1500,500,0],['X (Twitter)','Profile',400,400,0],['LinkedIn','Post',1200,627,1],['LinkedIn','Banner',1584,396,0],['YouTube','Thumbnail',1280,720,1],['YouTube','Channel banner',2560,1440,0],['Pinterest','Pin 2:3',1000,1500,0],['WhatsApp','Profile picture',500,500,0]];
+function openSocial(){if(!need())return;
+ const shut=openM('📣 Social media sizes',`<p class="mt">Pick the sizes you need. Every added image is exported at each size, using its crop if you set one. Platforms change recommended sizes now and then, so check the latest guidance.</p>
+ <div class="grid2">${SOC.map((s,i)=>`<label class="sl" style="font-weight:600"><span><input type="checkbox" class="sk" value="${i}"${s[4]?' checked':''}> ${s[0]} · ${s[1]} <span class="mt">${s[2]}×${s[3]}</span></span></label>`).join('')}</div>
+ <div class="grid2"><label class="sl">Fit<select id="sf"><option value="fill">Fill: crop to the exact size</option><option value="fit">Fit: whole image with bars</option></select></label>
+ <label class="sl">Bar colour<input type="color" class="in2" id="sb" value="#ffffff"></label>
+ <label class="sl">Format<select id="st"><option value="webp">WebP (small)</option><option value="jpeg">JPG (compatible)</option><option value="png">PNG (lossless)</option></select></label></div>
+ <div class="tools"><button class="btn p" id="sgo">⬇ Download ZIP</button></div><p class="mt" id="sm"></p>`);
+ $('#sgo').onclick=async()=>{if(!window.JSZip)return toast('ZIP library did not load. Check your connection.');const ch=[...document.querySelectorAll('.sk:checked')].map(c=>SOC[+c.value]);if(!ch.length)return toast('Pick at least one size');
+  const fu={},uf=n=>{fu[n]=(fu[n]||0)+1;return fu[n]>1?n+'-'+fu[n]:n},fit=$('#sf').value==='fit',col=$('#sb').value,type=MIME[$('#st').value],ext=EXT[type],items=ready(),z=new JSZip(),b=$('#sgo');b.disabled=true;let n=0;
+  for(const it of items){$('#sm').textContent=`Image ${++n} of ${items.length}…`;await ens(it);const cr=it.crop||{x:0,y:0,w:it.w,h:it.h},f=items.length>1?z.folder(uf(safe(baseName(it.file.name)))):z;
+   for(const[g,l,w,h]of ch){const c=cv(w,h),x=c.getContext('2d');x.fillStyle=col;x.fillRect(0,0,w,h);x.imageSmoothingQuality='high';
+    if(fit){const k=Math.min(w/cr.w,h/cr.h),dw=cr.w*k,dh=cr.h*k;x.drawImage(it.bmp,cr.x,cr.y,cr.w,cr.h,(w-dw)/2,(h-dh)/2,dw,dh)}
+    else{const a=w/h;let sx=cr.x,sy=cr.y,sw=cr.w,sh=cr.h;if(sw/sh>a){const k=sh*a;sx+=(sw-k)/2;sw=k}else{const k=sw/a;sy+=(sh-k)/2;sh=k}x.drawImage(it.bmp,sx,sy,sw,sh,0,0,w,h)}
+    f.file(`${safe(g)}-${safe(l)}-${w}x${h}.${ext}`,await toB(c,type,.86))}
+   rel(it);await new Promise(r=>setTimeout(r))}
+  dl(await z.generateAsync({type:'blob'}),'social-sizes.zip');b.disabled=false;$('#sm').textContent='';toast('Social pack ready')}}
+
+/* ---------- Images -> PDF ---------- */
+async function jpegOf(it){if(it.out.type==='image/jpeg'&&!it.keep)return it.out;const bm=await createImageBitmap(it.out),c=cv(bm.width,bm.height),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bm,0,0);return toB(c,'image/jpeg',.9)}
+async function buildPdf(pages,o){
+ const te=new TextEncoder(),parts=[],offs=[];let len=0;const put=x=>{const b=typeof x==='string'?te.encode(x):x;parts.push(b);len+=b.length},f=n=>(+n).toFixed(2),N=pages.length;
+ put('%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n');const obj=(n,b)=>{offs[n]=len;put(`${n} 0 obj\n`);put(b);put('\nendobj\n')};
+ obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,`<< /Type /Pages /Kids [${pages.map((_,i)=>`${3+3*i} 0 R`).join(' ')}] /Count ${N} >>`);
+ pages.forEach((p,i)=>{let pw,ph;const m=o.margin;if(o.size==='fit'){pw=p.w*.75+2*m;ph=p.h*.75+2*m}else{[pw,ph]=o.size==='letter'?[612,792]:[595.28,841.89];if(p.w>p.h)[pw,ph]=[ph,pw]}
+  const k=Math.min((pw-2*m)/p.w,(ph-2*m)/p.h),iw=p.w*k,ih=p.h*k,x=(pw-iw)/2,y=(ph-ih)/2,cs=`q ${f(iw)} 0 0 ${f(ih)} ${f(x)} ${f(y)} cm /Im0 Do Q`;
+  obj(3+3*i,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${f(pw)} ${f(ph)}] /Resources << /XObject << /Im0 ${5+3*i} 0 R >> >> /Contents ${4+3*i} 0 R >>`);
+  obj(4+3*i,`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+  offs[5+3*i]=len;put(`${5+3*i} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.d.length} >>\nstream\n`);put(p.d);put('\nendstream\nendobj\n')});
+ const xr=len,T=3+3*N;let t=`xref\n0 ${T}\n0000000000 65535 f \n`;for(let n=1;n<T;n++)t+=String(offs[n]).padStart(10,'0')+' 00000 n \n';
+ put(t+`trailer\n<< /Size ${T} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
+function openPdfOut(){if(!need())return;
+ const shut=openM('📄 Images → PDF',`<p class="mt">Combines your processed images, in the order shown in the list, into one PDF. Compress first for a smaller file.</p>
+ <div class="grid2"><label class="sl">Page size<select id="ps"><option value="a4">A4</option><option value="letter">US Letter</option><option value="fit">Same as each image</option></select></label>
+ <label class="sl">Margin<select id="pm"><option value="0">None</option><option value="18">Small</option><option value="40">Medium</option></select></label></div>
+ <p class="mt" id="pn">${ready().length} image${ready().length>1?'s':''} will be included. Landscape images get landscape pages.</p>
+ <div class="tools"><button class="btn p" id="pgo">⬇ Create PDF</button></div>`);
+ $('#pgo').onclick=async()=>{const b=$('#pgo');b.disabled=true;const pages=[];let n=0;const L=ready();
+  try{for(const it of L){$('#pn').textContent=`Preparing ${++n} of ${L.length}…`;const jb=await jpegOf(it),bm=await createImageBitmap(jb);pages.push({d:new Uint8Array(await jb.arrayBuffer()),w:bm.width,h:bm.height});bm.close&&bm.close()}
+   dl(await buildPdf(pages,{size:$('#ps').value,margin:+$('#pm').value}),'images.pdf');shut();toast('PDF ready')}catch(e){console.warn(e);b.disabled=false;$('#pn').textContent='Something went wrong building the PDF.'}}}
+
+/* ---------- PDF -> images ---------- */
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',PDFW='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const pin=Object.assign(document.createElement('input'),{type:'file',accept:'application/pdf,.pdf',hidden:true});document.body.appendChild(pin);
+function parseRange(t,max){if(!t.trim())return Array.from({length:max},(_,i)=>i+1);const s=new Set();t.split(',').forEach(p=>{const m=p.trim().match(/^(\d+)(?:\s*-\s*(\d+))?$/);if(!m)return;let a=+m[1],b=m[2]?+m[2]:a;if(a>b)[a,b]=[b,a];for(let i=Math.max(1,a);i<=Math.min(max,b);i++)s.add(i)});return[...s].sort((a,b)=>a-b)}
+function openPdfIn(){
+ const shut=openM('🖼 PDF → images',`<p class="mt">Choose a PDF and every page becomes an image that then goes through the compressor with your current settings. The PDF reader downloads once, so you need an internet connection the first time.</p>
+ <div class="grid2"><label class="sl">Resolution<select id="pd"><option value="96">Screen (96 dpi)</option><option value="150" selected>Standard (150 dpi)</option><option value="200">Sharp (200 dpi)</option><option value="300">Print (300 dpi)</option></select></label>
+ <label class="sl">Pages (optional)<input class="in2" id="pr" placeholder="All, or e.g. 1-3, 5"></label></div>
+ <div class="tools"><button class="btn p" id="pch">Choose PDF</button></div><p class="mt" id="pst"></p>`);
+ $('#pch').onclick=()=>pin.click();
+ pin.onchange=async()=>{const f=pin.files[0];pin.value='';if(!f)return;const st=$('#pst');
+  try{st.textContent='Loading PDF reader…';await loadJS(PDFJS);pdfjsLib.GlobalWorkerOptions.workerSrc=PDFW;
+   const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,pg=parseRange($('#pr').value,doc.numPages),dpi=+$('#pd').value,files=[];if(!pg.length){st.textContent='No valid pages in that range.';return}
+   for(let i=0;i<pg.length;i++){st.textContent=`Rendering page ${pg[i]} (${i+1} of ${pg.length})…`;const p=await doc.getPage(pg[i]),v0=p.getViewport({scale:1});let sc=dpi/72;if(v0.width*v0.height*sc*sc>16e6)sc=Math.sqrt(16e6/(v0.width*v0.height));
+    const v=p.getViewport({scale:sc}),c=cv(Math.ceil(v.width),Math.ceil(v.height)),x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await p.render({canvasContext:x,viewport:v}).promise;
+    files.push(new File([await toB(c,'image/png')],`${safe(baseName(f.name))}-page-${String(pg[i]).padStart(String(doc.numPages).length,'0')}.png`,{type:'image/png'}))}
+   shut();await add(files);toast(`${files.length} page${files.length>1?'s':''} added`)}
+  catch(e){console.warn(e);st.textContent=e&&e.name==='PasswordException'?'This PDF is password protected. Remove the password and try again.':'Could not read that PDF. Check your connection and that the file is a valid PDF.'}}}
+
+/* ---------- wiring ---------- */
+$('#tools').onclick=e=>{const b=e.target.closest('[data-tool]');if(!b)return;({heic:heicGo,cut:()=>pickItem('🪄 Remove background',openCut),fav:()=>pickItem('⭐ Favicon generator',openFav),soc:openSocial,pdfi:openPdfOut,pdfo:openPdfIn,ren:openRename})[b.dataset.tool]()};
+$('#list').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(b)openCut(+b.dataset.b)});
+})();
+
 </script>
 </body>
 </html>
