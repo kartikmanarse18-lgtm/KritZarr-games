@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Free Image Converter, Compressor &amp; Background Remover">
 <meta name="twitter:description" content="Convert, compress, cut out backgrounds and resize images. Nothing is uploaded.">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Lumen Squeeze", "alternateName": "Lumen Squeeze Image Converter & Compressor", "url": "https://kritzaar.online/tools/image-converter/", "description": "Free browser-based tool that converts HEIC, JPG, PNG, WebP, GIF, BMP, TIFF, AVIF and ICO images to JPG, PNG, WebP or AVIF and compresses images to a chosen quality or file size. No server upload.", "applicationCategory": "MultimediaApplication", "applicationSubCategory": "Image converter and compressor", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern browser", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "inLanguage": "en", "featureList": ["Convert HEIC to JPG", "Convert images to WebP and AVIF", "Compress images to an exact file size", "Batch conversion with ZIP download", "Crop, straighten and fix perspective", "Removes EXIF and GPS metadata", "Works offline from your device, no upload", "One-tap HEIC to JPG", "Background remover", "Favicon generator", "Social media image sizes", "Images to PDF", "PDF to images", "Bulk rename"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Lumen Squeeze", "alternateName": "Lumen Squeeze Image Converter & Compressor", "url": "https://kritzaar.online/tools/image-converter/", "description": "Free browser-based tool that converts HEIC, JPG, PNG, WebP, GIF, BMP, TIFF, AVIF and ICO images to JPG, PNG, WebP or AVIF and compresses images to a chosen quality or file size. No server upload.", "applicationCategory": "MultimediaApplication", "applicationSubCategory": "Image converter and compressor", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern browser", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "inLanguage": "en", "featureList": ["Convert HEIC to JPG", "Convert images to WebP and AVIF", "Compress images to an exact file size", "Batch conversion with ZIP download", "Crop, straighten and fix perspective", "Removes EXIF and GPS metadata", "Works offline from your device, no upload", "One-tap HEIC to JPG", "Background remover with brush refinement, blur, colour or image backgrounds and batch mode", "Favicon generator", "Social media image sizes", "Images to PDF", "PDF to images", "Bulk rename"]}</script>
 <title>Image Converter, Compressor &amp; Background Remover | Lumen Squeeze</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap" rel="stylesheet">
 <style>
@@ -116,6 +116,30 @@ html{scroll-behavior:smooth}
 .sl{margin-top:8px}.sl input[type=checkbox]{width:auto;accent-color:var(--acc)}
 code{font:12px ui-monospace,monospace;background:var(--bg);padding:1px 5px;border-radius:5px}
 </style>
+<style>
+/* v8 polish */
+.tg{grid-template-columns:repeat(2,minmax(0,1fr))!important}@media(min-width:700px){.tg{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+.tl{flex-direction:row!important;align-items:center;gap:11px!important;padding:11px 12px!important;min-height:64px;transition:transform .12s}
+.tl:last-child:nth-child(odd){grid-column:1/-1}
+.tl .ic{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:linear-gradient(135deg,var(--a),var(--b));box-shadow:0 6px 14px color-mix(in srgb,var(--b) 40%,transparent)}
+.tl .tx{min-width:0;display:flex;flex-direction:column;gap:2px}.tl .tx b{font-size:14px;line-height:1.2}.tl .tx small{font-size:12px;line-height:1.3;color:var(--mut)}
+.tl:focus-visible,.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--bg);box-shadow:inset 2px 2px 5px var(--nd),inset -2px -2px 5px var(--nl);margin:12px 0}
+.seg button{flex:1;border:none;background:none;color:var(--mut);font:600 13px/1 inherit;padding:10px 6px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--acc);box-shadow:0 2px 8px var(--nd)}
+.mf{position:sticky;bottom:0;margin:14px -16px -16px!important;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;z-index:2;border-radius:0 0 18px 18px}
+.mf .btn{flex:1 1 auto}
+.grid2{gap:10px 14px}.sl{font-size:13px}.sl input.in2{margin-top:4px}
+@media(max-width:640px){
+ #modal{padding:0!important;overflow:hidden!important}
+ #modal[style*="block"]{display:flex!important;align-items:flex-end}
+ #modal .in{width:100%;max-width:none!important;margin:0!important;border-radius:22px 22px 0 0!important;max-height:94vh;overflow:auto;padding-bottom:16px;animation:up .2s ease-out}
+ #modal .in::before{content:"";display:block;width:40px;height:4px;border-radius:9px;background:var(--line);margin:-6px auto 10px}
+ .mf{border-radius:0}
+}
+@keyframes up{from{transform:translateY(24px);opacity:.4}}
+@media(prefers-reduced-motion:reduce){#modal .in{animation:none}}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -135,15 +159,15 @@ code{font:12px ui-monospace,monospace;background:var(--bg);padding:1px 5px;borde
 
 <div id="sum"><div><b id="s1">0%</b><small id="s2"></small></div><div><button class="btn" id="zip">⬇ Download all (ZIP)</button> <button class="btn" id="clr">Clear</button></div></div>
 <div class="list" id="list"></div>
-<section id="tools" aria-labelledby="tt"><h2 id="tt">More tools</h2><p class="mt" style="margin-bottom:10px">Everything runs on your device. Tools that edit images use the images you added above.</p>
+<section id="tools" aria-labelledby="tt"><h2 id="tt">More tools</h2><p class="mt" style="margin-bottom:12px">Everything runs on your device. Tools that edit images use the images you added above.</p>
 <div class="tg">
-<button class="tl" data-tool="heic"><b>📱 HEIC → JPG</b><small>One tap: sets JPG at quality 92 and opens your iPhone photos</small></button>
-<button class="tl" data-tool="cut"><b>🪄 Background remover</b><small>Cut out plain backgrounds, keep transparency or fill a colour</small></button>
-<button class="tl" data-tool="fav"><b>⭐ Favicon generator</b><small>ICO, PNG, Apple touch icon and manifest in one ZIP</small></button>
-<button class="tl" data-tool="soc"><b>📣 Social media sizes</b><small>Instagram, Facebook, X, LinkedIn, YouTube, Pinterest</small></button>
-<button class="tl" data-tool="pdfi"><b>📄 Images → PDF</b><small>Combine your images into one PDF</small></button>
-<button class="tl" data-tool="pdfo"><b>🖼 PDF → images</b><small>Turn PDF pages into images, then compress them</small></button>
-<button class="tl" data-tool="ren"><b>🏷 Bulk rename</b><small>Patterns, numbering and dates for saved files</small></button>
+<button class="tl" data-tool="heic"><span class="ic" style="--a:#ff7a3d;--b:#e8481c">📱</span><span class="tx"><b>HEIC → JPG</b><small>iPhone photos in one tap</small></span></button>
+<button class="tl" data-tool="cut"><span class="ic" style="--a:#7a5cff;--b:#4f35d6">🪄</span><span class="tx"><b>Cutout</b><small>Remove or replace backgrounds</small></span></button>
+<button class="tl" data-tool="fav"><span class="ic" style="--a:#ffc43d;--b:#f59e0b">⭐</span><span class="tx"><b>Favicon maker</b><small>ICO, PNG and manifest</small></span></button>
+<button class="tl" data-tool="soc"><span class="ic" style="--a:#ff5e8a;--b:#d6246e">📣</span><span class="tx"><b>Social sizes</b><small>Instagram, X, YouTube…</small></span></button>
+<button class="tl" data-tool="pdfi"><span class="ic" style="--a:#4fc79b;--b:#1f7a5c">📄</span><span class="tx"><b>Images → PDF</b><small>Combine into one file</small></span></button>
+<button class="tl" data-tool="pdfo"><span class="ic" style="--a:#4aa8ff;--b:#2f6fed">🖼</span><span class="tx"><b>PDF → images</b><small>One image per page</small></span></button>
+<button class="tl" data-tool="ren"><span class="ic" style="--a:#9aa3b2;--b:#5b6577">🏷</span><span class="tx"><b>Bulk rename</b><small>Patterns, numbers and dates</small></span></button>
 </div></section>
 <section id="about" aria-labelledby="abt">
 <h2 id="abt">About Lumen Squeeze</h2>
@@ -222,7 +246,7 @@ code{font:12px ui-monospace,monospace;background:var(--bg);padding:1px 5px;borde
 <p><b>Is Lumen Squeeze really free and private?</b><br>Yes. There is no sign-up and no upload. Conversion and compression run in your browser, so your images never leave your device.</p>
 <p><b>Will compressing reduce image quality?</b><br>WebP, JPEG and AVIF are lossy, but at quality 70–80 the difference is usually hard to see. Use Inspect to compare before and after.</p>
 <p><b>Which format is smallest: JPG, PNG, WebP or AVIF?</b><br>For photos AVIF is usually smallest, then WebP, then JPG. PNG is lossless and best for screenshots and logos.</p>
-<p><b>Can I remove a background for free?</b><br>Yes. The background remover works on plain backgrounds, keeps transparency as PNG or WebP and can fill the area with a colour. It is colour-based, not AI, so complex scenes may need manual tuning.</p>
+<p><b>Can I remove a background for free?</b><br>Yes. The Cutout tool detects plain backgrounds, lets you tap extra colours, paint to erase or restore areas, and replace the background with transparency, a colour, a blurred copy or your own image, with an optional shadow. It can process a whole batch at once. It is colour-based, not AI, so complex scenes may need the brush.</p>
 <p><b>How do I make a favicon from an image?</b><br>Add a square logo, open the Favicon generator and download the ZIP with favicon.ico, PNG icons, Apple touch icon, manifest and the HTML to paste.</p>
 <p><b>Can I turn images into a PDF, or a PDF into images?</b><br>Yes. Use Images → PDF to combine your images, or PDF → images to turn each page into a picture you can compress.</p>
 <p><b>Can I convert many images at once?</b><br>Yes. Drop multiple files or a whole folder and download everything as one ZIP.</p>
@@ -508,7 +532,8 @@ const LS={},loadJS=u=>LS[u]||(LS[u]=new Promise((ok,no)=>{const s=document.creat
 const ready=()=>S.items.filter(i=>i.out&&!i.busy);
 const need=()=>{if(ready().length)return true;toast('Add an image first');return false};
 const rel=it=>{if(it.flt==='e'||!it.raw)return;try{it.raw.close&&it.raw.close()}catch(_){}it.raw=it.bmp=null};
-function openM(title,html){const m=$('#modal');m.style.display='block';$('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${title}</b><button class="btn" id="mx" aria-label="Close">✕</button></div>${html}`;const shut=()=>{m.style.display='none';m.onclick=null};$('#mx').onclick=shut;m.onclick=e=>{if(e.target===m)shut()};return shut}
+function openM(title,html){const m=$('#modal');m.style.display='block';$('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${title}</b><button class="btn" id="mx" aria-label="Close">✕</button></div>${html}`;const ts=$('#mbody').querySelectorAll('.tools');if(ts.length)ts[ts.length-1].classList.add('mf');m.scrollTop=0;const shut=()=>{m.style.display='none';m.onclick=null};$('#mx').onclick=shut;m.onclick=e=>{if(e.target===m)shut()};return shut}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modal').style.display==='block')$('#modal').style.display='none'});
 const sel=(id,label)=>`<label class="sl">${label}<select id="${id}">${S.items.filter(i=>i.out).map(i=>`<option value="${i.id}">${esc(i.file.name)}</option>`).join('')}</select></label>`;
 
 /* ---------- HEIC ---------- */
@@ -549,52 +574,124 @@ function openRename(){
  $('#rok').onclick=()=>{rd();RN.on=true;shut();toast('Custom names on')};
  $('#roff').onclick=()=>{RN.on=false;shut();toast('Default names')};rd()}
 
-/* ---------- Background remover ---------- */
+/* ---------- Background remover v2: detect, refine brush, backgrounds, batch ---------- */
+const FILTER='filter' in CanvasRenderingContext2D.prototype;
 function autoBg(c){const x=c.getContext('2d'),w=c.width,h=c.height,s=Math.max(1,Math.min(6,w>>3,h>>3)),pts=[[0,0],[w-s,0],[0,h-s],[w-s,h-s]].map(([a,b])=>{const d=x.getImageData(a,b,s,s).data;let r=0,g=0,bl=0;const n=d.length/4;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];bl+=d[i+2]}return[r/n,g/n,bl/n]}),dist=(p,q)=>Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2]);
  let best=pts[0],bs=-1;pts.forEach(p=>{const sc=pts.filter(q=>dist(p,q)<60).length;if(sc>bs){bs=sc;best=p}});
  const g=pts.filter(q=>dist(best,q)<60);return[0,1,2].map(i=>Math.round(g.reduce((a,q)=>a+q[i],0)/g.length))}
-function cutMask(d,w,h,bg,tol,glob){const N=w*h,keep=new Uint8Array(N).fill(1),t2=(tol*2.2)**2,
- near=i=>{const k=i*4;if(d[k+3]<10)return true;const a=d[k]-bg[0],b=d[k+1]-bg[1],c=d[k+2]-bg[2];return a*a+b*b+c*c<=t2};
+function cutMaskBase(d,w,h,bgs,tol,glob){const N=w*h,keep=new Uint8Array(N).fill(1),t2=(tol*2.2)**2,L=bgs.length,
+ near=i=>{const k=i*4;if(d[k+3]<10)return true;for(let j=0;j<L;j++){const b=bgs[j],a=d[k]-b[0],c=d[k+1]-b[1],e=d[k+2]-b[2];if(a*a+c*c+e*e<=t2)return true}return false};
  if(glob){for(let i=0;i<N;i++)if(near(i))keep[i]=0;return keep}
  const st=new Int32Array(N);let sp=0;const push=i=>{if(keep[i]&&near(i)){keep[i]=0;st[sp++]=i}};
  for(let x=0;x<w;x++){push(x);push((h-1)*w+x)}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1)}
  while(sp){const i=st[--sp],x=i%w,y=(i/w)|0;if(x>0)push(i-1);if(x<w-1)push(i+1);if(y>0)push(i-w);if(y<h-1)push(i+w)}
  return keep}
+function labelKeep(keep,w,h,onlyBiggest,minFrac){const N=w*h,lab=new Int32Array(N),sizes=[0],st=new Int32Array(N);let n=0;
+ for(let i=0;i<N;i++){if(!keep[i]||lab[i])continue;n++;let sp=0,c=0;st[sp++]=i;lab[i]=n;
+  while(sp){const j=st[--sp];c++;const x=j%w,y=(j/w)|0;
+   if(x>0&&keep[j-1]&&!lab[j-1]){lab[j-1]=n;st[sp++]=j-1}if(x<w-1&&keep[j+1]&&!lab[j+1]){lab[j+1]=n;st[sp++]=j+1}
+   if(y>0&&keep[j-w]&&!lab[j-w]){lab[j-w]=n;st[sp++]=j-w}if(y<h-1&&keep[j+w]&&!lab[j+w]){lab[j+w]=n;st[sp++]=j+w}}
+  sizes[n]=c}
+ let mx=0;for(let i=1;i<=n;i++)if(sizes[i]>mx)mx=sizes[i];const min=onlyBiggest?mx:mx*minFrac;
+ for(let i=0;i<N;i++)if(keep[i]&&sizes[lab[i]]<min)keep[i]=0}
 function erode(k,w,h,n){for(let r=0;r<n;r++){const c=k.slice();for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const i=y*w+x;if(c[i]&&(!c[i-1]||!c[i+1]||!c[i-w]||!c[i+w]))k[i]=0}}}
-function cutRender(src,W,H,P,k){
+function blurC(src,W,H,r){const o=cv(W,H),x=o.getContext('2d');x.imageSmoothingQuality='high';
+ if(FILTER){x.filter=`blur(${r}px)`;const m=Math.ceil(r*2);x.drawImage(src,-m,-m,W+2*m,H+2*m)}
+ else{const f=Math.max(1,Math.round(r)),s=cv(Math.ceil(W/f),Math.ceil(H/f));s.getContext('2d').drawImage(src,0,0,s.width,s.height);x.drawImage(s,0,0,W,H)}
+ return o}
+function cutRender(src,W,H,P,k,ed,cache){
  const c=cv(W,H),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(src,0,0,W,H);
- const keep=cutMask(x.getImageData(0,0,W,H).data,W,H,P.bg,P.tol,P.glob),n=Math.round(P.trim*k);if(n)erode(keep,W,H,n);
+ const key=JSON.stringify([P.bgs,P.tol,P.glob,P.largest,P.specks,W,H]);let base=cache&&cache.key===key?cache.keep:null;
+ if(!base){base=cutMaskBase(x.getImageData(0,0,W,H).data,W,H,P.bgs,P.tol,P.glob);if(P.largest||P.specks)labelKeep(base,W,H,P.largest,P.specks?.004:0);if(cache){cache.key=key;cache.keep=base}}
+ const keep=base.slice();
+ if(ed){const a=ed.k.getContext('2d').getImageData(0,0,W,H).data,b=ed.e.getContext('2d').getImageData(0,0,W,H).data;for(let i=0;i<keep.length;i++){if(a[i*4+3]>127)keep[i]=1;else if(b[i*4+3]>127)keep[i]=0}}
+ const n=Math.round(P.trim*k);if(n)erode(keep,W,H,n);
  const sp=P.soft*k,pad=Math.ceil(sp*3)+1,PW=W+2*pad,PH=H+2*pad,m=cv(PW,PH),mx=m.getContext('2d'),mi=mx.createImageData(PW,PH);
  for(let y=0;y<PH;y++){const sy=Math.min(H-1,Math.max(0,y-pad))*W;for(let xx=0;xx<PW;xx++)mi.data[(y*PW+xx)*4+3]=keep[sy+Math.min(W-1,Math.max(0,xx-pad))]?255:0}
- mx.putImageData(mi,0,0);const mb=cv(PW,PH),bx=mb.getContext('2d');if(sp>.3)bx.filter=`blur(${sp}px)`;bx.drawImage(m,0,0);
+ mx.putImageData(mi,0,0);const mb=sp>.3?blurC(m,PW,PH,sp):m;
  x.globalCompositeOperation='destination-in';x.drawImage(mb,-pad,-pad);x.globalCompositeOperation='source-over';
- if(P.fill){const o=cv(W,H),ox=o.getContext('2d');ox.fillStyle=P.fill;ox.fillRect(0,0,W,H);ox.drawImage(c,0,0);return o}
+ if(P.defringe){const id=x.getImageData(0,0,W,H),d=id.data,b0=P.bgs[0];for(let i=0;i<d.length;i+=4){const a=d[i+3];if(a>0&&a<250){const f=a/255;for(let j=0;j<3;j++){const v=(d[i+j]-b0[j]*(1-f))/f;d[i+j]=v<0?0:v>255?255:v}}}x.putImageData(id,0,0)}
  return c}
+function compose(cut,src,W,H,P,k){
+ if(P.fill==='none'&&!P.shadow)return cut;
+ const o=cv(W,H),x=o.getContext('2d');x.imageSmoothingQuality='high';
+ if(P.fill==='color'){x.fillStyle=P.fcol;x.fillRect(0,0,W,H)}
+ else if(P.fill==='blur'){x.drawImage(blurC(src,W,H,Math.max(1,P.blur*k)),0,0,W,H)}
+ else if(P.fill==='image'&&P.img){const a=W/H,iw=P.img.width,ih=P.img.height;let sx=0,sy=0,sw=iw,sh=ih;if(iw/ih>a){sw=ih*a;sx=(iw-sw)/2}else{sh=iw/a;sy=(ih-sh)/2}x.drawImage(P.img,sx,sy,sw,sh,0,0,W,H)}
+ if(P.shadow){x.save();x.shadowColor='rgba(0,0,0,.4)';x.shadowBlur=16*k;x.shadowOffsetY=8*k;x.drawImage(cut,0,0);x.restore()}else x.drawImage(cut,0,0);
+ return o}
+const prevScale=b=>Math.min(1,1000/Math.max(b.width,b.height));
+function finishCut(it,out,P){it.orig=it.orig||it.raw;it.raw=out;it.bmp=out;it.w=out.width;it.h=out.height;it.rot=0;it.flip=false;it.crop=null;it.flt='e';
+ const cur=(it.o&&it.o.fmt)||S.fmt;let forced=false;if(P.fill==='none'&&!['png','webp','avif'].includes(cur)){it.o={...(it.o||{}),fmt:'png'};forced=true}queue(it);return forced}
 async function openCut(id){
- const it=S.items.find(i=>i.id===id);if(!it)return;await ens(it);const src=it.bmp,s=Math.min(1,1000/Math.max(src.width,src.height)),W=Math.max(1,Math.round(src.width*s)),H=Math.max(1,Math.round(src.height*s)),base=cv(W,H);base.getContext('2d',{willReadFrequently:true}).drawImage(src,0,0,W,H);
- const P={tol:30,trim:0,soft:1,glob:false,fill:'',bg:autoBg(base)},hex=a=>'#'+a.map(v=>v.toString(16).padStart(2,'0')).join('');
- const shut=openM('🪄 Remove background',`<p class="mt">Works best on plain backgrounds such as studio shots, products and documents. It is a colour-based tool, not AI, so busy backgrounds will need a higher tolerance or will not separate cleanly. Tap the picture to choose the background colour yourself.</p>
- <div class="cmp" style="margin-top:8px"><canvas id="cpv" style="display:block;width:100%;height:auto;max-height:55vh;object-fit:contain;margin:auto;cursor:crosshair"></canvas></div>
- <p class="mt" style="margin:6px 0">Background colour: <span class="sw" id="cbg"><i></i><span></span></span></p>
- <div class="grid2"><label class="sl">Tolerance <span id="vt">${P.tol}</span><input type="range" id="ct" min="0" max="100" value="${P.tol}"></label>
- <label class="sl">Edge trim <span id="vr">0</span><input type="range" id="cr" min="0" max="4" step="1" value="0"></label>
- <label class="sl">Edge softness <span id="vs">${P.soft}</span><input type="range" id="cs" min="0" max="4" step="0.5" value="${P.soft}"></label></div>
- <label class="sl" style="margin-top:8px"><span><input type="checkbox" id="cg"> Remove this colour everywhere, not only around the edges</span></label>
- <div class="grid2"><label class="sl">Replace with<select id="cf"><option value="">Transparent</option><option value="#ffffff">White</option><option value="c">Custom colour</option></select></label><label class="sl">Custom colour<input type="color" class="in2" id="cc" value="#2f6fed"></label></div>
- <div class="tools"><button class="btn p" id="cok">Apply</button><button class="btn" id="cun"${it.orig?'':' disabled'}>Undo cutout</button></div>`);
- const paint=()=>{const o=cutRender(base,W,H,P,1),c=$('#cpv');c.width=W;c.height=H;c.getContext('2d').drawImage(o,0,0);const b=$('#cbg');b.querySelector('i').style.background=hex(P.bg);b.querySelector('span').textContent=hex(P.bg)};
+ const it=S.items.find(i=>i.id===id);if(!it)return;await ens(it);const src=it.bmp,s=prevScale(src),W=Math.max(1,Math.round(src.width*s)),H=Math.max(1,Math.round(src.height*s)),base=cv(W,H);base.getContext('2d',{willReadFrequently:true}).drawImage(src,0,0,W,H);
+ const P={tol:30,trim:0,soft:1,glob:false,largest:false,specks:true,defringe:true,bgs:[autoBg(base)],auto:true,fill:'none',fcol:'#ffffff',blur:14,img:null,shadow:false},
+  hex=a=>'#'+a.map(v=>v.toString(16).padStart(2,'0')).join(''),E={k:cv(W,H),e:cv(W,H)},cache={},strokes=[],redo=[];
+ let mode='pick',BR=Math.max(10,Math.round(Math.max(W,H)/28)),showO=false,cur=null;
+ const shut=openM('🪄 Remove background',`
+ <div class="cmp" id="cwrap" style="margin-top:10px;position:relative"><canvas id="cpv" style="display:block;width:100%;height:auto;max-height:46vh;object-fit:contain;margin:auto;cursor:crosshair;touch-action:none"></canvas><button class="btn" id="cor" style="position:absolute;right:8px;bottom:8px;padding:6px 10px;font-size:12px">👁 Hold for original</button></div>
+ <div class="seg" id="ctabs"><button class="on" data-tb="0">Detect</button><button data-tb="1">Refine</button><button data-tb="2">Background</button></div>
+ <div id="tb0"><p class="mt">Tap the picture to choose which colours are background. Tap again to add more colours.</p>
+  <div id="cbgs" class="chips" style="margin:6px 0"></div><button class="btn" id="cauto" style="padding:6px 12px;font-size:12px">↺ Auto-detect</button>
+  <label class="sl">Tolerance <span id="vt">${P.tol}</span><input type="range" id="ct" min="0" max="100" value="${P.tol}"></label>
+  <label class="sl"><span><input type="checkbox" id="cg"> Remove these colours everywhere, not only around the edges</span></label>
+  <label class="sl"><span><input type="checkbox" id="cl"> Keep only the biggest object</span></label>
+  <label class="sl"><span><input type="checkbox" id="cp" checked> Remove tiny specks</span></label></div>
+ <div id="tb1" hidden><p class="mt">Paint over the picture to fix mistakes by hand.</p>
+  <div class="chips" id="cbm" style="margin:6px 0"></div>
+  <label class="sl">Brush size <span id="vb">${BR}</span><input type="range" id="cb" min="4" max="${Math.max(60,Math.round(Math.max(W,H)/6))}" value="${BR}"></label>
+  <div class="tools" style="margin:8px 0"><button class="btn" id="cun2">↶ Undo</button><button class="btn" id="cre2">↷ Redo</button><button class="btn" id="ccl">Clear brush</button></div>
+  <label class="sl">Edge trim <span id="vr">0</span><input type="range" id="cr" min="0" max="4" step="1" value="0"></label>
+  <label class="sl">Edge softness <span id="vs">${P.soft}</span><input type="range" id="cs" min="0" max="4" step="0.5" value="${P.soft}"></label>
+  <label class="sl"><span><input type="checkbox" id="cd" checked> Clean colour fringe on edges</span></label></div>
+ <div id="tb2" hidden><label class="sl">Replace background with</label><div class="chips" id="cfm" style="margin:6px 0"></div>
+  <div id="fc1" hidden><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" id="csw"></div><input type="color" class="in2" id="cc" value="#ffffff" style="max-width:120px"></div>
+  <label class="sl" id="fb1" hidden>Blur amount <span id="vbl">${P.blur}</span><input type="range" id="cbl" min="4" max="40" value="${P.blur}"></label>
+  <div id="fi1" hidden><button class="btn" id="cim">Choose background image</button> <span class="mt" id="cin"></span></div>
+  <label class="sl"><span><input type="checkbox" id="csh"> Add soft drop shadow</span></label>
+  <label class="sl" style="margin-top:12px">Preview backdrop</label><div class="chips" id="cpb" style="margin-top:6px"></div></div>
+ <div class="tools"><button class="btn p" id="cok">Apply</button><button class="btn" id="call">Apply to all images</button><button class="btn" id="cun"${it.orig?'':' disabled'}>Undo cutout</button></div>`);
+ const wrap=$('#cwrap'),cvp=$('#cpv');
+ const paint=()=>{const cut=cutRender(base,W,H,P,1,E,cache),o=compose(cut,base,W,H,P,1);cvp.width=W;cvp.height=H;cvp.getContext('2d').drawImage(showO?base:o,0,0)};
  let raf;const rq=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(paint)};
- $('#ct').oninput=e=>{P.tol=+e.target.value;$('#vt').textContent=P.tol;rq()};$('#cr').oninput=e=>{P.trim=+e.target.value;$('#vr').textContent=P.trim;rq()};$('#cs').oninput=e=>{P.soft=+e.target.value;$('#vs').textContent=P.soft;rq()};
- $('#cg').onchange=e=>{P.glob=e.target.checked;rq()};
- const fl=()=>{const v=$('#cf').value;P.fill=v==='c'?$('#cc').value:v;rq()};$('#cf').onchange=fl;$('#cc').oninput=()=>{if($('#cf').value==='c')fl()};
- $('#cpv').onpointerdown=e=>{const c=$('#cpv'),r=c.getBoundingClientRect(),k=Math.min(r.width/W,r.height/H),ox=(r.width-W*k)/2,oy=(r.height-H*k)/2,x=Math.floor((e.clientX-r.left-ox)/k),y=Math.floor((e.clientY-r.top-oy)/k);if(x<0||y<0||x>=W||y>=H)return;const d=base.getContext('2d').getImageData(Math.max(0,x-1),Math.max(0,y-1),3,3).data;let a=0,b=0,g=0;for(let i=0;i<d.length;i+=4){a+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4;P.bg=[Math.round(a/n),Math.round(g/n),Math.round(b/n)];rq()};
+ const sw=()=>{$('#cbgs').innerHTML=P.bgs.map((b,i)=>`<span class="sw" data-i="${i}"><i style="background:${hex(b)}"></i>${hex(b)} ${P.bgs.length>1?'✕':''}</span>`).join('')};
+ $('#cbgs').onclick=e=>{const b=e.target.closest('[data-i]');if(!b||P.bgs.length<2)return;P.bgs.splice(+b.dataset.i,1);sw();rq()};
+ $('#cauto').onclick=()=>{P.bgs=[autoBg(base)];P.auto=true;sw();rq()};
+ const xy=(e,clamp)=>{const r=cvp.getBoundingClientRect(),k=Math.min(r.width/W,r.height/H),ox=(r.width-W*k)/2,oy=(r.height-H*k)/2;let x=(e.clientX-r.left-ox)/k,y=(e.clientY-r.top-oy)/k;if(clamp){x=Math.min(W-1,Math.max(0,x));y=Math.min(H-1,Math.max(0,y))}else if(x<0||y<0||x>=W||y>=H)return null;return[x,y]};
+ const lp=(ctx,s,sc)=>{ctx.lineCap=ctx.lineJoin='round';ctx.lineWidth=s.s*sc;ctx.strokeStyle='#000';ctx.beginPath();s.p.forEach(([x,y],i)=>i?ctx.lineTo(x*sc,y*sc):ctx.moveTo(x*sc,y*sc));if(s.p.length===1)ctx.lineTo(s.p[0][0]*sc+.01,s.p[0][1]*sc);ctx.stroke()};
+ const ps=(s,K,Ee,sc)=>{const[on,off]=s.m==='keep'?[K,Ee]:[Ee,K];on.globalCompositeOperation='source-over';lp(on,s,sc);off.globalCompositeOperation='destination-out';lp(off,s,sc);off.globalCompositeOperation='source-over'};
+ const KC=E.k.getContext('2d'),EC=E.e.getContext('2d'),rpl=()=>{KC.clearRect(0,0,W,H);EC.clearRect(0,0,W,H);strokes.forEach(s=>ps(s,KC,EC,1))};
+ const hb=()=>{$('#cun2').disabled=!strokes.length;$('#cre2').disabled=!redo.length;$('#ccl').disabled=!strokes.length};hb();
+ cvp.onpointerdown=e=>{const p=xy(e);if(!p)return;
+  if(mode==='pick'){const d=base.getContext('2d').getImageData(Math.max(0,Math.floor(p[0])-1),Math.max(0,Math.floor(p[1])-1),3,3).data;let a=0,b=0,g=0;for(let i=0;i<d.length;i+=4){a+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4,c=[Math.round(a/n),Math.round(g/n),Math.round(b/n)];
+   if(P.auto){P.bgs=[c];P.auto=false}else if(P.bgs.length<6)P.bgs.push(c);sw();rq();return}
+  if(mode==='keep'||mode==='erase'){cvp.setPointerCapture(e.pointerId);cur={m:mode,s:BR,p:[p]};strokes.push(cur);redo.length=0;ps(cur,KC,EC,1);hb();rq()}};
+ cvp.onpointermove=e=>{if(!cur)return;cur.p.push(xy(e,true));ps(cur,KC,EC,1);rq()};
+ cvp.onpointerup=cvp.onpointercancel=()=>{cur=null;hb()};
+ $('#cun2').onclick=()=>{if(strokes.length){redo.push(strokes.pop());rpl();hb();rq()}};$('#cre2').onclick=()=>{if(redo.length){strokes.push(redo.pop());rpl();hb();rq()}};$('#ccl').onclick=()=>{strokes.length=0;redo.length=0;rpl();hb();rq()};
+ const orig=v=>{showO=v;rq()};$('#cor').onpointerdown=()=>orig(true);['pointerup','pointerleave','pointercancel'].forEach(v=>$('#cor').addEventListener(v,()=>orig(false)));
+ $('#ct').oninput=e=>{P.tol=+e.target.value;$('#vt').textContent=P.tol;rq()};$('#cg').onchange=e=>{P.glob=e.target.checked;rq()};$('#cl').onchange=e=>{P.largest=e.target.checked;rq()};$('#cp').onchange=e=>{P.specks=e.target.checked;rq()};
+ $('#cb').oninput=e=>{BR=+e.target.value;$('#vb').textContent=BR};$('#cr').oninput=e=>{P.trim=+e.target.value;$('#vr').textContent=P.trim;rq()};$('#cs').oninput=e=>{P.soft=+e.target.value;$('#vs').textContent=P.soft;rq()};$('#cd').onchange=e=>{P.defringe=e.target.checked;rq()};
+ const setMode=()=>{const tb=+document.querySelector('#ctabs .on').dataset.tb;mode=tb===0?'pick':tb===1?(bm?'keep':'erase'):'none';cvp.style.cursor=mode==='pick'?'crosshair':mode==='none'?'default':'cell'};let bm=0;
+ chips($('#cbm'),[['Erase',0],['Restore',1]],0,v=>{bm=v;setMode()});
+ $('#ctabs').onclick=e=>{const b=e.target.closest('[data-tb]');if(!b)return;[...$('#ctabs').children].forEach(c=>c.classList.toggle('on',c===b));[0,1,2].forEach(i=>$('#tb'+i).hidden=i!==+b.dataset.tb);setMode()};
+ const FM=['none','color','blur','image'],fv=()=>{const f=P.fill;$('#fc1').hidden=f!=='color';$('#fb1').hidden=f!=='blur';$('#fi1').hidden=f!=='image'};
+ chips($('#cfm'),[['Transparent',0],['Colour',1],['Blur original',2],['Image',3]],0,v=>{P.fill=FM[v];fv();if(P.fill==='image'&&!P.img)$('#cim').click();rq()});
+ $('#csw').innerHTML=['#ffffff','#000000','#f4f1ea','#e8481c','#2f6fed','#1f7a5c','#ffd23f'].map(c=>`<button class="sw" data-c="${c}" style="padding:4px"><i style="background:${c};border:1px solid var(--line)"></i></button>`).join('');
+ $('#csw').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;P.fcol=b.dataset.c;$('#cc').value=P.fcol;rq()};$('#cc').oninput=e=>{P.fcol=e.target.value;rq()};
+ $('#cbl').oninput=e=>{P.blur=+e.target.value;$('#vbl').textContent=P.blur;rq()};$('#csh').onchange=e=>{P.shadow=e.target.checked;rq()};
+ const imf=Object.assign(document.createElement('input'),{type:'file',accept:'image/*',hidden:true});document.body.appendChild(imf);$('#cim').onclick=()=>imf.click();
+ imf.onchange=async()=>{const f=imf.files[0];imf.value='';if(!f)return;try{P.img=await createImageBitmap(f);$('#cin').textContent=f.name;rq()}catch(_){toast('Could not read that image')}};
+ const PV=['','#ffffff','#111111','#00b140'];chips($('#cpb'),[['Checker',0],['White',1],['Black',2],['Green',3]],0,v=>{wrap.style.background=PV[v]||''});
  $('#cok').onclick=async()=>{const b=$('#cok');b.disabled=true;b.textContent='Working…';await new Promise(r=>setTimeout(r,30));
-  const sc=Math.min(1,Math.sqrt(12e6/(src.width*src.height))),FW=Math.max(1,Math.round(src.width*sc)),FH=Math.max(1,Math.round(src.height*sc)),out=cutRender(src,FW,FH,P,FW/W);
-  it.orig=it.orig||it.raw;it.raw=out;it.bmp=out;it.w=out.width;it.h=out.height;it.rot=0;it.flip=false;it.crop=null;it.flt='e';
-  const cur=(it.o&&it.o.fmt)||S.fmt;let msg='Background removed';if(!P.fill&&!['png','webp','avif'].includes(cur)){it.o={...(it.o||{}),fmt:'png'};msg+=' · output set to PNG to keep transparency'}
-  shut();queue(it);toast(msg)};
+  const sc=Math.min(1,Math.sqrt(12e6/(src.width*src.height))),FW=Math.max(1,Math.round(src.width*sc)),FH=Math.max(1,Math.round(src.height*sc)),k=FW/W,ek=cv(FW,FH),ee=cv(FW,FH);strokes.forEach(st=>ps(st,ek.getContext('2d'),ee.getContext('2d'),k));
+  const out=compose(cutRender(src,FW,FH,P,k,{k:ek,e:ee}),src,FW,FH,P,k),forced=finishCut(it,out,P);shut();toast('Background removed'+(forced?' · output set to PNG to keep transparency':''))};
+ $('#call').onclick=async()=>{const L=ready();if(L.length<2)return toast('Add more images to use this');const b=$('#call');b.disabled=true;let n=0,forced=false;
+  for(const o of L){b.textContent=`Image ${++n} of ${L.length}…`;await new Promise(r=>setTimeout(r,20));await ens(o);const bs=o.bmp,s2=prevScale(bs),sc=Math.min(1,Math.sqrt(12e6/(bs.width*bs.height))),FW=Math.max(1,Math.round(bs.width*sc)),FH=Math.max(1,Math.round(bs.height*sc)),pw=Math.max(1,Math.round(bs.width*s2)),sb=cv(pw,Math.max(1,Math.round(bs.height*s2)));sb.getContext('2d',{willReadFrequently:true}).drawImage(bs,0,0,sb.width,sb.height);
+   const P2={...P,bgs:P.auto?[autoBg(sb)]:P.bgs},k=FW/pw,out=compose(cutRender(bs,FW,FH,P2,k),bs,FW,FH,P2,k);if(finishCut(o,out,P))forced=true}
+  shut();toast(`Background removed from ${L.length} images`+(forced?' · PNG used to keep transparency':''))};
  $('#cun').onclick=()=>{if(!it.orig)return;it.raw=it.orig;it.bmp=it.orig;it.w=it.orig.width;it.h=it.orig.height;it.orig=null;it.flt=0;shut();queue(it);toast('Original restored')};
- paint()}
+ sw();setMode();paint()}
 function pickItem(title,cb){const L=ready();if(!L.length)return need();if(L.length===1)return cb(L[0].id);
  openM(title,`<p class="mt">Choose an image.</p><div class="list" id="pk">${L.map(i=>`<div class="it" data-pk="${i.id}" style="cursor:pointer;grid-template-columns:64px 1fr!important"><img src="${i.th||i.src}" alt=""><div><div class="nm">${esc(i.file.name)}</div><div class="mt">${i.ow}×${i.oh}</div></div></div>`).join('')}</div>`);
  $('#pk').onclick=e=>{const r=e.target.closest('[data-pk]');if(r)cb(+r.dataset.pk)}}
@@ -642,7 +739,7 @@ function openSocial(){if(!need())return;
  <div class="grid2"><label class="sl">Fit<select id="sf"><option value="fill">Fill: crop to the exact size</option><option value="fit">Fit: whole image with bars</option></select></label>
  <label class="sl">Bar colour<input type="color" class="in2" id="sb" value="#ffffff"></label>
  <label class="sl">Format<select id="st"><option value="webp">WebP (small)</option><option value="jpeg">JPG (compatible)</option><option value="png">PNG (lossless)</option></select></label></div>
- <div class="tools"><button class="btn p" id="sgo">⬇ Download ZIP</button></div><p class="mt" id="sm"></p>`);
+ <p class="mt" id="sm"></p><div class="tools"><button class="btn p" id="sgo">⬇ Download ZIP</button></div>`);
  $('#sgo').onclick=async()=>{if(!window.JSZip)return toast('ZIP library did not load. Check your connection.');const ch=[...document.querySelectorAll('.sk:checked')].map(c=>SOC[+c.value]);if(!ch.length)return toast('Pick at least one size');
   const fu={},uf=n=>{fu[n]=(fu[n]||0)+1;return fu[n]>1?n+'-'+fu[n]:n},fit=$('#sf').value==='fit',col=$('#sb').value,type=MIME[$('#st').value],ext=EXT[type],items=ready(),z=new JSZip(),b=$('#sgo');b.disabled=true;let n=0;
   for(const it of items){$('#sm').textContent=`Image ${++n} of ${items.length}…`;await ens(it);const cr=it.crop||{x:0,y:0,w:it.w,h:it.h},f=items.length>1?z.folder(uf(safe(baseName(it.file.name)))):z;
@@ -684,7 +781,7 @@ function openPdfIn(){
  const shut=openM('🖼 PDF → images',`<p class="mt">Choose a PDF and every page becomes an image that then goes through the compressor with your current settings. The PDF reader downloads once, so you need an internet connection the first time.</p>
  <div class="grid2"><label class="sl">Resolution<select id="pd"><option value="96">Screen (96 dpi)</option><option value="150" selected>Standard (150 dpi)</option><option value="200">Sharp (200 dpi)</option><option value="300">Print (300 dpi)</option></select></label>
  <label class="sl">Pages (optional)<input class="in2" id="pr" placeholder="All, or e.g. 1-3, 5"></label></div>
- <div class="tools"><button class="btn p" id="pch">Choose PDF</button></div><p class="mt" id="pst"></p>`);
+ <p class="mt" id="pst"></p><div class="tools"><button class="btn p" id="pch">Choose PDF</button></div>`);
  $('#pch').onclick=()=>pin.click();
  pin.onchange=async()=>{const f=pin.files[0];pin.value='';if(!f)return;const st=$('#pst');
   try{st.textContent='Loading PDF reader…';await loadJS(PDFJS);pdfjsLib.GlobalWorkerOptions.workerSrc=PDFW;
