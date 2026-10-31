@@ -74,6 +74,8 @@ select{border:none;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px va
 .hd{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#fff;border:4px solid var(--acc);box-shadow:0 2px 8px #0006;pointer-events:auto}
 .hd.nw{left:0;top:0;cursor:nwse-resize}.hd.n{left:50%;top:0;cursor:ns-resize}.hd.ne{left:100%;top:0;cursor:nesw-resize}.hd.e{left:100%;top:50%;cursor:ew-resize}.hd.se{left:100%;top:100%;cursor:nwse-resize}.hd.s{left:50%;top:100%;cursor:ns-resize}.hd.sw{left:0;top:100%;cursor:nesw-resize}.hd.w{left:0;top:50%;cursor:ew-resize}
 .tools{display:flex;flex-wrap:wrap;gap:10px;margin:12px 4px}
+@media(prefers-reduced-motion:reduce){body::before,body::after{animation:none}}
+u[data-x]{cursor:pointer;color:var(--acc)}
 </style>
 </head>
 <body>
@@ -86,7 +88,7 @@ select{border:none;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px va
 <div class="panel">
 <div class="box"><label>Quality <em id="qv">78</em></label><input type="range" id="q" min="10" max="98" value="78"><div class="mt">Ignored when a target size is set.</div></div>
 <div class="box"><label>Output format</label><select id="fmt"><option value="auto">Auto — smallest of WebP / JPEG</option><option value="jpeg">JPEG</option><option value="webp">WebP</option><option value="png">PNG (lossless)</option><option value="avif">AVIF (if supported)</option></select></div>
-<div class="box"><label>Max side <em id="mv">Original</em></label><div class="chips" id="maxc"></div></div>
+<div class="box"><label>Max side <em id="mv">Original</em></label><div class="chips" id="maxc"></div><input id="cm" type="number" min="16" placeholder="Custom px" style="width:100%;margin-top:8px;padding:8px;border:none;border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px var(--nl)"></div>
 <div class="box"><label>Crop to ratio</label><div class="chips" id="asp"></div></div>
 <div class="box" style="grid-column:1/-1"><label>🎯 Target file size — hit upload limits exactly <em id="tv">Off</em></label><div class="chips" id="tgt"></div></div>
 </div>
@@ -114,7 +116,7 @@ chips($('#tgt'),[['Off',0],['20 KB',20480],['50 KB',51200],['100 KB',102400],['2
 $('#q').oninput=e=>{S.q=e.target.value/100;$('#qv').textContent=e.target.value};$('#q').onchange=()=>redo();
 $('#fmt').onchange=e=>{S.fmt=e.target.value;redo()};
 // avif support check
-enc(Object.assign(document.createElement('canvas'),{width:2,height:2}),2,2,0,0,2,2,'image/avif',.5).then(b=>{if(b.type!=='image/avif')$('#fmt option[value=avif]').disabled=true});
+enc(Object.assign(document.createElement('canvas'),{width:2,height:2}),2,2,0,0,2,2,'image/avif',.5).then(b=>{if(!b||b.type!=='image/avif')$('#fmt option[value=avif]').disabled=true});
 function enc(src,w,h,sx,sy,sw,sh,type,q){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');if(type==='image/jpeg'){x.fillStyle='#fff';x.fillRect(0,0,w,h)}x.imageSmoothingQuality='high';if(src instanceof HTMLCanvasElement&&!sw)x.drawImage(src,0,0,w,h);else x.drawImage(src,sx,sy,sw,sh,0,0,w,h);return new Promise(r=>c.toBlob(b=>r(b),type,q))}
 function geo(it){const c=it.crop||{x:0,y:0,w:it.w,h:it.h};let sx=c.x,sy=c.y,sw=c.w,sh=c.h;const a=S.asp;if(a){if(sw/sh>a){const n=sh*a;sx+=(sw-n)/2;sw=n}else{const n=sw/a;sy+=(sh-n)/2;sh=n}}const s=S.max?Math.min(1,S.max/Math.max(sw,sh)):1;return{sx,sy,sw,sh,w:Math.max(1,Math.round(sw*s)),h:Math.max(1,Math.round(sh*s))}}
 async function run(it){
@@ -127,7 +129,7 @@ async function run(it){
   if(r.b.type!==t&&t==='image/avif')continue;
   if(!best||r.b.size<best.size){best=r.b;bw=r.w;bh=r.h}
  }
- it.keep=false;
+ if(!best)best=await enc(it.bmp,g.w,g.h,g.sx,g.sy,g.sw,g.sh,'image/jpeg',S.q);it.keep=false;
  if(!S.tgt&&!S.max&&!S.asp&&!it.crop&&!it.rot&&!it.flip&&!it.flt&&S.fmt==='auto'&&best.size>=it.file.size){best=it.file;it.keep=true;bw=it.w;bh=it.h}
  if(it.url)URL.revokeObjectURL(it.url);
  it.out=best;it.url=URL.createObjectURL(best);it.ow=bw;it.oh=bh;it.ext=EXT[best.type]||it.file.name.split('.').pop();
@@ -136,35 +138,35 @@ async function run(it){
 }
 async function fidelity(it,g){try{const W=160,H=Math.max(1,Math.round(W*g.sh/g.sw)),a=await enc(it.bmp,W,H,g.sx,g.sy,g.sw,g.sh,'image/png'),bm=await createImageBitmap(it.out),b=await enc(bm,W,H,0,0,bm.width,bm.height,'image/png');const px=async bl=>{const m=await createImageBitmap(bl),c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.drawImage(m,0,0);return x.getImageData(0,0,W,H).data},A=await px(a),B=await px(b);let e=0;for(let i=0;i<A.length;i++)if(i%4!==3){const d=A[i]-B[i];e+=d*d}const mse=e/(A.length*.75);return mse<.01?99:10*Math.log10(65025/mse)}catch(_){return 0}}
 const fidLabel=p=>!p?'':p>=42?'🟢 Visually identical':p>=36?'🟢 Excellent':p>=31?'🟡 Good':p>=27?'🟠 Visible softening':'🔴 Heavy loss';
-let chain=Promise.resolve();const queue=it=>{chain=chain.then(()=>run(it)).catch(e=>{it.busy=false;it.err=1;draw()})};
+let chain=Promise.resolve();const queue=it=>{const v=it.v=(it.v||0)+1;it.err=0;chain=chain.then(()=>v===it.v&&S.items.includes(it)?run(it):0).catch(e=>{it.busy=false;it.err=1;draw()})};
 function redo(){S.items.forEach(queue)}
-async function add(files){for(const f of files){if(!f.type.startsWith('image/'))continue;try{const bmp=await createImageBitmap(f),it={id:++S.n,file:f,bmp,raw:bmp,rot:0,flt:0,w:bmp.width,h:bmp.height,src:URL.createObjectURL(f)};it.meta=await exif(f);S.items.push(it);queue(it)}catch(e){toast('Could not read '+f.name)}}draw()}
+async function add(files){for(const f of files){if(!f.type.startsWith('image/'))continue;try{let bmp=await createImageBitmap(f);if(bmp.width*bmp.height>16e6){const k=Math.sqrt(16e6/(bmp.width*bmp.height));bmp=await createImageBitmap(f,{resizeWidth:Math.floor(bmp.width*k),resizeHeight:Math.floor(bmp.height*k),resizeQuality:'high'});toast('Very large image scaled to ~16 MP so your browser stays stable')}const it={id:++S.n,file:f,bmp,raw:bmp,rot:0,flt:0,w:bmp.width,h:bmp.height,src:URL.createObjectURL(f)};it.meta=await exif(f);it.th=mkTh(bmp,{sx:0,sy:0,sw:bmp.width,sh:bmp.height});S.items.push(it);queue(it)}catch(e){toast(/hei[cf]/i.test(f.type+f.name)?'HEIC is not supported by this browser. Convert it to JPG first.':'Could not read '+f.name)}}draw()}
 async function exif(f){try{if(!/jpe?g/i.test(f.type))return null;const d=new DataView(await f.slice(0,131072).arrayBuffer());if(d.getUint16(0)!==0xFFD8)return null;let o=2;while(o<d.byteLength-4){const m=d.getUint16(o),l=d.getUint16(o+2);if(m===0xFFE1&&d.getUint32(o+4)===0x45786966){const t=o+10,le=d.getUint16(t)===0x4949,g=(p,s)=>s?d.getUint16(p,le):d.getUint32(p,le),i0=t+g(t+4,0),n=g(i0,1);let gps=false,cam=false;for(let i=0;i<n;i++){const tg=g(i0+2+i*12,1);if(tg===0x8825)gps=true;if(tg===0x010F)cam=true}return{gps,cam,has:true}}if((m&0xFF00)!==0xFF00)break;o+=2+l}return{has:false}}catch(_){return null}}
 // UI
 function draw(){
- const L=$('#list');L.innerHTML=S.items.map(it=>{const p=it.out?Math.round((1-it.out.size/it.file.size)*100):0,m=it.meta&&it.meta.gps?' · <b style="color:var(--acc)">📍 GPS removed</b>':'';return `<div class="it"><img data-o="${it.id}" src="${it.cs||it.src}" alt=""><div><div class="nm">${it.file.name}</div><div class="mt">${it.busy?'Compressing…':it.err?'Failed':`${fb(it.file.size)} → <b>${fb(it.out.size)}</b> · ${it.ow}×${it.oh}${it.keep?' · already optimal':''}`}${m}</div>${it.out&&!it.busy?`<div class="mt">${fidLabel(it.fid)}</div><div class="bar"><i style="width:${Math.max(0,p)}%"></i></div>`:''}</div><div class="acts">${it.out&&!it.busy?`<span class="sv">${p>0?'−'+p:'+'+Math.abs(p)}%</span><button class="btn" data-c="${it.id}">✂ Crop</button><button class="btn" data-o="${it.id}">Inspect</button><button class="btn p" data-d="${it.id}">Save</button>`:''}</div></div>`}).join('');
+ const L=$('#list');L.innerHTML=S.items.map(it=>{const p=it.out?Math.round((1-it.out.size/it.file.size)*100):0,m=it.meta&&it.meta.gps?' · <b style="color:var(--acc)">📍 GPS removed</b>':'';return `<div class="it"><img data-o="${it.id}" src="${it.th||it.src}" alt=""><div><div class="nm">${esc(it.file.name)}</div><div class="mt">${it.busy?'Compressing…':it.err?`Failed (unsupported or too large) · <u data-x="${it.id}">remove</u>`:`${fb(it.file.size)} → <b>${fb(it.out.size)}</b> · ${it.ow}×${it.oh}${it.keep?' · already optimal':''}`}${m}</div>${it.out&&!it.busy?`<div class="mt">${fidLabel(it.fid)}</div><div class="bar"><i style="width:${Math.max(0,p)}%"></i></div>`:''}</div><div class="acts">${it.out&&!it.busy?`<span class="sv">${p>0?'−'+p:'+'+Math.abs(p)}%</span><button class="btn" data-c="${it.id}">✂ Crop</button><button class="btn" data-f="${it.id}">🪪 Frame &amp; text</button><button class="btn" data-o="${it.id}">Inspect</button><button class="btn p" data-d="${it.id}">Save</button><button class="btn" data-x="${it.id}" aria-label="Remove">✕</button>`:''}</div></div>`}).join('');
  const done=S.items.filter(i=>i.out),o=done.reduce((a,i)=>a+i.file.size,0),n=done.reduce((a,i)=>a+i.out.size,0);
  $('#sum').style.display=S.items.length?'flex':'none';
  if(done.length){const sv=o-n;$('#s1').textContent=(o?Math.round(sv/o*100):0)+'% smaller';$('#s2').textContent=`${fb(o)} → ${fb(n)} · saves ${fb(Math.max(0,sv))} ≈ ${(Math.max(0,sv)*8/6e6).toFixed(1)}s faster per load on 4G`}
 }
-$('#list').onclick=e=>{const o=e.target.closest('[data-o]'),d=e.target.closest('[data-d]'),cr=e.target.closest('[data-c]');if(cr)return openCrop(+cr.dataset.c);if(o)inspect(+o.dataset.o);if(d)save(S.items.find(i=>i.id==d.dataset.d))};
+$('#list').onclick=e=>{const o=e.target.closest('[data-o]'),d=e.target.closest('[data-d]'),cr=e.target.closest('[data-c]');const xr=e.target.closest('[data-x]');if(xr)return removeItem(+xr.dataset.x);if(cr)return openCrop(+cr.dataset.c);if(o)inspect(+o.dataset.o);if(d)save(S.items.find(i=>i.id==d.dataset.d))};
 const nameOf=it=>it.file.name.replace(/\.[^.]+$/,'')+'-lumen.'+it.ext;
-function save(it){const a=document.createElement('a');a.href=it.url;a.download=nameOf(it);a.click()}
+function save(it){const a=document.createElement('a');a.href=it.url;a.download=nameOf(it);document.body.appendChild(a);a.click();a.remove()}
 $('#zip').onclick=async()=>{const d=S.items.filter(i=>i.out);if(!d.length)return;if(!window.JSZip){d.forEach(save);return}const z=new JSZip();d.forEach(i=>z.file(i.id+'-'+nameOf(i),i.out));const b=await z.generateAsync({type:'blob'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='lumen-squeeze.zip';a.click()};
 $('#clr').onclick=()=>{S.items.forEach(i=>{URL.revokeObjectURL(i.src);i.url&&URL.revokeObjectURL(i.url)});S.items=[];draw()};
 // inspector
 async function inspect(id){
  const it=S.items.find(i=>i.id===id);if(!it||!it.out)return;const m=$('#modal');m.style.display='block';
  const p=Math.round((1-it.out.size/it.file.size)*100),mt=it.meta;
- $('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${it.file.name}</b><button class="btn" id="mx">✕</button></div>
+ $('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>${esc(it.file.name)}</b><button class="btn" id="mx">✕</button></div>
  <div class="cmp" id="cmp" style="margin-top:10px"><img src="${it.cs||it.src}" alt="Original"><div class="top" id="tp" style="clip-path:inset(0 50% 0 0)"><img src="${it.url}" alt="Compressed"></div><div class="ln" id="ln" style="left:50%"></div><span class="tag" style="left:8px">Compressed ${fb(it.out.size)}</span><span class="tag" style="right:8px">Original ${fb(it.file.size)}</span><input type="range" id="sl" min="0" max="100" value="50"></div>
  <p class="mt">Drag to compare. ${fidLabel(it.fid)} · PSNR ${it.fid>=99?'∞':it.fid.toFixed(1)} dB · ${p>0?p+'% smaller':'no saving'}</p>
  <div class="grid2"><div class="box"><label>Sweet-spot finder</label><div id="curve" class="mt">Measuring…</div></div>
  <div class="box"><label>Privacy scan</label><div class="mt">${mt&&mt.has?`EXIF found${mt.cam?' (camera info)':''}${mt.gps?' and <b style="color:var(--acc)">GPS coordinates</b>':''}. All of it is stripped from your download.`:'No hidden metadata detected. Output is clean.'}</div><label style="margin-top:12px">Dominant colours <span class="mt">tap to copy</span></label><div id="pal" style="display:flex;flex-wrap:wrap;gap:6px"></div></div></div>
- <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="ms">Save</button><button class="btn" id="mu">Copy data URI</button><button class="btn" id="mh">Copy &lt;img&gt; tag</button></div>`;
+ <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" id="ms">Save</button><button class="btn" id="mu">Copy data URI</button><button class="btn" id="mh">Copy &lt;img&gt; tag</button><button class="btn" id="m1">📱 Social pack</button><button class="btn" id="m2">📐 Responsive set</button></div>`;
  $('#mx').onclick=()=>m.style.display='none';m.onclick=e=>{if(e.target===m)m.style.display='none'};
  $('#sl').oninput=e=>{$('#tp').style.clipPath=`inset(0 ${100-e.target.value}% 0 0)`;$('#ln').style.left=e.target.value+'%'};
- $('#ms').onclick=()=>save(it);
+ $('#ms').onclick=()=>save(it);$('#m1').onclick=()=>pack(it.id,'social');$('#m2').onclick=()=>pack(it.id,'resp');
  $('#mu').onclick=async()=>{const r=new FileReader();r.onload=()=>navigator.clipboard.writeText(r.result).then(()=>toast('Data URI copied'),()=>toast('Copy blocked'));r.readAsDataURL(it.out)};
  $('#mh').onclick=()=>navigator.clipboard.writeText(`<img src="${nameOf(it)}" width="${it.ow}" height="${it.oh}" loading="lazy" decoding="async" alt="">`).then(()=>toast('Tag copied'),()=>toast('Copy blocked'));
  palette(it);curve(it);
@@ -185,13 +187,13 @@ let C=null;
 function openCrop(id){const it=S.items.find(i=>i.id===id);if(!it)return;C={it,x:0,y:0,w:1,h:1};if(it.crop)Object.assign(C,{x:it.crop.x/it.w,y:it.crop.y/it.h,w:it.crop.w/it.w,h:it.crop.h/it.h});
  const m=$('#modal');m.style.display='block';m.onclick=e=>{if(e.target===m)m.style.display='none'};
  $('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b>✂ Crop & enhance</b><button class="btn" id="mx">✕</button></div><div style="text-align:center"><div class="cstage" id="cs"><div class="cwrap"><canvas id="cv"></canvas></div><div class="hl"><div class="mk" id="mk"></div><div class="cb" id="cb">${['nw','n','ne','e','se','s','sw','w'].map(h=>`<i class="hd ${h}" data-h="${h}"></i>`).join('')}</div></div></div></div><p class="mt" id="ci" style="text-align:center"></p><div class="chips" id="fl" style="justify-content:center"></div><div class="tools" style="justify-content:center"><button class="btn" id="rl">⟲</button><button class="btn" id="rr">⟳</button><button class="btn" id="fp">⇋ Flip</button><button class="btn" id="at">✨ Auto-trim</button><button class="btn" id="nb">📓 Notebook mode</button><button class="btn" id="rs">Reset</button><button class="btn p" id="ap">Apply</button></div><p class="mt" style="text-align:center">Drag the 8 white dots to resize, drag inside to move. Notebook mode finds the page edges and cleans up shadows.</p>`;
- $('#mx').onclick=()=>m.style.display='none';cvDraw();
+ it._s={rot:it.rot,flip:it.flip,flt:it.flt,crop:it.crop};$('#mx').onclick=cancelCrop;m.onclick=e=>{if(e.target===m)cancelCrop()};cvDraw();
  chips($('#fl'),FN.map((n,i)=>[n,i]),it.flt||0,v=>{it.flt=v;rebuild(it);cvDraw()});
  const sw=()=>{rebuild(it);it.crop=null;Object.assign(C,{x:0,y:0,w:1,h:1});cvDraw()};
  $('#rl').onclick=()=>{it.rot=(it.rot+3)%4;sw()};$('#rr').onclick=()=>{it.rot=(it.rot+1)%4;sw()};$('#fp').onclick=()=>{it.flip=!it.flip;sw()};
  $('#rs').onclick=()=>{it.rot=0;it.flip=false;it.flt=0;it.crop=null;rebuild(it);Object.assign(C,{x:0,y:0,w:1,h:1});openCrop(id)};
  $('#at').onclick=autoTrim;$('#nb').onclick=()=>{it.flt=1;rebuild(it);cvDraw();[...$('#fl').children].forEach((c,i)=>c.classList.toggle('on',i==1));autoTrim()};
- $('#ap').onclick=()=>{const c=C,full=c.w>.995&&c.h>.995&&c.x<.005&&c.y<.005;it.crop=full?null:{x:Math.round(c.x*it.w),y:Math.round(c.y*it.h),w:Math.round(c.w*it.w),h:Math.round(c.h*it.h)};m.style.display='none';queue(it);toast('Applied')};
+ $('#ap').onclick=()=>{const c=C,full=c.w>.995&&c.h>.995&&c.x<.005&&c.y<.005;it.crop=full?null:{x:Math.round(c.x*it.w),y:Math.round(c.y*it.h),w:Math.round(c.w*it.w),h:Math.round(c.h*it.h)};it._s=null;m.style.display='none';queue(it);toast('Applied')};
  $('#cs').onpointerdown=e=>{const h=e.target.dataset.h||(e.target.closest('#cb')?'m':null);if(!h)return;e.preventDefault();C.d={h,x:e.clientX,y:e.clientY,s:{x:C.x,y:C.y,w:C.w,h:C.h},r:$('.cwrap canvas').getBoundingClientRect()}};
 }
 function cvDraw(){const it=C.it,cv=$('#cv');cv.width=it.w;cv.height=it.h;cv.getContext('2d').drawImage(it.bmp,0,0);paintCrop()}
@@ -199,19 +201,87 @@ function paintCrop(){const s=`left:${C.x*100}%;top:${C.y*100}%;width:${C.w*100}%
 addEventListener('pointermove',e=>{const d=C&&C.d;if(!d)return;const dx=(e.clientX-d.x)/d.r.width,dy=(e.clientY-d.y)/d.r.height,s=d.s,mn=.04,cl=(v,a,b)=>Math.min(Math.max(v,a),b);let L=s.x,T=s.y,R=s.x+s.w,B=s.y+s.h;
  if(d.h==='m'){L=cl(s.x+dx,0,1-s.w);T=cl(s.y+dy,0,1-s.h);R=L+s.w;B=T+s.h}else{if(d.h.includes('w'))L=cl(L+dx,0,R-mn);if(d.h.includes('e'))R=cl(R+dx,L+mn,1);if(d.h.includes('n'))T=cl(T+dy,0,B-mn);if(d.h.includes('s'))B=cl(B+dy,T+mn,1)}
  C.x=L;C.y=T;C.w=R-L;C.h=B-T;paintCrop()});
-addEventListener('pointerup',()=>{if(C)C.d=null});addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').style.display='none'});
+addEventListener('pointerup',()=>{if(C)C.d=null});addEventListener('keydown',e=>{if(e.key==='Escape'){$('#modal').style.display==='block'&&$('#cs')&&C&&C.it._s?cancelCrop():$('#modal').style.display='none'}});
 function autoTrim(){const it=C.it,W=240,H=Math.max(1,Math.round(W*it.h/it.w)),c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(it.bmp,0,0,W,H);const d=x.getImageData(0,0,W,H).data,px=(i,j)=>{const k=(j*W+i)*4;return[d[k],d[k+1],d[k+2]]};
  const bg=[0,0,0];let n=0;const add=(i,j)=>{const p=px(i,j);bg[0]+=p[0];bg[1]+=p[1];bg[2]+=p[2];n++};for(let i=0;i<W;i++){add(i,0);add(i,H-1)}for(let j=0;j<H;j++){add(0,j);add(W-1,j)}bg.forEach((v,i)=>bg[i]=v/n);
  const cc=new Array(W).fill(0),rc=new Array(H).fill(0);for(let j=0;j<H;j++)for(let i=0;i<W;i++){const p=px(i,j);if(Math.abs(p[0]-bg[0])+Math.abs(p[1]-bg[1])+Math.abs(p[2]-bg[2])>110){cc[i]++;rc[j]++}}
  const f=(a,t)=>{const i=a.findIndex(v=>v>t),k=a.length-1-[...a].reverse().findIndex(v=>v>t);return[i,k]},[x0,x1]=f(cc,H*.1),[y0,y1]=f(rc,W*.1);
  if(x0<0||y0<0||x1<=x0||y1<=y0||(x1-x0)*(y1-y0)<W*H*.12)return toast('Could not find clear edges — adjust the dots by hand');
  const p=.012;C.x=Math.max(0,x0/W-p);C.y=Math.max(0,y0/H-p);C.w=Math.min(1,(x1+1)/W+p)-C.x;C.h=Math.min(1,(y1+1)/H+p)-C.y;paintCrop();toast('Edges found — fine-tune with the dots')}
+// fixes & extras
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function cancelCrop(){const it=C.it,s=it._s;if(s){Object.assign(it,s);rebuild(it)}it._s=null;$('#modal').style.display='none'}
+function removeItem(id){const i=S.items.findIndex(x=>x.id===id);if(i<0)return;const it=S.items[i];[it.src,it.url,it.cs].forEach(u=>u&&URL.revokeObjectURL(u));S.items.splice(i,1);draw()}
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+async function pack(id,kind){const it=S.items.find(i=>i.id===id);if(!it)return;if(!window.JSZip)return toast('ZIP library did not load. Check your connection.');toast('Building pack…');
+ const c=it.crop||{x:0,y:0,w:it.w,h:it.h},z=new JSZip();let specs=kind==='social'?[['open-graph-1200x630',1200,630],['instagram-square-1080',1080,1080],['instagram-portrait-1080x1350',1080,1350],['story-1080x1920',1080,1920],['youtube-thumb-1280x720',1280,720],['avatar-400',400,400],['icon-512',512,512]]:[480,768,1080,1280,1920,2560].filter(w=>w<=c.w).map(w=>['w'+w,w,Math.round(w*c.h/c.w)]);
+ if(!specs.length)specs=[['w'+Math.round(c.w),Math.round(c.w),Math.round(c.h)]];
+ for(const[n,w,h]of specs){const a=w/h;let sx=c.x,sy=c.y,sw=c.w,sh=c.h;if(sw/sh>a){const k=sh*a;sx+=(sw-k)/2;sw=k}else{const k=sw/a;sy+=(sh-k)/2;sh=k}z.file(n+'.webp',await enc(it.bmp,w,h,sx,sy,sw,sh,'image/webp',.82))}
+ if(kind==='resp')z.file('snippet.html',`<img src="${specs[specs.length-1][0]}.webp" srcset="${specs.map(s=>s[0]+'.webp '+s[1]+'w').join(', ')}" sizes="(max-width:800px) 100vw, 800px" loading="lazy" alt="">`);
+ dl(await z.generateAsync({type:'blob'}),(kind==='social'?'social-pack':'responsive-set')+'.zip');toast('Pack ready')}
+$('#cm').onchange=e=>{S.max=Math.max(0,+e.target.value||0);$('#mv').textContent=S.max?S.max+' px':'Original';[...$('#maxc').children].forEach(c=>c.classList.remove('on'));redo()};
+addEventListener('resize',()=>{if(C&&$('#cs')&&$('#cv'))paintCrop()});
 // input
 const dz=$('#drop'),fi=$('#file');dz.onclick=e=>{if(e.target.tagName!=='BUTTON'||e.target.id==='pick')fi.click()};fi.onchange=()=>{add(fi.files);fi.value=''};
 ['dragover','dragenter'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.add('on')}));['dragleave','drop'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.remove('on')}));
 dz.addEventListener('drop',e=>add(e.dataTransfer.files));addEventListener('paste',e=>add([...e.clipboardData.files]));
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();if(!dz.contains(e.target))add(e.dataTransfer.files)});
 $('#sample').onclick=async()=>{const c=document.createElement('canvas');c.width=2400;c.height=1600;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,2400,1600);g.addColorStop(0,'#ff7a3d');g.addColorStop(.5,'#7a3dff');g.addColorStop(1,'#1fb8a0');x.fillStyle=g;x.fillRect(0,0,2400,1600);for(let i=0;i<260;i++){x.fillStyle=`hsla(${Math.random()*360},80%,60%,.25)`;x.beginPath();x.arc(Math.random()*2400,Math.random()*1600,10+Math.random()*130,0,7);x.fill()}const id=x.getImageData(0,0,2400,1600),d=id.data;for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*28;d[i]+=n;d[i+1]+=n;d[i+2]+=n}x.putImageData(id,0,0);c.toBlob(b=>add([new File([b],'sample-photo.jpg',{type:'image/jpeg'})]),'image/jpeg',.97)};
+</script>
+<style>
+body::before,body::after{animation:none!important;filter:none!important;width:80vmax;height:80vmax;opacity:1}
+body::before{background:radial-gradient(circle,rgba(255,138,76,.45),transparent 65%)}body::after{background:radial-gradient(circle,rgba(122,92,255,.4),transparent 65%)}
+.it{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.box,#drop{-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important}
+#modal .in{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--card)!important}
+.st2{position:relative;margin:14px auto;touch-action:none;line-height:0}.st2 canvas{width:100%;height:100%;display:block;border-radius:6px}
+.mkl{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:6px}.mk2{position:absolute;box-shadow:0 0 0 9999px rgba(0,0,0,.55)}
+.ov{position:absolute;inset:0;pointer-events:none}
+.bx{position:absolute;border:2px solid #fff;cursor:move;pointer-events:auto;touch-action:none;background:linear-gradient(90deg,transparent 33%,rgba(255,255,255,.35) 33% calc(33% + 1px),transparent calc(33% + 1px) 66%,rgba(255,255,255,.35) 66% calc(66% + 1px),transparent calc(66% + 1px)),linear-gradient(transparent 33%,rgba(255,255,255,.35) 33% calc(33% + 1px),transparent calc(33% + 1px) 66%,rgba(255,255,255,.35) 66% calc(66% + 1px),transparent calc(66% + 1px))}
+.dot{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;display:flex;align-items:center;justify-content:center;touch-action:none}
+.dot::after{content:"";width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--acc);box-shadow:0 2px 6px #0007}
+.dot.nw{left:0;top:0;cursor:nwse-resize}.dot.n{left:50%;top:0;cursor:ns-resize}.dot.ne{left:100%;top:0;cursor:nesw-resize}.dot.e{left:100%;top:50%;cursor:ew-resize}.dot.se{left:100%;top:100%;cursor:nwse-resize}.dot.s{left:50%;top:100%;cursor:ns-resize}.dot.sw{left:0;top:100%;cursor:nesw-resize}.dot.w{left:0;top:50%;cursor:ew-resize}
+.in2{width:100%;padding:9px;border:none;border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;margin:4px 0;box-shadow:inset 3px 3px 7px var(--nd),inset -3px -3px 7px var(--nl)}input[type=color].in2{height:38px;padding:3px}
+#fp{max-width:100%;max-height:52vh;box-shadow:0 8px 24px var(--nd);border-radius:4px}
+</style>
+<script>
+// v3: fast crop, frame & text, thumbnails, layout
+$('#drop').after($('#sum'),$('#list'));
+function mkTh(b,g){const k=96/Math.max(g.sw,g.sh),c=document.createElement('canvas');c.width=Math.max(1,Math.round(g.sw*k));c.height=Math.max(1,Math.round(g.sh*k));c.getContext('2d').drawImage(b,g.sx,g.sy,g.sw,g.sh,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7)}
+function mkView(it,rot,flip,flt,max){const r=rot%2,rw=it.raw.width,rh=it.raw.height,W=r?rh:rw,H=r?rw:rh,s=Math.min(1,max/Math.max(W,H)),c=document.createElement('canvas');c.width=Math.round(W*s);c.height=Math.round(H*s);const x=c.getContext('2d');x.filter=FLT[flt]||'none';x.translate(c.width/2,c.height/2);x.rotate(rot*Math.PI/2);if(flip)x.scale(-1,1);x.drawImage(it.raw,-rw*s/2,-rh*s/2,rw*s,rh*s);return c}
+function openCrop(id){const it=S.items.find(i=>i.id===id);if(!it)return;C={it,rot:it.rot||0,flip:!!it.flip,flt:it.flt||0,x:0,y:0,w:1,h:1};if(it.crop)Object.assign(C,{x:it.crop.x/it.w,y:it.crop.y/it.h,w:it.crop.w/it.w,h:it.crop.h/it.h});
+ const m=$('#modal'),close=()=>{m.style.display='none';C=null};m.style.display='block';m.onclick=e=>{if(e.target===m)close()};
+ $('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b>✂ Crop & enhance</b><button class="btn" id="mx">✕</button></div><div class="st2" id="st2"><canvas id="pv"></canvas><div class="mkl"><div class="mk2" id="mk2"></div></div><div class="ov"><div class="bx" id="bx">${['nw','n','ne','e','se','s','sw','w'].map(h=>`<i class="dot ${h}" data-h="${h}"></i>`).join('')}</div></div></div><p class="mt" id="ci" style="text-align:center"></p><div class="chips" id="fl2" style="justify-content:center"></div><div class="tools" style="justify-content:center"><button class="btn" id="r1">⟲</button><button class="btn" id="r2">⟳</button><button class="btn" id="f1">⇋ Flip</button><button class="btn" id="a1">✨ Auto-trim</button><button class="btn" id="n1">📓 Notebook mode</button><button class="btn" id="z1">Reset</button><button class="btn p" id="ok">Apply</button></div><p class="mt" style="text-align:center">Drag the 8 dots to resize and drag inside the box to move it.</p>`;
+ $('#mx').onclick=close;const full=()=>Object.assign(C,{x:0,y:0,w:1,h:1}),fch=()=>chips($('#fl2'),FN.map((n,i)=>[n,i]),C.flt,v=>{C.flt=v;pvDraw()});fch();
+ $('#r1').onclick=()=>{C.rot=(C.rot+3)%4;full();pvDraw()};$('#r2').onclick=()=>{C.rot=(C.rot+1)%4;full();pvDraw()};$('#f1').onclick=()=>{C.flip=!C.flip;full();pvDraw()};
+ $('#z1').onclick=()=>{C.rot=0;C.flip=false;C.flt=0;full();fch();pvDraw()};$('#a1').onclick=autoTrim;$('#n1').onclick=()=>{C.flt=1;pvDraw();fch();autoTrim()};
+ $('#ok').onclick=()=>{const c=C,it=c.it;if(it.rot!==c.rot||!!it.flip!==c.flip||(it.flt||0)!==c.flt){it.rot=c.rot;it.flip=c.flip;it.flt=c.flt;rebuild(it)}const f=c.w>.995&&c.h>.995&&c.x<.005&&c.y<.005;it.crop=f?null:{x:Math.round(c.x*it.w),y:Math.round(c.y*it.h),w:Math.round(c.w*it.w),h:Math.round(c.h*it.h)};close();queue(it);toast('Applied')};
+ const bx=$('#bx');bx.onpointerdown=e=>{e.preventDefault();bx.setPointerCapture(e.pointerId);C.dr={h:e.target.dataset.h||'m',x:e.clientX,y:e.clientY,s:{x:C.x,y:C.y,w:C.w,h:C.h},r:$('#st2').getBoundingClientRect()}};
+ bx.onpointermove=e=>{const d=C&&C.dr;if(!d)return;const dx=(e.clientX-d.x)/d.r.width,dy=(e.clientY-d.y)/d.r.height,s=d.s,mn=.04,cl=(v,a,b)=>Math.min(Math.max(v,a),b);let L=s.x,T=s.y,R=s.x+s.w,B=s.y+s.h;
+  if(d.h==='m'){L=cl(s.x+dx,0,1-s.w);T=cl(s.y+dy,0,1-s.h);R=L+s.w;B=T+s.h}else{if(d.h.includes('w'))L=cl(L+dx,0,R-mn);if(d.h.includes('e'))R=cl(R+dx,L+mn,1);if(d.h.includes('n'))T=cl(T+dy,0,B-mn);if(d.h.includes('s'))B=cl(B+dy,T+mn,1)}
+  C.x=L;C.y=T;C.w=R-L;C.h=B-T;boxPaint()};bx.onpointerup=bx.onpointercancel=()=>{if(C)C.dr=null};pvDraw()}
+function pvDraw(){const p=mkView(C.it,C.rot,C.flip,C.flt,1100),cv=$('#pv');cv.width=p.width;cv.height=p.height;cv.getContext('2d').drawImage(p,0,0);C.p=p;fitCrop()}
+function fitCrop(){const p=C.p,s=Math.min(1,Math.min(innerWidth-70,800)/p.width,innerHeight*.48/p.height),st=$('#st2');st.style.width=Math.round(p.width*s)+'px';st.style.height=Math.round(p.height*s)+'px';boxPaint()}
+function boxPaint(){const css=`left:${C.x*100}%;top:${C.y*100}%;width:${C.w*100}%;height:${C.h*100}%`;$('#bx').style.cssText=css;$('#mk2').style.cssText=css;const r=C.rot%2,W=r?C.it.raw.height:C.it.raw.width,H=r?C.it.raw.width:C.it.raw.height;$('#ci').textContent=`Selection ${Math.round(C.w*W)} × ${Math.round(C.h*H)} px`}
+addEventListener('resize',()=>{if(C&&C.p&&$('#st2'))fitCrop()});
+function autoTrim(){const p=C.p,W=Math.min(240,p.width),H=Math.max(1,Math.round(W*p.height/p.width)),c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(p,0,0,W,H);const d=x.getImageData(0,0,W,H).data,bg=[0,0,0],at=(i,j)=>(j*W+i)*4;let n=0;const add=(i,j)=>{const k=at(i,j);bg[0]+=d[k];bg[1]+=d[k+1];bg[2]+=d[k+2];n++};for(let i=0;i<W;i++){add(i,0);add(i,H-1)}for(let j=0;j<H;j++){add(0,j);add(W-1,j)}for(let q=0;q<3;q++)bg[q]/=n;
+ const cc=Array(W).fill(0),rc=Array(H).fill(0);for(let j=0;j<H;j++)for(let i=0;i<W;i++){const k=at(i,j);if(Math.abs(d[k]-bg[0])+Math.abs(d[k+1]-bg[1])+Math.abs(d[k+2]-bg[2])>110){cc[i]++;rc[j]++}}
+ const f=(a,t)=>{const s=a.findIndex(v=>v>t);let e=a.length-1;while(e>=0&&a[e]<=t)e--;return[s,e]},[x0,x1]=f(cc,H*.1),[y0,y1]=f(rc,W*.1);
+ if(x0<0||y0<0||x1<=x0||y1<=y0||(x1-x0)*(y1-y0)<W*H*.12)return toast('Could not find clear edges. Adjust the dots by hand.');
+ const q=.012;C.x=Math.max(0,x0/W-q);C.y=Math.max(0,y0/H-q);C.w=Math.min(1,(x1+1)/W+q)-C.x;C.h=Math.min(1,(y1+1)/H+q)-C.y;boxPaint();toast('Edges found. Fine-tune with the dots.')}
+// frame & text
+const FR0={pad:0,bg:'#ffffff',pos:'strip',l1:'',l2:'',l3:'',size:6,color:'#111111',al:'center'},today=()=>new Date().toLocaleDateString('en-GB');
+function composeFr(it,s,f){f=f||it.fr;const g=geo(it),W=g.sw*s,H=g.sh*s,m=Math.min(W,H),pad=Math.round(m*f.pad/100),fs=Math.max(8,Math.round(m*f.size/100)),L=[f.l1,f.l2,f.l3].filter(t=>t&&t.trim()),sh=L.length?L.length*fs*1.4+fs*.5:0,strip=f.pos==='strip'?Math.round(sh):0,cw=Math.round(W+2*pad),bot=strip?strip+Math.round(pad*.5):pad,ch=Math.round(pad+H+bot),c=document.createElement('canvas');c.width=cw;c.height=ch;const x=c.getContext('2d');x.fillStyle=f.bg;x.fillRect(0,0,cw,ch);x.imageSmoothingQuality='high';x.drawImage(it.bmp,g.sx,g.sy,g.sw,g.sh,pad,pad,Math.round(W),Math.round(H));
+ if(L.length){x.font=`700 ${fs}px system-ui,sans-serif`;x.textAlign=f.al;const px=f.al==='left'?pad+fs*.3:f.al==='right'?cw-pad-fs*.3:cw/2;let y0=pad+H+fs*.25;if(f.pos!=='strip'){y0=pad+H-sh;x.fillStyle='rgba(0,0,0,.45)';x.fillRect(pad,y0,W,sh)}x.fillStyle=f.color;L.forEach((t,i)=>x.fillText(t,px,y0+fs*1.35+i*fs*1.4,W))}return c}
+const _run=run;run=async function(it){const f=it.fr&&(it.fr.pad>0||it.fr.l1||it.fr.l2||it.fr.l3);if(!f)await _run(it);else{const sv={b:it.bmp,w:it.w,h:it.h,c:it.crop,a:S.asp,f:it.flt};try{const c=composeFr(it,1);it.bmp=c;it.w=c.width;it.h=c.height;it.crop=null;S.asp=0;it.flt='f';await _run(it)}finally{it.bmp=sv.b;it.w=sv.w;it.h=sv.h;it.crop=sv.c;it.flt=sv.f;if(S.asp===0)S.asp=sv.a}}it.th=mkTh(it.bmp,geo(it));draw()};
+function openFrame(id){const it=S.items.find(i=>i.id===id);if(!it)return;const F=Object.assign({},FR0,it.fr||{}),m=$('#modal'),g=geo(it),s=Math.min(1,420/Math.max(g.sw,g.sh));m.style.display='block';m.onclick=e=>{if(e.target===m)m.style.display='none'};
+ $('#mbody').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b>🪪 Frame & text</b><button class="btn" id="mx">✕</button></div><div class="grid2"><div style="text-align:center"><canvas id="fp"></canvas><p class="mt">Tip: set Crop to ratio → Passport 35:45 first for a standard passport shape.</p></div><div id="ctl"><div class="chips" id="pr"></div><label class="mt">Outer white border <span id="bv"></span></label><input class="in2" type="range" id="fb" min="0" max="20"><label class="mt">Border colour</label><input class="in2" type="color" id="fg"><div class="chips" id="ps" style="margin:6px 0"></div><input class="in2" id="l1" placeholder="Name" maxlength="60"><div style="display:flex;gap:6px"><input class="in2" id="l2" placeholder="Date" maxlength="40"><button class="btn" id="td">Today</button></div><input class="in2" id="l3" placeholder="Extra line (optional)" maxlength="60"><label class="mt">Text size</label><input class="in2" type="range" id="fs" min="3" max="12"><div style="display:flex;gap:8px;align-items:center"><span class="mt">Text colour</span><input class="in2" type="color" id="fc" style="width:70px"></div><div class="chips" id="al" style="margin:6px 0"></div><label class="mt"><input type="checkbox" id="fa"> Apply to all images</label><div class="tools"><button class="btn p" id="fok">Apply</button><button class="btn" id="frm">Remove frame</button></div></div></div>`;
+ const pv=()=>{const c=composeFr(it,s,F),p=$('#fp');p.width=c.width;p.height=c.height;p.getContext('2d').drawImage(c,0,0);$('#bv').textContent=F.pad+'%'},sy=()=>{$('#fb').value=F.pad;$('#fg').value=F.bg;$('#fs').value=F.size;$('#fc').value=F.color;['l1','l2','l3'].forEach(k=>$('#'+k).value=F[k]);pv()},rd=()=>{F.pad=+$('#fb').value;F.bg=$('#fg').value;F.size=+$('#fs').value;F.color=$('#fc').value;['l1','l2','l3'].forEach(k=>F[k]=$('#'+k).value);pv()};
+ $('#mx').onclick=()=>m.style.display='none';$('#ctl').oninput=rd;$('#td').onclick=()=>{$('#l2').value=today();rd()};
+ chips($('#pr'),[['None',0],['Passport border',1],['Passport + name & date',2],['Polaroid',3]],-1,v=>{Object.assign(F,[{pad:0,l1:'',l2:'',l3:''},{pad:6,bg:'#ffffff',pos:'strip',l1:'',l2:'',l3:''},{pad:5,bg:'#ffffff',pos:'strip',size:6,al:'center',l2:F.l2||today()},{pad:7,bg:'#ffffff',pos:'strip',size:7,al:'center',l1:F.l1||'Caption',l2:''}][v]);sy()});
+ chips($('#ps'),[['Text below photo',0],['Text on photo',1]],F.pos==='strip'?0:1,v=>{F.pos=v?'photo':'strip';if(v&&F.color==='#111111')F.color='#ffffff';if(!v&&F.color==='#ffffff')F.color='#111111';sy()});
+ chips($('#al'),[['Left',0],['Center',1],['Right',2]],['left','center','right'].indexOf(F.al),v=>{F.al=['left','center','right'][v];pv()});sy();
+ $('#fok').onclick=()=>{rd();const t=$('#fa').checked?S.items:[it];t.forEach(x=>{x.fr={...F};queue(x)});m.style.display='none';toast('Frame applied')};$('#frm').onclick=()=>{it.fr=null;queue(it);m.style.display='none'}}
+$('#list').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b)openFrame(+b.dataset.f)});
 </script>
 </body>
 </html>
