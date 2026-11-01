@@ -58,10 +58,10 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <p class="sm">Your camera is analyzed on this device only. Nothing is uploaded. Photos are never saved. Only your scores are kept locally, and you can delete them anytime.</p>
 <label class="chk"><input type="checkbox" id="ok1"><span>I’m 13 or older and agree to use my camera or photo for this scan.</span></label>
 <label class="chk"><input type="checkbox" id="vo"><span>Read the prompts aloud</span></label>
-<label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label>
-<b class="sm" style="display:block">Photo guide (sample illustrations for uploads)</b>
+<details><summary>Advanced</summary><label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label></details>
+<details><summary>Photo tips for uploads (see samples)</summary>
 <div class="gd" id="gd"></div>
-<p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p>
+<p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p></details>
 <button class="btn" id="go" disabled>Start 360° scan</button>
 <button class="btn ghost" id="up">📷 Upload a photo instead</button><input type="file" id="fi" accept="image/*" hidden>
 <p class="note" id="st" role="status" aria-live="polite">Good light and a steady hand help.</p>
@@ -78,7 +78,7 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 
 <div id="res" hidden>
 <div class="card"><canvas id="cl" width="360" height="360" tabindex="0" role="img" aria-label="3D point cloud of your face. Drag or use arrow keys to rotate."></canvas><p class="note">Drag or use arrow keys to rotate your 3D face cloud.</p></div>
-<p class="note" id="upn" role="status"></p>
+<p class="note" id="upn" role="status"></p><p class="note" id="stk"></p>
 <div class="card arch"><div class="em" id="aem"></div><h2 id="ati"></h2><p id="ade"></p></div>
 <div class="card">
 <div class="meter"><b><span>Symmetry (fun estimate)</span><span id="sv"></span></b><div class="bar"><i id="sb"></i></div>
@@ -87,9 +87,15 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <details><summary>What’s this?</summary>The strongest smile the tracker saw in any of your captures.</details></div>
 <div class="meter"><b><span id="xl">Expression range (rough)</span><span id="xv"></span></b><div class="bar"><i id="xb"></i></div>
 <details><summary>What’s this?</summary>A loose measure of how much your brows, jaw, eyes and smile moved between angles.</details></div>
-<p class="note" id="cmp"></p>
+<p class="sm" id="rd"></p><p class="note" id="cmp"></p>
 <p class="note">Every real face is asymmetric, and that’s part of what makes you recognizable. If looking at scores like these affects how you feel, it’s fine to skip them.</p>
 </div>
+<div class="card"><b>Photo score</b> <span class="sm">(how good is this photo?)</span>
+<div class="arch" style="margin:8px 0"><div style="font-size:42px;font-weight:800" id="pv"></div><p id="pbest"></p></div>
+<div id="pparts"></div><p class="sm" id="ptip"></p>
+<details><summary>What’s this?</summary>Scores the photo, not your face: lighting, sharpness, framing and expression. Better light and a steady hand raise it.</details></div>
+<div class="card"><b>Vibe traits</b> <span class="sm">(fun readings)</span><div id="vt" style="margin-top:6px"></div>
+<p class="sm">Based on how your face moved during the scan. Traits describe expression, not worth.</p></div>
 <div class="card"><b>Your face signature</b>
 <div class="chips" style="margin-top:10px">
 <div class="chip"><b id="c1"></b><span>Width to height</span></div>
@@ -99,6 +105,7 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <div class="card" id="vs" hidden><b>You two</b><div id="vsb" style="margin-top:8px"></div></div>
 <div class="card"><b>Play and compare</b>
 <button class="btn" id="gm" style="margin-top:8px">Expression challenge 🎭</button>
+<button class="btn ghost" id="dm">Daily challenge ⭐</button>
 <button class="btn ghost" id="fr">Compare with a friend</button>
 <p class="note" id="gres">No rankings against other people. Friend scans aren’t saved.</p></div>
 <div class="card" id="tl" hidden><b>Tester log</b><p class="sm">Copy this and send it to the builder to help tune the scores. Numbers only, no photos.</p><button class="btn" id="cp">Copy test log</button></div>
@@ -127,10 +134,42 @@ const STEPS=[
  {t:'Tilt your chin up or down',h:'A small tilt is enough',ms:450,ok:p=>Math.abs(p.dp)>.07&&Math.abs(p.yaw)<.1,done:p=>{S.ps=Math.sign(p.dp)}},
  {t:'Now tilt the opposite way',h:'Almost done',ms:450,ok:p=>p.dp*S.ps<-.07&&Math.abs(p.yaw)<.1}];
 const NAMES=['Front','Side A','Side B','Tilt A','Tilt B'];
-const GR=[['Biggest smile 😁',b=>(b.mouthSmileLeft+b.mouthSmileRight)/2],
+const GR0=[['Biggest smile 😁',b=>(b.mouthSmileLeft+b.mouthSmileRight)/2],
 ['Look surprised 😲',b=>b.jawOpen*.4+(b.eyeWideLeft+b.eyeWideRight)*.15+b.browInnerUp*.3],
 ['Raise your eyebrows 🤨',b=>(b.browOuterUpLeft+b.browOuterUpRight)*.3+b.browInnerUp*.4],
 ['Kissy face 😘',b=>b.mouthPucker]];
+let GR=GR0,daily=false;
+const today=()=>new Date().toISOString().slice(0,10);
+function bump(){try{const t=today(),y=new Date(Date.now()-864e5).toISOString().slice(0,10);let o=JSON.parse(localStorage.getItem('fvs')||'{}');
+ if(o.d!==t){o={d:t,n:o.d===y?(o.n||0)+1:1};localStorage.setItem('fvs',JSON.stringify(o))}return o.n}catch(e){return 1}}
+function sharpOf(c){const w=120,h=Math.max(1,Math.round(120*c.height/c.width)),t=document.createElement('canvas');t.width=w;t.height=h;
+ const x=t.getContext('2d',{willReadFrequently:true});x.drawImage(c,0,0,w,h);const d=x.getImageData(0,0,w,h).data,g=[];
+ for(let i=0;i<w*h;i++)g.push(d[i*4]*.299+d[i*4+1]*.587+d[i*4+2]*.114);
+ let s=0,n=0;for(let j=0;j<h-1;j++)for(let i=0;i<w-1;i++){s+=Math.abs(g[j*w+i]-g[j*w+i+1])+Math.abs(g[j*w+i]-g[(j+1)*w+i]);n+=2}return s/n}
+function photo(){
+ const out=caps.map((c,i)=>{if(!c)return null;
+  const w=(c.L[454][0]-c.L[234][0])/Math.max(.6,1-Math.abs(c.yaw||0)*1.2),cx=c.L[1][0],bs=c.bs;
+  const sm=((bs.mouthSmileLeft||0)+(bs.mouthSmileRight||0))/2,eo=1-((bs.eyeBlinkLeft||0)+(bs.eyeBlinkRight||0))/2;
+  const light=clamp(100-Math.abs(c.lum-130)*1.1-c.gl*800,0,100),sharp=clamp((c.sharp-1.5)/6*100,0,100),
+   frame=clamp(100-Math.abs(w-.42)*250-Math.abs(cx-.5)*150,0,100),expr=clamp(55*eo+45*Math.min(1,sm*2.5),0,100);
+  return{i,tot:Math.round(.3*light+.25*sharp+.2*frame+.25*expr),parts:{light,sharp,frame,expr}}}).filter(Boolean);
+ const b=out.reduce((a,c)=>c.tot>a.tot?c:a),TP={light:'Face a window or soft lamp, and avoid light from behind.',sharp:'Hold the phone steady and wipe the lens for a crisper photo.',frame:'Fill about half the frame and keep your face centered.',expr:'Keep your eyes open and try a relaxed, natural smile.'};
+ let wk='light';for(const k in b.parts)if(b.parts[k]<b.parts[wk])wk=k;
+ return{best:b.tot,bi:b.i,parts:b.parts,tip:TP[wk]};
+}
+function bars(id,items){const el=$(id);el.textContent='';items.forEach(([l,v])=>{
+ const m=document.createElement('div');m.className='meter';m.style.margin='8px 0';
+ const b=document.createElement('b'),a=document.createElement('span'),c=document.createElement('span');a.textContent=l;c.textContent=v+'%';b.appendChild(a);b.appendChild(c);
+ const bar=document.createElement('div');bar.className='bar';const i=document.createElement('i');bar.appendChild(i);m.appendChild(b);m.appendChild(bar);el.appendChild(m);
+ setTimeout(()=>{i.style.width=v+'%'},80)})}
+function nudge(p){
+ const a=Math.abs(p.yaw),d=Math.abs(p.dp);
+ if(step===2)return'Turn the other way '+((face==='user'?S.ys:-S.ys)>0?'→':'←');
+ if(step===4)return'Tilt the other way '+(S.ps>0?'⬆':'⬇');
+ if(step===1&&a>.05)return'Keep turning a little more…';
+ if(step===3&&d>.03)return'Tilt a bit more…';
+ return STEPS[step].h;
+}
 function sample(k){
  const head='<ellipse cx="60" cy="76" rx="32" ry="42"/>',
  fe='<circle cx="48" cy="68" r="3" fill="currentColor" stroke="none"/><circle cx="72" cy="68" r="3" fill="currentColor" stroke="none"/><path d="M42 58q6-4 12 0M66 58q6-4 12 0M60 72v14M49 98q11 9 22 0"/>';
@@ -169,7 +208,7 @@ async function fromFile(file){
   if(lum>205)warns.push('The photo is very bright.');
   const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(q=>bs[q.categoryName]=q.score);
   const t=document.createElement('canvas');t.width=240;t.height=Math.round(240*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
-  caps=[{img:t.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W,H}];
+  caps=[{img:t.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W,H,lum,gl:0,sharp:sharpOf(t),yaw:pz.yaw}];
   S={lum,gl:0};mode='scan';$('intro').hidden=true;finish();
   $('upn').textContent=warns.length?warns.join(' '):'Single photo scan: angles and range need the live scan.';
  }catch(e){say2('Couldn’t read that photo. Try a different image.')}
@@ -185,6 +224,8 @@ function gframe(r){
  if(f>=1){G.s.push(Math.round(clamp(G.peak*110,0,100)));G.i++;G.t0=performance.now();G.peak=0;G.i>=GR.length?endGame():gui()}
 }
 function endGame(){
+ if(daily){daily=false;const sc=G.s[0],k='fvd'+today();let b=0;try{b=+localStorage.getItem(k)||0;if(sc>b){b=sc;localStorage.setItem(k,sc)}}catch(e){}
+  stopCam();mode='scan';$('scan').hidden=true;$('res').hidden=false;$('gres').textContent='Daily challenge ('+GR[0][0]+'): '+sc+'/100. Today’s best: '+b+'.';GR=GR0;return}
  stopCam();mode='scan';$('scan').hidden=true;$('res').hidden=false;
  const tot=G.s.reduce((a,b)=>a+b,0);let best=0;
  try{best=+localStorage.getItem('fvg')||0;if(tot>best){best=tot;localStorage.setItem('fvg',tot)}}catch(e){}
@@ -260,13 +301,13 @@ function frame(r){
   if(!hold)hold=performance.now();const f=Math.min(1,(performance.now()-hold)/st.ms);
   $('hb').style.width=f*100+'%';$('hp').textContent='Holding… '+Math.round(f*100)+'%';$('ring').style.borderColor='#22c55e';
   if(f>=1)capture(L,r,p);
- }else{hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='transparent';$('hint').textContent=st.h}
+ }else{hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='transparent';$('hint').textContent=nudge(p)}
 }
 function capture(L,r,p){
  const c=document.createElement('canvas');c.width=240;c.height=Math.round(240*V.videoHeight/V.videoWidth);
  const x=c.getContext('2d');if(face==='user'){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(V,0,0,c.width,c.height);
  const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(k=>bs[k.categoryName]=k.score);
- caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight});
+ caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight,lum:S.lum||120,gl:S.gl||0,sharp:sharpOf(c),yaw:p.yaw});
  if(STEPS[step].done)STEPS[step].done(p);T.steps.push(Math.round(performance.now()-S.ts));
  $('ring').style.borderColor='transparent';hold=0;step++;step>=STEPS.length?finish():ui();
 }
@@ -276,7 +317,7 @@ function renderHist(){
  if(!h.length){el.textContent='Nothing saved yet.';return}
  h.slice().reverse().slice(0,6).forEach(s=>{const d=document.createElement('div');d.className='hl';
   const a=document.createElement('span'),b=document.createElement('span');
-  a.textContent=new Date(s.t).toLocaleDateString()+' · '+s.a;b.textContent='Sym '+s.sym+' · Smile '+s.smile;d.appendChild(a);d.appendChild(b);el.appendChild(d)});
+  a.textContent=new Date(s.t).toLocaleDateString()+' · '+s.a;b.textContent='Photo '+(s.ps||'–')+' · Sym '+s.sym;d.appendChild(a);d.appendChild(b);el.appendChild(d)});
 }
 $('clr').onclick=()=>{try{localStorage.removeItem('fvp')}catch(e){}renderHist();$('cmp').textContent=''};
 function finish(){
@@ -299,15 +340,27 @@ function finish(){
  setTimeout(()=>{$('sb').style.width=sym+'%';$('mb').style.width=smile+'%';$('xb').style.width=range+'%'},80);
  const wr=D(P(234),P(454))/len,eg=D(P(133),P(362))/D(P(33),P(263)),mw=D(P(61),P(291))/D(P(234),P(454));
  $('c1').textContent=wr.toFixed(2);$('c2').textContent=eg<.36?'Close':eg<.44?'Balanced':'Wide';$('c3').textContent=mw<.36?'Subtle':mw<.44?'Classic':'Grand';
- let A;
- if(smile>55&&sym>=88)A=['☀️','The Sunbeam','Warm, balanced and instantly likable.'];
- else if(smile>55)A=['🎉','The Showstopper','A smile that rearranges the whole room.'];
- else if(sym>=92)A=['🏛️','The Architect','Calm, composed and beautifully even.'];
- else if(worst==='brows')A=['🤨','The Raised Eyebrow','Your brows do most of the talking.'];
- else if(worst==='mouth')A=['😏','The Smirker','A mouth with opinions and a sense of humor.'];
- else A=['🎨','The Original','One-of-a-kind, with plenty of character.'];
+ const cs=caps.filter(Boolean),av=f=>cs.reduce((a,c)=>a+f(c),0)/cs.length,bz=(c,k)=>c.bs[k]||0;
+ const warm=Math.round(clamp(av(sm)*140+av(c=>bz(c,'cheekSquintLeft')+bz(c,'cheekSquintRight'))*40,0,100));
+ const energy=Math.round(clamp(Math.max(...cs.map(c=>Math.max(bz(c,'jawOpen'),bz(c,'eyeWideLeft')+bz(c,'eyeWideRight'),bz(c,'browInnerUp'))))*130,0,100));
+ const play=Math.round(clamp(av(c=>Math.abs(bz(c,'mouthSmileLeft')-bz(c,'mouthSmileRight')))*250+av(c=>bz(c,'mouthPucker'))*80+av(c=>bz(c,'browOuterUpLeft')+bz(c,'browOuterUpRight'))*40,0,100));
+ const lead=[['warm',warm],['energy',energy],['play',play]].reduce((a,b)=>b[1]>a[1]?b:a),lv=lead[1]>=66?2:lead[1]>=33?1:0;
+ const NO={warm:[['🌤️','Cool Charmer','Understated warmth that grows on people.'],['🤗','Cozy Friend','Easy to talk to and easy to trust.'],['☀️','Sunbeam','Warm and instantly likable.']],
+  energy:[['🌙','Night Owl','Calm, steady and quietly intense.'],['🧭','Explorer','Curious, with a spark behind the eyes.'],['⚡','Spark','Big, lively expressions that light up a room.']],
+  play:[['😐','Straight Face','Deadpan, with perfect comic timing.'],['😄','Joker','Always one punchline away.'],['😜','Trickster','Mischief in every expression.']]};
+ const QK={brows:['🤨','Raised Eyebrow','Your brows do most of the talking.'],mouth:['😏','Smirker','A mouth with opinions and a sense of humor.'],eyes:['😉','Wink-Ready','Your eyes have a signature look.'],cheeks:['😊','Dimple Dreamer','Your cheeks do a lot of the smiling.']};
+ let A=NO[lead[0]][lv].slice();A[1]=(sym>=90?'Poised':sym>=78?'Easygoing':'Free-spirit')+' '+A[1];
+ if(wv>.08&&QK[worst])A=QK[worst].slice();
+ const PH=photo();
  $('aem').textContent=A[0];$('ati').textContent=A[1];$('ade').textContent=A[2];
- res={sym,smile,range,arch:A[1],em:A[0],img:F.img};
+ res={sym,smile,range,arch:A[1],em:A[0],img:F.img,ps:PH.best,warm,energy,play};
+ bars('pparts',[['Lighting',Math.round(PH.parts.light)],['Sharpness',Math.round(PH.parts.sharp)],['Framing',Math.round(PH.parts.frame)],['Expression',Math.round(PH.parts.expr)]]);
+ bars('vt',[['Warmth',warm],['Energy',energy],['Playfulness',play]]);
+ $('pv').textContent=PH.best+'/100';
+ $('pbest').textContent=(PH.best>=80?'Great photo':PH.best>=60?'Good, with room to improve':'Needs better conditions')+' · '+(caps.length>1?'Best angle: '+NAMES[PH.bi]:'Scan live to find your best angle');
+ $('ptip').textContent='Tip: '+PH.tip;
+ const c0=caps[0],flags=(Math.abs(c0.yaw||0)>.1?1:0)+((c0.lum<55||c0.lum>205)?1:0)+((c0.L[454][0]-c0.L[234][0])<.2?1:0)+((T.frames&&T.nof/T.frames>.3)?1:0);
+ $('rd').textContent='Symmetry looks '+(sym>=90?'very even':sym>=78?'typical':'a bit uneven, often just head angle or lighting')+'. Smile reads '+(smile>=60?'big':smile>=30?'warm':'calm')+'. Reading confidence: '+['High','Medium','Low','Low','Low'][flags]+'.';
  $('tl').hidden=!$('tm').checked;$('cp').textContent='Copy test log';
  TL={ua:navigator.userAgent,when:new Date().toISOString(),frames:T.frames,noFacePct:Math.round(100*T.nof/Math.max(1,T.frames)),blocked:T.q,stepMs:T.steps,
   lum:Math.round(S.lum||0),glare:+(S.gl||0).toFixed(3),faceWidthRatio:+wr.toFixed(2),skippedAngles:caps.filter(c=>!c).length,sym,smile,range,
@@ -315,7 +368,8 @@ function finish(){
  const fr=cmpBase;cmpBase=null;$('vs').hidden=!fr;if(fr)showVs(fr,res);
  const h=hist(),prev=h[h.length-1],sg=n=>(n>0?'+':'')+n;
  $('cmp').textContent=(prev&&!fr)?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
- if(!fr){h.push({t:Date.now(),sym,smile,range,a:A[1]});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}}
+ $('stk').textContent=fr?'':'🔥 '+bump()+'-day streak';
+ if(!fr){h.push({t:Date.now(),sym,smile,range,a:A[1],ps:PH.best});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}}
  renderHist();
  const s=$('strip');s.textContent='';
  caps.forEach((c,i)=>{if(!c)return;const d=document.createElement('div'),im=new Image();const nm=caps.length===1?'Your photo':NAMES[i];im.alt=nm;im.src=c.img;d.appendChild(im);d.appendChild(document.createTextNode(nm));s.appendChild(d)});
@@ -344,13 +398,17 @@ function cloud(F){
 $('shr').onclick=async()=>{
  if(!res)return;const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d');
  const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#7c3aed');g.addColorStop(1,'#ec4899');x.fillStyle=g;x.fillRect(0,0,1080,1350);
+ x.fillStyle='rgba(255,255,255,.08)';x.beginPath();x.arc(960,180,300,0,7);x.fill();x.beginPath();x.arc(90,1200,260,0,7);x.fill();
  x.textAlign='center';x.fillStyle='#fff';let y=200;
  if($('inc').checked){await new Promise(r=>{const im=new Image();im.onload=()=>{const s=360;x.save();x.beginPath();x.arc(540,330,s/2,0,7);x.clip();
   const m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,360,150,s,s);x.restore();r()};im.onerror=r;im.src=res.img});y=640}
  else{x.font='200px system-ui,sans-serif';x.fillText(res.em,540,y+120);y=520}
  x.font='700 84px system-ui,sans-serif';x.fillText(res.arch,540,y);
  x.font='500 48px system-ui,sans-serif';
- [['Symmetry (fun estimate)',res.sym],['Peak smile',res.smile],['Expression range',res.range]].forEach((r,i)=>{x.fillText(r[0]+': '+r[1]+'%',540,y+120+i*84)});
+ [['Photo score',res.ps],['Warmth',res.warm],['Energy',res.energy],['Playfulness',res.play]].forEach((r,i)=>{const yy=y+110+i*96;
+  x.textAlign='left';x.fillText(r[0],140,yy);x.textAlign='right';x.fillText(String(r[1]),940,yy);
+  x.fillStyle='rgba(255,255,255,.3)';x.fillRect(140,yy+16,800,18);x.fillStyle='#fff';x.fillRect(140,yy+16,8*r[1],18)});
+ x.textAlign='center';
  x.font='400 34px system-ui,sans-serif';x.globalAlpha=.85;x.fillText('FaceVibe Pro · just for fun, not a beauty score',540,1260);
  c.toBlob(async b=>{const f=new File([b],'facevibe.png',{type:'image/png'});
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'My FaceVibe'});return}catch(e){if(e.name==='AbortError')return}}
@@ -365,6 +423,12 @@ $('gm').onclick=async()=>{
 $('fr').onclick=()=>{cmpBase=res;$('res').hidden=true;$('intro').hidden=false;$('ok1').checked=false;$('go').disabled=true;
  $('st').textContent='Hand the phone to your friend. They need to tick the consent box too. Their scan isn’t saved.';window.scrollTo(0,0)};
 $('cp').onclick=async()=>{const t=JSON.stringify(TL,null,1);try{await navigator.clipboard.writeText(t);$('cp').textContent='Copied ✓'}catch(e){prompt('Copy this log:',t)}};
+async function startGame(dl){
+ try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
+ daily=dl;GR=dl?[GR0[Math.floor(Date.now()/864e5)%GR0.length]]:GR0;
+ mode='game';G={i:0,t0:performance.now(),peak:0,s:[]};$('res').hidden=true;$('scan').hidden=false;$('skip').hidden=true;live=true;gui();loop();window.scrollTo(0,0);
+}
+$('gm').onclick=()=>startGame(false);$('dm').onclick=()=>startGame(true);
 (function(){const g=$('gd');[['good','Best: front-facing, even light'],['turn','Turned or tilted'],['dark','Too dark or glare'],['cover','Eyes covered'],['far','Face too small']].forEach(([k,t])=>{
  const d=document.createElement('div');d.innerHTML=sample(k);d.appendChild(document.createTextNode(t));g.appendChild(d)})})();
 $('up').onclick=()=>{if(!$('ok1').checked){$('st').textContent='Please tick the consent box first.';return}$('fi').click()};
