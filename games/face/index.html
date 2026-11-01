@@ -43,6 +43,8 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 .chip b{display:block;font-size:1.05rem}.chip span{font-size:.72rem;color:var(--mute)}
 .note{font-size:.8rem;color:var(--mute);text-align:center;margin-top:8px}
 .hl{font-size:.85rem;margin:4px 0;display:flex;justify-content:space-between;color:var(--mute)}
+.gd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
+.gd div{font-size:.7rem;color:var(--mute);text-align:center;line-height:1.25}.gd svg{width:100%;height:auto;display:block;margin-bottom:3px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -54,9 +56,14 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <div id="intro" class="card">
 <h3>Before we start</h3>
 <p class="sm">Your camera is analyzed on this device only. Nothing is uploaded. Photos are never saved. Only your scores are kept locally, and you can delete them anytime.</p>
-<label class="chk"><input type="checkbox" id="ok1"><span>I’m 13 or older and agree to use my camera for this scan.</span></label>
+<label class="chk"><input type="checkbox" id="ok1"><span>I’m 13 or older and agree to use my camera or photo for this scan.</span></label>
 <label class="chk"><input type="checkbox" id="vo"><span>Read the prompts aloud</span></label>
+<label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label>
+<b class="sm" style="display:block">Photo guide (sample illustrations for uploads)</b>
+<div class="gd" id="gd"></div>
+<p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p>
 <button class="btn" id="go" disabled>Start 360° scan</button>
+<button class="btn ghost" id="up">📷 Upload a photo instead</button><input type="file" id="fi" accept="image/*" hidden>
 <p class="note" id="st" role="status" aria-live="polite">Good light and a steady hand help.</p>
 </div>
 
@@ -71,13 +78,14 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 
 <div id="res" hidden>
 <div class="card"><canvas id="cl" width="360" height="360" tabindex="0" role="img" aria-label="3D point cloud of your face. Drag or use arrow keys to rotate."></canvas><p class="note">Drag or use arrow keys to rotate your 3D face cloud.</p></div>
+<p class="note" id="upn" role="status"></p>
 <div class="card arch"><div class="em" id="aem"></div><h2 id="ati"></h2><p id="ade"></p></div>
 <div class="card">
 <div class="meter"><b><span>Symmetry (fun estimate)</span><span id="sv"></span></b><div class="bar"><i id="sb"></i></div>
 <details><summary>What’s this?</summary>Compares matching landmark pairs (eyes, brows, mouth, nose, cheeks) either side of your face’s centerline. Everyone scores below 100, and small differences are normal.</details></div>
 <div class="meter"><b><span>Peak smile</span><span id="mv"></span></b><div class="bar"><i id="mb"></i></div>
 <details><summary>What’s this?</summary>The strongest smile the tracker saw in any of your captures.</details></div>
-<div class="meter"><b><span>Expression range (rough)</span><span id="xv"></span></b><div class="bar"><i id="xb"></i></div>
+<div class="meter"><b><span id="xl">Expression range (rough)</span><span id="xv"></span></b><div class="bar"><i id="xb"></i></div>
 <details><summary>What’s this?</summary>A loose measure of how much your brows, jaw, eyes and smile moved between angles.</details></div>
 <p class="note" id="cmp"></p>
 <p class="note">Every real face is asymmetric, and that’s part of what makes you recognizable. If looking at scores like these affects how you feel, it’s fine to skip them.</p>
@@ -88,6 +96,12 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <div class="chip"><b id="c2"></b><span>Eye spacing</span></div>
 <div class="chip"><b id="c3"></b><span>Smile width</span></div></div></div>
 <div class="card"><b>Your captures (not saved)</b><div class="strip" id="strip" style="margin-top:10px"></div></div>
+<div class="card" id="vs" hidden><b>You two</b><div id="vsb" style="margin-top:8px"></div></div>
+<div class="card"><b>Play and compare</b>
+<button class="btn" id="gm" style="margin-top:8px">Expression challenge 🎭</button>
+<button class="btn ghost" id="fr">Compare with a friend</button>
+<p class="note" id="gres">No rankings against other people. Friend scans aren’t saved.</p></div>
+<div class="card" id="tl" hidden><b>Tester log</b><p class="sm">Copy this and send it to the builder to help tune the scores. Numbers only, no photos.</p><button class="btn" id="cp">Copy test log</button></div>
 <div class="card"><b>Share</b>
 <label class="chk"><input type="checkbox" id="inc"><span>Include my photo on the card</span></label>
 <button class="btn" id="shr">Share result card</button></div>
@@ -103,7 +117,7 @@ const BASE="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
 const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
 const $=i=>document.getElementById(i),V=$('v'),O=$('o'),ox=O.getContext('2d');
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
-let lm,stream,S={},step=0,hold=0,caps=[],last=-1,live=false,raf=0,face='user',nf=0,fc=0,voice=false,res=null;
+let lm,stream,S={},step=0,hold=0,caps=[],last=-1,live=false,raf=0,face='user',nf=0,fc=0,voice=false,res=null,mode='scan',G={},cmpBase=null,TL={},T={frames:0,nof:0,q:{},steps:[]};
 const qc=document.createElement('canvas');qc.width=96;qc.height=72;const qx=qc.getContext('2d',{willReadFrequently:true});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const STEPS=[
@@ -113,15 +127,88 @@ const STEPS=[
  {t:'Tilt your chin up or down',h:'A small tilt is enough',ms:450,ok:p=>Math.abs(p.dp)>.07&&Math.abs(p.yaw)<.1,done:p=>{S.ps=Math.sign(p.dp)}},
  {t:'Now tilt the opposite way',h:'Almost done',ms:450,ok:p=>p.dp*S.ps<-.07&&Math.abs(p.yaw)<.1}];
 const NAMES=['Front','Side A','Side B','Tilt A','Tilt B'];
+const GR=[['Biggest smile 😁',b=>(b.mouthSmileLeft+b.mouthSmileRight)/2],
+['Look surprised 😲',b=>b.jawOpen*.4+(b.eyeWideLeft+b.eyeWideRight)*.15+b.browInnerUp*.3],
+['Raise your eyebrows 🤨',b=>(b.browOuterUpLeft+b.browOuterUpRight)*.3+b.browInnerUp*.4],
+['Kissy face 😘',b=>b.mouthPucker]];
+function sample(k){
+ const head='<ellipse cx="60" cy="76" rx="32" ry="42"/>',
+ fe='<circle cx="48" cy="68" r="3" fill="currentColor" stroke="none"/><circle cx="72" cy="68" r="3" fill="currentColor" stroke="none"/><path d="M42 58q6-4 12 0M66 58q6-4 12 0M60 72v14M49 98q11 9 22 0"/>';
+ let body=head+fe,extra='';
+ if(k==='turn')body='<ellipse cx="60" cy="76" rx="25" ry="42"/><g transform="translate(12 0)">'+fe+'</g>';
+ if(k==='far')body='<g transform="translate(33 40) scale(.45)">'+head+fe+'</g>';
+ if(k==='cover')extra='<rect x="35" y="59" width="50" height="17" rx="6" fill="var(--ink)" stroke="none"/>';
+ if(k==='dark')extra='<rect width="120" height="150" rx="14" fill="#000" opacity=".62" stroke="none"/>';
+ const ok=k==='good';
+ return '<svg viewBox="0 0 120 150" aria-hidden="true"><rect width="120" height="150" rx="14" fill="var(--bg)" stroke="var(--line)"/><g fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round">'+body+'</g>'+extra+'<circle cx="100" cy="20" r="12" fill="'+(ok?'#22c55e':'#ef4444')+'"/><text x="100" y="25" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">'+(ok?'✓':'✕')+'</text></svg>';
+}
+async function rmode(m){if(lm.rm!==m){await lm.setOptions({runningMode:m});lm.rm=m}}
+async function loadModel(){
+ if(lm)return;
+ const fs=await FilesetResolver.forVisionTasks(BASE+"/wasm");
+ const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
+ try{lm=await FaceLandmarker.createFromOptions(fs,opt('GPU'))}catch(e){lm=await FaceLandmarker.createFromOptions(fs,opt('CPU'))}
+ lm.rm='VIDEO';
+}
+async function fromFile(file){
+ const say2=t=>{$('st').textContent=t};
+ if(!file.type.startsWith('image/')){say2('Please choose an image file.');return}
+ say2('Loading your photo…');
+ try{
+  await loadModel();await rmode('IMAGE');
+  const bm=await createImageBitmap(file,{imageOrientation:'from-image'});
+  const k=Math.min(1,1024/Math.max(bm.width,bm.height)),W=Math.round(bm.width*k),H=Math.round(bm.height*k);
+  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(bm,0,0,W,H);
+  const r=lm.detect(c),L=r.faceLandmarks&&r.faceLandmarks[0];
+  if(!L){say2('No face found. Try a clear, front-facing photo like the best sample above.');return}
+  const pz=pose(L),w=L[454].x-L[234].x,warns=[];
+  qx.drawImage(c,0,0,96,72);const d=qx.getImageData(0,0,96,72).data;let sm=0;for(let i=0;i<d.length;i+=4)sm+=d[i]*.299+d[i+1]*.587+d[i+2]*.114;const lum=sm/(d.length/4);
+  if(Math.abs(pz.yaw)>.12)warns.push('Your head looks turned, so symmetry may read lower than it really is.');
+  if(w<.2)warns.push('The face is small in the photo. A closer crop will be more accurate.');
+  if(lum<55)warns.push('The photo is quite dark.');
+  if(lum>205)warns.push('The photo is very bright.');
+  const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(q=>bs[q.categoryName]=q.score);
+  const t=document.createElement('canvas');t.width=240;t.height=Math.round(240*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+  caps=[{img:t.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W,H}];
+  S={lum,gl:0};mode='scan';$('intro').hidden=true;finish();
+  $('upn').textContent=warns.length?warns.join(' '):'Single photo scan: angles and range need the live scan.';
+ }catch(e){say2('Couldn’t read that photo. Try a different image.')}
+}
+function gui(){const d=$('dots');d.textContent='';GR.forEach((_,i)=>{const e=document.createElement('i');if(i<G.i)e.className='on';d.appendChild(e)});
+ $('cnt').textContent='Round '+(G.i+1)+' of '+GR.length;$('stp').textContent=GR[G.i][0];$('hp').textContent='';say(GR[G.i][0])}
+function gframe(r){
+ const bs=new Proxy({},{get:(o,k)=>o[k]||0});((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(k=>bs[k.categoryName]=k.score);
+ const e=performance.now()-G.t0;
+ if(e<3000){$('hint').textContent='Get ready… '+Math.ceil((3000-e)/1000);$('hb').style.width='0';G.peak=0;return}
+ const f=Math.min(1,(e-3000)/3000);$('hb').style.width=f*100+'%';$('hint').textContent='Go!';$('hp').textContent='Time left: '+Math.ceil(3*(1-f))+'s';
+ G.peak=Math.max(G.peak,GR[G.i][1](bs));
+ if(f>=1){G.s.push(Math.round(clamp(G.peak*110,0,100)));G.i++;G.t0=performance.now();G.peak=0;G.i>=GR.length?endGame():gui()}
+}
+function endGame(){
+ stopCam();mode='scan';$('scan').hidden=true;$('res').hidden=false;
+ const tot=G.s.reduce((a,b)=>a+b,0);let best=0;
+ try{best=+localStorage.getItem('fvg')||0;if(tot>best){best=tot;localStorage.setItem('fvg',tot)}}catch(e){}
+ $('gres').textContent='Challenge: '+G.s.join(' · ')+' = '+tot+'/'+GR.length*100+'. Your personal best: '+best+'.';
+}
+function showVs(a,b){
+ const el=$('vsb');el.textContent='';
+ const hd=document.createElement('p');hd.className='sm';hd.textContent='Person 1: '+a.em+' '+a.arch+'  ·  Person 2: '+b.em+' '+b.arch;el.appendChild(hd);
+ [['Symmetry','sym'],['Peak smile','smile'],['Expression range','range']].forEach(([l,k])=>{
+  const d=document.createElement('div');d.className='hl';const x=document.createElement('span'),y=document.createElement('span');
+  x.textContent=l;y.textContent=a[k]+'% vs '+b[k]+'%';d.appendChild(x);d.appendChild(y);el.appendChild(d)});
+ const sim=Math.round(clamp(100-(Math.abs(a.sym-b.sym)+Math.abs(a.smile-b.smile)*.6+Math.abs(a.range-b.range)*.6)/2.2,0,100));
+ const m=document.createElement('p');m.style.cssText='text-align:center;font-weight:700';
+ m.textContent='Vibe similarity '+sim+'%: '+(sim>=80?'Mirror twins 🪞':sim>=55?'Great match 🤝':'Opposites attract 🧲');el.appendChild(m);
+}
 function say(t){if(!voice||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}catch(e){}}
 function pose(L){const w=L[454].x-L[234].x,h=L[152].y-L[10].y;return{yaw:(L[1].x-(L[234].x+L[454].x)/2)/w,pitch:(L[1].y-(L[10].y+L[152].y)/2)/h}}
 function ui(){
  const d=$('dots');d.textContent='';STEPS.forEach((_,i)=>{const e=document.createElement('i');if(i<step)e.className='on';d.appendChild(e)});
  $('cnt').textContent='Step '+(step+1)+' of '+STEPS.length;$('stp').textContent=STEPS[step].t;$('hint').textContent=STEPS[step].h;
- $('skip').hidden=step===0;$('hb').style.width='0';$('hp').textContent='';say(STEPS[step].t);
+ $('skip').hidden=step===0;$('hb').style.width='0';$('hp').textContent='';S.ts=performance.now();say(STEPS[step].t);
 }
 $('ok1').onchange=e=>{$('go').disabled=!e.target.checked};
-async function startCam(){
+async function startCam(){await rmode('VIDEO');
  if(stream)stream.getTracks().forEach(t=>t.stop());
  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:face,width:{ideal:640},height:{ideal:480}},audio:false});
  V.srcObject=stream;await V.play();$('cam').style.transform=face==='user'?'scaleX(-1)':'none';
@@ -140,17 +227,21 @@ $('go').onclick=async()=>{
  try{await startCam()}catch(e){
   $('st').textContent=e&&e.name==='NotAllowedError'?'Camera permission was denied. Allow it in your browser settings, then try again.':e&&e.name==='NotFoundError'?'No camera found on this device.':'Couldn’t open the camera: '+((e&&e.message)||e);
   $('go').disabled=false;return}
- S={};step=0;hold=0;caps=[];nf=0;live=true;$('intro').hidden=true;$('scan').hidden=false;ui();loop();
+ S={};step=0;hold=0;caps=[];nf=0;live=true;mode='scan';$('upn').textContent='';Object.assign(T,{frames:0,nof:0,q:{},steps:[]});$('intro').hidden=true;$('scan').hidden=false;ui();loop();
 };
 $('flip').onclick=async()=>{face=face==='user'?'environment':'user';try{await startCam()}catch(e){face=face==='user'?'environment':'user';$('hint').textContent='Couldn’t switch cameras.'}};
-$('stop').onclick=()=>{stopCam();$('scan').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Scan stopped.'};
+$('stop').onclick=()=>{mode='scan';stopCam();$('scan').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Scan stopped.'};
 $('skip').onclick=()=>{const n=(step===1||step===3)?2:1;for(let i=0;i<n;i++)caps.push(null);step+=n;hold=0;step>=STEPS.length?finish():ui()};
 function loop(){if(!live)return;if(V.readyState>=2&&V.currentTime!==last){last=V.currentTime;frame(lm.detectForVideo(V,performance.now()))}raf=requestAnimationFrame(loop)}
 function quality(L){
- fc++;if(fc%8===1){qx.drawImage(V,0,0,96,72);const d=qx.getImageData(0,0,96,72).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]*.299+d[i+1]*.587+d[i+2]*.114;S.lum=s/(d.length/4)}
+ fc++;if(fc%8===1){qx.drawImage(V,0,0,96,72);const d=qx.getImageData(0,0,96,72).data;let s=0,gl=0,n=0;
+ const x0=Math.max(0,L[234].x*96|0),x1=Math.min(95,L[454].x*96|0),y0=Math.max(0,L[10].y*72|0),y1=Math.min(71,L[152].y*72|0);
+ for(let i=0;i<d.length;i+=4){const l=d[i]*.299+d[i+1]*.587+d[i+2]*.114;s+=l;const q=i/4,X=q%96,Y=q/96|0;if(X>=x0&&X<=x1&&Y>=y0&&Y<=y1){n++;if(l>245)gl++}}
+ S.lum=s/(d.length/4);S.gl=n?gl/n:0}
  const w=L[454].x-L[234].x,cx=L[1].x;
  if(S.lum<55)return'Too dark. Face a window or lamp.';
  if(S.lum>205)return'Too bright. Reduce glare or backlight.';
+ if(S.gl>.04)return'Glare on your face or glasses. Tilt your head or change the light.';
  if(w<.22)return'Move a little closer.';
  if(w>.62)return'Move back a little.';
  if(cx<.25||cx>.75)return'Center your face in the frame.';
@@ -159,11 +250,11 @@ function quality(L){
 function frame(r){
  if(O.width!==V.videoWidth){O.width=V.videoWidth;O.height=V.videoHeight}else ox.clearRect(0,0,O.width,O.height);
  const L=r.faceLandmarks&&r.faceLandmarks[0];
- if(!L){nf++;hold=0;$('hb').style.width='0';$('hp').textContent='';
+ T.frames++;if(!L){nf++;T.nof++;hold=0;$('hb').style.width='0';$('hp').textContent='';
   $('hint').textContent=nf>90?'Still no face found. Try better light, remove glare or a hat, and hold the phone at eye level.':'I can’t see a face. Move into the light.';return}
  nf=0;ox.fillStyle='rgba(167,139,250,.85)';
  for(let i=0;i<L.length;i+=2)ox.fillRect(L[i].x*O.width-1,L[i].y*O.height-1,2,2);
- const q=quality(L);if(q){$('hint').textContent=q;hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='#f59e0b';return}
+ if(mode==='game'){gframe(r);return}const q=quality(L);if(q){T.q[q]=(T.q[q]||0)+1;$('hint').textContent=q;hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='#f59e0b';return}
  const p=pose(L);p.dp=S.p0===undefined?0:p.pitch-S.p0;const st=STEPS[step];
  if(st.ok(p)){
   if(!hold)hold=performance.now();const f=Math.min(1,(performance.now()-hold)/st.ms);
@@ -176,7 +267,7 @@ function capture(L,r,p){
  const x=c.getContext('2d');if(face==='user'){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(V,0,0,c.width,c.height);
  const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(k=>bs[k.categoryName]=k.score);
  caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight});
- if(STEPS[step].done)STEPS[step].done(p);
+ if(STEPS[step].done)STEPS[step].done(p);T.steps.push(Math.round(performance.now()-S.ts));
  $('ring').style.borderColor='transparent';hold=0;step++;step>=STEPS.length?finish():ui();
 }
 const hist=()=>{try{return JSON.parse(localStorage.getItem('fvp')||'[]')}catch(e){return[]}};
@@ -202,7 +293,8 @@ function finish(){
  const sm=c=>c?((c.bs.mouthSmileLeft||0)+(c.bs.mouthSmileRight||0))/2:0;
  const ex=c=>c?((c.bs.browInnerUp||0)+(c.bs.jawOpen||0)+sm(c)+(c.bs.eyeWideLeft||0)):0;
  const smile=Math.round(clamp(Math.max(...caps.map(sm))*100,0,100));
- const exs=caps.filter(Boolean).map(ex),range=Math.round(clamp((Math.max(...exs)-Math.min(...exs))*120+20,5,99));
+ const exs=caps.filter(Boolean).map(ex),single=caps.length===1,range=single?Math.round(clamp(exs[0]*100,5,99)):Math.round(clamp((Math.max(...exs)-Math.min(...exs))*120+20,5,99));
+ $('xl').textContent=single?'Expression level (single photo)':'Expression range (rough)';
  $('sv').textContent=sym+'%';$('mv').textContent=smile+'%';$('xv').textContent=range+'%';
  setTimeout(()=>{$('sb').style.width=sym+'%';$('mb').style.width=smile+'%';$('xb').style.width=range+'%'},80);
  const wr=D(P(234),P(454))/len,eg=D(P(133),P(362))/D(P(33),P(263)),mw=D(P(61),P(291))/D(P(234),P(454));
@@ -216,12 +308,17 @@ function finish(){
  else A=['🎨','The Original','One-of-a-kind, with plenty of character.'];
  $('aem').textContent=A[0];$('ati').textContent=A[1];$('ade').textContent=A[2];
  res={sym,smile,range,arch:A[1],em:A[0],img:F.img};
+ $('tl').hidden=!$('tm').checked;$('cp').textContent='Copy test log';
+ TL={ua:navigator.userAgent,when:new Date().toISOString(),frames:T.frames,noFacePct:Math.round(100*T.nof/Math.max(1,T.frames)),blocked:T.q,stepMs:T.steps,
+  lum:Math.round(S.lum||0),glare:+(S.gl||0).toFixed(3),faceWidthRatio:+wr.toFixed(2),skippedAngles:caps.filter(c=>!c).length,sym,smile,range,
+  asymByGroup:Object.fromEntries(Object.entries(by).map(([k,v])=>[k,+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(3)]))};
+ const fr=cmpBase;cmpBase=null;$('vs').hidden=!fr;if(fr)showVs(fr,res);
  const h=hist(),prev=h[h.length-1],sg=n=>(n>0?'+':'')+n;
- $('cmp').textContent=prev?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
- h.push({t:Date.now(),sym,smile,range,a:A[1]});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}
+ $('cmp').textContent=(prev&&!fr)?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
+ if(!fr){h.push({t:Date.now(),sym,smile,range,a:A[1]});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}}
  renderHist();
  const s=$('strip');s.textContent='';
- caps.forEach((c,i)=>{if(!c)return;const d=document.createElement('div'),im=new Image();im.alt=NAMES[i]+' capture';im.src=c.img;d.appendChild(im);d.appendChild(document.createTextNode(NAMES[i]));s.appendChild(d)});
+ caps.forEach((c,i)=>{if(!c)return;const d=document.createElement('div'),im=new Image();const nm=caps.length===1?'Your photo':NAMES[i];im.alt=nm;im.src=c.img;d.appendChild(im);d.appendChild(document.createTextNode(nm));s.appendChild(d)});
  cloud(F);
 }
 let cloudId=0,ry=0,drag=false,lx=0,cloudInit=false;
@@ -259,7 +356,19 @@ $('shr').onclick=async()=>{
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'My FaceVibe'});return}catch(e){if(e.name==='AbortError')return}}
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='facevibe.png';a.click()},'image/png');
 };
-$('again').onclick=()=>{cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
+$('again').onclick=()=>{cmpBase=null;cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
+$('gm').onclick=async()=>{
+ try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
+ mode='game';G={i:0,t0:performance.now(),peak:0,s:[]};$('res').hidden=true;$('scan').hidden=false;$('skip').hidden=true;
+ live=true;gui();loop();window.scrollTo(0,0);
+};
+$('fr').onclick=()=>{cmpBase=res;$('res').hidden=true;$('intro').hidden=false;$('ok1').checked=false;$('go').disabled=true;
+ $('st').textContent='Hand the phone to your friend. They need to tick the consent box too. Their scan isn’t saved.';window.scrollTo(0,0)};
+$('cp').onclick=async()=>{const t=JSON.stringify(TL,null,1);try{await navigator.clipboard.writeText(t);$('cp').textContent='Copied ✓'}catch(e){prompt('Copy this log:',t)}};
+(function(){const g=$('gd');[['good','Best: front-facing, even light'],['turn','Turned or tilted'],['dark','Too dark or glare'],['cover','Eyes covered'],['far','Face too small']].forEach(([k,t])=>{
+ const d=document.createElement('div');d.innerHTML=sample(k);d.appendChild(document.createTextNode(t));g.appendChild(d)})})();
+$('up').onclick=()=>{if(!$('ok1').checked){$('st').textContent='Please tick the consent box first.';return}$('fi').click()};
+$('fi').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)fromFile(f)};
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
