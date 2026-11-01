@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7c3aed">
+<link rel="manifest" href="manifest.json">
+<title>FaceVibe Pro: 360° Face Scan</title>
+<style>
+:root{--bg:#faf7ff;--card:#fff;--ink:#241b3a;--mute:#5f567a;--acc:#7c3aed;--acc2:#ec4899;--line:#e6defa;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#15102a;--card:#201a3a;--ink:#f3eeff;--mute:#b5acd1;--acc:#a78bfa;--acc2:#f472b6;--line:#3a3160;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.7rem;margin:0 0 4px;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h3{margin:0 0 8px}
+.sub,.sm{color:var(--mute);font-size:.9rem;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.btn{display:block;width:100%;min-height:48px;padding:12px;border:0;border-radius:14px;font:600 1rem inherit;color:#fff;background:linear-gradient(90deg,var(--acc),var(--acc2));cursor:pointer}
+.btn.ghost{background:transparent;color:var(--acc);border:1px solid var(--line);margin-top:10px}
+.btn:disabled{opacity:.45}
+.btn:focus-visible,summary:focus-visible,#cl:focus-visible,input:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:10px 0;font-size:.95rem}.chk input{width:22px;height:22px;flex:none}
+.cam{position:relative;border-radius:16px;overflow:hidden;background:#000}
+.cam video,.cam canvas{display:block;width:100%;height:auto}.cam canvas{position:absolute;inset:0}
+.ring{position:absolute;inset:0;border:4px solid transparent;border-radius:16px;pointer-events:none}
+.dots{display:flex;gap:6px;margin:12px 0 6px}.dots i{flex:1;height:6px;border-radius:9px;background:var(--line)}.dots i.on{background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.hold{height:6px;background:var(--line);border-radius:9px;overflow:hidden}.hold i{display:block;height:100%;width:0;background:var(--acc2)}
+.step{font-size:1.15rem;font-weight:700;margin:10px 0 2px}.hint{font-size:.9rem;color:var(--mute);min-height:1.4em}
+.row{display:flex;gap:8px}.row .btn{margin-top:10px}
+.strip{display:flex;gap:6px;overflow-x:auto}.strip div{flex:0 0 30%;font-size:.75rem;color:var(--mute);text-align:center}
+.strip img{width:100%;border-radius:10px;display:block;margin-bottom:3px}
+#cl{width:100%;height:auto;border-radius:14px;background:radial-gradient(circle,var(--line),transparent 75%);touch-action:pan-y;cursor:grab}
+.arch{text-align:center}.arch .em{font-size:44px}.arch h2{margin:4px 0;font-size:1.4rem}.arch p{margin:0;color:var(--mute);font-size:.9rem}
+.meter{margin:14px 0}.meter b{display:flex;justify-content:space-between;font-size:.95rem}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .9s}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer;color:var(--acc)}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+.chip b{display:block;font-size:1.05rem}.chip span{font-size:.72rem;color:var(--mute)}
+.note{font-size:.8rem;color:var(--mute);text-align:center;margin-top:8px}
+.hl{font-size:.85rem;margin:4px 0;display:flex;justify-content:space-between;color:var(--mute)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>FaceVibe Pro 🧬</h1>
+<p class="sub">A guided 5-angle face scan for fun. Playful geometry, not a judgment of how you look.</p>
+
+<div id="intro" class="card">
+<h3>Before we start</h3>
+<p class="sm">Your camera is analyzed on this device only. Nothing is uploaded. Photos are never saved. Only your scores are kept locally, and you can delete them anytime.</p>
+<label class="chk"><input type="checkbox" id="ok1"><span>I’m 13 or older and agree to use my camera for this scan.</span></label>
+<label class="chk"><input type="checkbox" id="vo"><span>Read the prompts aloud</span></label>
+<button class="btn" id="go" disabled>Start 360° scan</button>
+<p class="note" id="st" role="status" aria-live="polite">Good light and a steady hand help.</p>
+</div>
+
+<div id="scan" class="card" hidden>
+<div class="cam" id="cam"><video id="v" playsinline muted aria-label="Camera preview"></video><canvas id="o" aria-hidden="true"></canvas><div class="ring" id="ring"></div></div>
+<div class="dots" id="dots" aria-hidden="true"></div>
+<div class="hint" id="cnt"></div>
+<div class="step" id="stp" aria-live="polite"></div><div class="hint" id="hint" aria-live="polite"></div>
+<div class="hold" style="margin-top:8px"><i id="hb"></i></div><div class="hint" id="hp"></div>
+<div class="row"><button class="btn ghost" id="flip">Flip camera</button><button class="btn ghost" id="skip">Skip angle</button><button class="btn ghost" id="stop">Stop</button></div>
+</div>
+
+<div id="res" hidden>
+<div class="card"><canvas id="cl" width="360" height="360" tabindex="0" role="img" aria-label="3D point cloud of your face. Drag or use arrow keys to rotate."></canvas><p class="note">Drag or use arrow keys to rotate your 3D face cloud.</p></div>
+<div class="card arch"><div class="em" id="aem"></div><h2 id="ati"></h2><p id="ade"></p></div>
+<div class="card">
+<div class="meter"><b><span>Symmetry (fun estimate)</span><span id="sv"></span></b><div class="bar"><i id="sb"></i></div>
+<details><summary>What’s this?</summary>Compares matching landmark pairs (eyes, brows, mouth, nose, cheeks) either side of your face’s centerline. Everyone scores below 100, and small differences are normal.</details></div>
+<div class="meter"><b><span>Peak smile</span><span id="mv"></span></b><div class="bar"><i id="mb"></i></div>
+<details><summary>What’s this?</summary>The strongest smile the tracker saw in any of your captures.</details></div>
+<div class="meter"><b><span>Expression range (rough)</span><span id="xv"></span></b><div class="bar"><i id="xb"></i></div>
+<details><summary>What’s this?</summary>A loose measure of how much your brows, jaw, eyes and smile moved between angles.</details></div>
+<p class="note" id="cmp"></p>
+<p class="note">Every real face is asymmetric, and that’s part of what makes you recognizable. If looking at scores like these affects how you feel, it’s fine to skip them.</p>
+</div>
+<div class="card"><b>Your face signature</b>
+<div class="chips" style="margin-top:10px">
+<div class="chip"><b id="c1"></b><span>Width to height</span></div>
+<div class="chip"><b id="c2"></b><span>Eye spacing</span></div>
+<div class="chip"><b id="c3"></b><span>Smile width</span></div></div></div>
+<div class="card"><b>Your captures (not saved)</b><div class="strip" id="strip" style="margin-top:10px"></div></div>
+<div class="card"><b>Share</b>
+<label class="chk"><input type="checkbox" id="inc"><span>Include my photo on the card</span></label>
+<button class="btn" id="shr">Share result card</button></div>
+<div class="card"><b>Past scans on this device</b><div id="hist" style="margin-top:8px"></div>
+<button class="btn ghost" id="clr">Delete my saved scores</button></div>
+<button class="btn ghost" id="again">Scan again</button>
+</div>
+</main>
+
+<script type="module">
+import {FaceLandmarker,FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
+const BASE="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const MODEL="https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const $=i=>document.getElementById(i),V=$('v'),O=$('o'),ox=O.getContext('2d');
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lm,stream,S={},step=0,hold=0,caps=[],last=-1,live=false,raf=0,face='user',nf=0,fc=0,voice=false,res=null;
+const qc=document.createElement('canvas');qc.width=96;qc.height=72;const qx=qc.getContext('2d',{willReadFrequently:true});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const STEPS=[
+ {t:'Look straight at the camera',h:'Relax your face and hold still',ms:700,ok:p=>Math.abs(p.yaw)<.05,done:p=>{S.p0=p.pitch}},
+ {t:'Turn your head slowly to one side',h:'Keep your eyes on the screen',ms:450,ok:p=>Math.abs(p.yaw)>.16&&Math.abs(p.dp)<.1,done:p=>{S.ys=Math.sign(p.yaw)}},
+ {t:'Now turn to the other side',h:'Slow and steady',ms:450,ok:p=>p.yaw*S.ys<-.16&&Math.abs(p.dp)<.1},
+ {t:'Tilt your chin up or down',h:'A small tilt is enough',ms:450,ok:p=>Math.abs(p.dp)>.07&&Math.abs(p.yaw)<.1,done:p=>{S.ps=Math.sign(p.dp)}},
+ {t:'Now tilt the opposite way',h:'Almost done',ms:450,ok:p=>p.dp*S.ps<-.07&&Math.abs(p.yaw)<.1}];
+const NAMES=['Front','Side A','Side B','Tilt A','Tilt B'];
+function say(t){if(!voice||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}catch(e){}}
+function pose(L){const w=L[454].x-L[234].x,h=L[152].y-L[10].y;return{yaw:(L[1].x-(L[234].x+L[454].x)/2)/w,pitch:(L[1].y-(L[10].y+L[152].y)/2)/h}}
+function ui(){
+ const d=$('dots');d.textContent='';STEPS.forEach((_,i)=>{const e=document.createElement('i');if(i<step)e.className='on';d.appendChild(e)});
+ $('cnt').textContent='Step '+(step+1)+' of '+STEPS.length;$('stp').textContent=STEPS[step].t;$('hint').textContent=STEPS[step].h;
+ $('skip').hidden=step===0;$('hb').style.width='0';$('hp').textContent='';say(STEPS[step].t);
+}
+$('ok1').onchange=e=>{$('go').disabled=!e.target.checked};
+async function startCam(){
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:face,width:{ideal:640},height:{ideal:480}},audio:false});
+ V.srcObject=stream;await V.play();$('cam').style.transform=face==='user'?'scaleX(-1)':'none';
+}
+function stopCam(){live=false;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;try{speechSynthesis.cancel()}catch(e){}}
+$('go').onclick=async()=>{
+ if(!navigator.mediaDevices||!window.WebAssembly){$('st').textContent='This browser can’t run the scan. Try a recent Chrome, Safari or Edge over https.';return}
+ voice=$('vo').checked;$('go').disabled=true;$('st').textContent='Loading face model (about 4 MB)…';
+ try{
+  if(!lm){
+   const fs=await FilesetResolver.forVisionTasks(BASE+"/wasm");
+   const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
+   try{lm=await FaceLandmarker.createFromOptions(fs,opt('GPU'))}catch(e){lm=await FaceLandmarker.createFromOptions(fs,opt('CPU'))}
+  }
+ }catch(e){$('st').textContent='Couldn’t load the face model. Check your connection and try again.';$('go').disabled=false;return}
+ try{await startCam()}catch(e){
+  $('st').textContent=e&&e.name==='NotAllowedError'?'Camera permission was denied. Allow it in your browser settings, then try again.':e&&e.name==='NotFoundError'?'No camera found on this device.':'Couldn’t open the camera: '+((e&&e.message)||e);
+  $('go').disabled=false;return}
+ S={};step=0;hold=0;caps=[];nf=0;live=true;$('intro').hidden=true;$('scan').hidden=false;ui();loop();
+};
+$('flip').onclick=async()=>{face=face==='user'?'environment':'user';try{await startCam()}catch(e){face=face==='user'?'environment':'user';$('hint').textContent='Couldn’t switch cameras.'}};
+$('stop').onclick=()=>{stopCam();$('scan').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Scan stopped.'};
+$('skip').onclick=()=>{const n=(step===1||step===3)?2:1;for(let i=0;i<n;i++)caps.push(null);step+=n;hold=0;step>=STEPS.length?finish():ui()};
+function loop(){if(!live)return;if(V.readyState>=2&&V.currentTime!==last){last=V.currentTime;frame(lm.detectForVideo(V,performance.now()))}raf=requestAnimationFrame(loop)}
+function quality(L){
+ fc++;if(fc%8===1){qx.drawImage(V,0,0,96,72);const d=qx.getImageData(0,0,96,72).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]*.299+d[i+1]*.587+d[i+2]*.114;S.lum=s/(d.length/4)}
+ const w=L[454].x-L[234].x,cx=L[1].x;
+ if(S.lum<55)return'Too dark. Face a window or lamp.';
+ if(S.lum>205)return'Too bright. Reduce glare or backlight.';
+ if(w<.22)return'Move a little closer.';
+ if(w>.62)return'Move back a little.';
+ if(cx<.25||cx>.75)return'Center your face in the frame.';
+ return'';
+}
+function frame(r){
+ if(O.width!==V.videoWidth){O.width=V.videoWidth;O.height=V.videoHeight}else ox.clearRect(0,0,O.width,O.height);
+ const L=r.faceLandmarks&&r.faceLandmarks[0];
+ if(!L){nf++;hold=0;$('hb').style.width='0';$('hp').textContent='';
+  $('hint').textContent=nf>90?'Still no face found. Try better light, remove glare or a hat, and hold the phone at eye level.':'I can’t see a face. Move into the light.';return}
+ nf=0;ox.fillStyle='rgba(167,139,250,.85)';
+ for(let i=0;i<L.length;i+=2)ox.fillRect(L[i].x*O.width-1,L[i].y*O.height-1,2,2);
+ const q=quality(L);if(q){$('hint').textContent=q;hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='#f59e0b';return}
+ const p=pose(L);p.dp=S.p0===undefined?0:p.pitch-S.p0;const st=STEPS[step];
+ if(st.ok(p)){
+  if(!hold)hold=performance.now();const f=Math.min(1,(performance.now()-hold)/st.ms);
+  $('hb').style.width=f*100+'%';$('hp').textContent='Holding… '+Math.round(f*100)+'%';$('ring').style.borderColor='#22c55e';
+  if(f>=1)capture(L,r,p);
+ }else{hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='transparent';$('hint').textContent=st.h}
+}
+function capture(L,r,p){
+ const c=document.createElement('canvas');c.width=240;c.height=Math.round(240*V.videoHeight/V.videoWidth);
+ const x=c.getContext('2d');if(face==='user'){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(V,0,0,c.width,c.height);
+ const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(k=>bs[k.categoryName]=k.score);
+ caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight});
+ if(STEPS[step].done)STEPS[step].done(p);
+ $('ring').style.borderColor='transparent';hold=0;step++;step>=STEPS.length?finish():ui();
+}
+const hist=()=>{try{return JSON.parse(localStorage.getItem('fvp')||'[]')}catch(e){return[]}};
+function renderHist(){
+ const h=hist(),el=$('hist');el.textContent='';
+ if(!h.length){el.textContent='Nothing saved yet.';return}
+ h.slice().reverse().slice(0,6).forEach(s=>{const d=document.createElement('div');d.className='hl';
+  const a=document.createElement('span'),b=document.createElement('span');
+  a.textContent=new Date(s.t).toLocaleDateString()+' · '+s.a;b.textContent='Sym '+s.sym+' · Smile '+s.smile;d.appendChild(a);d.appendChild(b);el.appendChild(d)});
+}
+$('clr').onclick=()=>{try{localStorage.removeItem('fvp')}catch(e){}renderHist();$('cmp').textContent=''};
+function finish(){
+ stopCam();$('scan').hidden=true;$('res').hidden=false;
+ const F=caps[0];if(!F)return;
+ const P=i=>[F.L[i][0]*F.W,F.L[i][1]*F.H],D=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+ const a=P(10),b=P(152),len=D(a,b),ux=(b[0]-a[0])/len,uy=(b[1]-a[1])/len,nx=-uy,ny=ux;
+ const sd=q=>Math.abs((q[0]-a[0])*nx+(q[1]-a[1])*ny);
+ const PAIRS=[['eyes',33,263],['eyes',133,362],['brows',70,300],['brows',105,334],['mouth',61,291],['nose',48,278],['cheeks',234,454]];
+ const by={};let tot=0;
+ PAIRS.forEach(([n,l,r])=>{const dl=sd(P(l)),dr=sd(P(r)),as=Math.abs(dl-dr)/(dl+dr+1e-6);tot+=as;(by[n]=by[n]||[]).push(as)});
+ const sym=Math.round(clamp(100-(tot/PAIRS.length)*220,40,99));
+ let worst='',wv=-1;for(const k in by){const m=by[k].reduce((s,v)=>s+v,0)/by[k].length;if(m>wv){wv=m;worst=k}}
+ const sm=c=>c?((c.bs.mouthSmileLeft||0)+(c.bs.mouthSmileRight||0))/2:0;
+ const ex=c=>c?((c.bs.browInnerUp||0)+(c.bs.jawOpen||0)+sm(c)+(c.bs.eyeWideLeft||0)):0;
+ const smile=Math.round(clamp(Math.max(...caps.map(sm))*100,0,100));
+ const exs=caps.filter(Boolean).map(ex),range=Math.round(clamp((Math.max(...exs)-Math.min(...exs))*120+20,5,99));
+ $('sv').textContent=sym+'%';$('mv').textContent=smile+'%';$('xv').textContent=range+'%';
+ setTimeout(()=>{$('sb').style.width=sym+'%';$('mb').style.width=smile+'%';$('xb').style.width=range+'%'},80);
+ const wr=D(P(234),P(454))/len,eg=D(P(133),P(362))/D(P(33),P(263)),mw=D(P(61),P(291))/D(P(234),P(454));
+ $('c1').textContent=wr.toFixed(2);$('c2').textContent=eg<.36?'Close':eg<.44?'Balanced':'Wide';$('c3').textContent=mw<.36?'Subtle':mw<.44?'Classic':'Grand';
+ let A;
+ if(smile>55&&sym>=88)A=['☀️','The Sunbeam','Warm, balanced and instantly likable.'];
+ else if(smile>55)A=['🎉','The Showstopper','A smile that rearranges the whole room.'];
+ else if(sym>=92)A=['🏛️','The Architect','Calm, composed and beautifully even.'];
+ else if(worst==='brows')A=['🤨','The Raised Eyebrow','Your brows do most of the talking.'];
+ else if(worst==='mouth')A=['😏','The Smirker','A mouth with opinions and a sense of humor.'];
+ else A=['🎨','The Original','One-of-a-kind, with plenty of character.'];
+ $('aem').textContent=A[0];$('ati').textContent=A[1];$('ade').textContent=A[2];
+ res={sym,smile,range,arch:A[1],em:A[0],img:F.img};
+ const h=hist(),prev=h[h.length-1],sg=n=>(n>0?'+':'')+n;
+ $('cmp').textContent=prev?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
+ h.push({t:Date.now(),sym,smile,range,a:A[1]});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}
+ renderHist();
+ const s=$('strip');s.textContent='';
+ caps.forEach((c,i)=>{if(!c)return;const d=document.createElement('div'),im=new Image();im.alt=NAMES[i]+' capture';im.src=c.img;d.appendChild(im);d.appendChild(document.createTextNode(NAMES[i]));s.appendChild(d)});
+ cloud(F);
+}
+let cloudId=0,ry=0,drag=false,lx=0,cloudInit=false;
+function cloud(F){
+ const c=$('cl'),x=c.getContext('2d'),n=F.L.length;
+ if(!cloudInit){cloudInit=true;
+  c.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;c.setPointerCapture(e.pointerId)});
+  c.addEventListener('pointermove',e=>{if(drag){ry+=(e.clientX-lx)*.01;lx=e.clientX}});
+  ['pointerup','pointercancel'].forEach(k=>c.addEventListener(k,()=>drag=false));
+  c.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')ry-=.15;if(e.key==='ArrowRight')ry+=.15})}
+ cancelAnimationFrame(cloudId);ry=0;
+ let mx=0,my=0,mz=0;F.L.forEach(q=>{mx+=q[0];my+=q[1];mz+=q[2]});mx/=n;my/=n;mz/=n;
+ const pts=F.L.map(q=>[(q[0]-mx)*F.W,(q[1]-my)*F.H,q[2]*F.W]);
+ const ext=Math.max(...pts.map(p=>Math.abs(p[1])))*2,sc=c.height*.8/ext,dark=matchMedia('(prefers-color-scheme: dark)').matches;
+ (function t(ts){
+  x.clearRect(0,0,c.width,c.height);const ang=ry+(RM?0:Math.sin(ts/1400)*.8),ca=Math.cos(ang),sa=Math.sin(ang);
+  for(const p of pts){const X=p[0]*ca+p[2]*sa,Z=-p[0]*sa+p[2]*ca,k=1/(1+Z*sc/900);
+   x.fillStyle='hsla('+(280+Z*sc/3)+',80%,'+(dark?70:50)+'%,'+clamp(.45-Z*sc/260,.15,1)+')';
+   x.fillRect(c.width/2+X*sc*k-1,c.height/2+p[1]*sc*k-1,2.2,2.2)}
+  cloudId=requestAnimationFrame(t);
+ })(0);
+}
+$('shr').onclick=async()=>{
+ if(!res)return;const c=document.createElement('canvas');c.width=1080;c.height=1350;const x=c.getContext('2d');
+ const g=x.createLinearGradient(0,0,1080,1350);g.addColorStop(0,'#7c3aed');g.addColorStop(1,'#ec4899');x.fillStyle=g;x.fillRect(0,0,1080,1350);
+ x.textAlign='center';x.fillStyle='#fff';let y=200;
+ if($('inc').checked){await new Promise(r=>{const im=new Image();im.onload=()=>{const s=360;x.save();x.beginPath();x.arc(540,330,s/2,0,7);x.clip();
+  const m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,360,150,s,s);x.restore();r()};im.onerror=r;im.src=res.img});y=640}
+ else{x.font='200px system-ui,sans-serif';x.fillText(res.em,540,y+120);y=520}
+ x.font='700 84px system-ui,sans-serif';x.fillText(res.arch,540,y);
+ x.font='500 48px system-ui,sans-serif';
+ [['Symmetry (fun estimate)',res.sym],['Peak smile',res.smile],['Expression range',res.range]].forEach((r,i)=>{x.fillText(r[0]+': '+r[1]+'%',540,y+120+i*84)});
+ x.font='400 34px system-ui,sans-serif';x.globalAlpha=.85;x.fillText('FaceVibe Pro · just for fun, not a beauty score',540,1260);
+ c.toBlob(async b=>{const f=new File([b],'facevibe.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'My FaceVibe'});return}catch(e){if(e.name==='AbortError')return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='facevibe.png';a.click()},'image/png');
+};
+$('again').onclick=()=>{cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
