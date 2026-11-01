@@ -47,6 +47,7 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 .gd div{font-size:.7rem;color:var(--mute);text-align:center;line-height:1.25}.gd svg{width:100%;height:auto;display:block;margin-bottom:3px}
 select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin-left:auto}
 #intro[hidden]~#pgc{display:none}
+.btn.ghost.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -61,8 +62,7 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <label class="chk" style="align-items:center"><span>Language</span><select id="lg" aria-label="Language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="es">Español</option><option value="fr">Français</option></select></label>
 <p class="sm">By continuing you confirm you’re 13 or older. Your browser will ask for camera access.</p>
 <label class="chk"><input type="checkbox" id="vo"><span>Read the prompts aloud</span></label>
-<details><summary>Advanced</summary><label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label>
-<label class="chk"><input type="checkbox" id="at18"><span>I’m 18 or older and want an optional attractiveness estimate (shown as a range)</span></label></details>
+<details><summary>Advanced</summary><label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label></details>
 <details><summary>Photo tips for uploads (see samples)</summary>
 <div class="gd" id="gd"></div>
 <p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p></details>
@@ -103,8 +103,11 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <details><summary>What’s this?</summary>Scores the photo, not your face: lighting, sharpness, framing and expression. Better light and a steady hand raise it.</details></div>
 <div class="card"><b>Vibe traits</b> <span class="sm">(fun readings)</span><div id="vt" style="margin-top:6px"></div>
 <p class="sm">Based on how your face moved during the scan. Traits describe expression, not worth.</p></div>
-<div class="card"><b>Score breakdown</b> <span class="sm">(fun mix)</span><div class="arch" style="margin:8px 0"><div style="font-size:42px;font-weight:800" id="ovv"></div><p id="ovt"></p></div><div id="sbk"></div><p class="sm">Overall mixes symmetry, thirds balance, photo quality, expression and smile. It is a toy, not a verdict.</p></div>
-<div class="card" id="atc" hidden><b>Attractiveness estimate (18+)</b><div class="arch" style="margin:8px 0"><div style="font-size:34px;font-weight:800" id="atv"></div></div><p class="sm" id="atn"></p></div>
+<div class="card"><b>Photo markup</b> <span class="sm">(your face vs a perfectly symmetric one)</span><canvas id="an" width="480" height="360" style="width:100%;height:auto;border-radius:14px;margin-top:8px" role="img" aria-label="Your photo with symmetry markup"></canvas>
+<div class="row"><button class="btn ghost on" data-m="sym">Symmetry map</button><button class="btn ghost" data-m="th">Thirds</button><button class="btn ghost" data-m="mir">Mirror faces</button></div>
+<label class="chk"><input type="checkbox" id="exg"><span>Exaggerate differences ×3</span></label><p class="sm" id="ant"></p></div>
+<div class="card"><b>Score breakdown</b> <span class="sm">(fun mix)</span><div class="arch" style="margin:8px 0"><div style="font-size:42px;font-weight:800" id="ovv"></div><p id="ovt"></p></div><canvas id="rad" width="280" height="250" style="width:100%;max-width:320px;height:auto;display:block;margin:6px auto" role="img" aria-label="Radar chart of your scores"></canvas><div id="sbk"></div><p class="sm">Overall mixes symmetry, thirds balance, photo quality, expression and smile. It is a toy, not a verdict.</p></div>
+<div class="card" id="atc"><b>Attractiveness level</b> <span class="sm">(18+, fun estimate)</span><div id="atg" class="arch" style="margin:8px 0"></div><p class="sm" id="atn"></p><button class="btn" id="atb">Reveal (I’m 18 or older)</button></div>
 <div class="card"><b>Your face signature</b>
 <div class="chips" style="margin-top:10px">
 <div class="chip"><b id="c1"></b><span>Width to height</span></div>
@@ -171,7 +174,7 @@ function photo(){
 }
 function bars(id,items){const el=$(id);el.textContent='';items.forEach(([l,v])=>{
  const m=document.createElement('div');m.className='meter';m.style.margin='8px 0';
- const b=document.createElement('b'),a=document.createElement('span'),c=document.createElement('span');a.textContent=l;c.textContent=v+'%';b.appendChild(a);b.appendChild(c);
+ const b=document.createElement('b'),a=document.createElement('span'),c=document.createElement('span');a.textContent=l;c.textContent=(v/10).toFixed(1);b.appendChild(a);b.appendChild(c);
  const bar=document.createElement('div');bar.className='bar';const i=document.createElement('i');bar.appendChild(i);m.appendChild(b);m.appendChild(bar);el.appendChild(m);
  setTimeout(()=>{i.style.width=v+'%'},80)})}
 function nudge(p){
@@ -219,7 +222,7 @@ async function fromFile(file){
   if(lum<55)warns.push('The photo is quite dark.');
   if(lum>205)warns.push('The photo is very bright.');
   const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(q=>bs[q.categoryName]=q.score);
-  const t=document.createElement('canvas');t.width=240;t.height=Math.round(240*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+  const t=document.createElement('canvas');t.width=480;t.height=Math.round(480*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
   caps=[{img:t.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W,H,lum,gl:0,sharp:sharpOf(t),yaw:pz.yaw}];
   S={lum,gl:0};mode='scan';$('intro').hidden=true;finish();
   $('upn').textContent=warns.length?warns.join(' '):'Single photo scan: angles and range need the live scan.';
@@ -315,10 +318,10 @@ function frame(r){
  }else{hold=0;$('hb').style.width='0';$('hp').textContent='';$('ring').style.borderColor='transparent';$('hint').textContent=nudge(p)}
 }
 function capture(L,r,p){
- const c=document.createElement('canvas');c.width=240;c.height=Math.round(240*V.videoHeight/V.videoWidth);
+ const c=document.createElement('canvas');c.width=480;c.height=Math.round(480*V.videoHeight/V.videoWidth);
  const x=c.getContext('2d');if(face==='user'){x.translate(c.width,0);x.scale(-1,1)}x.drawImage(V,0,0,c.width,c.height);
  const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(k=>bs[k.categoryName]=k.score);
- caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight,lum:S.lum||120,gl:S.gl||0,sharp:sharpOf(c),yaw:p.yaw});
+ caps.push({img:c.toDataURL('image/jpeg',.7),L:L.map(q=>[q.x,q.y,q.z]),bs,W:V.videoWidth,H:V.videoHeight,lum:S.lum||120,gl:S.gl||0,sharp:sharpOf(c),yaw:p.yaw,fl:face==='user'});
  if(STEPS[step].done)STEPS[step].done(p);T.steps.push(Math.round(performance.now()-S.ts));
  $('ring').style.borderColor='transparent';hold=0;step++;step>=STEPS.length?finish():ui();
 }
@@ -348,7 +351,7 @@ function fin(F){
  const smile=Math.round(clamp(Math.max(...caps.map(sm))*100,0,100));
  const exs=caps.filter(Boolean).map(ex),single=caps.length===1,range=single?Math.round(clamp(exs[0]*100,5,99)):Math.round(clamp((Math.max(...exs)-Math.min(...exs))*120+20,5,99));
  $('xl').textContent=single?'Expression level (single photo)':'Expression range (rough)';
- $('sv').textContent=sym+'%';$('mv').textContent=smile+'%';$('xv').textContent=range+'%';
+ $('sv').textContent=(sym/10).toFixed(1)+' / 10';$('mv').textContent=(smile/10).toFixed(1)+' / 10';$('xv').textContent=(range/10).toFixed(1)+' / 10';
  setTimeout(()=>{$('sb').style.width=sym+'%';$('mb').style.width=smile+'%';$('xb').style.width=range+'%'},80);
  const wr=D(P(234),P(454))/len,eg=D(P(133),P(362))/D(P(33),P(263)),mw=D(P(61),P(291))/D(P(234),P(454));
  $('c1').textContent=wr.toFixed(2);$('c2').textContent=eg<.36?'Close':eg<.44?'Balanced':'Wide';$('c3').textContent=mw<.36?'Subtle':mw<.44?'Classic':'Grand';
@@ -371,12 +374,14 @@ function fin(F){
   shape=wr<.78?'Long':jw>.82&&fh>.8?(wr>.92?'Round':'Square'):fh>jw+.1?'Heart':'Oval',
   ov=Math.round(clamp(.3*sym+.25*prop+.2*PH.best+.15*range+.1*smile,0,100));
  Object.assign(res,{prop,shape,ov});
- $('c4').textContent=shape;$('c5').textContent=prop+'%';$('c6').textContent=jw<.74?'Soft':jw<.84?'Balanced':'Strong';
- $('ovv').textContent=ov+'/100';$('ovt').textContent=ov>=80?'Standout scan':ov>=60?'Solid scan':'Room to improve the photo';
+ $('c4').textContent=shape;$('c5').textContent=(prop/10).toFixed(1);$('c6').textContent=jw<.74?'Soft':jw<.84?'Balanced':'Strong';
+ const gr=ov>=90?['S','Legendary']:ov>=80?['A','Main Character']:ov>=70?['B','Rising Star']:ov>=60?['C','Warming Up']:['D','Needs Better Light'],stars=Math.round(ov/20);
+ $('ovv').innerHTML=ringSvg(0,ov,(ov/10).toFixed(1),'out of 10',30);$('ovt').textContent='Grade '+gr[0]+' · '+gr[1]+' · '+'★'.repeat(stars)+'☆'.repeat(5-stars);
+ radar([['Symmetry',sym],['Balance',prop],['Photo',PH.best],['Smile',smile],['Energy',energy],['Warmth',warm],['Play',play]]);AN.mode='sym';initAnn(F);
  bars('sbk',[['Symmetry',sym],['Proportions',prop],['Photo quality',PH.best],['Expression',range],['Smile',smile]]);
  bars('pparts',[['Lighting',Math.round(PH.parts.light)],['Sharpness',Math.round(PH.parts.sharp)],['Framing',Math.round(PH.parts.frame)],['Expression',Math.round(PH.parts.expr)]]);
  bars('vt',[['Warmth',warm],['Energy',energy],['Playfulness',play]]);
- $('pv').textContent=PH.best+'/100';
+ $('pv').textContent=(PH.best/10).toFixed(1)+' / 10';
  $('pbest').textContent=(PH.best>=80?'Great photo':PH.best>=60?'Good, with room to improve':'Needs better conditions')+' · '+(caps.length>1?'Best angle: '+NAMES[PH.bi]:'Scan live to find your best angle');
  $('ptip').textContent='Tip: '+PH.tip;
  const c0=caps[0],flags=(Math.abs(c0.yaw||0)>.1?1:0)+((c0.lum<55||c0.lum>205)?1:0)+((c0.L[454][0]-c0.L[234][0])<.2?1:0)+((T.frames&&T.nof/T.frames>.3)?1:0);
@@ -385,12 +390,9 @@ function fin(F){
  TL={ov:res.ov,prop:res.prop,shape:res.shape,cal:CAL,ua:navigator.userAgent,when:new Date().toISOString(),frames:T.frames,noFacePct:Math.round(100*T.nof/Math.max(1,T.frames)),blocked:T.q,stepMs:T.steps,
   lum:Math.round(S.lum||0),glare:+(S.gl||0).toFixed(3),faceWidthRatio:+wr.toFixed(2),skippedAngles:caps.filter(c=>!c).length,sym,smile,range,
   asymByGroup:Object.fromEntries(Object.entries(by).map(([k,v])=>[k,+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(3)]))};
- const on18=$('at18').checked;$('atc').hidden=!on18;
- if(on18){const pr=(v,m,s)=>clamp(1-Math.abs(v-m)/s,0,1),hm=.55*(sym-40)/59+.15*pr(wr,CAL.wr,.3)+.1*pr(eg,.4,.12)+.1*pr(mw,.4,.12)+.1*Math.min(1,smile/60),
-  ct=Math.round(25+hm*55),sp=8+flags*4,lo=clamp(ct-sp,0,100),hi=clamp(ct+sp,0,100);TL.atc=[lo,hi];
-  $('atv').textContent=lo+' – '+hi+' / 100';
-  $('atn').textContent='A rough guess from facial geometry and expression in this one photo. It can’t measure real attractiveness, which depends on far more, so treat it as a toy. The range widens when the reading is less reliable. Never added to saved history or share cards.'}
- const fr=cmpBase;cmpBase=null;$('vs').hidden=!fr;if(fr)showVs(fr,res);
+ const pr2=(v,m,s)=>clamp(1-Math.abs(v-m)/s,0,1),hm=.55*(sym-40)/59+.15*pr2(wr,CAL.wr,.3)+.1*pr2(eg,.4,.12)+.1*pr2(mw,.4,.12)+.1*Math.min(1,smile/60),
+  ct=Math.round(25+hm*55),sp=8+flags*4;AT={lo:clamp(ct-sp,0,100),hi:clamp(ct+sp,0,100),ct};TL.atc=[AT.lo,AT.hi];showAt();
+  const fr=cmpBase;cmpBase=null;$('vs').hidden=!fr;if(fr)showVs(fr,res);
  const h=hist(),prev=h[h.length-1],sg=n=>(n>0?'+':'')+n;
  $('cmp').textContent=(prev&&!fr)?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
  $('stk').textContent=fr?'':'🔥 '+(()=>{const n=bump();try{localStorage.setItem('fvmax',Math.max(+localStorage.getItem('fvmax')||0,n))}catch(e){}return n})()+'-day streak';
@@ -493,6 +495,62 @@ $('cr').onclick=async()=>{if(!res)return;const t='FaceVibe: '+res.em+' '+res.arc
 let dip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;$('inst').hidden=false});
 $('inst').onclick=()=>{if(dip){dip.prompt();dip=null;$('inst').hidden=true}};
 renderHist();
+
+let AT=null,ok18=false,AN={mode:'sym',F:null,im:null};
+const MP=[['Eyes',33,263],['Eyes',133,362],['Brows',70,300],['Brows',105,334],['Mouth',61,291],['Nose',48,278],['Cheeks',234,454],['Jaw',172,397]];
+function ringSvg(lo,hi,txt,sub,fs){const C=2*Math.PI*52,a=lo/100*C,len=Math.max(4,(hi-lo)/100*C);
+ return '<svg viewBox="0 0 140 140" width="170" height="170" role="img" aria-label="'+txt+' '+sub+'"><circle cx="70" cy="70" r="52" fill="none" stroke="var(--line)" stroke-width="14"/><circle cx="70" cy="70" r="52" fill="none" stroke="var(--acc2)" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+len+' '+C+'" stroke-dashoffset="'+(-a)+'" transform="rotate(-90 70 70)"/><text x="70" y="'+(fs>24?76:72)+'" text-anchor="middle" font-size="'+fs+'" font-weight="800" fill="var(--ink)">'+txt+'</text><text x="70" y="94" text-anchor="middle" font-size="11" fill="var(--mute)">'+sub+'</text></svg>'}
+function showAt(){if(!AT)return;const g=$('atg'),b=$('atb');
+ if(!ok18){g.innerHTML=ringSvg(0,1,'🔒','18+ only',28);$('atn').textContent='Hidden until you confirm you’re 18 or older. Shown as a range, never saved or shared.';b.hidden=false;return}
+ const t=AT.ct<40?'Understated':AT.ct<55?'Easygoing':AT.ct<70?'Eye-catching':AT.ct<85?'Head-turner':'Showstopper';
+ g.innerHTML=ringSvg(AT.lo,AT.hi,(AT.lo/10).toFixed(1)+'–'+(AT.hi/10).toFixed(1),t,19);b.hidden=true;
+ $('atn').textContent='The pink arc is your range out of 10. A rough guess from facial geometry and expression in this one photo. It can’t measure real attractiveness, which depends on far more, so treat it as a toy. The range widens when the reading is less reliable.'}
+$('atb').onclick=()=>{if(confirm('Confirm you’re 18 or older to see this estimate.')){ok18=true;showAt()}};
+function radar(v){const c=$('rad'),x=c.getContext('2d');if(!x)return;const cx=140,cy=128,R=84,n=v.length,cs=getComputedStyle(document.documentElement),ac=cs.getPropertyValue('--acc2').trim(),ln=cs.getPropertyValue('--line').trim(),ink=cs.getPropertyValue('--ink').trim();
+ x.clearRect(0,0,280,250);x.font='12px system-ui';x.textAlign='center';const pt=(i,k)=>[cx+Math.sin(i/n*6.2832)*R*k,cy-Math.cos(i/n*6.2832)*R*k];
+ [.25,.5,.75,1].forEach(k=>{x.beginPath();v.forEach((_,i)=>{const q=pt(i,k);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.closePath();x.strokeStyle=ln;x.lineWidth=1;x.stroke()});
+ x.beginPath();v.forEach((s,i)=>{const q=pt(i,s[1]/100);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.closePath();x.fillStyle=ac+'55';x.fill();x.strokeStyle=ac;x.lineWidth=2.5;x.stroke();
+ x.fillStyle=ink;v.forEach((s,i)=>{const q=pt(i,1.18);x.fillText(s[0],q[0],q[1]+4)})}
+function initAnn(F){AN.F=F;const im=new Image();im.onload=()=>{AN.im=im;drawAnn()};im.src=F.img}
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{AN.mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(q=>q.classList.toggle('on',q===b));drawAnn()});
+$('exg').onchange=()=>drawAnn();
+function drawAnn(){
+ const F=AN.F,im=AN.im;if(!F||!im)return;const c=$('an'),x=c.getContext('2d');if(!x)return;
+ const iw=im.naturalWidth,ih=im.naturalHeight,P=i=>{const q=F.L[i];return[(F.fl?1-q[0]:q[0])*iw,q[1]*ih]},m=AN.mode,ex=$('exg').checked?3:1,
+  a=P(10),b=P(152),L=Math.hypot(b[0]-a[0],b[1]-a[1]),u=[(b[0]-a[0])/L,(b[1]-a[1])/L],n=[-u[1],u[0]],fw=Math.hypot(P(454)[0]-P(234)[0],P(454)[1]-P(234)[1]),
+  tq=q=>[(q[0]-a[0])*u[0]+(q[1]-a[1])*u[1],(q[0]-a[0])*n[0]+(q[1]-a[1])*n[1]],at=(t,d)=>[a[0]+u[0]*t+n[0]*d,a[1]+u[1]*t+n[1]*d],
+  cs=getComputedStyle(document.documentElement),acc=cs.getPropertyValue('--acc').trim(),acc2=cs.getPropertyValue('--acc2').trim(),
+  warn=Math.abs(F.yaw||0)>.1?' Your head was turned, so some differences may be pose, not your face.':'';
+ if(m==='mir'){const pw=Math.round(iw*.8),ph=Math.round(ih*.8),s=pw/iw,M=[(a[0]+b[0])/2,(a[1]+b[1])/2],phi=Math.atan2(b[0]-a[0],b[1]-a[1]);c.width=pw*3;c.height=ph;
+  const T=()=>{x.translate(pw/2,ph/2);x.rotate(phi);x.scale(s,s);x.translate(-M[0],-M[1])};
+  [['Left half ×2',0],['Your real face',1],['Right half ×2',2]].forEach(([lab,k])=>{x.save();x.beginPath();x.rect(k*pw,0,pw,ph);x.clip();x.translate(k*pw,0);
+   if(k===1){x.save();T();x.drawImage(im,0,0);x.restore()}else[0,1].forEach(hf=>{x.save();x.beginPath();x.rect(hf*pw/2,0,pw/2,ph);x.clip();if(k===0?hf===1:hf===0){x.translate(pw,0);x.scale(-1,1)}T();x.drawImage(im,0,0);x.restore()});
+   x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,ph-30,pw,30);x.fillStyle='#fff';x.font='600 '+Math.round(pw/14)+'px system-ui';x.textAlign='center';x.fillText(lab,pw/2,ph-9);x.restore()});
+  $('ant').textContent='Each side of your face mirrored into a whole face (as you see them in the photo). The more the three faces differ, the more asymmetric you are. Perfectly symmetric halves would look identical.'+warn;return}
+ c.width=iw;c.height=ih;x.drawImage(im,0,0);
+ const line=(p,q,col,w,d)=>{x.beginPath();x.setLineDash(d||[]);x.moveTo(p[0],p[1]);x.lineTo(q[0],q[1]);x.strokeStyle=col;x.lineWidth=w;x.stroke();x.setLineDash([])},
+  dot=(p,r,col,fill)=>{x.beginPath();x.arc(p[0],p[1],r,0,7);if(fill){x.fillStyle=col;x.fill()}else{x.strokeStyle=col;x.lineWidth=2;x.stroke()}},
+  txt=(s,p,col)=>{x.font='700 '+Math.round(iw/30)+'px system-ui';x.textAlign='left';x.lineWidth=4;x.strokeStyle='rgba(0,0,0,.6)';x.strokeText(s,p[0],p[1]);x.fillStyle=col;x.fillText(s,p[0],p[1])},
+  cc=e=>e<1.2?'#22c55e':e<2.6?'#f59e0b':'#ef4444';
+ if(m==='sym'){
+  line(at(-L*.12,0),at(L*1.1,0),'#fff',iw/150);line(at(-L*.12,0),at(L*1.1,0),acc,iw/300,[10,7]);const rows=[];
+  MP.forEach(([nm,l,r])=>{const pl=P(l),pr=P(r),[tl,dl]=tq(pl),[tr,dr]=tq(pr),t=(tl+tr)/2,mg=(Math.abs(dl)+Math.abs(dr))/2,il=at(t,Math.sign(dl)*mg),ir=at(t,Math.sign(dr)*mg),
+   er=(Math.hypot(pl[0]-il[0],pl[1]-il[1])+Math.hypot(pr[0]-ir[0],pr[1]-ir[1]))/2/fw*100,col=cc(er);rows.push([nm,er]);line(il,ir,'rgba(255,255,255,.4)',1,[3,4]);
+   [[pl,il],[pr,ir]].forEach(([q,id])=>{const e2=[id[0]+(q[0]-id[0])*ex,id[1]+(q[1]-id[1])*ex];dot(id,iw/70,'#fff',false);line(id,e2,col,2.5);dot(e2,iw/110,col,true)})});
+  [168,1,13].forEach(i=>{const q=P(i);dot(q,iw/120,cc(Math.abs(tq(q)[1])/fw*100),true)});
+  const g={};rows.forEach(([k,e])=>(g[k]=g[k]||[]).push(e));const av=Object.entries(g).map(([k,v])=>[k,v.reduce((s,q)=>s+q,0)/v.length]).sort((p,q)=>q[1]-p[1]);
+  txt('○ ideal   ● real',[iw*.04,ih*.06],'#fff');
+  $('ant').textContent='Hollow circle = where the point would be on a perfectly symmetric face, dot = where it really is. Green is even, amber is slight, red is the biggest gap. Most uneven: '+av[0][0]+' ('+av[0][1].toFixed(1)+'% of face width). Most even: '+av[av.length-1][0]+' ('+av[av.length-1][1].toFixed(1)+'%).'+(ex>1?' Differences shown ×3.':'')+warn}
+ else{
+  const ys=[10,168,2,152].map(i=>tq(P(i))[0]),h3=ys[3]-ys[0],lab=['Upper','Middle','Lower'];
+  [234,33,133,362,263,454].forEach(i=>{const d=tq(P(i))[1];line(at(ys[0]-L*.05,d),at(ys[3]+L*.05,d),'rgba(255,255,255,.75)',1.5,[4,5])});
+  [1,2].forEach(k=>{const t=ys[0]+h3*k/3;line(at(t,-fw*.62),at(t,fw*.62),'#fff',2.5,[8,6])});
+  ys.forEach(t=>line(at(t,-fw*.62),at(t,fw*.62),acc2,3));
+  for(let i=0;i<3;i++)txt(lab[i]+' '+Math.round((ys[i+1]-ys[i])/h3*100)+'%',at((ys[i]+ys[i+1])/2,-fw*.6),'#fff');
+  line(P(33),P(263),acc,3);line(P(61),P(291),acc,3);
+  const ew=(Math.hypot(P(33)[0]-P(133)[0],P(33)[1]-P(133)[1])+Math.hypot(P(263)[0]-P(362)[0],P(263)[1]-P(362)[1]))/2,gap=Math.hypot(P(133)[0]-P(362)[0],P(133)[1]-P(362)[1]);
+  $('ant').textContent='Solid pink lines are your real hairline, brows, nose base and chin. Dashed white lines are where equal thirds would fall. Vertical dashes show the facial fifths. The gap between your eyes is '+(gap/ew).toFixed(2)+'× one eye width (about 1.0 is the classic ideal).'+warn}
+}
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
