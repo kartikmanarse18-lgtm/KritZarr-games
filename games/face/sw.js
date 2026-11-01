@@ -1,5 +1,5 @@
-const C='fvp-v2',CDN=['cdn.jsdelivr.net','storage.googleapis.com'];
-self.addEventListener('install',()=>self.skipWaiting());
+const C='fvp-v3',CDN=['cdn.jsdelivr.net','storage.googleapis.com'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(['./','index.html','manifest.json','icon.svg'])).catch(()=>{}).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>clients.claim())));
 self.addEventListener('fetch',e=>{
  const u=new URL(e.request.url),same=u.origin===location.origin;

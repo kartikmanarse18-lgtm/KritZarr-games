@@ -45,6 +45,8 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 .hl{font-size:.85rem;margin:4px 0;display:flex;justify-content:space-between;color:var(--mute)}
 .gd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 12px}
 .gd div{font-size:.7rem;color:var(--mute);text-align:center;line-height:1.25}.gd svg{width:100%;height:auto;display:block;margin-bottom:3px}
+select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin-left:auto}
+#intro[hidden]~#pgc{display:none}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -56,17 +58,22 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <div id="intro" class="card">
 <h3>Before we start</h3>
 <p class="sm">Your camera is analyzed on this device only. Nothing is uploaded. Photos are never saved. Only your scores are kept locally, and you can delete them anytime.</p>
-<label class="chk"><input type="checkbox" id="ok1"><span>I’m 13 or older and agree to use my camera or photo for this scan.</span></label>
+<label class="chk" style="align-items:center"><span>Language</span><select id="lg" aria-label="Language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="es">Español</option><option value="fr">Français</option></select></label>
+<p class="sm">By continuing you confirm you’re 13 or older. Your browser will ask for camera access.</p>
 <label class="chk"><input type="checkbox" id="vo"><span>Read the prompts aloud</span></label>
-<details><summary>Advanced</summary><label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label></details>
+<details><summary>Advanced</summary><label class="chk"><input type="checkbox" id="tm"><span>Tester mode (adds a numbers-only test log)</span></label>
+<label class="chk"><input type="checkbox" id="at18"><span>I’m 18 or older and want an optional attractiveness estimate (shown as a range)</span></label></details>
 <details><summary>Photo tips for uploads (see samples)</summary>
 <div class="gd" id="gd"></div>
 <p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p></details>
-<button class="btn" id="go" disabled>Start 360° scan</button>
+<button class="btn" id="go">Start 360° scan</button>
 <button class="btn ghost" id="up">📷 Upload a photo instead</button><input type="file" id="fi" accept="image/*" hidden>
+<button class="btn ghost" id="inst" hidden>Install app</button>
 <p class="note" id="st" role="status" aria-live="polite">Good light and a steady hand help.</p>
 </div>
 
+<div class="card" id="pgc"><b>Your progress</b><p class="sm" id="pst"></p><canvas id="sp" width="320" height="90" style="width:100%;height:auto" role="img" aria-label="Trend of your scores over time"></canvas><p class="sm" id="lgd"></p><div id="bdg" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0"></div>
+<details><summary>Your data (stored only on this device)</summary><button class="btn ghost" id="ex">Export my data (file)</button><button class="btn ghost" id="im">Import data</button><input type="file" id="imf" accept="application/json" hidden><button class="btn ghost" id="da">Delete ALL my data</button></details></div>
 <div id="scan" class="card" hidden>
 <div class="cam" id="cam"><video id="v" playsinline muted aria-label="Camera preview"></video><canvas id="o" aria-hidden="true"></canvas><div class="ring" id="ring"></div></div>
 <div class="dots" id="dots" aria-hidden="true"></div>
@@ -96,11 +103,14 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <details><summary>What’s this?</summary>Scores the photo, not your face: lighting, sharpness, framing and expression. Better light and a steady hand raise it.</details></div>
 <div class="card"><b>Vibe traits</b> <span class="sm">(fun readings)</span><div id="vt" style="margin-top:6px"></div>
 <p class="sm">Based on how your face moved during the scan. Traits describe expression, not worth.</p></div>
+<div class="card"><b>Score breakdown</b> <span class="sm">(fun mix)</span><div class="arch" style="margin:8px 0"><div style="font-size:42px;font-weight:800" id="ovv"></div><p id="ovt"></p></div><div id="sbk"></div><p class="sm">Overall mixes symmetry, thirds balance, photo quality, expression and smile. It is a toy, not a verdict.</p></div>
+<div class="card" id="atc" hidden><b>Attractiveness estimate (18+)</b><div class="arch" style="margin:8px 0"><div style="font-size:34px;font-weight:800" id="atv"></div></div><p class="sm" id="atn"></p></div>
 <div class="card"><b>Your face signature</b>
 <div class="chips" style="margin-top:10px">
 <div class="chip"><b id="c1"></b><span>Width to height</span></div>
 <div class="chip"><b id="c2"></b><span>Eye spacing</span></div>
-<div class="chip"><b id="c3"></b><span>Smile width</span></div></div></div>
+<div class="chip"><b id="c3"></b><span>Smile width</span></div>
+<div class="chip"><b id="c4"></b><span>Face shape</span></div><div class="chip"><b id="c5"></b><span>Thirds balance</span></div><div class="chip"><b id="c6"></b><span>Jaw vs cheeks</span></div></div></div>
 <div class="card"><b>Your captures (not saved)</b><div class="strip" id="strip" style="margin-top:10px"></div></div>
 <div class="card" id="vs" hidden><b>You two</b><div id="vsb" style="margin-top:8px"></div></div>
 <div class="card"><b>Play and compare</b>
@@ -111,7 +121,8 @@ details{font-size:.85rem;color:var(--mute);margin-top:4px}summary{cursor:pointer
 <div class="card" id="tl" hidden><b>Tester log</b><p class="sm">Copy this and send it to the builder to help tune the scores. Numbers only, no photos.</p><button class="btn" id="cp">Copy test log</button></div>
 <div class="card"><b>Share</b>
 <label class="chk"><input type="checkbox" id="inc"><span>Include my photo on the card</span></label>
-<button class="btn" id="shr">Share result card</button></div>
+<button class="btn" id="shr">Share result card</button>
+<button class="btn ghost" id="cr">Copy my results</button></div>
 <div class="card"><b>Past scans on this device</b><div id="hist" style="margin-top:8px"></div>
 <button class="btn ghost" id="clr">Delete my saved scores</button></div>
 <button class="btn ghost" id="again">Scan again</button>
@@ -127,6 +138,7 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let lm,stream,S={},step=0,hold=0,caps=[],last=-1,live=false,raf=0,face='user',nf=0,fc=0,voice=false,res=null,mode='scan',G={},cmpBase=null,TL={},T={frames:0,nof:0,q:{},steps:[]};
 const qc=document.createElement('canvas');qc.width=96;qc.height=72;const qx=qc.getContext('2d',{willReadFrequently:true});
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const CAL={lum:130,shLo:1.5,shSpan:6,fw:.42,wr:.85};try{Object.assign(CAL,JSON.parse(localStorage.getItem('fvcal')||'{}'))}catch(e){}
 const STEPS=[
  {t:'Look straight at the camera',h:'Relax your face and hold still',ms:700,ok:p=>Math.abs(p.yaw)<.05,done:p=>{S.p0=p.pitch}},
  {t:'Turn your head slowly to one side',h:'Keep your eyes on the screen',ms:450,ok:p=>Math.abs(p.yaw)>.16&&Math.abs(p.dp)<.1,done:p=>{S.ys=Math.sign(p.yaw)}},
@@ -150,8 +162,8 @@ function photo(){
  const out=caps.map((c,i)=>{if(!c)return null;
   const w=(c.L[454][0]-c.L[234][0])/Math.max(.6,1-Math.abs(c.yaw||0)*1.2),cx=c.L[1][0],bs=c.bs;
   const sm=((bs.mouthSmileLeft||0)+(bs.mouthSmileRight||0))/2,eo=1-((bs.eyeBlinkLeft||0)+(bs.eyeBlinkRight||0))/2;
-  const light=clamp(100-Math.abs(c.lum-130)*1.1-c.gl*800,0,100),sharp=clamp((c.sharp-1.5)/6*100,0,100),
-   frame=clamp(100-Math.abs(w-.42)*250-Math.abs(cx-.5)*150,0,100),expr=clamp(55*eo+45*Math.min(1,sm*2.5),0,100);
+  const light=clamp(100-Math.abs(c.lum-CAL.lum)*1.1-c.gl*800,0,100),sharp=clamp((c.sharp-CAL.shLo)/CAL.shSpan*100,0,100),
+   frame=clamp(100-Math.abs(w-CAL.fw)*250-Math.abs(cx-.5)*150,0,100),expr=clamp(55*eo+45*Math.min(1,sm*2.5),0,100);
   return{i,tot:Math.round(.3*light+.25*sharp+.2*frame+.25*expr),parts:{light,sharp,frame,expr}}}).filter(Boolean);
  const b=out.reduce((a,c)=>c.tot>a.tot?c:a),TP={light:'Face a window or soft lamp, and avoid light from behind.',sharp:'Hold the phone steady and wipe the lens for a crisper photo.',frame:'Fill about half the frame and keep your face centered.',expr:'Keep your eyes open and try a relaxed, natural smile.'};
  let wk='light';for(const k in b.parts)if(b.parts[k]<b.parts[wk])wk=k;
@@ -241,14 +253,13 @@ function showVs(a,b){
  const m=document.createElement('p');m.style.cssText='text-align:center;font-weight:700';
  m.textContent='Vibe similarity '+sim+'%: '+(sim>=80?'Mirror twins 🪞':sim>=55?'Great match 🤝':'Opposites attract 🧲');el.appendChild(m);
 }
-function say(t){if(!voice||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}catch(e){}}
+function say(t){if(!voice||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();{const u=new SpeechSynthesisUtterance(lang!=='en'&&DICT[lang][t]||t);u.lang=LC[lang];speechSynthesis.speak(u)}}catch(e){}}
 function pose(L){const w=L[454].x-L[234].x,h=L[152].y-L[10].y;return{yaw:(L[1].x-(L[234].x+L[454].x)/2)/w,pitch:(L[1].y-(L[10].y+L[152].y)/2)/h}}
 function ui(){
  const d=$('dots');d.textContent='';STEPS.forEach((_,i)=>{const e=document.createElement('i');if(i<step)e.className='on';d.appendChild(e)});
  $('cnt').textContent='Step '+(step+1)+' of '+STEPS.length;$('stp').textContent=STEPS[step].t;$('hint').textContent=STEPS[step].h;
  $('skip').hidden=step===0;$('hb').style.width='0';$('hp').textContent='';S.ts=performance.now();say(STEPS[step].t);
 }
-$('ok1').onchange=e=>{$('go').disabled=!e.target.checked};
 async function startCam(){await rmode('VIDEO');
  if(stream)stream.getTracks().forEach(t=>t.stop());
  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:face,width:{ideal:640},height:{ideal:480}},audio:false});
@@ -271,7 +282,7 @@ $('go').onclick=async()=>{
  S={};step=0;hold=0;caps=[];nf=0;live=true;mode='scan';$('upn').textContent='';Object.assign(T,{frames:0,nof:0,q:{},steps:[]});$('intro').hidden=true;$('scan').hidden=false;ui();loop();
 };
 $('flip').onclick=async()=>{face=face==='user'?'environment':'user';try{await startCam()}catch(e){face=face==='user'?'environment':'user';$('hint').textContent='Couldn’t switch cameras.'}};
-$('stop').onclick=()=>{mode='scan';stopCam();$('scan').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Scan stopped.'};
+$('stop').onclick=()=>{mode='scan';stopCam();$('scan').hidden=true;$('intro').hidden=false;$('go').disabled=false;$('st').textContent='Scan stopped.'};
 $('skip').onclick=()=>{const n=(step===1||step===3)?2:1;for(let i=0;i<n;i++)caps.push(null);step+=n;hold=0;step>=STEPS.length?finish():ui()};
 function loop(){if(!live)return;if(V.readyState>=2&&V.currentTime!==last){last=V.currentTime;frame(lm.detectForVideo(V,performance.now()))}raf=requestAnimationFrame(loop)}
 function quality(L){
@@ -312,12 +323,12 @@ function capture(L,r,p){
  $('ring').style.borderColor='transparent';hold=0;step++;step>=STEPS.length?finish():ui();
 }
 const hist=()=>{try{return JSON.parse(localStorage.getItem('fvp')||'[]')}catch(e){return[]}};
-function renderHist(){
+function renderHist(){renderProg();
  const h=hist(),el=$('hist');el.textContent='';
  if(!h.length){el.textContent='Nothing saved yet.';return}
  h.slice().reverse().slice(0,6).forEach(s=>{const d=document.createElement('div');d.className='hl';
   const a=document.createElement('span'),b=document.createElement('span');
-  a.textContent=new Date(s.t).toLocaleDateString()+' · '+s.a;b.textContent='Photo '+(s.ps||'–')+' · Sym '+s.sym;d.appendChild(a);d.appendChild(b);el.appendChild(d)});
+  a.textContent=new Date(s.t).toLocaleDateString()+' · '+s.a;b.textContent='Overall '+(s.ov||'–')+' · Sym '+s.sym;d.appendChild(a);d.appendChild(b);el.appendChild(d)});
 }
 $('clr').onclick=()=>{try{localStorage.removeItem('fvp')}catch(e){}renderHist();$('cmp').textContent=''};
 function finish(){
@@ -354,6 +365,14 @@ function finish(){
  const PH=photo();
  $('aem').textContent=A[0];$('ati').textContent=A[1];$('ade').textContent=A[2];
  res={sym,smile,range,arch:A[1],em:A[0],img:F.img,ps:PH.best,warm,energy,play};
+ const T3=[D(P(10),P(168)),D(P(168),P(2)),D(P(2),P(152))],m3=(T3[0]+T3[1]+T3[2])/3,prop=Math.round(clamp(100-T3.reduce((s,v)=>s+Math.abs(v-m3),0)/m3/3*220,40,99)),
+  jw=D(P(172),P(397))/D(P(234),P(454)),fh=D(P(54),P(284))/D(P(234),P(454)),
+  shape=wr<.78?'Long':jw>.82&&fh>.8?(wr>.92?'Round':'Square'):fh>jw+.1?'Heart':'Oval',
+  ov=Math.round(clamp(.3*sym+.25*prop+.2*PH.best+.15*range+.1*smile,0,100));
+ Object.assign(res,{prop,shape,ov});
+ $('c4').textContent=shape;$('c5').textContent=prop+'%';$('c6').textContent=jw<.74?'Soft':jw<.84?'Balanced':'Strong';
+ $('ovv').textContent=ov+'/100';$('ovt').textContent=ov>=80?'Standout scan':ov>=60?'Solid scan':'Room to improve the photo';
+ bars('sbk',[['Symmetry',sym],['Proportions',prop],['Photo quality',PH.best],['Expression',range],['Smile',smile]]);
  bars('pparts',[['Lighting',Math.round(PH.parts.light)],['Sharpness',Math.round(PH.parts.sharp)],['Framing',Math.round(PH.parts.frame)],['Expression',Math.round(PH.parts.expr)]]);
  bars('vt',[['Warmth',warm],['Energy',energy],['Playfulness',play]]);
  $('pv').textContent=PH.best+'/100';
@@ -362,14 +381,19 @@ function finish(){
  const c0=caps[0],flags=(Math.abs(c0.yaw||0)>.1?1:0)+((c0.lum<55||c0.lum>205)?1:0)+((c0.L[454][0]-c0.L[234][0])<.2?1:0)+((T.frames&&T.nof/T.frames>.3)?1:0);
  $('rd').textContent='Symmetry looks '+(sym>=90?'very even':sym>=78?'typical':'a bit uneven, often just head angle or lighting')+'. Smile reads '+(smile>=60?'big':smile>=30?'warm':'calm')+'. Reading confidence: '+['High','Medium','Low','Low','Low'][flags]+'.';
  $('tl').hidden=!$('tm').checked;$('cp').textContent='Copy test log';
- TL={ua:navigator.userAgent,when:new Date().toISOString(),frames:T.frames,noFacePct:Math.round(100*T.nof/Math.max(1,T.frames)),blocked:T.q,stepMs:T.steps,
+ TL={ov:res.ov,prop:res.prop,shape:res.shape,cal:CAL,ua:navigator.userAgent,when:new Date().toISOString(),frames:T.frames,noFacePct:Math.round(100*T.nof/Math.max(1,T.frames)),blocked:T.q,stepMs:T.steps,
   lum:Math.round(S.lum||0),glare:+(S.gl||0).toFixed(3),faceWidthRatio:+wr.toFixed(2),skippedAngles:caps.filter(c=>!c).length,sym,smile,range,
   asymByGroup:Object.fromEntries(Object.entries(by).map(([k,v])=>[k,+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(3)]))};
+ const on18=$('at18').checked;$('atc').hidden=!on18;
+ if(on18){const pr=(v,m,s)=>clamp(1-Math.abs(v-m)/s,0,1),hm=.55*(sym-40)/59+.15*pr(wr,CAL.wr,.3)+.1*pr(eg,.4,.12)+.1*pr(mw,.4,.12)+.1*Math.min(1,smile/60),
+  ct=Math.round(25+hm*55),sp=8+flags*4,lo=clamp(ct-sp,0,100),hi=clamp(ct+sp,0,100);TL.atc=[lo,hi];
+  $('atv').textContent=lo+' – '+hi+' / 100';
+  $('atn').textContent='A rough guess from facial geometry and expression in this one photo. It can’t measure real attractiveness, which depends on far more, so treat it as a toy. The range widens when the reading is less reliable. Never added to saved history or share cards.'}
  const fr=cmpBase;cmpBase=null;$('vs').hidden=!fr;if(fr)showVs(fr,res);
  const h=hist(),prev=h[h.length-1],sg=n=>(n>0?'+':'')+n;
  $('cmp').textContent=(prev&&!fr)?'Since your last scan: symmetry '+sg(sym-prev.sym)+', smile '+sg(smile-prev.smile)+', expression '+sg(range-prev.range)+'.':'';
- $('stk').textContent=fr?'':'🔥 '+bump()+'-day streak';
- if(!fr){h.push({t:Date.now(),sym,smile,range,a:A[1],ps:PH.best});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-10)))}catch(e){}}
+ $('stk').textContent=fr?'':'🔥 '+(()=>{const n=bump();try{localStorage.setItem('fvmax',Math.max(+localStorage.getItem('fvmax')||0,n))}catch(e){}return n})()+'-day streak';
+ if(!fr){h.push({t:Date.now(),sym,smile,range,a:A[1],ps:PH.best,ov,sh:shape});try{localStorage.setItem('fvp',JSON.stringify(h.slice(-60)))}catch(e){}}
  renderHist();
  const s=$('strip');s.textContent='';
  caps.forEach((c,i)=>{if(!c)return;const d=document.createElement('div'),im=new Image();const nm=caps.length===1?'Your photo':NAMES[i];im.alt=nm;im.src=c.img;d.appendChild(im);d.appendChild(document.createTextNode(nm));s.appendChild(d)});
@@ -405,7 +429,7 @@ $('shr').onclick=async()=>{
  else{x.font='200px system-ui,sans-serif';x.fillText(res.em,540,y+120);y=520}
  x.font='700 84px system-ui,sans-serif';x.fillText(res.arch,540,y);
  x.font='500 48px system-ui,sans-serif';
- [['Photo score',res.ps],['Warmth',res.warm],['Energy',res.energy],['Playfulness',res.play]].forEach((r,i)=>{const yy=y+110+i*96;
+ [['Overall',res.ov],['Photo score',res.ps],['Warmth',res.warm],['Energy',res.energy],['Playfulness',res.play]].forEach((r,i)=>{const yy=y+110+i*96;
   x.textAlign='left';x.fillText(r[0],140,yy);x.textAlign='right';x.fillText(String(r[1]),940,yy);
   x.fillStyle='rgba(255,255,255,.3)';x.fillRect(140,yy+16,800,18);x.fillStyle='#fff';x.fillRect(140,yy+16,8*r[1],18)});
  x.textAlign='center';
@@ -414,14 +438,14 @@ $('shr').onclick=async()=>{
   if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'My FaceVibe'});return}catch(e){if(e.name==='AbortError')return}}
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='facevibe.png';a.click()},'image/png');
 };
-$('again').onclick=()=>{cmpBase=null;cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=!$('ok1').checked;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
+$('again').onclick=()=>{cmpBase=null;cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=false;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
 $('gm').onclick=async()=>{
  try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
  mode='game';G={i:0,t0:performance.now(),peak:0,s:[]};$('res').hidden=true;$('scan').hidden=false;$('skip').hidden=true;
  live=true;gui();loop();window.scrollTo(0,0);
 };
-$('fr').onclick=()=>{cmpBase=res;$('res').hidden=true;$('intro').hidden=false;$('ok1').checked=false;$('go').disabled=true;
- $('st').textContent='Hand the phone to your friend. They need to tick the consent box too. Their scan isn’t saved.';window.scrollTo(0,0)};
+$('fr').onclick=()=>{cmpBase=res;$('res').hidden=true;$('intro').hidden=false;$('go').disabled=false;
+ $('st').textContent='Hand the phone to your friend. Their scan isn’t saved.';window.scrollTo(0,0)};
 $('cp').onclick=async()=>{const t=JSON.stringify(TL,null,1);try{await navigator.clipboard.writeText(t);$('cp').textContent='Copied ✓'}catch(e){prompt('Copy this log:',t)}};
 async function startGame(dl){
  try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
@@ -431,8 +455,42 @@ async function startGame(dl){
 $('gm').onclick=()=>startGame(false);$('dm').onclick=()=>startGame(true);
 (function(){const g=$('gd');[['good','Best: front-facing, even light'],['turn','Turned or tilted'],['dark','Too dark or glare'],['cover','Eyes covered'],['far','Face too small']].forEach(([k,t])=>{
  const d=document.createElement('div');d.innerHTML=sample(k);d.appendChild(document.createTextNode(t));g.appendChild(d)})})();
-$('up').onclick=()=>{if(!$('ok1').checked){$('st').textContent='Please tick the consent box first.';return}$('fi').click()};
+$('up').onclick=()=>{$('fi').click()};
 $('fi').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)fromFile(f)};
+const LR=[["A guided 5-angle face scan for fun. Playful geometry, not a judgment of how you look.", "मज़े के लिए 5 कोणों वाला गाइडेड फ़ेस स्कैन। खेल-खेल में ज्यामिति, आपके रूप का फ़ैसला नहीं।", "Un escaneo facial guiado de 5 ángulos, solo por diversión. Geometría lúdica, no un juicio sobre tu aspecto.", "Un scan du visage guidé en 5 angles, pour s’amuser. De la géométrie ludique, pas un jugement sur votre apparence."], ["Before we start", "शुरू करने से पहले", "Antes de empezar", "Avant de commencer"], ["Your camera is analyzed on this device only. Nothing is uploaded. Photos are never saved. Only your scores are kept locally, and you can delete them anytime.", "आपका कैमरा केवल इसी डिवाइस पर विश्लेषित होता है। कुछ भी अपलोड नहीं होता। फ़ोटो कभी सहेजी नहीं जातीं। केवल आपके स्कोर स्थानीय रूप से रखे जाते हैं, और आप उन्हें कभी भी हटा सकते हैं।", "Tu cámara se analiza solo en este dispositivo. No se sube nada. Las fotos nunca se guardan. Solo tus puntuaciones se conservan localmente y puedes borrarlas cuando quieras.", "Votre caméra est analysée uniquement sur cet appareil. Rien n’est envoyé. Les photos ne sont jamais enregistrées. Seuls vos scores sont conservés localement, et vous pouvez les supprimer à tout moment."], ["Language", "भाषा", "Idioma", "Langue"], ["I’m 13 or older and agree to use my camera or photo for this scan.", "मेरी उम्र 13 या उससे अधिक है और मैं इस स्कैन के लिए अपने कैमरे या फ़ोटो के उपयोग की सहमति देता/देती हूँ।", "Tengo 13 años o más y acepto usar mi cámara o foto para este escaneo.", "J’ai 13 ans ou plus et j’accepte d’utiliser ma caméra ou ma photo pour ce scan."], ["Read the prompts aloud", "निर्देश बोलकर सुनाएँ", "Leer las indicaciones en voz alta", "Lire les consignes à voix haute"], ["Advanced", "उन्नत", "Avanzado", "Avancé"], ["Start 360° scan", "360° स्कैन शुरू करें", "Iniciar escaneo 360°", "Lancer le scan 360°"], ["📷 Upload a photo instead", "📷 इसके बजाय फ़ोटो अपलोड करें", "📷 Subir una foto", "📷 Importer une photo"], ["Good light and a steady hand help.", "अच्छी रोशनी और स्थिर हाथ मदद करते हैं।", "Buena luz y pulso firme ayudan.", "Une bonne lumière et une main stable aident."], ["Flip camera", "कैमरा पलटें", "Cambiar cámara", "Changer de caméra"], ["Skip angle", "कोण छोड़ें", "Omitir ángulo", "Passer l’angle"], ["Stop", "रोकें", "Detener", "Arrêter"], ["Look straight at the camera", "सीधे कैमरे की ओर देखें", "Mira directo a la cámara", "Regardez droit la caméra"], ["Relax your face and hold still", "चेहरा ढीला रखें और स्थिर रहें", "Relaja la cara y quédate quieto", "Détendez le visage et ne bougez pas"], ["Turn your head slowly to one side", "सिर को धीरे से एक तरफ़ घुमाएँ", "Gira la cabeza despacio hacia un lado", "Tournez lentement la tête d’un côté"], ["Keep your eyes on the screen", "नज़रें स्क्रीन पर रखें", "Mantén la vista en la pantalla", "Gardez les yeux sur l’écran"], ["Now turn to the other side", "अब दूसरी तरफ़ घुमाएँ", "Ahora gira hacia el otro lado", "Maintenant, tournez de l’autre côté"], ["Slow and steady", "धीरे और स्थिर", "Despacio y con calma", "Doucement et régulièrement"], ["Tilt your chin up or down", "ठुड्डी ऊपर या नीचे झुकाएँ", "Inclina la barbilla hacia arriba o abajo", "Inclinez le menton vers le haut ou le bas"], ["A small tilt is enough", "थोड़ा झुकाना काफ़ी है", "Basta una pequeña inclinación", "Une petite inclinaison suffit"], ["Now tilt the opposite way", "अब उल्टी दिशा में झुकाएँ", "Ahora inclina al lado contrario", "Maintenant, inclinez dans l’autre sens"], ["Almost done", "लगभग हो गया", "Casi listo", "Presque fini"], ["Too dark. Face a window or lamp.", "बहुत अंधेरा है। खिड़की या लैंप की ओर मुँह करें।", "Muy oscuro. Mira hacia una ventana o lámpara.", "Trop sombre. Faites face à une fenêtre ou une lampe."], ["Too bright. Reduce glare or backlight.", "बहुत तेज़ रोशनी है। चमक या पीछे की रोशनी कम करें।", "Demasiado brillante. Reduce el reflejo o la luz trasera.", "Trop lumineux. Réduisez les reflets ou le contre-jour."], ["Move a little closer.", "थोड़ा पास आएँ।", "Acércate un poco.", "Rapprochez-vous un peu."], ["Move back a little.", "थोड़ा पीछे हटें।", "Aléjate un poco.", "Reculez un peu."], ["Center your face in the frame.", "चेहरा फ़्रेम के बीच में रखें।", "Centra tu cara en el encuadre.", "Centrez votre visage dans le cadre."], ["I can’t see a face. Move into the light.", "चेहरा नहीं दिख रहा। रोशनी में आएँ।", "No veo ninguna cara. Ponte bajo la luz.", "Je ne vois aucun visage. Placez-vous dans la lumière."], ["Symmetry (fun estimate)", "समरूपता (मज़ेदार अनुमान)", "Simetría (estimación divertida)", "Symétrie (estimation ludique)"], ["Peak smile", "सबसे बड़ी मुस्कान", "Mejor sonrisa", "Sourire maximal"], ["What’s this?", "यह क्या है?", "¿Qué es esto?", "C’est quoi ?"], ["Photo score", "फ़ोटो स्कोर", "Puntuación de la foto", "Score de la photo"], ["Vibe traits", "वाइब गुण", "Rasgos de vibra", "Traits de vibe"], ["Attractiveness estimate (18+)", "आकर्षण अनुमान (18+)", "Estimación de atractivo (18+)", "Estimation d’attrait (18+)"], ["Your face signature", "आपके चेहरे की पहचान", "La firma de tu cara", "La signature de votre visage"], ["Width to height", "चौड़ाई/ऊँचाई", "Ancho / alto", "Largeur / hauteur"], ["Eye spacing", "आँखों की दूरी", "Separación de ojos", "Écart des yeux"], ["Smile width", "मुस्कान की चौड़ाई", "Ancho de sonrisa", "Largeur du sourire"], ["Warmth", "अपनापन", "Calidez", "Chaleur"], ["Energy", "ऊर्जा", "Energía", "Énergie"], ["Playfulness", "चंचलता", "Jovialidad", "Espièglerie"], ["Lighting", "रोशनी", "Iluminación", "Éclairage"], ["Sharpness", "स्पष्टता", "Nitidez", "Netteté"], ["Framing", "फ़्रेमिंग", "Encuadre", "Cadrage"], ["Expression", "भाव", "Expresión", "Expression"], ["Play and compare", "खेलें और तुलना करें", "Juega y compara", "Jouez et comparez"], ["Expression challenge 🎭", "भाव चुनौती 🎭", "Reto de expresiones 🎭", "Défi d’expressions 🎭"], ["Daily challenge ⭐", "दैनिक चुनौती ⭐", "Reto diario ⭐", "Défi du jour ⭐"], ["Compare with a friend", "दोस्त से तुलना करें", "Comparar con un amigo", "Comparer avec un ami"], ["Share", "साझा करें", "Compartir", "Partager"], ["Share result card", "नतीजा कार्ड साझा करें", "Compartir tarjeta de resultado", "Partager la carte résultat"], ["Past scans on this device", "इस डिवाइस पर पिछले स्कैन", "Escaneos anteriores en este dispositivo", "Scans précédents sur cet appareil"], ["Delete my saved scores", "मेरे सहेजे स्कोर हटाएँ", "Borrar mis puntuaciones guardadas", "Supprimer mes scores enregistrés"], ["Scan again", "फिर से स्कैन करें", "Escanear de nuevo", "Scanner à nouveau"], ["Nothing saved yet.", "अभी तक कुछ सहेजा नहीं गया।", "Aún no hay nada guardado.", "Rien d’enregistré pour l’instant."]],LC={en:'en-US',hi:'hi-IN',es:'es-ES',fr:'fr-FR'},LI={hi:1,es:2,fr:3},DICT={hi:{},es:{},fr:{}};
+let lang='en';try{const s=localStorage.getItem('fvl'),b=(navigator.language||'en').slice(0,2);lang=s||(LI[b]?b:'en')}catch(e){}
+LR.push(...[["By continuing you confirm you’re 13 or older. Your browser will ask for camera access.", "जारी रखकर आप पुष्टि करते हैं कि आपकी उम्र 13 या उससे अधिक है। आपका ब्राउज़र कैमरा अनुमति माँगेगा।", "Al continuar confirmas que tienes 13 años o más. Tu navegador pedirá acceso a la cámara.", "En continuant, vous confirmez avoir 13 ans ou plus. Votre navigateur demandera l’accès à la caméra."], ["Your progress", "आपकी प्रगति", "Tu progreso", "Votre progression"], ["Score breakdown", "स्कोर विवरण", "Desglose de puntuación", "Détail du score"], ["(fun mix)", "(मज़ेदार मिश्रण)", "(mezcla divertida)", "(mélange ludique)"], ["Face shape", "चेहरे का आकार", "Forma de la cara", "Forme du visage"], ["Thirds balance", "तिहाई संतुलन", "Equilibrio de tercios", "Équilibre des tiers"], ["Jaw vs cheeks", "जबड़ा बनाम गाल", "Mandíbula vs mejillas", "Mâchoire vs joues"], ["Copy my results", "मेरे नतीजे कॉपी करें", "Copiar mis resultados", "Copier mes résultats"], ["Install app", "ऐप इंस्टॉल करें", "Instalar app", "Installer l’appli"], ["Your data (stored only on this device)", "आपका डेटा (केवल इसी डिवाइस पर)", "Tus datos (solo en este dispositivo)", "Vos données (uniquement sur cet appareil)"], ["Export my data (file)", "मेरा डेटा निर्यात करें (फ़ाइल)", "Exportar mis datos (archivo)", "Exporter mes données (fichier)"], ["Import data", "डेटा आयात करें", "Importar datos", "Importer des données"], ["Delete ALL my data", "मेरा सारा डेटा हटाएँ", "Borrar TODOS mis datos", "Supprimer TOUTES mes données"], ["Scan to start tracking progress. Everything stays on this device.", "प्रगति देखने के लिए स्कैन करें। सब कुछ इसी डिवाइस पर रहता है।", "Escanea para empezar a seguir tu progreso. Todo queda en este dispositivo.", "Scannez pour suivre votre progression. Tout reste sur cet appareil."], ["Standout scan", "शानदार स्कैन", "Escaneo destacado", "Scan remarquable"], ["Solid scan", "अच्छा स्कैन", "Escaneo sólido", "Scan solide"], ["Room to improve the photo", "फ़ोटो बेहतर हो सकती है", "La foto se puede mejorar", "La photo peut être améliorée"], ["Soft", "कोमल", "Suave", "Doux"], ["Balanced", "संतुलित", "Equilibrado", "Équilibré"], ["Strong", "मज़बूत", "Marcado", "Marqué"], ["Oval", "अंडाकार", "Ovalada", "Ovale"], ["Round", "गोल", "Redonda", "Ronde"], ["Square", "चौकोर", "Cuadrada", "Carré"], ["Heart", "दिल जैसा", "Corazón", "Cœur"], ["Long", "लंबा", "Alargada", "Allongé"], ["Symmetry", "समरूपता", "Simetría", "Symétrie"], ["Smile", "मुस्कान", "Sonrisa", "Sourire"], ["Overall", "कुल मिलाकर", "General", "Global"], ["Proportions", "अनुपात", "Proporciones", "Proportions"], ["Photo quality", "फ़ोटो गुणवत्ता", "Calidad de la foto", "Qualité de la photo"], ["Attractiveness estimate (18+)", "आकर्षण अनुमान (18+)", "Estimación de atractivo (18+)", "Estimation d’attrait (18+)"], ["🌱 First scan", "🌱 पहला स्कैन", "🌱 Primer escaneo", "🌱 Premier scan"], ["🎯 5 scans", "🎯 5 स्कैन", "🎯 5 escaneos", "🎯 5 scans"], ["🏅 10 scans", "🏅 10 स्कैन", "🏅 10 escaneos", "🏅 10 scans"], ["🔥 3-day streak", "🔥 3 दिन लगातार", "🔥 Racha de 3 días", "🔥 Série de 3 jours"], ["🔥 7-day streak", "🔥 7 दिन लगातार", "🔥 Racha de 7 días", "🔥 Série de 7 jours"], ["⚖️ Symmetry 90+", "⚖️ समरूपता 90+", "⚖️ Simetría 90+", "⚖️ Symétrie 90+"], ["😁 Smile 80+", "😁 मुस्कान 80+", "😁 Sonrisa 80+", "😁 Sourire 80+"], ["📸 Photo 85+", "📸 फ़ोटो 85+", "📸 Foto 85+", "📸 Photo 85+"], ["⭐ Overall 80+", "⭐ कुल 80+", "⭐ General 80+", "⭐ Global 80+"], ["🎭 Challenge 300+", "🎭 चुनौती 300+", "🎭 Reto 300+", "🎭 Défi 300+"], ["I’m 18 or older and want an optional attractiveness estimate (shown as a range)", "मेरी उम्र 18 या अधिक है और मुझे वैकल्पिक आकर्षण अनुमान (दायरे के रूप में) चाहिए", "Tengo 18 años o más y quiero una estimación opcional de atractivo (como rango)", "J’ai 18 ans ou plus et je veux une estimation d’attrait facultative (sous forme de fourchette)"], ["Include my photo on the card", "कार्ड पर मेरी फ़ोटो शामिल करें", "Incluir mi foto en la tarjeta", "Inclure ma photo sur la carte"], ["Tester mode (adds a numbers-only test log)", "टेस्टर मोड (केवल संख्याओं वाला टेस्ट लॉग जोड़ता है)", "Modo de prueba (añade un registro solo con números)", "Mode testeur (ajoute un journal de test avec uniquement des chiffres)"], ["Photo tips for uploads (see samples)", "अपलोड के लिए फ़ोटो सुझाव (नमूने देखें)", "Consejos para subir fotos (ver ejemplos)", "Conseils pour les photos importées (voir exemples)"]]);
+LR.forEach(r=>{for(const k in LI)DICT[k][r[0]]=r[LI[k]]});
+const orig=new WeakMap(),mine=new WeakMap();
+function tn(n){const v=n.nodeValue;if(mine.get(n)===v)return;const t=v.trim();if(!t)return;orig.set(n,v);const o=lang!=='en'&&DICT[lang][t];if(o){const x=v.replace(t,o);mine.set(n,x);n.nodeValue=x}}
+function tAll(){const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(mine.has(n)&&mine.get(n)===n.nodeValue){n.nodeValue=orig.get(n);mine.delete(n)}tn(n)}}
+new MutationObserver(ms=>{if(lang==='en')return;ms.forEach(m=>{if(m.type==='characterData')tn(m.target);else m.addedNodes.forEach(a=>{if(a.nodeType===3)tn(a);else if(a.nodeType===1){const w=document.createTreeWalker(a,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode())tn(n)}})})}).observe(document.body,{childList:true,subtree:true,characterData:true});
+$('lg').value=lang;document.documentElement.lang=lang;
+$('lg').onchange=e=>{lang=e.target.value;try{localStorage.setItem('fvl',lang)}catch(x){}document.documentElement.lang=lang;tAll()};
+tAll();
+
+function renderProg(){
+ const h=hist(),g=k=>{try{return +localStorage.getItem(k)||0}catch(e){return 0}},mx=k=>Math.max(0,...h.map(s=>s[k]||0)),
+  cur=(()=>{try{return JSON.parse(localStorage.getItem('fvs')||'{}').n||0}catch(e){return 0}})(),best=g('fvmax'),gm=g('fvg');
+ $('pst').textContent=h.length?h.length+' scans · best symmetry '+mx('sym')+' · best photo '+mx('ps')+' · best overall '+mx('ov')+' · streak '+cur+' (best '+best+')':'Scan to start tracking progress. Everything stays on this device.';
+ const B=[[h.length>=1,'🌱 First scan'],[h.length>=5,'🎯 5 scans'],[h.length>=10,'🏅 10 scans'],[best>=3,'🔥 3-day streak'],[best>=7,'🔥 7-day streak'],[mx('sym')>=90,'⚖️ Symmetry 90+'],[mx('smile')>=80,'😁 Smile 80+'],[mx('ps')>=85,'📸 Photo 85+'],[mx('ov')>=80,'⭐ Overall 80+'],[gm>=300,'🎭 Challenge 300+']],b=$('bdg');
+ b.textContent='';B.filter(x=>x[0]).forEach(x=>{const e=document.createElement('span');e.className='chip';e.style.padding='4px 10px';e.textContent=x[1];b.appendChild(e)});
+ const c=$('sp'),x=c.getContext('2d');if(!x)return;const W=c.width,H=c.height,cs=getComputedStyle(document.documentElement);x.clearRect(0,0,W,H);
+ $('lgd').textContent=h.length>1?'Lines: symmetry (purple), photo (pink), overall (green).':'';
+ if(h.length>1)[['sym',cs.getPropertyValue('--acc')],['ps',cs.getPropertyValue('--acc2')],['ov','#22c55e']].forEach(([k,col])=>{x.strokeStyle=col.trim();x.lineWidth=3;x.lineJoin='round';x.beginPath();h.forEach((s,i)=>{const X=8+i*(W-16)/(h.length-1),Y=H-8-clamp(s[k]||0,0,100)/100*(H-16);i?x.lineTo(X,Y):x.moveTo(X,Y)});x.stroke()})}
+$('ex').onclick=()=>{const o={app:'facevibe',v:1,hist:hist()},b=new Blob([JSON.stringify(o,null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='facevibe-data.json';a.click()};
+$('im').onclick=()=>$('imf').click();
+$('imf').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const o=JSON.parse(await f.text());if(o.app!=='facevibe'||!Array.isArray(o.hist))throw 0;
+ const n=v=>Number.isFinite(+v)?clamp(+v,0,100):0,cl=o.hist.slice(-60).map(s=>({t:+s.t||Date.now(),sym:n(s.sym),smile:n(s.smile),range:n(s.range),a:String(s.a||'').slice(0,40),ps:n(s.ps),ov:n(s.ov),sh:String(s.sh||'').slice(0,12)})),
+  m=hist().concat(cl).sort((a,b)=>a.t-b.t).filter((s,i,r)=>!i||s.t!==r[i-1].t).slice(-60);
+ localStorage.setItem('fvp',JSON.stringify(m));renderHist();$('pst').textContent='Imported '+cl.length+' scans. '+$('pst').textContent}catch(x){$('pst').textContent='That file isn’t a FaceVibe export.'}};
+$('da').onclick=()=>{if(!confirm('Delete all FaceVibe data on this device?'))return;try{Object.keys(localStorage).filter(k=>k.startsWith('fv')&&k!=='fvl').forEach(k=>localStorage.removeItem(k))}catch(e){}renderHist();$('stk').textContent='';$('cmp').textContent=''};
+$('cr').onclick=async()=>{if(!res)return;const t='FaceVibe: '+res.em+' '+res.arch+' · Overall '+res.ov+'/100 · Symmetry '+res.sym+'% · Smile '+res.smile+'% · Face shape '+res.shape+' (just for fun)';try{await navigator.clipboard.writeText(t);$('cr').textContent='Copied ✓'}catch(e){prompt('Copy:',t)}};
+(function(){let s={};try{s=JSON.parse(localStorage.getItem('fvset')||'{}')}catch(e){}
+ ['vo','tm','inc'].forEach(i=>{$(i).checked=!!s[i];$(i).addEventListener('change',()=>{s[i]=$(i).checked;try{localStorage.setItem('fvset',JSON.stringify(s))}catch(e){}})})})();
+let dip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;$('inst').hidden=false});
+$('inst').onclick=()=>{if(dip){dip.prompt();dip=null;$('inst').hidden=true}};
+renderHist();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
