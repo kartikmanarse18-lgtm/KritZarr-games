@@ -53,9 +53,9 @@ const tgt=n=>S.st.mode==="trail"?(T.prog[n]&&!T.prog[n].done?T.stops[T.prog[n].i
 const K=9e-6,ctr={lat:150*K,lng:150*K};
 const dist=(a,b)=>{const R=6371000,t=Math.PI/180,p=(b.lat-a.lat)*t,l=(b.lng-a.lng)*t,x=Math.sin(p/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(l/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
 const BANDS=[[15,5,"Burning · within 15 m"],[40,4,"Hot · within 40 m"],[100,3,"Warm · within 100 m"],[250,2,"Cool · within 250 m"],[500,1,"Cold · within 500 m"],[1e9,0,"Frozen · over 500 m"]];
-const band=d=>BANDS.find(b=>d<=b[0]);
+const band=d=>{const f=S.hm?.1:1,b=BANDS.find(b=>d<=b[0]*f);return[b[0]*f,b[1],b[2].replace(/\d+ m/,m=>Math.round(parseInt(m)*f*10)/10+" m")]};
 const isC=()=>S.role==="C"||S.bot;
-const keyOf=()=>S.role+S.st.phase+S.st.round+(S.pair?"P":"")+(S.lobby?"L":"");
+const keyOf=()=>S.role+S.st.phase+S.st.round+(S.pair?"P":"")+(S.hm?"M":"")+(S.lobby?"L":"");
 const mmss=ms=>{ms=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(ms/60)).padStart(2,"0")+":"+String(ms%60).padStart(2,"0")};
 const pips=n=>"●".repeat(n)+"○".repeat(3-n);
 
@@ -91,11 +91,14 @@ function hunterNet(code){const h={};let peer,conn,last=null,rt;
   peer.on("error",e=>{S.cerr=e.type==="peer-unavailable"?"Room not found yet. Check the code, or wait for the Courier. Retrying…":"Connection problem ("+e.type+"). Retrying…";if(peer.open)retry();else setTimeout(()=>{if(!peer.open&&!peer.destroyed)try{peer.reconnect()}catch(x){}},3000)});
   return{emit:(t,d)=>{send({k:"m",t,d});return Promise.resolve()},on:(t,f)=>{(h[t]=h[t]||[]).push(f)},peers:()=>[],pres:p=>{last=p;send({k:"p",p})}}}
 function wire(){const n=S.net;
-  n.on("state",d=>{if(S.role!=="H"||S.bot||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}if(d.phase!=="hiding")S.ready=false;else S.stop=null;S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
+  n.on("state",d=>{if(S.role!=="H"||S.bot||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}if(d.phase!=="hiding")S.ready=false;else S.stop=null;if(d.hm){if(!S.hm){S.hm=1;S.pos=null}if(!M.ok&&t-(M.rq||0)>6000){M.rq=t;S.net.emit("needmap",{n:S.name})}}else if(S.hm){S.hm=0;S.pos=null;M.ok=0;M.id=0}S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
   n.on("radar",d=>{if(S.role==="H"&&d){S.radar=d;S.radarAt=Date.now();const r=d[S.name];if(r&&r.h>=0){S.hist.push(r.h);if(S.hist.length>8)S.hist.shift()}buzz()}});
   n.on("result",d=>{if(S.role==="H"&&d&&d.n===S.name){if(d.m)S.msg=d.m;else if(!d.ok)S.msg=d.left>0?"Wrong code. "+d.left+" attempt(s) left.":"Locked out for this drop.";if(d.ok)buzz();if(S.msg)toast(S.msg)}});
   n.on("stop",d=>{if(S.role==="H"&&d&&d.n===S.name){if(!S.stop||S.stop.i!==d.i){S.son=1;S.hist=[];S.radar={}}S.stop=d}});
   n.on("bcast",d=>{if(S.role==="H"&&d&&d.m)toast("📣 Courier: "+d.m)});
+  n.on("needmap",d=>{if(S.role==="C"&&S.hm&&d&&d.n)sendMap(d.n)});
+  n.on("map",d=>{if(S.role!=="H"||!d)return;if(d.t==="m"){if(d.id!==M.id){M.id=d.id;M.got={};M.ok=d.n===0;M.im=null}M.w=d.w;M.a=d.a;M.labels=d.L||[];M.n=d.n}
+    else if(d.t==="p"){M.got[d.k]=d.d;if(Object.keys(M.got).length===M.n&&!M.ok){const s=Array.from({length:M.n},(_,i)=>M.got[i]).join("");M.im=new Image;M.im.src=s;M.ok=1}}});
   n.on("claim",d=>{if(isC()&&d)onClaim(d)});
   n.on("scan",d=>{if(isC()&&d&&(S.st.phase==="live"||S.st.phase==="trail"))onScan(d)});
   n.on("hint",d=>{if(!isC()||!d||S.st.phase!=="trail")return;const p=T.prog[d.n];if(p&&!p.done&&!p.hint&&T.stops[p.i].hint){p.hint=true;p.pts=Math.max(0,p.pts-30);tSend(d.n);board();bc()}});
@@ -121,6 +124,16 @@ const COL=["#3b82c4","#2fa3a8","#7fb069","#f2c14e","#f08a3c","#ff3b30"];
 function scope(h){let s='<svg viewBox="0 0 200 200" class="sc" role="img" aria-label="Radar heat level">';for(let i=5;i>=0;i--)s+=`<circle cx="100" cy="100" r="${16+i*16.5}" class="rg${i<=h?" on":""}" style="--c:${COL[i]}"/>`;
   s+='<g class="sw"><path d="M100 100 L100 8 A92 92 0 0 1 165 35 Z"/></g>';if(h>=0){const r=100-(16+(5-h)*14),a=h*1.9+.6;s+=`<circle class="bl" cx="${100+Math.cos(a)*(r*.9)}" cy="${100+Math.sin(a)*(r*.9)}" r="5"/>`}return s+"</svg>"}
 function burst(e){const a=[...e];for(let i=0;i<40;i++){const s=document.createElement("span");s.className="cf";s.textContent=a[i%a.length];s.style.left=Math.random()*100+"vw";s.style.animationDuration=2.5+Math.random()*2.5+"s";s.style.animationDelay=Math.random()*.8+"s";document.body.append(s);setTimeout(()=>s.remove(),6000)}}
+const M={labels:[],parts:[],got:{},w:12,a:.75};
+const sendMeta=to=>S.net.emit("map",{t:"m",id:M.id,w:M.w,a:M.a,L:M.labels,n:M.parts.length},to);
+const sendMap=to=>{sendMeta(to);M.parts.forEach((d,k)=>S.net.emit("map",{t:"p",k,d},to))};
+function drawHM(c){if(!c)return;const W=600,H=Math.round(W*M.a);if(c.height!==H||c.width!==W){c.width=W;c.height=H}const x=c.getContext("2d");x.fillStyle="#16203a";x.fillRect(0,0,W,H);
+  if(M.im&&M.im.complete&&M.im.naturalWidth)x.drawImage(M.im,0,0,W,H);else{x.strokeStyle="rgba(255,255,255,.14)";x.lineWidth=1;for(let i=0;i<=12;i++){x.beginPath();x.moveTo(i*W/12,0);x.lineTo(i*W/12,H);x.moveTo(0,i*H/12);x.lineTo(W,i*H/12);x.stroke()}}
+  if(!M.ok){x.fillStyle="#fff";x.font="20px system-ui";x.textAlign="center";x.fillText("Loading house map…",W/2,H/2)}
+  const pt=p=>[p.lng/K/M.w*W,p.lat/K/(M.w*M.a)*H],dot=(p,col,r,t)=>{const[a,b]=pt(p);x.fillStyle=col;x.beginPath();x.arc(a,b,r,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=3;x.stroke();if(t){x.fillStyle="#fff";x.font="bold 18px system-ui";x.textAlign="center";x.fillText(t,a,b+6)}};
+  (M.labels||[]).forEach(l=>{x.font="bold 20px system-ui";x.textAlign="center";const a=l.u*W,b=l.v*H,w=x.measureText(l.t).width+16;x.fillStyle="rgba(10,14,28,.8)";x.fillRect(a-w/2,b-16,w,28);x.fillStyle="#fff";x.fillText(l.t,a,b+5)});
+  if(S.role==="C"){if(C.drop)dot(C.drop,"#d6372a",14,"✕");T.stops.forEach((p,i)=>dot(p,"#d6372a",15,i+1));S.net.peers().forEach(q=>{q=q.presence;if(q&&q.role==="H"&&q.lat!=null)dot(q,"#3b82f6",10)})}
+  if(S.pos)dot(S.pos,"#ffb547",11)}
 function toast(m){S.toast=m;S.toastT=Date.now()+7000;buzz()}
 function buzz(){if(S.mute)return;try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;S.ac=S.ac||new A();const o=S.ac.createOscillator(),g=S.ac.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(S.ac.destination);o.start();o.stop(S.ac.currentTime+.15)}catch(e){}}
 async function wake(){try{S.wl=await navigator.wakeLock.request("screen")}catch(e){}}
@@ -129,7 +142,7 @@ S.mute=(()=>{try{return localStorage.getItem("pp_m")==="1"}catch(e){return false
 const sv=()=>{try{return localStorage.getItem("pp_n")||""}catch(e){return""}};
 /* ---------- courier engine ---------- */
 const bc=()=>{const s=S.st,t=Date.now();S.net.emit("state",{...s,tl:s.endsAt-t,nl:s.nextPing-t,h2:C.h2&&s.phase==="live"&&t>=s.endsAt-s.hunt*500?C.h2:""})};
-function ping(){const o={};S.net.peers().forEach(p=>{const q=p.presence;if(!q||q.role!=="H")return;if(S.jamNext){o[q.n]={h:-2,t:"📵 Signal jammed by the Courier"};return}if(q.lat==null){o[q.n]={h:-1,t:"No GPS signal"};return}
+function ping(){const o={};S.net.peers().forEach(p=>{const q=p.presence;if(!q||q.role!=="H")return;if(S.jamNext){o[q.n]={h:-2,t:"📵 Signal jammed by the Courier"};return}if(q.lat==null){o[q.n]={h:-1,t:"No position yet"};return}
   const tg=tgt(q.n);if(!tg){o[q.n]={h:-1,t:S.st.mode==="trail"?"Trail complete":"No target"};return}const d=dist(q,tg),b=band(d),pv=C.prev[q.n];o[q.n]={h:b[1],t:b[2],tr:pv==null?0:d<pv-5?1:d>pv+5?-1:0};C.prev[q.n]=d});
   S.jamNext=false;S.radar=o;S.radarAt=Date.now();S.net.emit("radar",o)}
 function launch(clue,iv,hunt){const s=S.st;C.tries={};C.prev={};Object.assign(s,{phase:"live",round:s.round+1,clue,interval:iv,hunt,endsAt:Date.now()+hunt*1000,nextPing:Date.now()+iv*1000,note:""});S.msg="";S.hist=[];S.son=1;ping();bc()}
@@ -138,7 +151,7 @@ function onClaim(d){const s=S.st;if(s.paused)return S.net.emit("result",{n:d.n,o
   if(C.tries[n]>=3)return S.net.emit("result",{n,ok:false,left:0});
   if(String(d.code)===C.pass){s.phase="caught";s.note=n+" recovered the payload.";s.log=(s.log||[]).concat("Drop #"+s.round+": intercepted by "+n+" ❌");S.net.emit("result",{n,ok:true});bc()}
   else{C.tries[n]++;S.net.emit("result",{n,ok:false,left:3-C.tries[n]})}}
-function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";toast(S.alert);buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:Math.round(dist(q,tgt(d.n)||C.drop)/5)*5})}
+function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";toast(S.alert);buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:Math.round(dist(q,tgt(d.n)||C.drop)/(S.hm?.5:5))*(S.hm?.5:5)})}
 function botDrop(){const a=Math.random()*6.28,r=40+Math.random()*90;
   C.drop={lat:(150+Math.sin(a)*r)*K,lng:(150+Math.cos(a)*r)*K};C.pass=String(1000+Math.floor(Math.random()*9000));
   const cl=["Tucked under something green, close to a path.","Wedged where two surfaces meet, low to the ground.","Hidden a few steps from a landmark."];
@@ -152,7 +165,7 @@ function tClaim(d){const s=S.st,n=d.n,p=T.prog[n],t=Date.now();if(!p||p.done||s.
   const R=(ok,m)=>S.net.emit("result",{n,ok,m,left:0},n);
   if(p.lock>t)return R(false,"Locked for "+Math.ceil((p.lock-t)/1000)+" s after wrong codes.");
   const st=T.stops[p.i],q=S.net.peers().map(x=>x.presence).find(x=>x&&x.n===n);
-  if(q&&q.lat!=null){const m=dist(q,st);if(m>60)return R(false,"You’re about "+Math.round(m/10)*10+" m from the stop. Get closer first.")}
+  if(q&&q.lat!=null){const m=dist(q,st);if(m>(S.hm?6:60))return R(false,"You’re about "+Math.round(m/(S.hm?1:10))*(S.hm?1:10)+" m from the stop. Get closer first.")}
   if(String(d.code)===st.code){const sec=(t-p.t0)/1000;p.pts+=100+Math.max(0,50-Math.floor(sec/6));p.i++;p.tries=0;p.hint=false;p.t0=t;C.prev[n]=null;
     if(p.i>=T.stops.length){p.done=true;p.fin=t-T.start;board();R(true,"🏆 You found the treasure!");s.phase="trailend";s.note="🏆 "+n+" found the treasure first!";bc();return}
     board();R(true,"✅ Correct! Next clue unlocked.");tSend(n);bc()}
@@ -171,7 +184,7 @@ function tickC(){if(!isC())return;const s=S.st,t=Date.now();if(s.phase==="trail"
 
 /* ---------- GPS ---------- */
 function gps(){if(S.sim||S.gw!=null||!navigator.geolocation)return;
-  S.gw=navigator.geolocation.watchPosition(p=>{if(S.sim)return;S.pos={lat:p.coords.latitude,lng:p.coords.longitude};S.acc=p.coords.accuracy;pres()},e=>{S.gerr=e.message},{enableHighAccuracy:true,maximumAge:2000})}
+  S.gw=navigator.geolocation.watchPosition(p=>{if(S.sim||S.hm)return;S.pos={lat:p.coords.latitude,lng:p.coords.longitude};S.acc=p.coords.accuracy;pres()},e=>{S.gerr=e.message},{enableHighAccuracy:true,maximumAge:2000})}
 
 /* ---------- views ---------- */
 function home(){return`<div class="hero"><div class="radar"></div><h1>Phantom Post</h1><p>Hide a token outdoors. Hunt it with a heat radar.</p><p class="mut">${career()}</p></div>
@@ -183,7 +196,9 @@ function home(){return`<div class="hero"><div class="radar"></div><h1>Phantom Po
 <div class="row"><button class="g" data-a="host">🎒 Host as Courier</button><button class="g" data-a="join">🔍 Join as Hunter</button></div></div>
 <details class="card"><summary>How it works</summary><div class="mut">The <b>Courier</b> hides a physical token outdoors, marks the spot with GPS, writes a cryptic clue and sets a 4-digit code under the token. <b>Hunters</b> get the clue and a radar ping every interval (default 2 min) showing hot/cold bands. Hunters win by finding the token and entering its code (3 tries). If the clock runs out, the drop is secured. <b>3 secured drops in a row and the Courier wins.</b><br><br><b>Powers:</b> each Hunter gets one 🎯 sonar burst per drop (distance to within 5 m, but it alerts the Courier). The Courier gets one 📵 jammer per game and can add a bonus hint that unlocks at half time.<br><br><b>Treasure Trail mode:</b> the Courier hides several stops. Each code you find unlocks the clue to the next stop. Hunters race on a live leaderboard (speed earns points, hints cost 30). First to the 🏆 treasure wins.<br><br><b>Your phone is the server.</b> The Courier hosts a room and shares a 5-letter code or link. Hunters join from anywhere (any Wi-Fi or mobile data) and game data flows directly between phones. A free public matchmaking service only introduces the phones. The Courier keeps the app open. Training mode works alone.</div></details>`}
 function hdr(){const s=S.st,tr=s.mode==="trail"||S.gm==="trail";return`<header class="top"><div class="brand">👻 Phantom Post</div><div class="chips"><span class="chip">${S.role==="C"?"Courier":"Hunter"} ${esc(S.name)}</span>${S.mode==="room"?`<span class="chip code">${esc(S.code)}</span>`:`<span class="chip">Training</span>`}${tr?"":`<span class="chip pip">${pips(s.secured)}</span>`}</div><button class="ib" data-a="mute" aria-label="Toggle sound">${S.mute?"🔇":"🔊"}</button><button class="ib" data-a="leave" aria-label="Leave game">✕</button></header><div id="cs" class="err"></div>`}
-const mapc=()=>S.sim?`<div class="card"><div class="mut">Simulated map (300 m). Tap to move.</div><canvas id="mp" class="map" width="300" height="300"></canvas></div>`:`<div class="card"><canvas id="rm" class="map" width="480" height="480"></canvas><div class="mut">You are amber${S.role==="C"?", hunters blue, targets red":""}. Map © OpenStreetMap contributors; needs a connection.</div></div>`;
+const SETUP=`<div class="card"><h2>🏠 Playing indoors?</h2><div class="mut">Upload a floor plan, photo or sketch of your home. Hunters tap their location on it instead of using GPS.</div><input id="mf" type="file" accept="image/*"><label class="mut">House width in meters</label><input id="mw" type="number" value="12" min="3" max="100"><button data-a="usehome">🏠 Use this map</button><button class="g" data-a="usegrid">▦ Blank grid, no image</button></div>`;
+const hmcard=()=>`<div class="card"><h2>🏠 House map</h2><canvas id="hm" class="map" width="600" height="450" style="aspect-ratio:auto"></canvas><div class="mut">${S.role==="C"?"Tap to drop a pin (amber), then use Lock in or Mark stop. Red = hidden, blue = hunters.":"Tap where you are standing. Your radar uses that spot."}</div>${S.role==="C"&&S.st.phase==="hiding"?'<div class="row"><button class="g" data-a="mlabel">📌 Label spot</button><button class="g" data-a="mlabclr">Clear labels</button></div><button class="g" data-a="usegps">Back to GPS map</button>':""}</div>`;
+const mapc=()=>S.hm?hmcard():S.sim?`<div class="card"><div class="mut">Simulated map (300 m). Tap to move.</div><canvas id="mp" class="map" width="300" height="300"></canvas></div>`:`<div class="card"><canvas id="rm" class="map" width="480" height="480"></canvas><div class="mut">You are amber${S.role==="C"?", hunters blue, targets red":""}. Map © OpenStreetMap contributors; needs a connection.</div></div>${S.role==="C"&&S.mode==="room"&&S.st.phase==="hiding"?SETUP:""}`;
 function view(){const s=S.st,a=$("app");S.key=keyOf();
   if(!S.role){a.innerHTML=home();return}
   let h=hdr();
@@ -230,7 +245,7 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
 function dyn(){const s=S.st,t=Date.now(),g=i=>$(i);
   document.body.dataset.r=S.role||"";document.body.dataset.ph=s.phase;
   {const e=g("ts");e.textContent=S.toast||"";e.classList.toggle("on",!!S.toast&&t<S.toastT)}
-  if(g("pb"))g("pb").textContent=s.paused?"▶ Resume hunt":"⏸ Pause hunt";if(g("rb"))g("rb").textContent=S.ready?"✅ Ready (tap to undo)":"✋ I’m ready";drawRM(g("rm"));
+  if(g("pb"))g("pb").textContent=s.paused?"▶ Resume hunt":"⏸ Pause hunt";if(g("rb"))g("rb").textContent=S.ready?"✅ Ready (tap to undo)":"✋ I’m ready";drawRM(g("rm"));drawHM(g("hm"));
   if(g("cst"))g("cst").textContent=S.cerr||"Contacting the Courier…";
   if(g("lb"))g("lb").innerHTML=(s.board||[]).map((r,k)=>`<div class="lr"><i>${["🥇","🥈","🥉"][k]||k+1}</i><b>${esc(r.n)}${r.n===S.name?" (you)":""}</b><span>${r.done?"🏆 finished":"stop "+Math.min(r.i+1,s.total)+"/"+s.total} · ${r.pts} pts${S.role==="C"&&S.radar[r.n]?"<br>"+esc(S.radar[r.n].t):""}</span></div>`).join("")||"No hunters yet.";
   if(g("stp")){const k=S.stop;g("stp").textContent=k?(k.done?"🏆 Treasure found!":"🗝 Stop "+(k.i+1)+" of "+k.total+" · "+k.pts+" pts"):"Waiting for your first clue…";g("sc").textContent=k?k.clue:"";g("th").textContent=k&&k.hint?"💡 "+k.hint:"";g("hb").style.display=k&&k.hq&&!k.hint?"":"none"}
@@ -243,7 +258,7 @@ function dyn(){const s=S.st,t=Date.now(),g=i=>$(i);
   if(g("al"))g("al").textContent=S.alert||"";
   if(g("hs"))g("hs").innerHTML=S.hist.map(h=>`<span class="on" style="height:${(h+1)*16}%;background:var(--acc)"></span>`).join("");
   if(g("hn")){const hs=S.net.peers().filter(p=>p.presence&&p.presence.role==="H");g("hn").textContent="Hunters in room: "+hs.length+" · ready: "+hs.filter(p=>p.presence.r).length};
-  if(g("pi"))g("pi").textContent=S.sim?"Simulated position set.":S.pos?"GPS lock: "+S.pos.lat.toFixed(5)+", "+S.pos.lng.toFixed(5)+" (±"+Math.round(S.acc||0)+" m)":"Waiting for GPS… "+(S.gerr||"allow location access.");
+  if(g("pi"))g("pi").textContent=S.hm?(S.pos?"Position set. Tap the map to move.":"Tap the map where you are standing."):S.sim?"Simulated position set.":S.pos?"GPS lock: "+S.pos.lat.toFixed(5)+", "+S.pos.lng.toFixed(5)+" (±"+Math.round(S.acc||0)+" m)":"Waiting for GPS… "+(S.gerr||"allow location access.");
   if(g("hl")){const e=Object.entries(S.radar);g("hl").innerHTML=e.length?e.map(([n,r])=>`<div class="lr"><b>${esc(n)}</b><span>${esc(r.t)}</span></div>`).join(""):"No hunters detected yet."}
   if(g("gz")){const r=S.radar[S.name];const h=r?r.h:-1;if(g("gz").dataset.h!=h){g("gz").dataset.h=h;g("gz").innerHTML=scope(h)}
     g("rt").innerHTML=r?`<b>${esc(r.t)}</b> ${r.tr>0?"↗ warmer":r.tr<0?"↘ colder":""}<div class="mut">Updated ${Math.round((t-S.radarAt)/1000)} s ago</div>`:'<div class="mut">Awaiting first ping…</div>'}
@@ -269,6 +284,13 @@ async function start(a){const nm=$("nm").value.trim(),er=$("er");
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
   if(["train","traint","host","join"].includes(a))return start(a);
   if(a==="again")return location.reload();
+  if(a==="usehome"||a==="usegrid"){const w=Math.max(3,Math.min(100,+$("mw").value||12)),f=a==="usehome"&&$("mf").files[0];
+    if(a==="usehome"&&!f)return toast("Choose a floor plan image first.");
+    const go=(src,ar)=>{M.id=Date.now();M.w=w;M.a=ar;M.labels=[];M.parts=[];M.im=null;if(src){M.im=new Image;M.im.src=src;for(let i=0;i<src.length;i+=8000)M.parts.push(src.slice(i,i+8000))}M.ok=1;S.hm=1;S.st.hm=1;S.pos={lat:.5*w*ar*K,lng:.5*w*K};S.acc=0;bc();sendMap();view()};
+    if(!f)return go(null,.75);const im=new Image;im.onload=()=>{const sc=Math.min(1,700/Math.max(im.width,im.height)),W=Math.round(im.width*sc),H=Math.round(im.height*sc),c=document.createElement("canvas");c.width=W;c.height=H;c.getContext("2d").drawImage(im,0,0,W,H);go(c.toDataURL("image/jpeg",.6),H/W)};im.onerror=()=>toast("Could not read that image.");im.src=URL.createObjectURL(f);return}
+  if(a==="usegps"){S.hm=0;S.st.hm=0;S.pos=null;bc();view();return}
+  if(a==="mlabel"){if(!S.pos)return;const t=(prompt("Name this spot (e.g. Kitchen)")||"").trim().slice(0,16);if(t){M.labels.push({t,u:S.pos.lng/K/M.w,v:S.pos.lat/K/(M.w*M.a)});sendMeta()}return}
+  if(a==="mlabclr"){M.labels=[];sendMeta();return}
   if(a==="pause"){S.st.paused=!S.st.paused;bc();return}
   if(a==="ready"){S.ready=!S.ready;pres();return}
   if(a==="rematch"){Object.assign(S.st,{phase:"hiding",round:0,secured:0,clue:"",note:"New game. The Courier is setting up.",log:[],board:[],mode:undefined,paused:false,total:0});S.gm=undefined;T.stops=[];T.prog={};C.drop=null;S.jam=1;S.jamNext=false;S.radar={};bc();view();return}
@@ -295,6 +317,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
   if(a==="search"){const tg=tgt(S.name),cd=S.st.mode==="trail"?(T.stops[T.prog[S.name]?T.prog[S.name].i:0]||{}).code:C.pass;S.msg=tg&&dist(S.pos,tg)<=12?"You found the marker! Code: "+cd:"Nothing here. Keep looking."}});
 document.addEventListener("pointerdown",e=>{if(e.target.id!=="mp")return;const r=e.target.getBoundingClientRect();
   S.pos={lat:(e.clientY-r.top)/r.height*300*K,lng:(e.clientX-r.left)/r.width*300*K};S.acc=0;pres()});
+document.addEventListener("pointerdown",e=>{if(e.target.id!=="hm")return;const r=e.target.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;S.pos={lat:v*M.w*M.a*K,lng:u*M.w*K};S.acc=0;pres()});
 setInterval(()=>{const t0=Date.now();if(S.st.paused&&(S.st.phase==="live"||S.st.phase==="trail")){const d=t0-(S.lt||t0);S.st.endsAt+=d;S.st.nextPing+=d}S.lt=t0;{const ph=S.st.phase;if(ph==="won"||ph==="caught"||ph==="trailend"){if(!S.rec&&S.mode==="room"){S.rec=1;rec(ph)}if(!S.cel){S.cel=1;burst(ph==="won"?"🎒💜✨":"🏆🎉✨")}}else{S.rec=0;S.cel=0}}tickC();if(S.role==="H"&&!S.bot&&!S.pair&&Date.now()-(S.pt||0)>5000){S.pt=Date.now();pres()}const k=keyOf();if(S.role&&k!==S.key)view();dyn()},500);
 view();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
