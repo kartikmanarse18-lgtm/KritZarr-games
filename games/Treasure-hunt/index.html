@@ -1,21 +1,47 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0d1117"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg"><title>Phantom Post: Dead Drop Courier</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0a0e1c"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg"><title>Phantom Post: Dead Drop Courier</title>
 <style>
-:root{--bg:#efede4;--card:#fff;--ink:#16181d;--mut:#666c78;--acc:#0a7c5a;--hot:#d9382b;--bd:#d6d3c8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1117;--card:#171c24;--ink:#e7eaf0;--mut:#8b93a1;--acc:#3ddc97;--hot:#ff6b5b;--bd:#2a313c;color-scheme:dark}}
-:root[data-theme=dark]{--bg:#0d1117;--card:#171c24;--ink:#e7eaf0;--mut:#8b93a1;--acc:#3ddc97;--hot:#ff6b5b;--bd:#2a313c;color-scheme:dark}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
-#app{max-width:520px;margin:0 auto;padding:16px}
-h1{margin:4px 0 0;font-size:28px;letter-spacing:.5px}h2{margin:0 0 8px;font-size:18px}
-.mut{color:var(--mut);font-size:14px}.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
-input,select,textarea{width:100%;box-sizing:border-box;padding:10px;margin:4px 0 8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--ink);font:inherit}
-button{width:100%;padding:12px;margin:4px 0;border:0;border-radius:10px;background:var(--acc);color:var(--bg);font:600 16px system-ui,sans-serif;cursor:pointer}
-button.g{background:transparent;color:var(--ink);border:1px solid var(--bd)}
-.big{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center}
-.row{display:flex;gap:8px}.row>*{flex:1}
-.gz{display:flex;gap:4px;margin:8px 0}.gz span{flex:1;height:14px;border-radius:4px;background:var(--bd)}.gz span.on{background:var(--hot)}
-.map{width:100%;aspect-ratio:1;border:1px solid var(--bd);border-radius:10px;background:var(--bg);touch-action:none}
-.pip{font-size:22px;letter-spacing:4px}.err{color:var(--hot)}
-</style></head><body><div id="app"></div>
+:root{--bg:#0a0e1c;--card:rgba(255,255,255,.06);--ink:#f2f4ff;--mut:#9aa3c7;--acc:#ff9a4d;--acc2:#ff4f9a;--hot:#ff5a5f;--bd:rgba(255,255,255,.12);--r:22px;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body[data-r=C]{--acc:#b69cff;--acc2:#f472b6}body[data-r=H]{--acc:#22d3ee;--acc2:#6ea8ff}
+html,body{margin:0;min-height:100%;color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(900px 520px at 85% -8%,color-mix(in srgb,var(--acc2) 30%,transparent),transparent),radial-gradient(800px 500px at -10% 8%,color-mix(in srgb,var(--acc) 24%,transparent),transparent),var(--bg);background-attachment:fixed;transition:background .6s}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;background:repeating-radial-gradient(circle at 50% 120%,transparent 0 38px,rgba(255,255,255,.035) 39px 40px)}
+#app{position:relative;max-width:520px;margin:0 auto;padding:0 16px 110px}#app>*:not(.top){animation:in .4s both}@keyframes in{from{opacity:0;transform:translateY(10px)}}
+h1{margin:0;font:800 48px/1.05 ui-serif,Georgia,serif;letter-spacing:-.5px}h2{margin:0 0 10px;font:700 20px/1.3 ui-serif,Georgia,serif}
+.mut{color:var(--mut);font-size:14px}label.mut{display:block;margin-top:10px;font-weight:600}
+.card{background:var(--card);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin:14px 0;box-shadow:0 12px 32px rgba(0,0,0,.28)}
+.card:has(.big){background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 22%,transparent),color-mix(in srgb,var(--acc2) 10%,transparent)),var(--card)}
+input,select,textarea{width:100%;box-sizing:border-box;padding:13px 15px;margin:5px 0 8px;border-radius:14px;border:1.5px solid var(--bd);background:rgba(255,255,255,.07);color:var(--ink);font:inherit;font-size:16px;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 25%,transparent)}textarea{resize:vertical}input[type=checkbox]{accent-color:var(--acc)}
+select option{background:#16203a}
+#cc,#pc,#tk{text-align:center;letter-spacing:.55em;font:700 30px ui-monospace,Menlo,monospace;padding:16px}
+button{width:100%;min-height:54px;padding:13px;margin:6px 0;border:0;border-radius:16px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a0e1c;font:800 16px system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 22px color-mix(in srgb,var(--acc2) 35%,transparent);transition:transform .12s,filter .2s}
+button:hover{filter:brightness(1.08)}button:active{transform:scale(.96)}button:disabled{opacity:.35;box-shadow:none}
+button.g{background:rgba(255,255,255,.06);color:var(--ink);border:1.5px solid var(--bd);box-shadow:none}
+.row>button{min-height:82px;font-size:17px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:8px;padding:10px 0;background:linear-gradient(var(--bg) 60%,transparent)}
+.brand{font:800 18px ui-serif,Georgia,serif;flex:none}.chips{display:flex;gap:6px;flex:1;justify-content:flex-end;overflow:hidden}
+.chip{padding:5px 11px;border-radius:99px;background:color-mix(in srgb,var(--acc) 16%,transparent);border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chip.code{letter-spacing:2px}
+.ib{width:40px;min-height:40px;height:40px;padding:0;margin:0;border-radius:50%;background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--bd);box-shadow:none;font-size:15px;flex:none}
+.big{font:700 60px/1.1 ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;text-align:center;margin:4px 0;text-shadow:0 0 24px color-mix(in srgb,var(--acc) 60%,transparent)}
+.big.low{color:var(--hot);text-shadow:0 0 24px var(--hot);animation:pl 1s infinite}@keyframes pl{50%{opacity:.55}}
+.row{display:flex;gap:10px}.row>*{flex:1}
+#gz{margin:6px 0}.sc{display:block;width:100%;max-width:290px;margin:0 auto}.rg{fill:none;stroke:rgba(255,255,255,.16);stroke-width:1.5;transition:fill-opacity .6s}
+.rg.on{fill:var(--c);fill-opacity:.22;stroke:var(--c)}.sw{transform-origin:100px 100px;animation:sp 3s linear infinite}.sw path{fill:var(--acc);opacity:.28}
+.bl{fill:#fff;animation:pl 1.2s infinite}#rt{text-align:center;font-size:18px}
+#hs{display:flex;gap:4px;height:40px;align-items:flex-end}#hs span{flex:1;border-radius:5px;background:linear-gradient(var(--acc),var(--acc2))!important}
+.lr{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.06);margin:7px 0;font-size:15px}.lr i{font-style:normal;width:28px;text-align:center;font-size:20px}.lr b{flex:1;color:var(--ink)}.lr span{color:var(--mut);font-size:13px;text-align:right}
+.map{width:100%;aspect-ratio:1;border:1.5px solid var(--bd);border-radius:16px;background:#16203a;touch-action:none}
+.pip{letter-spacing:3px}.err{color:var(--hot);font-weight:700}
+.hero{text-align:center;padding:30px 0 6px}.hero p{margin:10px 0 0;color:var(--mut)}
+.radar{position:relative;width:150px;height:150px;margin:0 auto 20px;border-radius:50%;border:2px solid var(--bd);background:conic-gradient(from 0deg,transparent 0 70%,color-mix(in srgb,var(--acc) 70%,transparent)),repeating-radial-gradient(circle,transparent 0 22px,var(--bd) 23px 24px);animation:sp 4s linear infinite;box-shadow:0 0 50px color-mix(in srgb,var(--acc) 35%,transparent)}
+@keyframes sp{to{transform:rotate(1turn)}}
+.hero h1{background:linear-gradient(100deg,#fff 20%,var(--acc) 65%,var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+summary{cursor:pointer;font:700 20px ui-serif,Georgia,serif}details[open] summary{margin-bottom:10px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:488px;margin:0 auto;padding:15px 18px;border-radius:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a0e1c;font-weight:800;z-index:20;opacity:0;transform:translateY(150%) scale(.95);transition:.35s cubic-bezier(.2,1.4,.4,1);pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.45)}.toast.on{opacity:1;transform:none}
+.cf{position:fixed;top:-40px;font-size:24px;z-index:30;pointer-events:none;animation:fall linear forwards}@keyframes fall{to{transform:translateY(112vh) rotate(540deg)}}
+@media (prefers-reduced-motion:reduce){.radar,.sw,.big.low,.bl{animation:none}*{transition:none!important}#app>*{animation:none!important}.cf{display:none}}
+</style></head><body><div id="app"></div><div id="ts" class="toast" role="status" aria-live="polite"></div>
 <script src="peerjs.min.js"></script>
 <script>
 (()=>{
@@ -65,20 +91,41 @@ function hunterNet(code){const h={};let peer,conn,last=null,rt;
   peer.on("error",e=>{S.cerr=e.type==="peer-unavailable"?"Room not found yet. Check the code, or wait for the Courier. Retrying…":"Connection problem ("+e.type+"). Retrying…";if(peer.open)retry();else setTimeout(()=>{if(!peer.open&&!peer.destroyed)try{peer.reconnect()}catch(x){}},3000)});
   return{emit:(t,d)=>{send({k:"m",t,d});return Promise.resolve()},on:(t,f)=>{(h[t]=h[t]||[]).push(f)},peers:()=>[],pres:p=>{last=p;send({k:"p",p})}}}
 function wire(){const n=S.net;
-  n.on("state",d=>{if(S.role!=="H"||S.bot||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
+  n.on("state",d=>{if(S.role!=="H"||S.bot||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}if(d.phase!=="hiding")S.ready=false;else S.stop=null;S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
   n.on("radar",d=>{if(S.role==="H"&&d){S.radar=d;S.radarAt=Date.now();const r=d[S.name];if(r&&r.h>=0){S.hist.push(r.h);if(S.hist.length>8)S.hist.shift()}buzz()}});
-  n.on("result",d=>{if(S.role==="H"&&d&&d.n===S.name){if(d.m)S.msg=d.m;else if(!d.ok)S.msg=d.left>0?"Wrong code. "+d.left+" attempt(s) left.":"Locked out for this drop.";if(d.ok)buzz()}});
+  n.on("result",d=>{if(S.role==="H"&&d&&d.n===S.name){if(d.m)S.msg=d.m;else if(!d.ok)S.msg=d.left>0?"Wrong code. "+d.left+" attempt(s) left.":"Locked out for this drop.";if(d.ok)buzz();if(S.msg)toast(S.msg)}});
   n.on("stop",d=>{if(S.role==="H"&&d&&d.n===S.name){if(!S.stop||S.stop.i!==d.i){S.son=1;S.hist=[];S.radar={}}S.stop=d}});
+  n.on("bcast",d=>{if(S.role==="H"&&d&&d.m)toast("📣 Courier: "+d.m)});
   n.on("claim",d=>{if(isC()&&d)onClaim(d)});
   n.on("scan",d=>{if(isC()&&d&&(S.st.phase==="live"||S.st.phase==="trail"))onScan(d)});
   n.on("hint",d=>{if(!isC()||!d||S.st.phase!=="trail")return;const p=T.prog[d.n];if(p&&!p.done&&!p.hint&&T.stops[p.i].hint){p.hint=true;p.pts=Math.max(0,p.pts-30);tSend(d.n);board();bc()}});
   n.on("sonar",d=>{if(S.role==="H"&&d&&d.n===S.name){S.radar[S.name]={h:band(d.m)[1],t:"🎯 Sonar: about "+d.m+" m",tr:0};S.radarAt=Date.now();S.msg="";buzz()}});
 }
-function pres(){if(S.net)S.net.pres({n:S.name,role:S.role,lat:S.pos?S.pos.lat:null,lng:S.pos?S.pos.lng:null})}
+function pres(){if(S.net)S.net.pres({n:S.name,role:S.role,lat:S.pos?S.pos.lat:null,lng:S.pos?S.pos.lng:null,r:S.ready?1:0})}
 
-function buzz(){try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;S.ac=S.ac||new A();const o=S.ac.createOscillator(),g=S.ac.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(S.ac.destination);o.start();o.stop(S.ac.currentTime+.15)}catch(e){}}
+const TC={};
+function tile(z,x,y){const k=z+"/"+x+"/"+y;if(!TC[k]){const i=new Image();i.src="https://tile.openstreetmap.org/"+k+".png";TC[k]=i}return TC[k]}
+function mpx(p,z){const n=256*2**z,s=Math.sin(p.lat*Math.PI/180);return{x:(p.lng+180)/360*n,y:(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n}}
+function drawRM(c){if(!c)return;const x=c.getContext("2d"),z=17,W=c.width;x.fillStyle="#cfd9e2";x.fillRect(0,0,W,W);
+  if(!S.pos){x.fillStyle="#586a7a";x.font="18px system-ui";x.fillText("Waiting for GPS…",20,40);return}
+  const m=mpx(S.pos,z),ox=m.x-W/2,oy=m.y-W/2;
+  for(let tx=Math.floor(ox/256);tx<=Math.floor((ox+W)/256);tx++)for(let ty=Math.floor(oy/256);ty<=Math.floor((oy+W)/256);ty++){const i=tile(z,tx,ty);if(i.complete&&i.naturalWidth)x.drawImage(i,tx*256-ox,ty*256-oy)}
+  const dot=(p,col,r)=>{const q=mpx(p,z);x.fillStyle=col;x.beginPath();x.arc(q.x-ox,q.y-oy,r,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=2;x.stroke()};
+  if(S.role==="C"){if(C.drop)dot(C.drop,"#d6372a",9);T.stops.forEach(p=>dot(p,"#d6372a",9));S.net.peers().forEach(q=>{q=q.presence;if(q&&q.role==="H"&&q.lat!=null)dot(q,"#2f7fc1",7)})}
+  if(S.acc>0){const r=S.acc/(156543.03*Math.cos(S.pos.lat*Math.PI/180)/2**z);x.strokeStyle="#ffb547";x.lineWidth=2;x.beginPath();x.arc(W/2,W/2,Math.min(r,W/2),0,7);x.stroke()}
+  dot(S.pos,"#ffb547",8)}
+function rec(ph){const n=S.st.note||"",w=S.role==="C"?(ph==="won"||(ph==="trailend"&&n.startsWith("⏱"))):n.includes(S.name);try{const o=JSON.parse(localStorage.getItem("pp_s")||"{}");o.g=(o.g||0)+1;o.w=(o.w||0)+(w?1:0);localStorage.setItem("pp_s",JSON.stringify(o))}catch(e){}}
+const career=()=>{try{const o=JSON.parse(localStorage.getItem("pp_s")||"{}");return o.g?"Career: "+o.g+" games · "+(o.w||0)+" wins":"No games played yet"}catch(e){return""}};
+function rdy(){if(S.mode!=="room")return true;const n=S.net.peers().filter(p=>p.presence&&p.presence.role==="H"&&!p.presence.r).length;return !n||confirm(n+" hunter(s) not ready. Start anyway?")}
+const COL=["#3b82c4","#2fa3a8","#7fb069","#f2c14e","#f08a3c","#ff3b30"];
+function scope(h){let s='<svg viewBox="0 0 200 200" class="sc" role="img" aria-label="Radar heat level">';for(let i=5;i>=0;i--)s+=`<circle cx="100" cy="100" r="${16+i*16.5}" class="rg${i<=h?" on":""}" style="--c:${COL[i]}"/>`;
+  s+='<g class="sw"><path d="M100 100 L100 8 A92 92 0 0 1 165 35 Z"/></g>';if(h>=0){const r=100-(16+(5-h)*14),a=h*1.9+.6;s+=`<circle class="bl" cx="${100+Math.cos(a)*(r*.9)}" cy="${100+Math.sin(a)*(r*.9)}" r="5"/>`}return s+"</svg>"}
+function burst(e){const a=[...e];for(let i=0;i<40;i++){const s=document.createElement("span");s.className="cf";s.textContent=a[i%a.length];s.style.left=Math.random()*100+"vw";s.style.animationDuration=2.5+Math.random()*2.5+"s";s.style.animationDelay=Math.random()*.8+"s";document.body.append(s);setTimeout(()=>s.remove(),6000)}}
+function toast(m){S.toast=m;S.toastT=Date.now()+7000;buzz()}
+function buzz(){if(S.mute)return;try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;S.ac=S.ac||new A();const o=S.ac.createOscillator(),g=S.ac.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(S.ac.destination);o.start();o.stop(S.ac.currentTime+.15)}catch(e){}}
 async function wake(){try{S.wl=await navigator.wakeLock.request("screen")}catch(e){}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&S.role)wake()});
+S.mute=(()=>{try{return localStorage.getItem("pp_m")==="1"}catch(e){return false}})();
 const sv=()=>{try{return localStorage.getItem("pp_n")||""}catch(e){return""}};
 /* ---------- courier engine ---------- */
 const bc=()=>{const s=S.st,t=Date.now();S.net.emit("state",{...s,tl:s.endsAt-t,nl:s.nextPing-t,h2:C.h2&&s.phase==="live"&&t>=s.endsAt-s.hunt*500?C.h2:""})};
@@ -87,11 +134,11 @@ function ping(){const o={};S.net.peers().forEach(p=>{const q=p.presence;if(!q||q
   S.jamNext=false;S.radar=o;S.radarAt=Date.now();S.net.emit("radar",o)}
 function launch(clue,iv,hunt){const s=S.st;C.tries={};C.prev={};Object.assign(s,{phase:"live",round:s.round+1,clue,interval:iv,hunt,endsAt:Date.now()+hunt*1000,nextPing:Date.now()+iv*1000,note:""});S.msg="";S.hist=[];S.son=1;ping();bc()}
 function secure(){const s=S.st;s.secured++;s.note="Drop #"+s.round+" secured. The hunters ran out of time.";s.log=(s.log||[]).concat("Drop #"+s.round+": secured ✅");s.phase=s.secured>=3?"won":"hiding";bc();if(S.bot&&s.phase==="hiding")setTimeout(botDrop,4000)}
-function onClaim(d){const s=S.st;if(s.phase==="trail")return tClaim(d);if(s.phase!=="live")return;const n=d.n;C.tries[n]=C.tries[n]||0;
+function onClaim(d){const s=S.st;if(s.paused)return S.net.emit("result",{n:d.n,ok:false,m:"Hunt is paused."},d.n);if(s.phase==="trail")return tClaim(d);if(s.phase!=="live")return;const n=d.n;C.tries[n]=C.tries[n]||0;
   if(C.tries[n]>=3)return S.net.emit("result",{n,ok:false,left:0});
   if(String(d.code)===C.pass){s.phase="caught";s.note=n+" recovered the payload.";s.log=(s.log||[]).concat("Drop #"+s.round+": intercepted by "+n+" ❌");S.net.emit("result",{n,ok:true});bc()}
   else{C.tries[n]++;S.net.emit("result",{n,ok:false,left:3-C.tries[n]})}}
-function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:Math.round(dist(q,tgt(d.n)||C.drop)/5)*5})}
+function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";toast(S.alert);buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:Math.round(dist(q,tgt(d.n)||C.drop)/5)*5})}
 function botDrop(){const a=Math.random()*6.28,r=40+Math.random()*90;
   C.drop={lat:(150+Math.sin(a)*r)*K,lng:(150+Math.cos(a)*r)*K};C.pass=String(1000+Math.floor(Math.random()*9000));
   const cl=["Tucked under something green, close to a path.","Wedged where two surfaces meet, low to the ground.","Hidden a few steps from a landmark."];
@@ -127,25 +174,25 @@ function gps(){if(S.sim||S.gw!=null||!navigator.geolocation)return;
   S.gw=navigator.geolocation.watchPosition(p=>{if(S.sim)return;S.pos={lat:p.coords.latitude,lng:p.coords.longitude};S.acc=p.coords.accuracy;pres()},e=>{S.gerr=e.message},{enableHighAccuracy:true,maximumAge:2000})}
 
 /* ---------- views ---------- */
-function home(){return`<h1>👻 Phantom Post</h1><div class="mut">Dead Drop Courier · real-world hide &amp; seek</div>
+function home(){return`<div class="hero"><div class="radar"></div><h1>Phantom Post</h1><p>Hide a token outdoors. Hunt it with a heat radar.</p><p class="mut">${career()}</p></div>
 <div class="card"><label class="mut">Agent codename</label><input id="nm" maxlength="14" placeholder="e.g. Raven" value="${esc(sv())}">
 
 <label class="mut">Room code (to join a game)</label><input id="cd" maxlength="5" placeholder="e.g. K7Q2M" value="${esc((QS.get("join")||"").toUpperCase())}" style="text-transform:uppercase"><label class="mut"><input id="sm" type="checkbox" style="width:auto;margin-right:6px">Simulated GPS (test indoors or on one device)</label>
 <div id="er" class="err"></div>
 <button data-a="train">▶ Dead Drop training (solo)</button><button class="g" data-a="traint">🗺 Treasure Trail training (solo)</button>
 <div class="row"><button class="g" data-a="host">🎒 Host as Courier</button><button class="g" data-a="join">🔍 Join as Hunter</button></div></div>
-<div class="card"><h2>How it works</h2><div class="mut">The <b>Courier</b> hides a physical token outdoors, marks the spot with GPS, writes a cryptic clue and sets a 4-digit code under the token. <b>Hunters</b> get the clue and a radar ping every interval (default 2 min) showing hot/cold bands. Hunters win by finding the token and entering its code (3 tries). If the clock runs out, the drop is secured. <b>3 secured drops in a row and the Courier wins.</b><br><br><b>Powers:</b> each Hunter gets one 🎯 sonar burst per drop (distance to within 5 m, but it alerts the Courier). The Courier gets one 📵 jammer per game and can add a bonus hint that unlocks at half time.<br><br><b>Treasure Trail mode:</b> the Courier hides several stops. Each code you find unlocks the clue to the next stop. Hunters race on a live leaderboard (speed earns points, hints cost 30). First to the 🏆 treasure wins.<br><br><b>Your phone is the server.</b> The Courier hosts a room and shares a 5-letter code or link. Hunters join from anywhere (any Wi-Fi or mobile data) and game data flows directly between phones. A free public matchmaking service only introduces the phones. The Courier keeps the app open. Training mode works alone.</div></div>`}
-function hdr(){const s=S.st;return`<h1>👻 Phantom Post</h1><div class="mut">${S.role==="C"?"Courier":"Hunter"} <b>${esc(S.name)}</b>${S.mode==="room"?" · room "+esc(S.code):" · training"}${s.mode==="trail"||S.gm==="trail"?"":" · secured <span class=\"pip\">"+pips(s.secured)+"</span>"}</div><div id="cs" class="err"></div><button class="g" data-a="again" style="width:auto;padding:6px 12px;font-size:13px">Leave game</button>`}
-const mapc=()=>S.sim?`<div class="card"><div class="mut">Simulated map (300 m). Tap to move.</div><canvas id="mp" class="map" width="300" height="300"></canvas></div>`:"";
+<details class="card"><summary>How it works</summary><div class="mut">The <b>Courier</b> hides a physical token outdoors, marks the spot with GPS, writes a cryptic clue and sets a 4-digit code under the token. <b>Hunters</b> get the clue and a radar ping every interval (default 2 min) showing hot/cold bands. Hunters win by finding the token and entering its code (3 tries). If the clock runs out, the drop is secured. <b>3 secured drops in a row and the Courier wins.</b><br><br><b>Powers:</b> each Hunter gets one 🎯 sonar burst per drop (distance to within 5 m, but it alerts the Courier). The Courier gets one 📵 jammer per game and can add a bonus hint that unlocks at half time.<br><br><b>Treasure Trail mode:</b> the Courier hides several stops. Each code you find unlocks the clue to the next stop. Hunters race on a live leaderboard (speed earns points, hints cost 30). First to the 🏆 treasure wins.<br><br><b>Your phone is the server.</b> The Courier hosts a room and shares a 5-letter code or link. Hunters join from anywhere (any Wi-Fi or mobile data) and game data flows directly between phones. A free public matchmaking service only introduces the phones. The Courier keeps the app open. Training mode works alone.</div></details>`}
+function hdr(){const s=S.st,tr=s.mode==="trail"||S.gm==="trail";return`<header class="top"><div class="brand">👻 Phantom Post</div><div class="chips"><span class="chip">${S.role==="C"?"Courier":"Hunter"} ${esc(S.name)}</span>${S.mode==="room"?`<span class="chip code">${esc(S.code)}</span>`:`<span class="chip">Training</span>`}${tr?"":`<span class="chip pip">${pips(s.secured)}</span>`}</div><button class="ib" data-a="mute" aria-label="Toggle sound">${S.mute?"🔇":"🔊"}</button><button class="ib" data-a="leave" aria-label="Leave game">✕</button></header><div id="cs" class="err"></div>`}
+const mapc=()=>S.sim?`<div class="card"><div class="mut">Simulated map (300 m). Tap to move.</div><canvas id="mp" class="map" width="300" height="300"></canvas></div>`:`<div class="card"><canvas id="rm" class="map" width="480" height="480"></canvas><div class="mut">You are amber${S.role==="C"?", hunters blue, targets red":""}. Map © OpenStreetMap contributors; needs a connection.</div></div>`;
 function view(){const s=S.st,a=$("app");S.key=keyOf();
   if(!S.role){a.innerHTML=home();return}
   let h=hdr();
   if(S.pair){a.innerHTML=h+`<div class="card"><h2>Linking to room ${esc(S.code)}…</h2><div class="mut" id="cst">Contacting the Courier…</div></div>`;return}
-  if(s.phase==="trailend"){h+=`<div class="card"><h2>🏆 Hunt over</h2><div>${esc(s.note)}</div><h2 style="margin-top:12px">Final standings</h2><div class="mut" id="lb"></div><button data-a="again">Back to HQ</button></div>`}
+  if(s.phase==="trailend"){h+=`<div class="card"><h2>🏆 Hunt over</h2><div>${esc(s.note)}</div><h2 style="margin-top:12px">Final standings</h2><div class="mut" id="lb"></div>${S.role==="C"&&S.mode==="room"?'<button data-a="rematch">🔁 Rematch in this room</button>':""}<button class="g" data-a="again">Back to HQ</button></div>`}
   else if(s.phase==="trail"&&S.role==="C"){h+=`<div class="card"><h2>🏴‍☠️ Hunt in progress</h2><div class="mut">Time left</div><div class="big" id="tm"></div><div class="mut">Next radar ping in <b id="np"></b> · room <b>${esc(S.code||"")}</b></div></div>
     <div class="card"><h2>🏁 Leaderboard</h2><div id="lb" class="mut"></div></div>
     <div class="card"><h2>Trail</h2><div class="mut">${T.stops.map((p,i)=>(i+1)+". "+esc(p.clue)+" · code <b>"+esc(p.code)+"</b>").join("<br>")}</div></div>
-    <div class="card"><button id="jb" data-a="jam"></button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
+    <div class="card"><button id="jb" data-a="jam"></button><button class="g" data-a="bcast">📣 Message hunters</button><button class="g" id="pb" data-a="pause"></button><button class="g" data-a="endnow">⏹ End hunt early</button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
   else if(s.phase==="trail"){h+=`<div class="card"><h2 id="stp">Waiting for your first clue…</h2><div id="sc"></div><div id="th" class="mut" style="margin-top:8px"></div><button class="g" id="hb" data-a="hint">💡 Reveal hint (−30 pts)</button></div>
     <div class="card"><div class="mut">Time left</div><div class="big" id="tm"></div><h2>📡 Radar</h2><div class="gz" id="gz"></div><div id="rt"></div><div class="mut">Heat history</div><div id="hs" class="gz" style="height:34px;align-items:flex-end"></div><div class="mut">Next ping in <b id="np"></b></div></div>
     <div class="card"><h2>Enter this stop’s code</h2><div class="mut">Get within 60 m, find the marker, read its 4-digit code.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button>${S.bot?'<button class="g" data-a="search">🔎 Search here (training)</button>':""}<div id="ms" class="err"></div><div id="pi" class="mut"></div></div>
@@ -161,7 +208,7 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
     <div id="er" class="err"></div><div id="hn" class="mut"></div>${S.mode==="room"?`<div class="mut">Room code · hunters can join any time</div><div class="big" style="letter-spacing:6px">${esc(S.code)}</div><button class="g" data-a="sharelink">📨 Share invite link</button>`:""}
     <button data-a="starttrail">🏁 Start the hunt</button></div>`+mapc()}
   else if(s.phase==="won"||s.phase==="caught"){const cw=s.phase==="won";
-    h+=`<div class="card"><h2>${cw?"🎒 Courier wins":"🔍 Hunters win"}</h2><div>${esc(s.note)}</div><div class="mut">${cw?"Three clean drops in a row.":"Payload intercepted on drop #"+s.round+"."}</div><h2 style="margin-top:12px">Mission log</h2><div class="mut">${(s.log||[]).map(esc).join("<br>")}</div><button data-a="again">Back to HQ</button></div>`}
+    h+=`<div class="card"><h2>${cw?"🎒 Courier wins":"🔍 Hunters win"}</h2><div>${esc(s.note)}</div><div class="mut">${cw?"Three clean drops in a row.":"Payload intercepted on drop #"+s.round+"."}</div><h2 style="margin-top:12px">Mission log</h2><div class="mut">${(s.log||[]).map(esc).join("<br>")}</div>${S.role==="C"&&S.mode==="room"?'<button data-a="rematch">🔁 Rematch in this room</button>':""}<button class="g" data-a="again">Back to HQ</button></div>`}
   else if(S.role==="C"&&s.phase==="hiding"){
     h+=`<div class="card">${s.round===0&&S.mode==="room"?`<div class="row"><button data-a="gm" data-m="drop">Dead Drop</button><button class="g" data-a="gm" data-m="trail">Treasure Trail</button></div>`:""}<h2>Drop #${s.secured+1}: hide the token</h2><div class="mut">${esc(s.note)}</div>
     <div class="mut">Go to your hiding spot, hide the token, then lock in the drop.</div><div id="pi" class="mut"></div><div id="hn" class="mut"></div>${S.mode==="room"?`<div class="mut">Room code · hunters can join any time, from anywhere</div><div class="big" style="letter-spacing:6px">${esc(S.code)}</div><button class="g" data-a="sharelink">📨 Share invite link</button>`:""}
@@ -172,30 +219,33 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
     <div id="er" class="err"></div><button data-a="lock">🔒 Lock in dead drop</button></div>`+mapc()}
   else if(S.role==="C"){
     h+=`<div class="card"><h2>Drop #${s.round} is live</h2><div class="mut">Hunt ends in</div><div class="big" id="tm"></div><div class="mut">Next radar ping in <b id="np"></b> · code <b>${esc(C.pass)}</b>${S.mode==="room"?" · room <b>"+esc(S.code)+"</b>":""}</div></div>
-    <div class="card"><h2>Hunters</h2><div id="hl" class="mut">Waiting for hunters to join…</div></div><div class="card"><button id="jb" data-a="jam"></button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
+    <div class="card"><h2>Hunters</h2><div id="hl" class="mut">Waiting for hunters to join…</div></div><div class="card"><button id="jb" data-a="jam"></button><button class="g" data-a="bcast">📣 Message hunters</button><button class="g" id="pb" data-a="pause"></button><button class="g" data-a="endnow">⏹ End hunt early</button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
   else if(s.phase==="hiding"){
-    h+=`<div class="card"><h2>Standing by</h2><div class="mut">${esc(s.note)||"The Courier is hiding the token…"}</div><div id="pi" class="mut"></div></div>`+mapc()}
+    h+=`<div class="card"><h2>Standing by</h2><div class="mut">${esc(s.note)||"The Courier is hiding the token…"}</div>${S.mode==="room"&&!S.bot?'<button id="rb" data-a="ready"></button>':""}<div id="pi" class="mut"></div></div>`+mapc()}
   else{
     h+=`<div class="card"><h2>🗝 Clue · drop #${s.round}</h2><div>${esc(s.clue)}</div><div id="hh" class="mut" style="margin-top:8px"></div></div>
     <div class="card"><div class="mut">Time left</div><div class="big" id="tm"></div><h2>📡 Radar</h2><div class="gz" id="gz"></div><div id="rt"></div><div class="mut">Heat history</div><div id="hs" class="gz" style="height:34px;align-items:flex-end"></div><div class="mut">Next ping in <b id="np"></b></div></div>
     <div class="card"><h2>Claim the payload</h2><div class="mut">Enter the 4-digit code on the token.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button>${S.bot?'<button class="g" data-a="search">🔎 Search here (training)</button>':""}<div id="ms" class="err"></div><div id="pi" class="mut"></div></div>`+mapc()}
   a.innerHTML=h}
 function dyn(){const s=S.st,t=Date.now(),g=i=>$(i);
+  document.body.dataset.r=S.role||"";document.body.dataset.ph=s.phase;
+  {const e=g("ts");e.textContent=S.toast||"";e.classList.toggle("on",!!S.toast&&t<S.toastT)}
+  if(g("pb"))g("pb").textContent=s.paused?"▶ Resume hunt":"⏸ Pause hunt";if(g("rb"))g("rb").textContent=S.ready?"✅ Ready (tap to undo)":"✋ I’m ready";drawRM(g("rm"));
   if(g("cst"))g("cst").textContent=S.cerr||"Contacting the Courier…";
-  if(g("lb"))g("lb").innerHTML=(s.board||[]).map((r,k)=>`${k+1}. <b>${esc(r.n)}</b> · ${r.done?"🏆 finished":"stop "+Math.min(r.i+1,s.total)+"/"+s.total} · ${r.pts} pts${S.role==="C"&&S.radar[r.n]?" · "+esc(S.radar[r.n].t):""}`).join("<br>")||"No hunters yet.";
+  if(g("lb"))g("lb").innerHTML=(s.board||[]).map((r,k)=>`<div class="lr"><i>${["🥇","🥈","🥉"][k]||k+1}</i><b>${esc(r.n)}${r.n===S.name?" (you)":""}</b><span>${r.done?"🏆 finished":"stop "+Math.min(r.i+1,s.total)+"/"+s.total} · ${r.pts} pts${S.role==="C"&&S.radar[r.n]?"<br>"+esc(S.radar[r.n].t):""}</span></div>`).join("")||"No hunters yet.";
   if(g("stp")){const k=S.stop;g("stp").textContent=k?(k.done?"🏆 Treasure found!":"🗝 Stop "+(k.i+1)+" of "+k.total+" · "+k.pts+" pts"):"Waiting for your first clue…";g("sc").textContent=k?k.clue:"";g("th").textContent=k&&k.hint?"💡 "+k.hint:"";g("hb").style.display=k&&k.hq&&!k.hint?"":"none"}
-  if(g("tm"))g("tm").textContent=mmss(s.endsAt-t);if(g("np"))g("np").textContent=mmss(s.nextPing-t);
+  if(g("tm")){g("tm").textContent=mmss(s.endsAt-t);g("tm").classList.toggle("low",s.endsAt-t<30000&&!s.paused)}if(g("np"))g("np").textContent=mmss(s.nextPing-t);
   if(g("ms"))g("ms").textContent=S.msg;
-  if(g("cs"))g("cs").textContent=S.role==="H"&&!S.bot&&S.seen&&t-S.seen>12000?"⚠ Courier signal lost…":"";
+  if(g("cs"))g("cs").textContent=s.paused?"⏸ Hunt paused by the Courier":S.role==="H"&&!S.bot&&S.seen&&t-S.seen>12000?"⚠ Courier signal lost…":"";
   if(g("hh"))g("hh").textContent=s.h2?"💡 Bonus hint: "+s.h2:"💡 Bonus hint unlocks at half time.";
   if(g("sb")){g("sb").textContent="🎯 Sonar burst · "+S.son+" left (alerts Courier)";g("sb").disabled=S.son<1}
   if(g("jb")){g("jb").textContent="📵 Jam next radar ping ("+S.jam+" left)"+(S.jamNext?" · armed":"");g("jb").disabled=S.jam<1&&!S.jamNext}
   if(g("al"))g("al").textContent=S.alert||"";
   if(g("hs"))g("hs").innerHTML=S.hist.map(h=>`<span class="on" style="height:${(h+1)*16}%;background:var(--acc)"></span>`).join("");
-  if(g("hn"))g("hn").textContent="Hunters in room: "+S.net.peers().filter(p=>p.presence&&p.presence.role==="H").length;
+  if(g("hn")){const hs=S.net.peers().filter(p=>p.presence&&p.presence.role==="H");g("hn").textContent="Hunters in room: "+hs.length+" · ready: "+hs.filter(p=>p.presence.r).length};
   if(g("pi"))g("pi").textContent=S.sim?"Simulated position set.":S.pos?"GPS lock: "+S.pos.lat.toFixed(5)+", "+S.pos.lng.toFixed(5)+" (±"+Math.round(S.acc||0)+" m)":"Waiting for GPS… "+(S.gerr||"allow location access.");
-  if(g("hl")){const e=Object.entries(S.radar);g("hl").innerHTML=e.length?e.map(([n,r])=>`${esc(n)}: ${esc(r.t)}`).join("<br>"):"No hunters detected yet."}
-  if(g("gz")){const r=S.radar[S.name];const h=r?r.h:-1;g("gz").innerHTML=[0,1,2,3,4,5].map(i=>`<span class="${i<=h?"on":""}"></span>`).join("");
+  if(g("hl")){const e=Object.entries(S.radar);g("hl").innerHTML=e.length?e.map(([n,r])=>`<div class="lr"><b>${esc(n)}</b><span>${esc(r.t)}</span></div>`).join(""):"No hunters detected yet."}
+  if(g("gz")){const r=S.radar[S.name];const h=r?r.h:-1;if(g("gz").dataset.h!=h){g("gz").dataset.h=h;g("gz").innerHTML=scope(h)}
     g("rt").innerHTML=r?`<b>${esc(r.t)}</b> ${r.tr>0?"↗ warmer":r.tr<0?"↘ colder":""}<div class="mut">Updated ${Math.round((t-S.radarAt)/1000)} s ago</div>`:'<div class="mut">Awaiting first ping…</div>'}
   const c=g("mp");if(c){const x=c.getContext("2d");x.clearRect(0,0,300,300);x.strokeStyle="#8884";for(let i=0;i<=300;i+=50){x.beginPath();x.moveTo(i,0);x.lineTo(i,300);x.moveTo(0,i);x.lineTo(300,i);x.stroke()}
     if(S.role==="C"&&C.drop){x.fillStyle="#d9382b";x.fillRect(C.drop.lng/K-5,C.drop.lat/K-5,10,10)}
@@ -219,6 +269,13 @@ async function start(a){const nm=$("nm").value.trim(),er=$("er");
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
   if(["train","traint","host","join"].includes(a))return start(a);
   if(a==="again")return location.reload();
+  if(a==="pause"){S.st.paused=!S.st.paused;bc();return}
+  if(a==="ready"){S.ready=!S.ready;pres();return}
+  if(a==="rematch"){Object.assign(S.st,{phase:"hiding",round:0,secured:0,clue:"",note:"New game. The Courier is setting up.",log:[],board:[],mode:undefined,paused:false,total:0});S.gm=undefined;T.stops=[];T.prog={};C.drop=null;S.jam=1;S.jamNext=false;S.radar={};bc();view();return}
+  if(a==="leave"){if(confirm("Leave this game?"))location.reload();return}
+  if(a==="mute"){S.mute=!S.mute;try{localStorage.setItem("pp_m",S.mute?"1":"0")}catch(x){}b.textContent=S.mute?"🔇":"🔊";return}
+  if(a==="bcast"){const m=(prompt("Message to all hunters:")||"").trim().slice(0,120);if(m&&S.net)S.net.emit("bcast",{m});return}
+  if(a==="endnow"){if(!confirm("End this hunt now?"))return;const s=S.st;if(s.phase==="trail")s.endsAt=Date.now();else{s.phase="hiding";s.note="Drop aborted by the Courier.";s.log=(s.log||[]).concat("Drop #"+s.round+": aborted");bc()}return}
   if(a==="sharelink"){const u=location.origin+location.pathname+"?join="+S.code,t="Join my Phantom Post game! Room code "+S.code+" · "+u;try{if(navigator.share)await navigator.share({text:t});else{await navigator.clipboard.writeText(t);$("er").textContent="Invite copied."}}catch(x){}return}
   if(a==="gm"){S.gm=b.dataset.m;view();return}
   if(a==="addstop"){const cl=$("tc").value.trim(),cd=$("tk").value.trim(),ht=$("tt").value.trim(),er=$("er");
@@ -226,11 +283,11 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
     if(!/^\d{4}$/.test(cd))return er.textContent="Code must be 4 digits.";if(T.stops.length>=8)return er.textContent="Maximum 8 stops.";
     T.stops.push({lat:S.pos.lat,lng:S.pos.lng,clue:cl,code:cd,hint:ht});view();return}
   if(a==="popstop"){T.stops.pop();view();return}
-  if(a==="starttrail"){const er=$("er");if(T.stops.length<2)return er.textContent="Add at least 2 stops (the last one is the treasure).";tLaunch(+$("iv").value,+$("lm").value*60);view();return}
+  if(a==="starttrail"){if(!rdy())return;const er=$("er");if(T.stops.length<2)return er.textContent="Add at least 2 stops (the last one is the treasure).";tLaunch(+$("iv").value,+$("lm").value*60);view();return}
   if(a==="hint"){S.net.emit("hint",{n:S.name});return}
   if(a==="jam"){if(S.jam>0&&(S.st.phase==="live"||S.st.phase==="trail")){S.jam--;S.jamNext=true;S.msg="Jammer armed for the next ping."}return}
   if(a==="sonar"){if(S.son>0&&(S.st.phase==="live"||S.st.phase==="trail")){S.son--;S.net.emit("scan",{n:S.name});S.msg="Sonar sent…"}return}
-  if(a==="lock"){const cl=$("cl").value.trim(),pc=$("pc").value.trim(),er=$("er");if(S.mode==="room"&&!S.net.peers().length)return er.textContent="No hunters have joined yet. Share the room code.";
+  if(a==="lock"){if(!rdy())return;const cl=$("cl").value.trim(),pc=$("pc").value.trim(),er=$("er");if(S.mode==="room"&&!S.net.peers().length)return er.textContent="No hunters have joined yet. Share the room code.";
     if(!S.pos)return er.textContent="No position yet. Wait for GPS or enable simulated GPS.";
     if(!cl)return er.textContent="Write a clue.";if(!/^\d{4}$/.test(pc))return er.textContent="Code must be 4 digits.";
     C.drop={...S.pos};C.pass=pc;C.h2=$("h2").value.trim();launch(cl,+$("iv").value,+$("hu").value);view()}
@@ -238,7 +295,7 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
   if(a==="search"){const tg=tgt(S.name),cd=S.st.mode==="trail"?(T.stops[T.prog[S.name]?T.prog[S.name].i:0]||{}).code:C.pass;S.msg=tg&&dist(S.pos,tg)<=12?"You found the marker! Code: "+cd:"Nothing here. Keep looking."}});
 document.addEventListener("pointerdown",e=>{if(e.target.id!=="mp")return;const r=e.target.getBoundingClientRect();
   S.pos={lat:(e.clientY-r.top)/r.height*300*K,lng:(e.clientX-r.left)/r.width*300*K};S.acc=0;pres()});
-setInterval(()=>{tickC();if(S.role==="H"&&!S.bot&&!S.pair&&Date.now()-(S.pt||0)>5000){S.pt=Date.now();pres()}const k=keyOf();if(S.role&&k!==S.key)view();dyn()},500);
+setInterval(()=>{const t0=Date.now();if(S.st.paused&&(S.st.phase==="live"||S.st.phase==="trail")){const d=t0-(S.lt||t0);S.st.endsAt+=d;S.st.nextPing+=d}S.lt=t0;{const ph=S.st.phase;if(ph==="won"||ph==="caught"||ph==="trailend"){if(!S.rec&&S.mode==="room"){S.rec=1;rec(ph)}if(!S.cel){S.cel=1;burst(ph==="won"?"🎒💜✨":"🏆🎉✨")}}else{S.rec=0;S.cel=0}}tickC();if(S.role==="H"&&!S.bot&&!S.pair&&Date.now()-(S.pt||0)>5000){S.pt=Date.now();pres()}const k=keyOf();if(S.role&&k!==S.key)view();dyn()},500);
 view();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
