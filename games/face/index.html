@@ -51,6 +51,16 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 .sl{margin:12px 0}.sl div:first-child{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mute)}.sl .tr{position:relative;height:8px;border-radius:9px;background:var(--line);margin-top:8px}.sl .tr i{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;background:linear-gradient(90deg,var(--acc),var(--acc2));margin-left:-9px}
 .aw{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:.95rem}.aw b{flex:none}
 .gin{flex:1;min-width:0;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);margin-top:6px}
+.btn:active{transform:scale(.98)}
+#ov{position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;background:rgba(21,16,42,.78);backdrop-filter:blur(6px);padding:20px}
+.ovb{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px 20px;max-width:360px;width:100%;text-align:center}
+.ovb h2{margin:0;font-size:1.2rem}
+.spin{width:44px;height:44px;margin:0 auto 12px;border-radius:50%;border:5px solid var(--line);border-top-color:var(--acc2);animation:spn .9s linear infinite}
+@keyframes spn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+#ovl{list-style:none;margin:10px 0;padding:0;text-align:left}#ovl li{padding:4px 0;color:var(--mute)}#ovl li.on{color:var(--ink);font-weight:700}#ovl li.ok{color:var(--ink)}
+#jb{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:8px 0;background:var(--bg)}#jb .btn{width:auto;flex:none;min-height:40px;margin:0;padding:8px 14px}
+#cl,#sv,#fun,#an,#gm,#shr,#atb{scroll-margin-top:70px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -70,12 +80,13 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <div class="gd" id="gd"></div>
 <p class="sm">Upload one clear photo of one face: looking straight at the camera, eyes open, hair off the eyes, no sunglasses, even light, and the face filling about half the frame.</p></details>
 <button class="btn" id="go">Start 360° scan</button>
+<button class="btn" id="crush" style="margin-top:10px">💘 Crush compatibility (2 people)</button>
 <label class="chk" id="consw" hidden><input type="checkbox" id="cons"><span>They said yes to me using their photo (needed for photo uploads)</span></label>
 <button class="btn ghost" id="up">📷 Upload a photo instead</button><input type="file" id="fi" accept="image/*" hidden>
 <button class="btn ghost" id="inst" hidden>Install app</button>
-<details id="lab"><summary>Games &amp; tools (no scan needed)</summary>
-<button class="btn ghost" id="b-grp">Group scan, up to 4 👥</button><button class="btn ghost" id="b-duel">Expression duel ⚔️</button><button class="btn ghost" id="b-mim">Mimic mode 🪞</button><button class="btn ghost" id="b-wink">Wink &amp; brow test 😉</button><button class="btn ghost" id="b-smile">Smile trainer 😁</button>
-<label class="chk" style="align-items:center"><span>Photo coach</span><select id="pm" aria-label="Photo coach mode"><option value="gen">Best overall</option><option value="li">LinkedIn</option><option value="dt">Dating</option><option value="pp">Passport</option></select></label>
+<details id="lab"><summary>🎮 Games &amp; tools (no scan needed)</summary>
+<button class="btn ghost" id="b-grp">Group scan, up to 4 👥</button><button class="btn ghost" id="b-duel">Expression duel ⚔️</button><button class="btn ghost" id="b-mim">Mimic mode 🪞</button><button class="btn ghost" id="b-wink">Wink &amp; brow test 😉</button><button class="btn ghost" id="b-smile">Smile trainer 😁</button><button class="btn ghost" id="b-stare">Staring contest 👀</button><button class="btn ghost" id="b-shut">Smile shutter: auto-snap 📸</button>
+<label class="chk" style="align-items:center"><span>Photo coach</span><select id="pm" aria-label="Photo coach mode"><option value="gen">Best overall (any photo)</option><option value="li">LinkedIn</option><option value="dt">Dating</option><option value="pp">Passport</option></select></label>
 <button class="btn ghost" id="b-pic">Pick best photo (upload 2–10) 🖼️</button><input type="file" id="pf" accept="image/*" multiple hidden><div id="pico" class="sm"></div>
 <b>Mood diary</b> <span class="sm">(resting expression, not feelings)</span><canvas id="mdc" width="320" height="80" style="width:100%;height:auto" role="img" aria-label="Trend of your daily resting expression"></canvas><p class="sm" id="mdt"></p></details>
 <p class="note" id="sealb" hidden>🔒 A friend sent you a sealed result. Scan yourself to unlock it.</p>
@@ -94,9 +105,13 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <div class="row"><button class="btn ghost" id="flip">Flip camera</button><button class="btn ghost" id="skip">Skip angle</button><button class="btn ghost" id="stop">Stop</button></div>
 </div>
 
+<div id="cc" class="card" hidden><b id="cct"></b><p class="sm" id="ccp"></p>
+<label class="chk"><input type="checkbox" id="ccx"><span>This is me, or they said yes to me using their photo (needed for photo uploads)</span></label>
+<button class="btn" id="ccl">Scan live 🎥</button><button class="btn ghost" id="ccu">Upload a photo 📷</button><input type="file" id="ccf" accept="image/*" hidden><button class="btn ghost" id="ccb">Back</button></div>
 <div id="mr" class="card" hidden><b id="mrt"></b><div id="mrb" style="margin-top:8px"></div><button class="btn" id="mra">Play again</button><button class="btn ghost" id="mrc">Copy result</button><button class="btn ghost" id="mrx">Done</button></div>
 
 <div id="res" hidden>
+<div id="jb" role="navigation" aria-label="Jump to a section"><button class="btn ghost" data-j="cl">🧊 3D</button><button class="btn ghost" data-j="sv">📊 Scores</button><button class="btn ghost" data-j="fun">🎉 Fun</button><button class="btn ghost" data-j="an">🔍 Markup</button><button class="btn ghost" data-j="gm">🎮 Games</button><button class="btn ghost" data-j="shr">📤 Share</button></div>
 <div class="card"><canvas id="cl" width="360" height="360" tabindex="0" role="img" aria-label="3D point cloud of your face. Drag or use arrow keys to rotate."></canvas><p class="note">Drag or use arrow keys to rotate your 3D face cloud.</p></div>
 <p class="note" id="upn" role="status"></p><p class="note" id="stk"></p>
 <div class="card arch"><div class="em" id="aem"></div><h2 id="ati"></h2><p id="ade"></p></div>
@@ -135,7 +150,8 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <div class="card"><b>Play and compare</b>
 <button class="btn" id="gm" style="margin-top:8px">Expression challenge 🎭</button>
 <button class="btn ghost" id="dm">Daily challenge ⭐</button>
-<button class="btn ghost" id="fr">Crush / friend compare 💞</button>
+<button class="btn" id="crush2">💘 Crush compatibility</button>
+<button class="btn ghost" id="fr">Compare full scans with a friend</button>
 <p class="note" id="gres">No rankings against other people. Friend scans aren’t saved.</p></div>
 <div class="card"><b>More fun</b>
 <button class="btn ghost" id="gs">Guess my score 🎯</button>
@@ -155,7 +171,8 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <button class="btn ghost" id="seal">Sealed link for a friend 🔒</button><p class="sm">The sealed link holds only rounded scores, no photo. The lock is a courtesy: anyone with the link could decode the numbers.</p>
 <button class="btn ghost" id="cr">Copy my results</button></div>
 <div class="card"><b>Past scans on this device</b><div id="hist" style="margin-top:8px"></div>
-<button class="btn ghost" id="clr">Delete my saved scores</button></div>
+<button class="btn ghost" id="clr">Delete my saved scores</button>
+<button class="btn ghost" id="wipe">Delete everything now (scores, mood, this session)</button></div>
 <button class="btn ghost" id="again">Scan again</button>
 </div>
 <details class="card" id="fbk"><summary>💬 Send feedback to the developer</summary>
@@ -168,6 +185,8 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 <button class="btn" id="fbs">Send feedback</button><button class="btn ghost" id="fbe" hidden>Email it instead</button>
 <p class="note" id="fbst" role="status" aria-live="polite"></p></details>
 </main>
+
+<div id="ov" hidden role="alertdialog" aria-modal="true" aria-labelledby="sut"><div class="ovb"><div class="spin" id="ovs" aria-hidden="true"></div><h2 id="sut"></h2><ol id="ovl"></ol><p class="sm" id="ovn" role="status" aria-live="polite"></p><button class="btn ghost" id="ovc">Cancel</button><button class="btn" id="ovk" hidden>OK</button></div></div>
 
 <script type="module">
 import {FaceLandmarker,FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm";
@@ -234,14 +253,17 @@ function sample(k){
  return '<svg viewBox="0 0 120 150" aria-hidden="true"><rect width="120" height="150" rx="14" fill="var(--bg)" stroke="var(--line)"/><g fill="none" stroke="var(--acc)" stroke-width="3" stroke-linecap="round">'+body+'</g>'+extra+'<circle cx="100" cy="20" r="12" fill="'+(ok?'#22c55e':'#ef4444')+'"/><text x="100" y="25" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">'+(ok?'✓':'✕')+'</text></svg>';
 }
 async function rmode(m){if(lm.rm!==m){await lm.setOptions({runningMode:m});lm.rm=m}}
-async function loadModel(){
+async function loadModel0(){
  if(lm)return;
  const fs=await FilesetResolver.forVisionTasks(BASE+"/wasm");
  const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
  try{lm=await FaceLandmarker.createFromOptions(fs,opt('GPU'))}catch(e){lm=await FaceLandmarker.createFromOptions(fs,opt('CPU'))}
  lm.rm='VIDEO';
 }
-async function fromFile(file){
+async function fromFile(f){ovOpen('Reading your photo',['Loading the face model','Finding your face','Ready'],false);await paint();
+ try{await loadModel()}catch(e){ovFail('Couldn’t load the face model. Check your connection and try again.');return}
+ ovStep(1);await paint();await fromFile0(f);ovClose()}
+async function fromFile0(file){
  const say2=t=>{$('st').textContent=t};
  if(!file.type.startsWith('image/')){say2('Please choose an image file.');return}
  say2('Loading your photo…');
@@ -306,7 +328,7 @@ function funCard(r){const e=ext(r),el=$('funb');el.textContent='';if(SEALED&&$('
  const role=r.play>=55?['Comic relief 🤡','Steals every scene']:r.warm>=60&&en?['Hero 🦸','Leads with heart']:r.energy<45&&r.warm<55?['Mastermind 🧠','Always three steps ahead']:['Sidekick 🤝','The one everyone needs'];
  const pw=[['warm','☀️ Sunshine Aura','Lights up a room before you speak'],['energy','⚡ Spark Eyes','Big reactions, big energy'],['play','🎭 Shapeshifter','Your face can be anything']].reduce((a,c)=>r[c[0]]>r[a[0]]?c:a);
  const an=[['🦊','Fox','Clever and playful',e.sharp*.5+r.play*.5],['🐶','Golden retriever','Warm and loyal',r.warm*.6+e.dog*.4],['🐱','Cat','Cool and self-possessed',100-e.dog],['🦉','Owl','Calm and thoughtful',e.moody*.6+(100-r.energy)*.4],['🦦','Otter','Joyful and silly',r.play*.5+r.warm*.5],['🐺','Wolf','Focused and loyal',e.sharp*.5+r.energy*.5]].reduce((a,c)=>c[3]>a[3]?c:a);
- [['🕰️ Face era',era[0],era[1]],['🎬 Movie role',role[0],role[1]],['🦸 Superpower',pw[1],pw[2]],['🐾 Spirit animal',an[0]+' '+an[1],an[2]],['🙃 Emoji twin',pick(r)+' matches you most','Picked from your expression']].forEach(x=>{const d=mk2('div','aw');d.appendChild(mk2('b','',x[0]));d.appendChild(mk2('span','',x[1]+' · '+x[2]));el.appendChild(d)});
+ [['🕰️ Face era',era[0],era[1]],['🎬 Movie role',role[0],role[1]],['🦸 Superpower',pw[1],pw[2]],['🐾 Spirit animal',an[0]+' '+an[1],an[2]],['🙃 Emoji twin',pick(r)+' matches you most','Picked from your expression'],['🌈 Aura',auraOf(r),''],['💌 Compliment',compl(r),''],['🔮 Today’s forecast',forecast(r),'']].forEach(x=>{const d=mk2('div','aw');d.appendChild(mk2('b','',x[0]));d.appendChild(mk2('span','',(x[2]?x[1]+' · '+x[2]:x[1])));el.appendChild(d)});
  el.appendChild(slider('Soft','Sharp',e.sharp));el.appendChild(slider('Sunny','Moody',e.moody));el.appendChild(slider('Cat energy','Dog energy',e.dog));el.appendChild(slider('Artsy','Sporty',e.sporty));
  el.appendChild(mk2('p','sm','Balance check: smile evenness '+Math.round(e.smileEven)+'%, brow evenness '+Math.round(e.browEven)+'%. Sliders read your expression, not your face structure, gender or worth.'))}
 function say(t){if(!voice||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();{const u=new SpeechSynthesisUtterance(lang!=='en'&&DICT[lang][t]||t);u.lang=LC[lang];speechSynthesis.speak(u)}}catch(e){}}
@@ -324,17 +346,8 @@ async function startCam(){await rmode('VIDEO');
 function stopCam(){live=false;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;try{speechSynthesis.cancel()}catch(e){}}
 $('go').onclick=async()=>{
  if(!navigator.mediaDevices||!window.WebAssembly){$('st').textContent='This browser can’t run the scan. Try a recent Chrome, Safari or Edge over https.';return}
- voice=$('vo').checked;$('go').disabled=true;$('st').textContent='Loading face model (about 4 MB)…';
- try{
-  if(!lm){
-   const fs=await FilesetResolver.forVisionTasks(BASE+"/wasm");
-   const opt=d=>({baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
-   try{lm=await FaceLandmarker.createFromOptions(fs,opt('GPU'))}catch(e){lm=await FaceLandmarker.createFromOptions(fs,opt('CPU'))}
-  }
- }catch(e){$('st').textContent='Couldn’t load the face model. Check your connection and try again.';$('go').disabled=false;return}
- try{await startCam()}catch(e){
-  $('st').textContent=e&&e.name==='NotAllowedError'?'Camera permission was denied. Allow it in your browser settings, then try again.':e&&e.name==='NotFoundError'?'No camera found on this device.':'Couldn’t open the camera: '+((e&&e.message)||e);
-  $('go').disabled=false;return}
+ voice=$('vo').checked;$('go').disabled=true;
+ if(!await setup('Setting things up',true)){$('go').disabled=false;return}
  S={};step=0;hold=0;caps=[];nf=0;live=true;mode='scan';$('upn').textContent='';Object.assign(T,{frames:0,nof:0,q:{},steps:[]});$('intro').hidden=true;$('scan').hidden=false;ui();loop();
 };
 $('flip').onclick=async()=>{face=face==='user'?'environment':'user';try{await startCam()}catch(e){face=face==='user'?'environment':'user';$('hint').textContent='Couldn’t switch cameras.'}};
@@ -511,7 +524,7 @@ $('shr').onclick=async()=>{
 };
 $('again').onclick=()=>{cmpBase=null;$('consw').hidden=true;cancelAnimationFrame(cloudId);$('res').hidden=true;$('intro').hidden=false;$('go').disabled=false;$('st').textContent='Good light and a steady hand help.';['sb','mb','xb'].forEach(i=>$(i).style.width='0');window.scrollTo(0,0)};
 $('gm').onclick=async()=>{
- try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
+ if(!await setup('Starting the challenge',true))return;
  mode='game';G={i:0,t0:performance.now(),peak:0,s:[]};$('res').hidden=true;$('scan').hidden=false;$('skip').hidden=true;
  live=true;gui();loop();window.scrollTo(0,0);
 };
@@ -519,7 +532,7 @@ $('fr').onclick=()=>{cmpBase=res;$('consw').hidden=false;$('cons').checked=false
  $('st').textContent='Scan live together on this phone, or upload a photo after ticking “They said yes”. Nothing is saved.';window.scrollTo(0,0)};
 $('cp').onclick=async()=>{const t=JSON.stringify(TL,null,1);try{await navigator.clipboard.writeText(t);$('cp').textContent='Copied ✓'}catch(e){prompt('Copy this log:',t)}};
 async function startGame(dl){
- try{await startCam()}catch(e){$('gres').textContent='Couldn’t open the camera for the challenge.';return}
+ if(!await setup('Starting the challenge',true))return;
  daily=dl;GR=dl?[GR0[Math.floor(Date.now()/864e5)%GR0.length]]:GR0;
  mode='game';G={i:0,t0:performance.now(),peak:0,s:[]};$('res').hidden=true;$('scan').hidden=false;$('skip').hidden=true;live=true;gui();loop();window.scrollTo(0,0);
 }
@@ -649,19 +662,19 @@ function symOf(L){const a=L[10],b=L[152],len=Math.hypot(b.x-a.x,b.y-a.y),nx=-(b.
 function miniUi(){const c=MN,d=$('dots');d.textContent='';if(c.rounds)c.rounds.forEach((_,i)=>{const e=mk2('i');if(i<c.i)e.className='on';d.appendChild(e)});
  $('cnt').textContent=c.title+(c.rounds?' · round '+(c.i+1)+' of '+c.rounds.length:'');$('stp').textContent=c.rounds?c.rounds[c.i].t:c.prompt;$('hp').textContent='';$('hb').style.width='0';say($('stp').textContent)}
 async function miniStart(c){
- try{await loadModel();await lm.setOptions({numFaces:c.n||1});await startCam()}catch(e){$('st').textContent='Couldn’t open the camera or load the face model.';return}
+ if(!await setup(c.title,true)){if(c.onfail)c.onfail();return}await lm.setOptions({numFaces:c.n||1});
  if(!KEEP)prevRes=!$('res').hidden;KEEP=false;MN=Object.assign({i:0,t0:performance.now(),pk:0,s:[]},c);mode='mini';S={};voice=$('vo').checked;
  ['intro','res','mr'].forEach(i=>$(i).hidden=true);$('scan').hidden=false;$('skip').hidden=true;$('msnap').hidden=!c.group;$('go').disabled=false;live=true;miniUi();loop();window.scrollTo(0,0)}
 function miniFrame(r){const c=MN,B=bsL(r),Ls=r.faceLandmarks||[];c.B=B;c.Ls=Ls;const no='I can’t see a face. Move into the light.';
  ox.fillStyle='rgba(167,139,250,.85)';Ls.forEach(L=>{for(let i=0;i<L.length;i+=3)ox.fillRect(L[i].x*O.width-1,L[i].y*O.height-1,2,2)});
  if(c.group){$('hint').textContent=Ls.length?Ls.length+' face'+(Ls.length>1?'s':'')+' found. Squeeze in and tap Snap.':no;return}
- if(c.live){$('hint').textContent=B[0]?c.live(B[0]):no;return}
+ if(c.live){$('hint').textContent=B[0]?c.live(B[0],Ls[0]):no;return}
  if(!B[0]){$('hint').textContent=no;c.t0=performance.now();return}
  const e=performance.now()-c.t0,d=c.rounds[c.i];
- if(e<3000){$('hint').textContent='Get ready… '+Math.ceil((3000-e)/1000);$('hb').style.width='0';c.pk=0;return}
- const f=Math.min(1,(e-3000)/3000);$('hb').style.width=f*100+'%';$('hint').textContent='Go!';$('hp').textContent='Time left: '+Math.ceil(3*(1-f))+'s';c.pk=Math.max(c.pk,d.f(B[0]));
+ const RD=c.rd||3000;if(e<RD){$('hint').textContent='Get ready… '+Math.ceil((RD-e)/1000);$('hb').style.width='0';c.pk=0;return}
+ const f=Math.min(1,(e-RD)/3000);$('hb').style.width=f*100+'%';$('hint').textContent='Go!';$('hp').textContent='Time left: '+Math.ceil(3*(1-f))+'s';c.pk=Math.max(c.pk,d.f(B[0]));if(c.rec)c.rec(B[0],Ls[0],c.i);
  if(f>=1){c.s.push(Math.round(clamp(c.pk*110,0,100)));c.i++;c.t0=performance.now();c.pk=0;c.i>=c.rounds.length?endMini():miniUi()}}
-function endMini(){const c=MN;MN=null;stopCam();lm.setOptions({numFaces:1});mode='scan';$('scan').hidden=true;$('msnap').hidden=true;$('mr').hidden=false;$('mrc').textContent='Copy result';$('mrt').textContent=c.title;const el=$('mrb');el.textContent='';c.cb(c.s,el);window.scrollTo(0,0)}
+function endMini(){const c=MN;MN=null;stopCam();lm.setOptions({numFaces:1});mode='scan';$('scan').hidden=true;$('msnap').hidden=true;if(c.after){c.after(c);return}$('mr').hidden=false;$('mrc').textContent='Copy result';$('mrt').textContent=c.title;const el=$('mrb');el.textContent='';c.cb(c.s,el);window.scrollTo(0,0)}
 $('stop').addEventListener('click',()=>{MN=null;$('msnap').hidden=true;if(lm)lm.setOptions({numFaces:1})});
 document.querySelectorAll('#lab button[id^="b-"]').forEach(b=>{if(b.id!=='b-pic')b.addEventListener('click',()=>{LB=b.id})});
 $('mra').onclick=()=>{if(!LB)return;KEEP=true;$('mr').hidden=true;$(LB).click()};
@@ -674,7 +687,8 @@ $('msnap').onclick=()=>{const c=MN;if(!c||!c.Ls||!c.Ls.length)return;const Z=new
  const best=a=>{let b=null;F.forEach((f,fi)=>{const mx=Math.max(...F.map(q=>q[a[1]]))||1,v=f[a[1]]/mx;if(!b||v>b.v)b={v,fi}});return b};
  while(pool.length&&got.some(g=>!g)){let bb=null;pool.forEach((a,ai)=>F.forEach((f,fi)=>{if(got[fi])return;const mx=Math.max(...F.map(q=>q[a[1]]))||1,v=f[a[1]]/mx;if(!bb||v>bb.v)bb={v,ai,fi}}));got[bb.fi]=pool[bb.ai][0];pool.splice(bb.ai,1)}
  pool.forEach(a=>{const b=best(a);got[b.fi]+=' + '+a[0]});
- c.cb=(g,el)=>{g.forEach((a,i)=>rw(el,'Face '+(i+1)+(g.length>1&&i===0?' (left)':g.length>1&&i===g.length-1?' (right)':''),a));el.appendChild(mk2('p','note','Faces are numbered left to right on screen. Everyone wins something. Nothing is saved.'))};c.s=got;endMini()};
+ let tw='';if(F.length>1){let bd=9,pi=[0,1];for(let i=0;i<F.length;i++)for(let j=i+1;j<F.length;j++){const d=Math.abs(F[i].sm-F[j].sm);if(d<bd){bd=d;pi=[i,j]}}tw='Smile twins: Face '+(pi[0]+1)+' & Face '+(pi[1]+1)+' 😁'}
+ c.cb=(g,el)=>{if(tw)el.appendChild(mk2('p','',tw));g.forEach((a,i)=>rw(el,'Face '+(i+1)+(g.length>1&&i===0?' (left)':g.length>1&&i===g.length-1?' (right)':''),a));el.appendChild(mk2('p','note','Faces are numbered left to right on screen. Everyone wins something. Nothing is saved.'))};c.s=got;endMini()};
 $('b-duel').onclick=()=>{const k=Math.random()<.5,f=k?SUR:WNK,nm=k?'surprise 😲':'a wink 😉';miniStart({title:'Expression duel',rounds:[{t:'Player 1: do '+nm,f},{t:'Player 2: do '+nm,f}],cb:(s,el)=>{rw(el,'Player 1',s[0]+'/100');rw(el,'Player 2',s[1]+'/100');el.appendChild(mk2('p','',Math.abs(s[0]-s[1])<5?'Too close to call 🤝':'Player '+(s[0]>s[1]?1:2)+' wins this round 🏆'));el.appendChild(mk2('p','note','Just for fun. Nothing is saved.'))}})};
 const MT=[['Big smile 😁',SMI],['Surprised 😲',SUR],['Kissy face 😘',b=>b.mouthPucker],['Eyebrow raise 🤨',BRW],['Wink 😉',WNK],['Tongue out 😛',b=>b.tongueOut*1.2]];
 $('b-mim').onclick=()=>{const t=MT.slice().sort(()=>Math.random()-.5).slice(0,3);miniStart({title:'Mimic mode',rounds:t.map(x=>({t:'Copy: '+x[0],f:x[1]})),cb:(s,el)=>{t.forEach((x,i)=>rw(el,x[0],s[i]+'% match'));el.appendChild(mk2('p','note','Nothing is saved.'))}})};
@@ -683,22 +697,41 @@ $('b-wink').onclick=()=>miniStart({title:'Wink & brow test',rounds:[{t:'Wink you
 $('b-smile').onclick=()=>miniStart({title:'Smile trainer',prompt:'Smile and watch the evenness meter',live:b=>{const L=b.mouthSmileLeft,R=b.mouthSmileRight,sm=(L+R)/2,ev=Math.round(clamp(100-Math.abs(L-R)*250,0,100));$('hp').textContent='Smile '+Math.round(sm*100)+' · evenness '+ev+'%';$('hb').style.width=ev+'%';return sm<.15?'Give a smile 🙂':Math.abs(L-R)<.06?'Even and lovely ✨':L>R?'Lift your right side a bit more':'Lift your left side a bit more'}});
 // photo picker + coach
 $('b-pic').onclick=()=>{if(confirm('Are these photos of you, or of people who said yes to you using them?'))$('pf').click()};
-const COACH={gen:'Pick the top photo: best light, sharpness, framing and expression.',li:'LinkedIn: calm light, eyes open, face centered, a mild friendly smile.',dt:'Dating: a genuine, warm smile and good natural light beat heavy filters.',pp:'Passport: neutral face, mouth closed, eyes open, looking straight on. Check your country’s rules.'};
+const COACH={gen:'Scored on the whole picture, not just the face. Photos without faces work too.',li:'LinkedIn: calm light, eyes open, face centered, a mild friendly smile.',dt:'Dating: a genuine, warm smile and good natural light beat heavy filters.',pp:'Passport: neutral face, mouth closed, eyes open, looking straight on. Check your country’s rules.'};
+function analyze(c,L,bs,ow,oh){
+ const w=160,h=Math.max(1,Math.round(160*c.height/c.width)),t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d',{willReadFrequently:true});x.drawImage(c,0,0,w,h);const d=x.getImageData(0,0,w,h).data,n=w*h,g=new Float32Array(n),rg=[],yb=[];
+ let su=0,sq=0,hi=0,lo=0;for(let i=0;i<n;i++){const R=d[i*4],G=d[i*4+1],B=d[i*4+2],l=R*.299+G*.587+B*.114;g[i]=l;su+=l;sq+=l*l;if(l>250)hi++;if(l<6)lo++;rg.push(R-G);yb.push((R+G)/2-B)}
+ const mean=su/n,sd=Math.sqrt(Math.max(0,sq/n-mean*mean)),ms=a=>{const m=a.reduce((p,q)=>p+q,0)/a.length;return[m,Math.sqrt(a.reduce((p,q)=>p+(q-m)**2,0)/a.length)]},[mr,sr]=ms(rg),[my,sy]=ms(yb),cf=Math.hypot(sr,sy)+.3*Math.hypot(mr,my);
+ const D={expo:clamp(100-Math.abs(mean-130)*1.1-hi/n*400-lo/n*300,0,100),cont:clamp(100-Math.abs(sd-60)*2.2,0,100),col:clamp(cf/70*100,0,100),res:clamp((Math.min(ow,oh)-300)/700*100,0,100)};
+ if(!L){D.sharp=clamp((sharpOf(c)-CAL.shLo)/CAL.shSpan*100,0,100);return D}
+ let x0=1,x1=0,y0=1,y1=0;L.forEach(q=>{x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y)});
+ const fw=x1-x0,fh=y1-y0,cx=(x0+x1)/2,cr=document.createElement('canvas'),px=Math.max(0,x0*c.width),py=Math.max(0,y0*c.height),pw=Math.max(8,Math.min(c.width-px,fw*c.width)),ph=Math.max(8,Math.min(c.height-py,fh*c.height));
+ cr.width=pw;cr.height=ph;cr.getContext('2d').drawImage(c,px,py,pw,ph,0,0,pw,ph);D.sharp=clamp((sharpOf(cr)-CAL.shLo)/CAL.shSpan*100,0,100);
+ const bx0=(x0-.08)*w,bx1=(x1+.08)*w,by0=(y0-.08)*h,by1=(y1+.08)*h;let bsum=0,bc=0,mL=0,nL=0,mR=0,nR=0;const mx=(x0+x1)/2*w;
+ for(let j=0;j<h-1;j++)for(let i=0;i<w-1;i++){const k=j*w+i;if(i>=bx0&&i<=bx1&&j>=by0&&j<=by1){if(i>=x0*w&&i<=x1*w&&j>=y0*h&&j<=y1*h){if(i<mx){mL+=g[k];nL++}else{mR+=g[k];nR++}}continue}bsum+=Math.abs(g[k]-g[k+1])+Math.abs(g[k]-g[k+w]);bc+=2}
+ D.bg=bc<n*.3?70:clamp(100-(bsum/bc-3)*9,0,100);D.even=nL&&nR?clamp(100-Math.abs(mL/nL-mR/nR)*1.6,0,100):70;
+ D.comp=clamp(100-Math.abs(fh-.45)*180-Math.abs(cx-.5)*120-(y0<.03?25:0)-(y1>.99?20:0),0,100);
+ D.angle=clamp(100-Math.abs(pose(L).yaw)*600,0,100);D.eo=1-((bs.eyeBlinkLeft||0)+(bs.eyeBlinkRight||0))/2;D.sm=((bs.mouthSmileLeft||0)+(bs.mouthSmileRight||0))/2;return D}
+const MW={gen:{expo:.18,sharp:.18,cont:.08,col:.08,bg:.1,comp:.1,res:.05,even:.05,expr:.12,angle:.06},li:{expo:.15,sharp:.15,cont:.05,col:.04,bg:.2,comp:.15,res:.05,even:.08,expr:.1,angle:.03},dt:{expo:.15,sharp:.15,cont:.05,col:.12,bg:.08,comp:.1,res:.05,even:.05,expr:.2,angle:.05},pp:{expo:.2,sharp:.15,cont:.05,col:0,bg:.2,comp:.1,res:.05,even:.1,expr:.1,angle:.05}},
+ DN={expo:['Lighting','Fix the light: face a window and avoid harsh shadows or blown highlights.'],sharp:['Sharpness','Hold steady, tap to focus and wipe the lens.'],cont:['Contrast','Flat or harsh: try softer, directional light.'],col:['Colour','Colours look dull: try natural light or a warmer spot.'],bg:['Clean background','Busy background: stand in front of something plain.'],comp:['Framing','Reframe: face about half the frame, centered, a little headroom.'],res:['Resolution','Use a larger, higher-resolution original.'],even:['Even light','Light is uneven across the face: turn toward the light.'],expr:['Expression','Eyes open and a relaxed, natural look.'],angle:['Angle','Face the camera more directly.']};
+function scoreP(D,m){const ex=m==='dt'?.5:m==='pp'?0:.3,V=Object.assign({},D);delete V.eo;delete V.sm;
+ if(D.eo!==undefined)V.expr=Math.min(clamp(100-Math.abs(D.sm-ex)*220,0,100),D.eo<.6?45:100,m==='pp'&&D.eo<.8?40:100);
+ const W=MW[m];let t=0,ws=0;const ks=Object.keys(V).filter(k=>W[k]>0);ks.forEach(k=>{t+=W[k]*V[k];ws+=W[k]});let sc=ws?t/ws:0;if(D.eo===undefined&&m!=='gen')sc=Math.min(sc,35);
+ const so=ks.slice().sort((p,q)=>V[q]-V[p]),good=so.filter(k=>V[k]>=75).slice(0,2).map(k=>DN[k][0]),wk=so[so.length-1];
+ return{sc:Math.round(sc),good:good.join(' · '),tip:V[wk]<72?DN[wk][1]:'Nothing major to fix.'}}
 $('pf').onchange=async e=>{const fs=[...e.target.files].slice(0,10);e.target.value='';const out=$('pico');if(fs.length<2){out.textContent='Choose 2 to 10 photos.';return}
- out.textContent='Scoring on this device… keep this open.';try{await loadModel();await rmode('IMAGE')}catch(x){out.textContent='Couldn’t load the face model.';return}
+ out.textContent='';ovOpen('Scoring your photos',['Loading the face model','Scoring photos','Done'],false);await paint();try{await loadModel();await rmode('IMAGE')}catch(x){ovFail('Couldn’t load the face model. Check your connection and try again.');return}ovStep(1);
  const m=$('pm').value,R=[];
- for(const f of fs){try{const bm=await createImageBitmap(f,{imageOrientation:'from-image'}),k=Math.min(1,800/Math.max(bm.width,bm.height)),W=Math.round(bm.width*k),H=Math.round(bm.height*k),c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(bm,0,0,W,H);
-  const t=document.createElement('canvas');t.width=480;t.height=Math.round(480*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);const img=t.toDataURL('image/jpeg',.6),r=lm.detect(c),L=r.faceLandmarks&&r.faceLandmarks[0];
-  if(!L){R.push({img,sc:-1,tip:'No face found'});continue}
-  qx.drawImage(c,0,0,96,72);const d=qx.getImageData(0,0,96,72).data;let sl=0;for(let i=0;i<d.length;i+=4)sl+=d[i]*.299+d[i+1]*.587+d[i+2]*.114;
-  const bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(q=>bs[q.categoryName]=q.score);
-  const yaw=pose(L).yaw,sv=caps;caps=[{L:L.map(q=>[q.x,q.y,q.z]),bs,lum:sl/(d.length/4),gl:0,sharp:sharpOf(t),yaw}];const p=photo();caps=sv;
-  const sm=((bs.mouthSmileLeft||0)+(bs.mouthSmileRight||0))/2,eo=1-((bs.eyeBlinkLeft||0)+(bs.eyeBlinkRight||0))/2,st=clamp(100-Math.abs(yaw)*600,0,100),mild=q=>clamp(100-Math.abs(sm-q)*220,0,100),P=p.parts;
-  let sc=m==='gen'?p.best:m==='li'?.3*P.light+.2*P.sharp+.25*P.frame+.15*mild(.3)+.1*st:m==='dt'?.25*P.light+.15*P.sharp+.15*P.frame+.3*mild(.5)+.15*st:.25*P.light+.15*P.sharp+.2*P.frame+.2*mild(0)+.2*st;
-  if(eo<.6)sc=Math.min(sc,50);if(m==='pp'&&eo<.8)sc=Math.min(sc,40);R.push({img,sc:Math.round(sc),tip:p.tip})}catch(x){}}
- R.sort((a,b)=>b.sc-a.sc);out.textContent='';out.appendChild(mk2('p','',R.length&&R[0].sc>=0?'Top pick: #1 · '+COACH[m]:'No faces found. Try clearer photos.'));
- const g=mk2('div');g.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px';R.forEach((x,i)=>{const d=mk2('div'),im=new Image();im.src=x.img;im.alt='Photo '+(i+1);im.style.cssText='width:100%;border-radius:10px;display:block';d.appendChild(im);d.appendChild(mk2('div','',x.sc<0?x.tip:'#'+(i+1)+' · '+x.sc+'/100'+(i===0?' 🏆':'')));if(x.sc>=0&&i>0)d.appendChild(mk2('div','sm',x.tip));g.appendChild(d)});out.appendChild(g);
- out.appendChild(mk2('p','note','This ranks photos, not people. Photos aren’t saved.'))};
+ for(const [fi,f] of fs.entries()){ovNote('Photo '+(fi+1)+' of '+fs.length);await paint();
+  try{const bm=await createImageBitmap(f,{imageOrientation:'from-image'}),k=Math.min(1,800/Math.max(bm.width,bm.height)),W=Math.round(bm.width*k),H=Math.round(bm.height*k),c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(bm,0,0,W,H);
+   const t=document.createElement('canvas');t.width=240;t.height=Math.round(240*H/W);t.getContext('2d').drawImage(c,0,0,t.width,t.height);
+   const img=t.toDataURL('image/jpeg',.6),r=lm.detect(c),L=r.faceLandmarks&&r.faceLandmarks[0],bs={};((r.faceBlendshapes&&r.faceBlendshapes[0])?r.faceBlendshapes[0].categories:[]).forEach(q=>bs[q.categoryName]=q.score);
+   const o=scoreP(analyze(c,L,bs,bm.width,bm.height),m);R.push({img,sc:o.sc,good:o.good,tip:o.tip,face:!!L})}catch(x){R.push({img:'',sc:-1,tip:'Couldn’t read this file'})}}
+ ovClose();R.sort((a,b)=>b.sc-a.sc);out.textContent='';out.appendChild(mk2('p','',R.length&&R[0].sc>=0?'Top pick: #1'+(R[0].good?' ('+R[0].good+')':'')+' · '+COACH[m]:'Couldn’t score these. Try different photos.'));
+ const g=mk2('div');g.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:8px';
+ R.forEach((x,i)=>{const d=mk2('div');if(x.img){const im=new Image();im.src=x.img;im.alt='Photo '+(i+1);im.style.cssText='width:100%;border-radius:10px;display:block';d.appendChild(im)}
+  d.appendChild(mk2('div','',x.sc<0?x.tip:'#'+(i+1)+' · '+x.sc+'/100'+(i===0?' 🏆':'')));if(x.sc>=0){if(x.good)d.appendChild(mk2('div','sm','👍 '+x.good));d.appendChild(mk2('div','sm','💡 '+x.tip));if(!x.face)d.appendChild(mk2('div','sm','No face: scored as a general photo'))}g.appendChild(d)});
+ out.appendChild(g);out.appendChild(mk2('p','note','Scores the whole photo: light, sharpness, colour, background, framing, resolution and expression. Photos aren’t saved.'))};
 // guess my score
 $('gs').onclick=()=>{$('gsp').hidden=!$('gsp').hidden};
 $('gsr').onclick=()=>{if(!res)return;const k=$('gst').value,real=res[k]/10,o=$('gso');o.textContent='';rw(o,'Real '+$('gst').selectedOptions[0].text,real.toFixed(1)+' / 10');let bi=-1,bd=99;const G=[...document.querySelectorAll('.gin')];
@@ -751,6 +784,87 @@ $('fbs').onclick=async()=>{const m=$('fbm').value.trim(),st=$('fbst');if(m.lengt
  catch(e){st.textContent='Couldn’t send directly (offline or blocked). Tap “Email it instead” to send from your mail app.';$('fbe').hidden=false}
  $('fbs').disabled=false};
 $('fbe').onclick=()=>{location.href='mailto:brokarma26@gmail.com?subject='+encodeURIComponent('FaceVibe feedback: '+$('fbk2').value)+'&body='+encodeURIComponent($('fbm').value)};
+
+
+// ===== crush compatibility =====
+let CR={n:1,A:null,prev:false};
+const SILLY=b=>b.mouthPucker+b.tongueOut+b.cheekPuff+BRW(b)+Math.abs(b.mouthSmileLeft-b.mouthSmileRight)*2+Math.abs(b.eyeBlinkLeft-b.eyeBlinkRight);
+function crushStart(){CR={n:1,A:null,prev:KEEP?prevRes:!$('res').hidden};KEEP=false;crushAsk()}
+function crushAsk(){const n=CR.n;['intro','res','mr','scan'].forEach(i=>$(i).hidden=true);$('cc').hidden=false;$('cct').textContent=n===1?'Person 1: you first 💘':'Hand the phone to Person 2 💘';
+ $('ccp').textContent=n===1?'Scan live (about 20 seconds: smile, surprise, silly face), or upload a photo.':'Person 2: scan live, or upload a photo if they said yes.';$('ccx').checked=false;window.scrollTo(0,0)}
+function crushDone(p){if(CR.n===1){CR.A=p;CR.n=2;crushAsk()}else showCrush(CR.A,p)}
+function crushLive(){$('cc').hidden=true;const acc={p:[0,0,0],sy:0},n=CR.n,F=[SMI,SUR,SILLY];KEEP=true;prevRes=CR.prev;
+ miniStart({title:'Crush scan · Person '+n,rd:1500,rounds:[{t:'Look at the camera and smile 😁',f:SMI},{t:'Now look surprised 😲',f:SUR},{t:'Make your silliest face 🤪',f:SILLY}],
+  rec:(b,L,i)=>{acc.p[i]=Math.max(acc.p[i],F[i](b));if(i===0&&L&&!acc.sy)acc.sy=symOf(L)},onfail:()=>{$('cc').hidden=false},
+  after:()=>crushDone({sm:acc.p[0],su:acc.p[1],fn:acc.p[2],sy:acc.sy||80,live:true})})}
+async function crushPhoto(f){ovOpen('Reading the photo',['Loading the face model','Finding the face','Ready'],false);await paint();
+ try{await loadModel();await rmode('IMAGE')}catch(e){ovFail('Couldn’t load the face model. Check your connection and try again.');return}
+ ovStep(1);await paint();
+ try{const bm=await createImageBitmap(f,{imageOrientation:'from-image'}),k=Math.min(1,800/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+  const r=lm.detect(c),L=r.faceLandmarks&&r.faceLandmarks[0];if(!L){ovFail('No face found. Try a clear, front-facing photo.');return}
+  const b=bsL(r)[0]||new Proxy({},{get:()=>0});ovClose();prevRes=CR.prev;crushDone({sm:SMI(b),su:SUR(b),fn:SILLY(b),sy:symOf(L),live:false})}catch(e){ovFail('Couldn’t read that photo. Try a different image.')}}
+function showCrush(A,B){$('cc').hidden=true;prevRes=CR.prev;LB='crush';const el=$('mrb');el.textContent='';$('mrt').textContent='Crush compatibility 💘';$('mr').hidden=false;$('mrc').textContent='Copy result';
+ const c1=v=>clamp(v,0,1),both=A.live&&B.live,D=[['😁 Smile sync',100-Math.abs(c1(A.sm*1.3)-c1(B.sm*1.3))*100],['⚖️ Poise match',100-Math.abs(A.sy-B.sy)*2.2]];
+ if(both)D.push(['⚡ Energy match',100-Math.abs(c1(A.su*1.4)-c1(B.su*1.4))*100],['🤪 Humor match',100-Math.abs(c1(A.fn*.9)-c1(B.fn*.9))*100]);
+ D.forEach(d=>d[1]=clamp(d[1],0,100));const avg=D.reduce((t,d)=>t+d[1],0)/D.length,sc=Math.round(55+avg*.43),lab=sc>=90?'Instant sparks 🔥':sc>=80?'Great chemistry 💞':sc>=70?'Sweet and balanced 🌷':'Opposites attract 🧲';
+ const g=mk2('div','arch');g.innerHTML=ringSvg(0,sc,sc+'%','chemistry',30);g.appendChild(mk2('h2','',lab));el.appendChild(g);
+ const bx=mk2('div');bx.id='crb';el.appendChild(bx);bars('crb',D.map(d=>[d[0],Math.round(d[1])]));
+ const role=P=>P.live?(P.fn>=P.su&&P.fn>=P.sm?'🤡 the Joke Maker':P.su>=P.sm?'⚡ the Spark':'☀️ the Smile Starter'):(P.sm>.3?'☀️ the Smile Starter':'😌 the Calm One');
+ rw(el,'Person 1',role(A));rw(el,'Person 2',role(B));
+ const hi=(A.su+B.su+A.fn+B.fn)/4>.45,idea=!both?'Coffee and a long walk ☕':hi?'Arcade, karaoke or mini-golf 🎤':(A.sm+B.sm)/2>.5?'Picnic and a photo walk 📸':'Cozy movie night 🎬';
+ rw(el,'Date idea',idea);rw(el,'Ice-breaker',['Teach each other your best wink 😉','Swap your most-used emoji and explain why','Make a 3-second movie trailer of your week','Say your worst photo habit out loud'][sc%4]);
+ if(!both)el.appendChild(mk2('p','sm','A photo gives a rougher read. Scan both people live for energy and humor too.'));
+ el.appendChild(mk2('p','note','Chemistry for fun, never a ranking of either person. Nothing is saved.'));window.scrollTo(0,0)}
+$('crush').onclick=crushStart;$('crush2').onclick=crushStart;
+$('ccl').onclick=crushLive;
+$('ccu').onclick=()=>{if(!$('ccx').checked){$('ccp').textContent='Tick the box first: it’s me, or they said yes.';return}$('ccf').click()};
+$('ccf').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)crushPhoto(f)};
+$('ccb').onclick=()=>{$('cc').hidden=true;$('intro').hidden=CR.prev;$('res').hidden=!CR.prev};
+// ===== aura / compliment / forecast =====
+const hs=t=>{let h=0;for(const ch of t)h=(h*31+ch.charCodeAt(0))>>>0;return h};
+function auraOf(r){const A=[['🟡 Sunrise Gold','Warm, bright and welcoming',r.warm],['🌸 Rose Spark','Playful, magnetic, a little mischievous',r.play],['🟣 Electric Violet','Big ideas and big energy',r.energy],['🔵 Ocean Calm','Steady, thoughtful, easy to trust',100-r.energy],['🟢 Mint Fresh','Easygoing and refreshing',(r.warm+100-r.energy)*.45]].reduce((a,c)=>c[2]>a[2]?c:a);return A[0]+' · '+A[1]}
+function compl(r){const t=[['warm',r.warm],['energy',r.energy],['play',r.play]].reduce((a,c)=>c[1]>a[1]?c:a)[0];return({warm:'Your warmth makes people relax around you.',energy:'You make ordinary moments feel lively.',play:'You bring humor without even trying.'})[t]}
+function forecast(r){const h=hs(today()+r.arch),A=['Today your smile is a secret weapon.','Expect a surprise compliment.','Your energy is contagious today.','A calm moment will beat a loud one.','Someone will copy your expression.'],B=['Say yes to the silly idea.','Send the message you’ve been drafting.','Take one photo you don’t overthink.','Hold the door and the smile.','Wear the colour you secretly like.'];return A[h%5]+' '+B[(h>>3)%5]+' Lucky number: '+(h%9+1)+'.'}
+// ===== staring contest =====
+$('b-stare').onclick=()=>{let t0=0;miniStart({title:'Staring contest',prompt:'Eyes open, no blinking! The clock starts when you’re ready 👀',
+ live:b=>{const bl=(b.eyeBlinkLeft+b.eyeBlinkRight)/2,now=performance.now();if(!t0){if(bl<.2)t0=now;return'Get ready, eyes wide open…'}
+  if(bl>.55&&now-t0>800){MN.s=[(now-t0)/1000];endMini();return''}$('hp').textContent=((now-t0)/1000).toFixed(1)+'s';return'Don’t blink… 👀'},
+ cb:(s,el)=>{let best=s[0];try{best=Math.max(best,+localStorage.getItem('fvstare')||0);localStorage.setItem('fvstare',best)}catch(e){}rw(el,'You lasted',s[0].toFixed(1)+'s');rw(el,'Your best',best.toFixed(1)+'s');el.appendChild(mk2('p','note','Pass the phone and let a friend try to beat it.'))}})};
+// ===== smile shutter =====
+$('b-shut').onclick=()=>{let ok=0;miniStart({title:'Smile shutter',prompt:'Smile naturally. I’ll snap the best moment 📸',
+ live:(b,L)=>{const sm=SMI(b),eo=1-(b.eyeBlinkLeft+b.eyeBlinkRight)/2,w=L[454].x-L[234].x,cx=L[1].x,good=sm>.45&&eo>.8&&cx>.3&&cx<.7&&w>.25&&w<.62&&Math.abs(pose(L).yaw)<.1;
+  ok=good?ok+1:0;$('hb').style.width=Math.min(100,ok/8*100)+'%';$('hp').textContent='';
+  if(ok>=8){const cv=document.createElement('canvas');cv.width=V.videoWidth;cv.height=V.videoHeight;const x=cv.getContext('2d');if(face==='user'){x.translate(cv.width,0);x.scale(-1,1)}x.drawImage(V,0,0);MN.s=[cv];endMini();return''}
+  return sm<.45?'Give a bigger smile 😁':!good?'Hold still, face the camera':'Hold it…'},
+ cb:(s,el)=>{const cv=s[0],im=new Image();im.src=cv.toDataURL('image/jpeg',.92);im.alt='Your snapped photo';im.style.cssText='width:100%;border-radius:14px';el.appendChild(im);
+  const b=mk2('button','btn','Save or share 📤');b.style.marginTop='10px';b.onclick=()=>cv.toBlob(q=>shareBlob(q,'facevibe-smile.jpg','image/jpeg'),'image/jpeg',.92);el.appendChild(b);el.appendChild(mk2('p','note','The app doesn’t keep this photo. Save it if you like it.'))}})};
+// ===== setup screen =====
+const paint=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+let SU=null,mP=null,ovSteps=[];
+function loadModel(){return lm?Promise.resolve():(mP||(mP=loadModel0().catch(e=>{mP=null;throw e})))}
+function ovOpen(t,steps,cancel){$('sut').textContent=t;ovSteps=steps;const l=$('ovl');l.textContent='';steps.forEach(x=>l.appendChild(mk2('li','',x)));$('ovn').textContent='';$('ovs').hidden=false;$('ovc').hidden=cancel===false;$('ovk').hidden=true;$('ov').hidden=false;ovStep(0);if(cancel!==false)$('ovc').focus()}
+function ovStep(i){[...$('ovl').children].forEach((li,k)=>{li.className=k<i?'ok':k===i?'on':'';li.textContent=(k<i?'✓ ':k===i?'⏳ ':'○ ')+ovSteps[k]})}
+function ovNote(t){$('ovn').textContent=t}
+function ovClose(){$('ov').hidden=true}
+function ovFail(m){$('sut').textContent='Couldn’t start';$('ovl').textContent='';$('ovs').hidden=true;$('ovn').textContent=m;$('ovc').hidden=true;$('ovk').hidden=false;$('ovk').focus()}
+$('ovk').onclick=ovClose;
+$('ovc').onclick=()=>{if(SU)SU.x=true;ovClose();$('go').disabled=false;$('st').textContent='Cancelled.'};
+async function setup(title,cam){
+ const me=SU={x:false};ovOpen(title,cam?['Loading the face model','Opening the camera','Ready']:['Loading the face model','Ready']);await paint();
+ if(!lm&&!navigator.onLine){ovFail('You’re offline. The first scan needs a connection to download the face model (about 4 MB). After that it works offline.');SU=null;return false}
+ const tm=[setTimeout(()=>ovNote('Taking a little longer… the first load downloads about 4 MB.'),5000),setTimeout(()=>ovNote('Still working. Check your connection, or tap Cancel.'),18000)];
+ try{
+  await loadModel();if(me.x)return false;
+  if(cam){ovStep(1);ovNote('If your browser asks, tap Allow for the camera.');await startCam();ovNote('');if(me.x){stopCam();return false}}
+  ovStep(cam?2:1);await new Promise(r=>setTimeout(r,300));ovClose();try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}return true
+ }catch(e){if(me.x)return false;
+  ovFail(e&&e.name==='NotAllowedError'?'Camera permission was denied. Allow it in your browser settings, then try again.':e&&e.name==='NotFoundError'?'No camera found on this device.':cam&&lm?'Couldn’t open the camera: '+((e&&e.message)||e):'Couldn’t load the face model. Check your connection and try again.');return false
+ }finally{tm.forEach(clearTimeout);if(SU===me)SU=null}
+}
+// jump bar, wipe, warm-up
+document.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{const e=$(b.dataset.j);if(e)e.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})});
+$('wipe').onclick=()=>{if(!confirm('Delete all saved data and clear this session?'))return;try{Object.keys(localStorage).filter(k=>k.startsWith('fv')&&k!=='fvl').forEach(k=>localStorage.removeItem(k))}catch(e){}caps=[];res=null;cmpBase=null;PAIR=null;SEALED=null;renderHist();mood();$('again').click();$('st').textContent='Everything deleted.'};
+const cn=navigator.connection||{};if(navigator.onLine&&!cn.saveData&&!/2g/.test(cn.effectiveType||''))(window.requestIdleCallback||setTimeout)(()=>loadModel().catch(()=>{}),1500);
 readSeal();mood();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
