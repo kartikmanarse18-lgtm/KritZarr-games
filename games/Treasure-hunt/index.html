@@ -41,7 +41,10 @@ summary{cursor:pointer;font:700 20px ui-serif,Georgia,serif}details[open] summar
 .toast{position:fixed;left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));max-width:488px;margin:0 auto;padding:15px 18px;border-radius:18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#0a0e1c;font-weight:800;z-index:20;opacity:0;transform:translateY(150%) scale(.95);transition:.35s cubic-bezier(.2,1.4,.4,1);pointer-events:none;box-shadow:0 14px 34px rgba(0,0,0,.45)}.toast.on{opacity:1;transform:none}
 .cf{position:fixed;top:-40px;font-size:24px;z-index:30;pointer-events:none;animation:fall linear forwards}@keyframes fall{to{transform:translateY(112vh) rotate(540deg)}}
 @media (prefers-reduced-motion:reduce){.radar,.sw,.big.low,.bl{animation:none}*{transition:none!important}#app>*{animation:none!important}.cf{display:none}}
-</style></head><body><div id="app"></div><div id="ts" class="toast" role="status" aria-live="polite"></div>
+.tut{position:fixed;inset:0;z-index:40;overflow:auto;background:var(--bg);padding:env(safe-area-inset-top,0px) 16px calc(24px + env(safe-area-inset-bottom,0px))}.tut[hidden]{display:none}
+.tw{max-width:520px;margin:0 auto;padding-top:20px}.td{display:flex;gap:6px;margin-bottom:18px}.td i{flex:1;height:5px;border-radius:3px;background:var(--bd)}.td i.on{background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.tw p,.tw li{line-height:1.55}.tw ul{padding-left:20px;margin:8px 0 16px}.tw b{color:var(--acc)}.tb{flex-wrap:wrap}.tb button{min-height:40px;font-size:12px;padding:6px}
+</style></head><body><div id="app"></div><div id="tut" class="tut" hidden></div><div id="ts" class="toast" role="status" aria-live="polite"></div>
 <script src="peerjs.min.js"></script>
 <script>
 (()=>{
@@ -50,17 +53,16 @@ const S={mode:"",role:"",bot:false,name:"",net:null,pos:null,sim:false,st:{phase
 const C={drop:null,pass:"",tries:{},prev:{}};
 const T={stops:[],prog:{},start:0};
 const tgt=n=>S.st.mode==="trail"?(T.prog[n]&&!T.prog[n].done?T.stops[T.prog[n].i]:null):C.drop;
-const K=9e-6,ctr={lat:150*K,lng:150*K};
+const K=9e-6;
 const dist=(a,b)=>{const R=6371000,t=Math.PI/180,p=(b.lat-a.lat)*t,l=(b.lng-a.lng)*t,x=Math.sin(p/2)**2+Math.cos(a.lat*t)*Math.cos(b.lat*t)*Math.sin(l/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
 const BANDS=[[15,5,"Burning · within 15 m"],[40,4,"Hot · within 40 m"],[100,3,"Warm · within 100 m"],[250,2,"Cool · within 250 m"],[500,1,"Cold · within 500 m"],[1e9,0,"Frozen · over 500 m"]];
-const band=d=>{const f=S.hm?.1:1,b=BANDS.find(b=>d<=b[0]*f);return[b[0]*f,b[1],b[2].replace(/\d+ m/,m=>Math.round(parseInt(m)*f*10)/10+" m")]};
-const isC=()=>S.role==="C"||S.bot;
+const band=d=>{const f=fs(),b=BANDS.find(b=>d<=b[0]*f);return[b[0]*f,b[1],b[2].replace(/\d+ m/,m=>Math.round(parseInt(m)*f*10)/10+" m")]};
+const isC=()=>S.role==="C";
 const keyOf=()=>S.role+S.st.phase+S.st.round+(S.pair?"P":"")+(S.hm?"M":"")+(S.lobby?"L":"");
 const mmss=ms=>{ms=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(ms/60)).padStart(2,"0")+":"+String(ms%60).padStart(2,"0")};
 const pips=n=>"●".repeat(n)+"○".repeat(3-n);
 
 /* ---------- transport ---------- */
-function bus(){const h={};return{emit(t,d){(h[t]||[]).forEach(f=>setTimeout(()=>f(d),0));return Promise.resolve()},on(t,f){(h[t]=h[t]||[]).push(f)},peers:()=>[{presence:{n:S.name,role:"H",lat:S.pos&&S.pos.lat,lng:S.pos&&S.pos.lng}}],pres(){}}}
 const CONFIG={ice:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun.cloudflare.com:3478"},
   {urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}]};
 const QS=new URLSearchParams(location.search);
@@ -91,13 +93,13 @@ function hunterNet(code){const h={};let peer,conn,last=null,rt;
   peer.on("error",e=>{S.cerr=e.type==="peer-unavailable"?"Room not found yet. Check the code, or wait for the Courier. Retrying…":"Connection problem ("+e.type+"). Retrying…";if(peer.open)retry();else setTimeout(()=>{if(!peer.open&&!peer.destroyed)try{peer.reconnect()}catch(x){}},3000)});
   return{emit:(t,d)=>{send({k:"m",t,d});return Promise.resolve()},on:(t,f)=>{(h[t]=h[t]||[]).push(f)},peers:()=>[],pres:p=>{last=p;send({k:"p",p})}}}
 function wire(){const n=S.net;
-  n.on("state",d=>{if(S.role!=="H"||S.bot||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}if(d.phase!=="hiding")S.ready=false;else S.stop=null;if(d.hm){if(!S.hm){S.hm=1;S.pos=null}if(!M.ok&&t-(M.rq||0)>6000){M.rq=t;S.net.emit("needmap",{n:S.name})}}else if(S.hm){S.hm=0;S.pos=null;M.ok=0;M.id=0}S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
+  n.on("state",d=>{if(S.role!=="H"||!d)return;const t=Date.now();if(d.round!==S.st.round){S.radar={};S.msg="";S.son=1;S.hist=[]}if(d.phase!=="hiding")S.ready=false;else S.stop=null;if(d.hm){if(!S.hm){S.hm=1;S.pos=null}if(!M.ok&&t-(M.rq||0)>6000){M.rq=t;S.net.emit("needmap",{n:S.name})}}else if(S.hm){S.hm=0;S.pos=null;M.ok=0;M.id=0}S.st={...d,endsAt:t+(d.tl||0),nextPing:t+(d.nl||0)};S.seen=t});
   n.on("radar",d=>{if(S.role==="H"&&d){S.radar=d;S.radarAt=Date.now();const r=d[S.name];if(r&&r.h>=0){S.hist.push(r.h);if(S.hist.length>8)S.hist.shift()}buzz()}});
   n.on("result",d=>{if(S.role==="H"&&d&&d.n===S.name){if(d.m)S.msg=d.m;else if(!d.ok)S.msg=d.left>0?"Wrong code. "+d.left+" attempt(s) left.":"Locked out for this drop.";if(d.ok)buzz();if(S.msg)toast(S.msg)}});
   n.on("stop",d=>{if(S.role==="H"&&d&&d.n===S.name){if(!S.stop||S.stop.i!==d.i){S.son=1;S.hist=[];S.radar={}}S.stop=d}});
   n.on("bcast",d=>{if(S.role==="H"&&d&&d.m)toast("📣 Courier: "+d.m)});
   n.on("needmap",d=>{if(S.role==="C"&&S.hm&&d&&d.n)sendMap(d.n)});
-  n.on("map",d=>{if(S.role!=="H"||!d)return;if(d.t==="m"){if(d.id!==M.id){M.id=d.id;M.got={};M.ok=d.n===0;M.im=null}M.w=d.w;M.a=d.a;M.labels=d.L||[];M.n=d.n}
+  n.on("map",d=>{if(S.role!=="H"||!d)return;if(d.t==="m"){if(d.id!==M.id){M.id=d.id;M.got={};M.ok=d.n===0;M.im=null}M.w=d.w;M.a=d.a;M.labels=d.L||[];M.n=d.n;M.sat=d.sat||null}
     else if(d.t==="p"){M.got[d.k]=d.d;if(Object.keys(M.got).length===M.n&&!M.ok){const s=Array.from({length:M.n},(_,i)=>M.got[i]).join("");M.im=new Image;M.im.src=s;M.ok=1}}});
   n.on("claim",d=>{if(isC()&&d)onClaim(d)});
   n.on("scan",d=>{if(isC()&&d&&(S.st.phase==="live"||S.st.phase==="trail"))onScan(d)});
@@ -116,7 +118,7 @@ function drawRM(c){if(!c)return;const x=c.getContext("2d"),z=17,W=c.width;x.fill
   const dot=(p,col,r)=>{const q=mpx(p,z);x.fillStyle=col;x.beginPath();x.arc(q.x-ox,q.y-oy,r,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=2;x.stroke()};
   if(S.role==="C"){if(C.drop)dot(C.drop,"#d6372a",9);T.stops.forEach(p=>dot(p,"#d6372a",9));S.net.peers().forEach(q=>{q=q.presence;if(q&&q.role==="H"&&q.lat!=null)dot(q,"#2f7fc1",7)})}
   if(S.acc>0){const r=S.acc/(156543.03*Math.cos(S.pos.lat*Math.PI/180)/2**z);x.strokeStyle="#ffb547";x.lineWidth=2;x.beginPath();x.arc(W/2,W/2,Math.min(r,W/2),0,7);x.stroke()}
-  dot(S.pos,"#ffb547",8)}
+  if(S.role==="H"&&S.stop&&S.stop.pin)dot(S.stop.pin,"#ffd23f",10);dot(S.pos,"#ffb547",8)}
 function rec(ph){const n=S.st.note||"",w=S.role==="C"?(ph==="won"||(ph==="trailend"&&n.startsWith("⏱"))):n.includes(S.name);try{const o=JSON.parse(localStorage.getItem("pp_s")||"{}");o.g=(o.g||0)+1;o.w=(o.w||0)+(w?1:0);localStorage.setItem("pp_s",JSON.stringify(o))}catch(e){}}
 const career=()=>{try{const o=JSON.parse(localStorage.getItem("pp_s")||"{}");return o.g?"Career: "+o.g+" games · "+(o.w||0)+" wins":"No games played yet"}catch(e){return""}};
 function rdy(){if(S.mode!=="room")return true;const n=S.net.peers().filter(p=>p.presence&&p.presence.role==="H"&&!p.presence.r).length;return !n||confirm(n+" hunter(s) not ready. Start anyway?")}
@@ -124,16 +126,46 @@ const COL=["#3b82c4","#2fa3a8","#7fb069","#f2c14e","#f08a3c","#ff3b30"];
 function scope(h){let s='<svg viewBox="0 0 200 200" class="sc" role="img" aria-label="Radar heat level">';for(let i=5;i>=0;i--)s+=`<circle cx="100" cy="100" r="${16+i*16.5}" class="rg${i<=h?" on":""}" style="--c:${COL[i]}"/>`;
   s+='<g class="sw"><path d="M100 100 L100 8 A92 92 0 0 1 165 35 Z"/></g>';if(h>=0){const r=100-(16+(5-h)*14),a=h*1.9+.6;s+=`<circle class="bl" cx="${100+Math.cos(a)*(r*.9)}" cy="${100+Math.sin(a)*(r*.9)}" r="5"/>`}return s+"</svg>"}
 function burst(e){const a=[...e];for(let i=0;i<40;i++){const s=document.createElement("span");s.className="cf";s.textContent=a[i%a.length];s.style.left=Math.random()*100+"vw";s.style.animationDuration=2.5+Math.random()*2.5+"s";s.style.animationDelay=Math.random()*.8+"s";document.body.append(s);setTimeout(()=>s.remove(),6000)}}
+const fs=()=>S.hm?(M.w<300?Math.min(1,M.w/120):M.w/300):1;
+const rs=()=>S.hm?Math.max(.5,5*fs()):5;
 const M={labels:[],parts:[],got:{},w:12,a:.75};
-const sendMeta=to=>S.net.emit("map",{t:"m",id:M.id,w:M.w,a:M.a,L:M.labels,n:M.parts.length},to);
+const sendMeta=to=>S.net.emit("map",{t:"m",id:M.id,w:M.w,a:M.a,L:M.labels,n:M.parts.length,sat:M.sat},to);
 const sendMap=to=>{sendMeta(to);M.parts.forEach((d,k)=>S.net.emit("map",{t:"p",k,d},to))};
-function drawHM(c){if(!c)return;const W=600,H=Math.round(W*M.a);if(c.height!==H||c.width!==W){c.width=W;c.height=H}const x=c.getContext("2d");x.fillStyle="#16203a";x.fillRect(0,0,W,H);
-  if(M.im&&M.im.complete&&M.im.naturalWidth)x.drawImage(M.im,0,0,W,H);else{x.strokeStyle="rgba(255,255,255,.14)";x.lineWidth=1;for(let i=0;i<=12;i++){x.beginPath();x.moveTo(i*W/12,0);x.lineTo(i*W/12,H);x.moveTo(0,i*H/12);x.lineTo(W,i*H/12);x.stroke()}}
+function drawHM(c){if(!c)return;const W=800,H=Math.round(W*M.a);if(c.height!==H||c.width!==W){c.width=W;c.height=H}const x=c.getContext("2d");x.fillStyle="#16203a";x.fillRect(0,0,W,H);
+  if(M.sat)drawSat(x,W);else if(M.im&&M.im.complete&&M.im.naturalWidth)x.drawImage(M.im,0,0,W,H);else{x.strokeStyle="rgba(255,255,255,.14)";x.lineWidth=1;for(let i=0;i<=12;i++){x.beginPath();x.moveTo(i*W/12,0);x.lineTo(i*W/12,H);x.moveTo(0,i*H/12);x.lineTo(W,i*H/12);x.stroke()}}
   if(!M.ok){x.fillStyle="#fff";x.font="20px system-ui";x.textAlign="center";x.fillText("Loading house map…",W/2,H/2)}
   const pt=p=>[p.lng/K/M.w*W,p.lat/K/(M.w*M.a)*H],dot=(p,col,r,t)=>{const[a,b]=pt(p);x.fillStyle=col;x.beginPath();x.arc(a,b,r,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=3;x.stroke();if(t){x.fillStyle="#fff";x.font="bold 18px system-ui";x.textAlign="center";x.fillText(t,a,b+6)}};
   (M.labels||[]).forEach(l=>{x.font="bold 20px system-ui";x.textAlign="center";const a=l.u*W,b=l.v*H,w=x.measureText(l.t).width+16;x.fillStyle="rgba(10,14,28,.8)";x.fillRect(a-w/2,b-16,w,28);x.fillStyle="#fff";x.fillText(l.t,a,b+5)});
   if(S.role==="C"){if(C.drop)dot(C.drop,"#d6372a",14,"✕");T.stops.forEach((p,i)=>dot(p,"#d6372a",15,i+1));S.net.peers().forEach(q=>{q=q.presence;if(q&&q.role==="H"&&q.lat!=null)dot(q,"#3b82f6",10)})}
-  if(S.pos)dot(S.pos,"#ffb547",11)}
+  if(S.role==="H"&&S.stop&&S.stop.pin)dot(S.stop.pin,"#ffd23f",15,"★");if(S.pos)dot(S.pos,"#ffb547",11);x.fillStyle="rgba(10,14,28,.78)";x.fillRect(8,8,110,26);x.fillStyle="#fff";x.font="bold 15px system-ui";x.textAlign="left";x.fillText("↔ "+(M.w>=1000?+(M.w/1000).toFixed(1)+" km":Math.round(M.w)+" m"),15,26)}
+function satTile(z,x,y){const k="s"+z+"/"+x+"/"+y;if(!TC[k]){const i=new Image();i.src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/"+z+"/"+y+"/"+x;TC[k]=i}return TC[k]}
+function drawSat(x,W){const la=M.sat.lat,mpc=2*M.sat.r/W,k=156543.03*Math.cos(la*Math.PI/180),z=Math.max(3,Math.min(19,Math.round(Math.log2(k/mpc)))),sc=k/2**z/mpc,c=mpx(M.sat,z),half=W/2/sc;
+  for(let tx=Math.floor((c.x-half)/256);tx<=Math.floor((c.x+half)/256);tx++)for(let ty=Math.floor((c.y-half)/256);ty<=Math.floor((c.y+half)/256);ty++){const i=satTile(z,tx,ty);if(i.complete&&i.naturalWidth)x.drawImage(i,W/2+(tx*256-c.x)*sc,W/2+(ty*256-c.y)*sc,256*sc+1,256*sc+1)}}
+const cell=(la,ln)=>[Math.floor((la+90)/.05),Math.floor((ln+180)/.05)];
+function openDir(){const[a,b]=cell(S.geo.lat,S.geo.lng);let s=0;const go=()=>{if(s>4)return;const p=new Peer("ppdir-"+a+"_"+b+"-"+s,PEERCFG());
+  p.on("open",()=>{S.dir=p;toast("🌍 Your room is listed for nearby players")});
+  p.on("error",e=>{if(e.type==="unavailable-id"){s++;try{p.destroy()}catch(x){}go()}});
+  p.on("connection",c=>{c.on("data",m=>{if(m&&m.k==="q")try{c.send({k:"i",c:S.code,n:S.name,m:S.gm==="trail"?"Treasure Trail":"Dead Drop",h:S.net.peers().filter(q=>q.presence&&q.presence.role==="H").length,la:Math.round(S.geo.lat*100)/100,ln:Math.round(S.geo.lng*100)/100})}catch(x){}})})};go()}
+function nearby(){const box=$("nb");if(typeof Peer==="undefined"){box.innerHTML='<div class="err">Networking library failed to load.</div>';return}box.innerHTML='<div class="mut">Finding your location…</div>';
+  navigator.geolocation.getCurrentPosition(pos=>{const la=pos.coords.latitude,ln=pos.coords.longitude,[a,b]=cell(la,ln),found={};box.innerHTML='<div class="mut">Searching nearby…</div>';
+    const pr=new Peer(PEERCFG());pr.on("error",()=>{});
+    pr.on("open",()=>{for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let s=0;s<5;s++){const c=pr.connect("ppdir-"+(a+i)+"_"+(b+j)+"-"+s,{serialization:"json"});c.on("open",()=>c.send({k:"q"}));
+      c.on("data",m=>{if(m&&m.k==="i"&&!found[m.c]){found[m.c]=1;if(box.querySelector(".mut"))box.innerHTML="";const km=dist({lat:la,lng:ln},{lat:m.la,lng:m.ln})/1000;box.insertAdjacentHTML("beforeend",`<button class="g" data-a="joincode" data-c="${esc(m.c)}">🌍 ${esc(m.n)}: ${esc(m.m)} · ${km<1?"under 1":"about "+Math.round(km)} km · ${+m.h||0} hunter(s)</button>`)}try{c.close()}catch(x){}})}
+      setTimeout(()=>{if(!box.querySelector("button"))box.innerHTML='<div class="mut">No public rooms nearby yet. Host one with “List my room publicly”.</div>';try{pr.destroy()}catch(x){}},9000)})},
+    ()=>{box.innerHTML='<div class="err">Allow location access to find nearby games.</div>'},{timeout:10000})}
+const HN=["Frozen","Cold","Cool","Warm","Hot","Burning"];
+const TUT=[
+["Welcome to Phantom Post","<p>A real-world hide and seek game. One player is the <b>Courier</b> and hides a token. Everyone else is a <b>Hunter</b> and follows a heat radar to find it.</p><ul><li>No accounts. Phones connect directly to each other.</li><li>The Courier keeps the app open for the whole game.</li><li>Works outdoors or inside a house.</li></ul>"],
+["Start or join a game","<ul><li><b>Courier:</b> enter a codename and tap Host as Courier. You get a 5-letter room code and an invite link to share.</li><li><b>Hunter:</b> enter a codename and the room code, then tap Join as Hunter.</li><li><b>Nearby:</b> tick “List my room publicly” when hosting, or tap Find nearby public games to join a room within about 10 km.</li></ul><p><b>Result:</b> the Courier sees how many hunters joined and how many tapped “I’m ready”.</p>"],
+["Choose your map","<ul><li><b>GPS map (default):</b> hunters are tracked automatically. GPS can be off by 5 to 30 m.</li><li><b>🛰 Auto satellite:</b> pick a radius from 100 m to 10 km. The app builds a satellite view around you.</li><li><b>📸 Screenshot or floor plan:</b> upload an image and enter its real width in meters. Good for houses.</li></ul><p><b>Result:</b> you are amber. The Courier also sees hidden spots in red and hunters in blue. On satellite and image maps, hunters tap the map to show where they stand and retap as they move.</p>"],
+["Hide the token","<ul><li><b>Dead Drop:</b> tap the map to drop a pin where you hid the token, write a clue, add an optional bonus hint, and set a 4-digit code written on the token. Choose the ping interval and hunt time, then Lock in.</li><li><b>Treasure Trail:</b> mark 2 to 8 stops. Each stop has a clue and a code. Finding a code unlocks the next clue. The last stop is the treasure.</li><li><b>★ Reveal pin:</b> on any stop you can show its pin on a hunter’s map once they clear the previous stop.</li></ul>"],
+["Read the radar",'<p>Every ping, the radar shows how close you are. Tap a level to see it.</p><div id="tsc"></div><div id="tl" class="mut" style="text-align:center;margin-bottom:8px"></div><div class="row tb">'+HN.map((n,k)=>`<button class="g" data-a="tdemo" data-h="${k}">${n}</button>`).join("")+'</div><ul><li><b>Distances:</b> Burning 15 m, Hot 40 m, Warm 100 m, Cool 250 m, Cold 500 m. They shrink automatically on small maps like a house.</li><li><b>↗ warmer / ↘ colder</b> compares with the last ping.</li><li>The bars show your heat history.</li></ul>'],
+["Powers and tools","<ul><li><b>🎯 Sonar (Hunter):</b> once per drop or stop. Shows your distance to within a few meters, but alerts the Courier.</li><li><b>💡 Hint (Trail):</b> reveals a hint for −30 points.</li><li><b>📵 Jammer (Courier):</b> once per game. Blocks the next radar ping.</li><li><b>📣 Message:</b> the Courier sends a note to all hunters.</li><li><b>⏸ Pause and ⏹ End early:</b> the Courier can freeze the clock or stop the hunt.</li><li>The bonus hint unlocks at half time.</li></ul>"],
+["Claim and win","<p>Find the token, read its 4-digit code and enter it.</p><ul><li><b>Dead Drop:</b> 3 tries per hunter. The first correct code makes Hunters win. If time runs out, the drop is secured. <b>3 secured drops in a row and the Courier wins.</b></li><li><b>Treasure Trail:</b> you must be close to the stop first. Each stop earns 100 points plus up to 50 for speed. A wrong code costs 5 points, and 3 wrong codes lock you out for 30 s. First to the treasure wins.</li></ul>"],
+["After the game","<ul><li><b>Results screen:</b> a mission log for Dead Drop, or final standings with 🥇🥈🥉 for Treasure Trail. Confetti marks the end.</li><li><b>Career stats:</b> games and wins are saved on your phone and shown on the home screen.</li><li><b>Rematch:</b> the Courier can restart in the same room.</li></ul><p><b>Tips:</b> keep the app open, stay in safe public places, and be considerate of other people nearby. Tap ? any time to read this again.</p>"]];
+function openTut(i){const t=$("tut"),n=TUT.length;t.hidden=false;try{localStorage.setItem("pp_t","1")}catch(e){}
+  t.innerHTML=`<div class="tw"><div class="td">${TUT.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("")}</div><h2>${TUT[i][0]}</h2>${TUT[i][1]}<div class="row" style="margin-top:14px"><button class="g" data-a="${i?"tprev":"tclose"}">${i?"Back":"Skip"}</button><button data-a="${i<n-1?"tnext":"tclose"}">${i<n-1?"Next":"Start playing"}</button></div></div>`;S.ti=i;t.scrollTop=0;if(i===4)demo(3)}
+function demo(h){$("tsc").innerHTML=scope(h);$("tl").textContent=BANDS.find(b=>b[1]===h)[2]}
 function toast(m){S.toast=m;S.toastT=Date.now()+7000;buzz()}
 function buzz(){if(S.mute)return;try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;S.ac=S.ac||new A();const o=S.ac.createOscillator(),g=S.ac.createGain();o.frequency.value=880;g.gain.value=.08;o.connect(g);g.connect(S.ac.destination);o.start();o.stop(S.ac.currentTime+.15)}catch(e){}}
 async function wake(){try{S.wl=await navigator.wakeLock.request("screen")}catch(e){}}
@@ -146,26 +178,22 @@ function ping(){const o={};S.net.peers().forEach(p=>{const q=p.presence;if(!q||q
   const tg=tgt(q.n);if(!tg){o[q.n]={h:-1,t:S.st.mode==="trail"?"Trail complete":"No target"};return}const d=dist(q,tg),b=band(d),pv=C.prev[q.n];o[q.n]={h:b[1],t:b[2],tr:pv==null?0:d<pv-5?1:d>pv+5?-1:0};C.prev[q.n]=d});
   S.jamNext=false;S.radar=o;S.radarAt=Date.now();S.net.emit("radar",o)}
 function launch(clue,iv,hunt){const s=S.st;C.tries={};C.prev={};Object.assign(s,{phase:"live",round:s.round+1,clue,interval:iv,hunt,endsAt:Date.now()+hunt*1000,nextPing:Date.now()+iv*1000,note:""});S.msg="";S.hist=[];S.son=1;ping();bc()}
-function secure(){const s=S.st;s.secured++;s.note="Drop #"+s.round+" secured. The hunters ran out of time.";s.log=(s.log||[]).concat("Drop #"+s.round+": secured ✅");s.phase=s.secured>=3?"won":"hiding";bc();if(S.bot&&s.phase==="hiding")setTimeout(botDrop,4000)}
+function secure(){const s=S.st;s.secured++;s.note="Drop #"+s.round+" secured. The hunters ran out of time.";s.log=(s.log||[]).concat("Drop #"+s.round+": secured ✅");s.phase=s.secured>=3?"won":"hiding";bc()}
 function onClaim(d){const s=S.st;if(s.paused)return S.net.emit("result",{n:d.n,ok:false,m:"Hunt is paused."},d.n);if(s.phase==="trail")return tClaim(d);if(s.phase!=="live")return;const n=d.n;C.tries[n]=C.tries[n]||0;
   if(C.tries[n]>=3)return S.net.emit("result",{n,ok:false,left:0});
   if(String(d.code)===C.pass){s.phase="caught";s.note=n+" recovered the payload.";s.log=(s.log||[]).concat("Drop #"+s.round+": intercepted by "+n+" ❌");S.net.emit("result",{n,ok:true});bc()}
   else{C.tries[n]++;S.net.emit("result",{n,ok:false,left:3-C.tries[n]})}}
-function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";toast(S.alert);buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:Math.round(dist(q,tgt(d.n)||C.drop)/(S.hm?.5:5))*(S.hm?.5:5)})}
-function botDrop(){const a=Math.random()*6.28,r=40+Math.random()*90;
-  C.drop={lat:(150+Math.sin(a)*r)*K,lng:(150+Math.cos(a)*r)*K};C.pass=String(1000+Math.floor(Math.random()*9000));
-  const cl=["Tucked under something green, close to a path.","Wedged where two surfaces meet, low to the ground.","Hidden a few steps from a landmark."];
-  C.h2="Closer than the clue suggests. Check low, hidden spots.";launch(cl[Math.floor(Math.random()*3)],20,150)}
+function onScan(d){const q=S.net.peers().map(p=>p.presence).find(p=>p&&p.n===d.n);if(!q||q.lat==null)return;S.alert="👁 "+d.n+" used sonar on you!";toast(S.alert);buzz();setTimeout(()=>S.alert="",8000);S.net.emit("sonar",{n:d.n,m:+(Math.round(dist(q,tgt(d.n)||C.drop)/rs())*rs()).toFixed(1)})}
 function board(){S.st.board=Object.entries(T.prog).map(([n,p])=>({n,i:p.i,pts:p.pts,done:p.done?1:0,f:p.fin||0})).sort((a,b)=>(b.done-a.done)||(a.done&&b.done?a.f-b.f:0)||(b.i-a.i)||(b.pts-a.pts))}
 function tSend(n){const p=T.prog[n];if(!p)return;const st=T.stops[Math.min(p.i,T.stops.length-1)];
-  S.net.emit("stop",{n,i:p.i,total:T.stops.length,clue:p.done?"You found the treasure! 🏆":st.clue,hint:p.hint&&!p.done?st.hint:"",hq:!!st.hint&&!p.done,pts:p.pts,done:!!p.done},n)}
+  S.net.emit("stop",{n,i:p.i,total:T.stops.length,clue:p.done?"You found the treasure! 🏆":st.clue,hint:p.hint&&!p.done?st.hint:"",hq:!!st.hint&&!p.done,pin:(!p.done&&st.rv)?{lat:st.lat,lng:st.lng}:null,pts:p.pts,done:!!p.done},n)}
 function tLaunch(iv,lim){const s=S.st,t=Date.now();T.prog={};C.prev={};T.start=t;S.jamNext=false;
   Object.assign(s,{mode:"trail",phase:"trail",round:1,total:T.stops.length,interval:iv,endsAt:t+lim*1000,nextPing:t+iv*1000,note:"",board:[]});bc()}
 function tClaim(d){const s=S.st,n=d.n,p=T.prog[n],t=Date.now();if(!p||p.done||s.phase!=="trail")return;
   const R=(ok,m)=>S.net.emit("result",{n,ok,m,left:0},n);
   if(p.lock>t)return R(false,"Locked for "+Math.ceil((p.lock-t)/1000)+" s after wrong codes.");
   const st=T.stops[p.i],q=S.net.peers().map(x=>x.presence).find(x=>x&&x.n===n);
-  if(q&&q.lat!=null){const m=dist(q,st);if(m>(S.hm?6:60))return R(false,"You’re about "+Math.round(m/(S.hm?1:10))*(S.hm?1:10)+" m from the stop. Get closer first.")}
+  if(q&&q.lat!=null){const m=dist(q,st);if(m>(S.hm?Math.max(6,Math.min(60*fs(),M.w*.02)):60))return R(false,"You’re about "+Math.round(m/(S.hm&&M.w<120?1:10))*(S.hm&&M.w<120?1:10)+" m from the stop. Get closer first.")}
   if(String(d.code)===st.code){const sec=(t-p.t0)/1000;p.pts+=100+Math.max(0,50-Math.floor(sec/6));p.i++;p.tries=0;p.hint=false;p.t0=t;C.prev[n]=null;
     if(p.i>=T.stops.length){p.done=true;p.fin=t-T.start;board();R(true,"🏆 You found the treasure!");s.phase="trailend";s.note="🏆 "+n+" found the treasure first!";bc();return}
     board();R(true,"✅ Correct! Next clue unlocked.");tSend(n);bc()}
@@ -176,29 +204,27 @@ function tickT(t){const s=S.st;
   if(add){board();ping();bc()}
   if(t>=s.nextPing){s.nextPing+=s.interval*1000;ping();bc()}
   if(t-(S.hb||0)>4000){S.hb=t;bc();pres();Object.keys(T.prog).forEach(tSend)}}
-function botTrail(){const cl=["Where the trail begins, something small waits low to the ground.","Halfway there. Follow the warmth toward the quiet corner.","The treasure rests where few would look. Close in and search."];
-  T.stops=cl.map(c=>({lat:(30+Math.random()*240)*K,lng:(30+Math.random()*240)*K,clue:c,code:String(1000+Math.floor(Math.random()*9000)),hint:"Trust the radar. It never lies (unless jammed)."}));tLaunch(15,420)}
 function tickC(){if(!isC())return;const s=S.st,t=Date.now();if(s.phase==="trail")return tickT(t);
-  if(s.phase==="live"){if(S.bot)s.h2=C.h2&&t>=s.endsAt-s.hunt*500?C.h2:"";if(t>=s.endsAt)return secure();if(t>=s.nextPing){s.nextPing+=s.interval*1000;ping();bc()}}
-  if(!S.bot&&t-(S.hb||0)>4000){S.hb=t;bc();pres()}}
+  if(s.phase==="live"){if(t>=s.endsAt)return secure();if(t>=s.nextPing){s.nextPing+=s.interval*1000;ping();bc()}}
+  if(t-(S.hb||0)>4000){S.hb=t;bc();pres()}}
 
 /* ---------- GPS ---------- */
-function gps(){if(S.sim||S.gw!=null||!navigator.geolocation)return;
-  S.gw=navigator.geolocation.watchPosition(p=>{if(S.sim||S.hm)return;S.pos={lat:p.coords.latitude,lng:p.coords.longitude};S.acc=p.coords.accuracy;pres()},e=>{S.gerr=e.message},{enableHighAccuracy:true,maximumAge:2000})}
+function gps(){if(S.gw!=null||!navigator.geolocation)return;
+  S.gw=navigator.geolocation.watchPosition(p=>{S.geo={lat:p.coords.latitude,lng:p.coords.longitude};if(S.hm)return;S.pos={lat:p.coords.latitude,lng:p.coords.longitude};S.acc=p.coords.accuracy;pres()},e=>{S.gerr=e.message},{enableHighAccuracy:true,maximumAge:2000})}
 
 /* ---------- views ---------- */
 function home(){return`<div class="hero"><div class="radar"></div><h1>Phantom Post</h1><p>Hide a token outdoors. Hunt it with a heat radar.</p><p class="mut">${career()}</p></div>
 <div class="card"><label class="mut">Agent codename</label><input id="nm" maxlength="14" placeholder="e.g. Raven" value="${esc(sv())}">
 
-<label class="mut">Room code (to join a game)</label><input id="cd" maxlength="5" placeholder="e.g. K7Q2M" value="${esc((QS.get("join")||"").toUpperCase())}" style="text-transform:uppercase"><label class="mut"><input id="sm" type="checkbox" style="width:auto;margin-right:6px">Simulated GPS (test indoors or on one device)</label>
+<label class="mut">Room code (to join a game)</label><input id="cd" maxlength="5" placeholder="e.g. K7Q2M" value="${esc((QS.get("join")||"").toUpperCase())}" style="text-transform:uppercase">
 <div id="er" class="err"></div>
-<button data-a="train">▶ Dead Drop training (solo)</button><button class="g" data-a="traint">🗺 Treasure Trail training (solo)</button>
-<div class="row"><button class="g" data-a="host">🎒 Host as Courier</button><button class="g" data-a="join">🔍 Join as Hunter</button></div></div>
-<details class="card"><summary>How it works</summary><div class="mut">The <b>Courier</b> hides a physical token outdoors, marks the spot with GPS, writes a cryptic clue and sets a 4-digit code under the token. <b>Hunters</b> get the clue and a radar ping every interval (default 2 min) showing hot/cold bands. Hunters win by finding the token and entering its code (3 tries). If the clock runs out, the drop is secured. <b>3 secured drops in a row and the Courier wins.</b><br><br><b>Powers:</b> each Hunter gets one 🎯 sonar burst per drop (distance to within 5 m, but it alerts the Courier). The Courier gets one 📵 jammer per game and can add a bonus hint that unlocks at half time.<br><br><b>Treasure Trail mode:</b> the Courier hides several stops. Each code you find unlocks the clue to the next stop. Hunters race on a live leaderboard (speed earns points, hints cost 30). First to the 🏆 treasure wins.<br><br><b>Your phone is the server.</b> The Courier hosts a room and shares a 5-letter code or link. Hunters join from anywhere (any Wi-Fi or mobile data) and game data flows directly between phones. A free public matchmaking service only introduces the phones. The Courier keeps the app open. Training mode works alone.</div></details>`}
-function hdr(){const s=S.st,tr=s.mode==="trail"||S.gm==="trail";return`<header class="top"><div class="brand">👻 Phantom Post</div><div class="chips"><span class="chip">${S.role==="C"?"Courier":"Hunter"} ${esc(S.name)}</span>${S.mode==="room"?`<span class="chip code">${esc(S.code)}</span>`:`<span class="chip">Training</span>`}${tr?"":`<span class="chip pip">${pips(s.secured)}</span>`}</div><button class="ib" data-a="mute" aria-label="Toggle sound">${S.mute?"🔇":"🔊"}</button><button class="ib" data-a="leave" aria-label="Leave game">✕</button></header><div id="cs" class="err"></div>`}
-const SETUP=`<div class="card"><h2>🏠 Playing indoors?</h2><div class="mut">Upload a floor plan, photo or sketch of your home. Hunters tap their location on it instead of using GPS.</div><input id="mf" type="file" accept="image/*"><label class="mut">House width in meters</label><input id="mw" type="number" value="12" min="3" max="100"><button data-a="usehome">🏠 Use this map</button><button class="g" data-a="usegrid">▦ Blank grid, no image</button></div>`;
-const hmcard=()=>`<div class="card"><h2>🏠 House map</h2><canvas id="hm" class="map" width="600" height="450" style="aspect-ratio:auto"></canvas><div class="mut">${S.role==="C"?"Tap to drop a pin (amber), then use Lock in or Mark stop. Red = hidden, blue = hunters.":"Tap where you are standing. Your radar uses that spot."}</div>${S.role==="C"&&S.st.phase==="hiding"?'<div class="row"><button class="g" data-a="mlabel">📌 Label spot</button><button class="g" data-a="mlabclr">Clear labels</button></div><button class="g" data-a="usegps">Back to GPS map</button>':""}</div>`;
-const mapc=()=>S.hm?hmcard():S.sim?`<div class="card"><div class="mut">Simulated map (300 m). Tap to move.</div><canvas id="mp" class="map" width="300" height="300"></canvas></div>`:`<div class="card"><canvas id="rm" class="map" width="480" height="480"></canvas><div class="mut">You are amber${S.role==="C"?", hunters blue, targets red":""}. Map © OpenStreetMap contributors; needs a connection.</div></div>${S.role==="C"&&S.mode==="room"&&S.st.phase==="hiding"?SETUP:""}`;
+
+<label class="mut"><input id="pu" type="checkbox" style="width:auto;margin-right:6px">List my room publicly so nearby players can join</label><div class="row"><button data-a="host">🎒 Host as Courier</button><button class="g" data-a="join">🔍 Join as Hunter</button></div><button class="g" data-a="nearby">🌍 Find nearby public games</button><div id="nb"></div></div>
+<div class="card"><h2>New here?</h2><div class="mut">A short tour of how the game, the maps and the results work.</div><button data-a="tut">📖 How to play</button></div>`}
+function hdr(){const s=S.st,tr=s.mode==="trail"||S.gm==="trail";return`<header class="top"><div class="brand">👻 Phantom Post</div><div class="chips"><span class="chip">${S.role==="C"?"Courier":"Hunter"} ${esc(S.name)}</span>${S.mode==="room"?`<span class="chip code">${esc(S.code)}</span>`:""}${tr?"":`<span class="chip pip">${pips(s.secured)}</span>`}</div><button class="ib" data-a="tut" aria-label="How to play">?</button><button class="ib" data-a="mute" aria-label="Toggle sound">${S.mute?"🔇":"🔊"}</button><button class="ib" data-a="leave" aria-label="Leave game">✕</button></header><div id="cs" class="err"></div>`}
+const SETUP=`<div class="card"><h2>🛰 Auto satellite map</h2><div class="mut">Stand in the play area. The app builds a satellite view centered on you, and no screenshot is needed.</div><label class="mut">Radius</label><select id="sr"><option value="100">100 m</option><option value="200">200 m</option><option value="500">500 m</option><option value="1000">1 km</option><option value="5000">5 km</option><option value="10000">10 km</option></select><label class="mut">Or custom radius in meters</label><input id="sx" type="number" min="30" max="20000" placeholder="e.g. 750"><button data-a="usesat">🛰 Generate satellite map</button></div><div class="card"><h2>📸 No GPS? Use a screenshot map</h2><div class="mut">GPS can be off by 5–30 m. Instead, screenshot a satellite view of your play area (Google Maps, Apple Maps) or use a floor plan or sketch. Upload it, enter how wide the area is (use the map’s scale bar), then pin your hiding spots. Hunters tap where they stand.</div><input id="mf" type="file" accept="image/*"><label class="mut">Real width of the map in meters</label><input id="mw" type="number" value="60" min="3" max="2000"><button data-a="usehome">📸 Use this map</button><button class="g" data-a="usegrid">▦ Blank grid, no image</button></div>`;
+const hmcard=()=>`<div class="card"><h2>📸 Pinned map</h2><canvas id="hm" class="map" width="600" height="450" style="aspect-ratio:auto"></canvas><div class="mut">${S.role==="C"?"Tap to drop a pin (amber), then use Lock in or Mark stop. Red = hidden, blue = hunters.":"Tap where you are standing. Your radar uses that spot."}${M.sat?" Imagery © Esri.":""}</div>${S.role==="C"&&S.st.phase==="hiding"?'<div class="row"><button class="g" data-a="mlabel">📌 Label spot</button><button class="g" data-a="mlabclr">Clear labels</button></div><button class="g" data-a="usegps">Back to GPS map</button>':""}</div>`;
+const mapc=()=>S.hm?hmcard():`<div class="card"><canvas id="rm" class="map" width="480" height="480"></canvas><div class="mut">You are amber${S.role==="C"?", hunters blue, targets red":""}. Map © OpenStreetMap contributors; needs a connection.</div></div>${S.role==="C"&&S.mode==="room"&&S.st.phase==="hiding"?SETUP:""}`;
 function view(){const s=S.st,a=$("app");S.key=keyOf();
   if(!S.role){a.innerHTML=home();return}
   let h=hdr();
@@ -210,7 +236,7 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
     <div class="card"><button id="jb" data-a="jam"></button><button class="g" data-a="bcast">📣 Message hunters</button><button class="g" id="pb" data-a="pause"></button><button class="g" data-a="endnow">⏹ End hunt early</button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
   else if(s.phase==="trail"){h+=`<div class="card"><h2 id="stp">Waiting for your first clue…</h2><div id="sc"></div><div id="th" class="mut" style="margin-top:8px"></div><button class="g" id="hb" data-a="hint">💡 Reveal hint (−30 pts)</button></div>
     <div class="card"><div class="mut">Time left</div><div class="big" id="tm"></div><h2>📡 Radar</h2><div class="gz" id="gz"></div><div id="rt"></div><div class="mut">Heat history</div><div id="hs" class="gz" style="height:34px;align-items:flex-end"></div><div class="mut">Next ping in <b id="np"></b></div></div>
-    <div class="card"><h2>Enter this stop’s code</h2><div class="mut">Get within 60 m, find the marker, read its 4-digit code.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button>${S.bot?'<button class="g" data-a="search">🔎 Search here (training)</button>':""}<div id="ms" class="err"></div><div id="pi" class="mut"></div></div>
+    <div class="card"><h2>Enter this stop’s code</h2><div class="mut">Get within 60 m, find the marker, read its 4-digit code.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button><div id="ms" class="err"></div><div id="pi" class="mut"></div></div>
     <div class="card"><h2>🏁 Leaderboard</h2><div id="lb" class="mut"></div></div>`+mapc()}
   else if(S.role==="C"&&s.phase==="hiding"&&S.gm==="trail"){h+=`<div class="card"><div class="row"><button class="g" data-a="gm" data-m="drop">Dead Drop</button><button data-a="gm" data-m="trail">Treasure Trail</button></div>
     <h2>Build the trail · ${T.stops.length} stop(s)</h2><div class="mut">Walk to each hiding spot, leave a marker with a 4-digit code, and mark it here. Each code unlocks the clue to the next stop. The last stop is the 🏆 treasure.</div>
@@ -218,7 +244,7 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
     <label class="mut">Clue that leads hunters TO stop ${T.stops.length+1}</label><textarea id="tc" rows="2" maxlength="160" placeholder="Where the river bends beneath the iron arch…"></textarea>
     <label class="mut">4-digit code at this stop</label><input id="tk" maxlength="4" inputmode="numeric" value="${1000+Math.floor(Math.random()*9000)}">
     <label class="mut">Hint (optional, costs hunters 30 pts)</label><input id="tt" maxlength="100">
-    <button data-a="addstop">📍 Mark this spot as stop ${T.stops.length+1}</button>${T.stops.length?'<button class="g" data-a="popstop">Remove last stop</button>':""}
+    <label class="mut"><input id="tr" type="checkbox" style="width:auto;margin-right:6px">Show this stop’s pin on hunters’ maps once they clear the previous stop</label><button data-a="addstop">📍 Mark this spot as stop ${T.stops.length+1}</button>${T.stops.length?'<button class="g" data-a="popstop">Remove last stop</button>':""}
     <div class="row"><div><label class="mut">Radar ping</label><select id="iv"><option value="120">Every 2 min</option><option value="60">Every 1 min</option><option value="30">Every 30 s</option><option value="15">Every 15 s</option></select></div><div><label class="mut">Time limit</label><select id="lm"><option value="60">60 min</option><option value="30">30 min</option><option value="15">15 min</option><option value="5">5 min</option></select></div></div>
     <div id="er" class="err"></div><div id="hn" class="mut"></div>${S.mode==="room"?`<div class="mut">Room code · hunters can join any time</div><div class="big" style="letter-spacing:6px">${esc(S.code)}</div><button class="g" data-a="sharelink">📨 Share invite link</button>`:""}
     <button data-a="starttrail">🏁 Start the hunt</button></div>`+mapc()}
@@ -236,11 +262,11 @@ function view(){const s=S.st,a=$("app");S.key=keyOf();
     h+=`<div class="card"><h2>Drop #${s.round} is live</h2><div class="mut">Hunt ends in</div><div class="big" id="tm"></div><div class="mut">Next radar ping in <b id="np"></b> · code <b>${esc(C.pass)}</b>${S.mode==="room"?" · room <b>"+esc(S.code)+"</b>":""}</div></div>
     <div class="card"><h2>Hunters</h2><div id="hl" class="mut">Waiting for hunters to join…</div></div><div class="card"><button id="jb" data-a="jam"></button><button class="g" data-a="bcast">📣 Message hunters</button><button class="g" id="pb" data-a="pause"></button><button class="g" data-a="endnow">⏹ End hunt early</button><div id="al" class="err"></div><div id="ms" class="mut"></div></div>`+mapc()}
   else if(s.phase==="hiding"){
-    h+=`<div class="card"><h2>Standing by</h2><div class="mut">${esc(s.note)||"The Courier is hiding the token…"}</div>${S.mode==="room"&&!S.bot?'<button id="rb" data-a="ready"></button>':""}<div id="pi" class="mut"></div></div>`+mapc()}
+    h+=`<div class="card"><h2>Standing by</h2><div class="mut">${esc(s.note)||"The Courier is hiding the token…"}</div>${S.mode==="room"?'<button id="rb" data-a="ready"></button>':""}<div id="pi" class="mut"></div></div>`+mapc()}
   else{
     h+=`<div class="card"><h2>🗝 Clue · drop #${s.round}</h2><div>${esc(s.clue)}</div><div id="hh" class="mut" style="margin-top:8px"></div></div>
     <div class="card"><div class="mut">Time left</div><div class="big" id="tm"></div><h2>📡 Radar</h2><div class="gz" id="gz"></div><div id="rt"></div><div class="mut">Heat history</div><div id="hs" class="gz" style="height:34px;align-items:flex-end"></div><div class="mut">Next ping in <b id="np"></b></div></div>
-    <div class="card"><h2>Claim the payload</h2><div class="mut">Enter the 4-digit code on the token.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button>${S.bot?'<button class="g" data-a="search">🔎 Search here (training)</button>':""}<div id="ms" class="err"></div><div id="pi" class="mut"></div></div>`+mapc()}
+    <div class="card"><h2>Claim the payload</h2><div class="mut">Enter the 4-digit code on the token.</div><input id="cc" maxlength="4" inputmode="numeric" placeholder="••••"><button data-a="claim">Submit code</button><button class="g" id="sb" data-a="sonar"></button><div id="ms" class="err"></div><div id="pi" class="mut"></div></div>`+mapc()}
   a.innerHTML=h}
 function dyn(){const s=S.st,t=Date.now(),g=i=>$(i);
   document.body.dataset.r=S.role||"";document.body.dataset.ph=s.phase;
@@ -251,43 +277,47 @@ function dyn(){const s=S.st,t=Date.now(),g=i=>$(i);
   if(g("stp")){const k=S.stop;g("stp").textContent=k?(k.done?"🏆 Treasure found!":"🗝 Stop "+(k.i+1)+" of "+k.total+" · "+k.pts+" pts"):"Waiting for your first clue…";g("sc").textContent=k?k.clue:"";g("th").textContent=k&&k.hint?"💡 "+k.hint:"";g("hb").style.display=k&&k.hq&&!k.hint?"":"none"}
   if(g("tm")){g("tm").textContent=mmss(s.endsAt-t);g("tm").classList.toggle("low",s.endsAt-t<30000&&!s.paused)}if(g("np"))g("np").textContent=mmss(s.nextPing-t);
   if(g("ms"))g("ms").textContent=S.msg;
-  if(g("cs"))g("cs").textContent=s.paused?"⏸ Hunt paused by the Courier":S.role==="H"&&!S.bot&&S.seen&&t-S.seen>12000?"⚠ Courier signal lost…":"";
+  if(g("cs"))g("cs").textContent=s.paused?"⏸ Hunt paused by the Courier":S.role==="H"&&S.seen&&t-S.seen>12000?"⚠ Courier signal lost…":"";
   if(g("hh"))g("hh").textContent=s.h2?"💡 Bonus hint: "+s.h2:"💡 Bonus hint unlocks at half time.";
   if(g("sb")){g("sb").textContent="🎯 Sonar burst · "+S.son+" left (alerts Courier)";g("sb").disabled=S.son<1}
   if(g("jb")){g("jb").textContent="📵 Jam next radar ping ("+S.jam+" left)"+(S.jamNext?" · armed":"");g("jb").disabled=S.jam<1&&!S.jamNext}
   if(g("al"))g("al").textContent=S.alert||"";
   if(g("hs"))g("hs").innerHTML=S.hist.map(h=>`<span class="on" style="height:${(h+1)*16}%;background:var(--acc)"></span>`).join("");
   if(g("hn")){const hs=S.net.peers().filter(p=>p.presence&&p.presence.role==="H");g("hn").textContent="Hunters in room: "+hs.length+" · ready: "+hs.filter(p=>p.presence.r).length};
-  if(g("pi"))g("pi").textContent=S.hm?(S.pos?"Position set. Tap the map to move.":"Tap the map where you are standing."):S.sim?"Simulated position set.":S.pos?"GPS lock: "+S.pos.lat.toFixed(5)+", "+S.pos.lng.toFixed(5)+" (±"+Math.round(S.acc||0)+" m)":"Waiting for GPS… "+(S.gerr||"allow location access.");
+  if(g("pi"))g("pi").textContent=S.hm?(S.pos?"Position set. Tap the map to move.":"Tap the map where you are standing."):S.pos?"GPS lock: "+S.pos.lat.toFixed(5)+", "+S.pos.lng.toFixed(5)+" (±"+Math.round(S.acc||0)+" m)":"Waiting for GPS… "+(S.gerr||"allow location access.");
   if(g("hl")){const e=Object.entries(S.radar);g("hl").innerHTML=e.length?e.map(([n,r])=>`<div class="lr"><b>${esc(n)}</b><span>${esc(r.t)}</span></div>`).join(""):"No hunters detected yet."}
   if(g("gz")){const r=S.radar[S.name];const h=r?r.h:-1;if(g("gz").dataset.h!=h){g("gz").dataset.h=h;g("gz").innerHTML=scope(h)}
     g("rt").innerHTML=r?`<b>${esc(r.t)}</b> ${r.tr>0?"↗ warmer":r.tr<0?"↘ colder":""}<div class="mut">Updated ${Math.round((t-S.radarAt)/1000)} s ago</div>`:'<div class="mut">Awaiting first ping…</div>'}
-  const c=g("mp");if(c){const x=c.getContext("2d");x.clearRect(0,0,300,300);x.strokeStyle="#8884";for(let i=0;i<=300;i+=50){x.beginPath();x.moveTo(i,0);x.lineTo(i,300);x.moveTo(0,i);x.lineTo(300,i);x.stroke()}
-    if(S.role==="C"&&C.drop){x.fillStyle="#d9382b";x.fillRect(C.drop.lng/K-5,C.drop.lat/K-5,10,10)}
-    if(S.role==="C")T.stops.forEach((p,i)=>{x.fillStyle="#d9382b";x.fillRect(p.lng/K-6,p.lat/K-6,12,12);x.fillStyle="#fff";x.font="10px sans-serif";x.fillText(i+1,p.lng/K-3,p.lat/K+4)})
-    if(S.pos){x.fillStyle="#0a7c5a";x.beginPath();x.arc(S.pos.lng/K,S.pos.lat/K,7,0,7);x.fill()}}}
+  }
 
 /* ---------- actions ---------- */
-async function start(a){const nm=$("nm").value.trim(),er=$("er");
+async function start(a){const nm=$("nm").value.trim(),er=$("er"),pub=$("pu")&&$("pu").checked;
   if(!nm){er.textContent="Pick a codename.";return}
   const cd=$("cd").value.trim().toUpperCase();
   if(a==="join"&&!/^[A-Z0-9]{5}$/.test(cd)){er.textContent="Enter the 5-character room code.";return}
-  if(typeof Peer==="undefined"&&a!=="train"&&a!=="traint"){er.textContent="Networking library failed to load. Reload the page.";return}
-  S.sim=$("sm").checked;S.name=nm;try{localStorage.setItem("pp_n",nm)}catch(e){}wake();
-  if(a==="train"||a==="traint"){S.mode="train";S.role="H";S.bot=true;S.sim=true;S.net=bus();S.pos={...ctr};wire();setTimeout(a==="traint"?botTrail:botDrop,200);view();return}
-  if(a==="host"){er.textContent="Opening room…";let net=null;
+  if(typeof Peer==="undefined"){er.textContent="Networking library failed to load. Reload the page.";return}
+  S.name=nm;try{localStorage.setItem("pp_n",nm)}catch(e){}wake();
+    if(a==="host"){er.textContent="Opening room…";let net=null;
     for(let i=0;i<3&&!net;i++){const n=courierNet(genCode());try{await n.ready;net=n}catch(e){n.close();if(e&&e.type!=="unavailable-id"){er.textContent="Could not reach the matchmaking service ("+((e&&e.type)||"offline")+"). Check your connection.";return}}}
     if(!net){er.textContent="Could not open a room. Try again.";return}
-    S.mode="room";S.role="C";S.net=net;S.code=net.code}
+    S.mode="room";S.role="C";S.net=net;S.code=net.code;S.pub=pub}
   else{S.mode="room";S.role="H";S.name=nm+"-"+(10+Math.floor(Math.random()*90));S.code=cd;S.net=hunterNet(cd);S.pair=true}
-  if(S.sim)S.pos={...ctr};else gps();wire();pres();view()}
+  gps();wire();pres();view()}
 document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
-  if(["train","traint","host","join"].includes(a))return start(a);
+  if(a==="tut")return openTut(0);
+  if(a==="tnext")return openTut(S.ti+1);
+  if(a==="tprev")return openTut(S.ti-1);
+  if(a==="tclose"){$("tut").hidden=true;return}
+  if(a==="tdemo")return demo(+b.dataset.h);
+  if(a==="nearby")return nearby();
+  if(a==="joincode"){$("cd").value=b.dataset.c;return start("join")}
+  if(["host","join"].includes(a))return start(a);
   if(a==="again")return location.reload();
-  if(a==="usehome"||a==="usegrid"){const w=Math.max(3,Math.min(100,+$("mw").value||12)),f=a==="usehome"&&$("mf").files[0];
+  if(a==="usehome"||a==="usegrid"){const w=Math.max(3,Math.min(2000,+$("mw").value||60)),f=a==="usehome"&&$("mf").files[0];
     if(a==="usehome"&&!f)return toast("Choose a floor plan image first.");
-    const go=(src,ar)=>{M.id=Date.now();M.w=w;M.a=ar;M.labels=[];M.parts=[];M.im=null;if(src){M.im=new Image;M.im.src=src;for(let i=0;i<src.length;i+=8000)M.parts.push(src.slice(i,i+8000))}M.ok=1;S.hm=1;S.st.hm=1;S.pos={lat:.5*w*ar*K,lng:.5*w*K};S.acc=0;bc();sendMap();view()};
-    if(!f)return go(null,.75);const im=new Image;im.onload=()=>{const sc=Math.min(1,700/Math.max(im.width,im.height)),W=Math.round(im.width*sc),H=Math.round(im.height*sc),c=document.createElement("canvas");c.width=W;c.height=H;c.getContext("2d").drawImage(im,0,0,W,H);go(c.toDataURL("image/jpeg",.6),H/W)};im.onerror=()=>toast("Could not read that image.");im.src=URL.createObjectURL(f);return}
+    const go=(src,ar)=>{M.id=Date.now();M.sat=null;M.w=w;M.a=ar;M.labels=[];M.parts=[];M.im=null;if(src){M.im=new Image;M.im.src=src;for(let i=0;i<src.length;i+=8000)M.parts.push(src.slice(i,i+8000))}M.ok=1;S.hm=1;S.st.hm=1;S.pos={lat:.5*w*ar*K,lng:.5*w*K};S.acc=0;bc();sendMap();view()};
+    if(!f)return go(null,.75);const im=new Image;im.onload=()=>{const sc=Math.min(1,1000/Math.max(im.width,im.height)),W=Math.round(im.width*sc),H=Math.round(im.height*sc),c=document.createElement("canvas");c.width=W;c.height=H;c.getContext("2d").drawImage(im,0,0,W,H);go(c.toDataURL("image/jpeg",.6),H/W)};im.onerror=()=>toast("Could not read that image.");im.src=URL.createObjectURL(f);return}
+  if(a==="usesat"){if(!S.geo)return toast("Waiting for GPS. Allow location access and try again.");const r=Math.max(30,Math.min(20000,+$("sx").value||+$("sr").value));M.id=Date.now();M.sat={lat:S.geo.lat,lng:S.geo.lng,r};M.w=2*r;M.a=1;M.labels=[];M.parts=[];M.im=null;M.ok=1;S.hm=1;S.st.hm=1;S.pos={lat:r*K,lng:r*K};S.acc=0;bc();sendMeta();view();return}
   if(a==="usegps"){S.hm=0;S.st.hm=0;S.pos=null;bc();view();return}
   if(a==="mlabel"){if(!S.pos)return;const t=(prompt("Name this spot (e.g. Kitchen)")||"").trim().slice(0,16);if(t){M.labels.push({t,u:S.pos.lng/K/M.w,v:S.pos.lat/K/(M.w*M.a)});sendMeta()}return}
   if(a==="mlabclr"){M.labels=[];sendMeta();return}
@@ -301,25 +331,24 @@ document.addEventListener("click",async e=>{const b=e.target.closest("[data-a]")
   if(a==="sharelink"){const u=location.origin+location.pathname+"?join="+S.code,t="Join my Phantom Post game! Room code "+S.code+" · "+u;try{if(navigator.share)await navigator.share({text:t});else{await navigator.clipboard.writeText(t);$("er").textContent="Invite copied."}}catch(x){}return}
   if(a==="gm"){S.gm=b.dataset.m;view();return}
   if(a==="addstop"){const cl=$("tc").value.trim(),cd=$("tk").value.trim(),ht=$("tt").value.trim(),er=$("er");
-    if(!S.pos)return er.textContent="No position yet. Wait for GPS or enable simulated GPS.";if(!cl)return er.textContent="Write the clue for this stop.";
+    if(!S.pos)return er.textContent="No position yet. Wait for GPS, or tap the map to place a pin.";if(!cl)return er.textContent="Write the clue for this stop.";
     if(!/^\d{4}$/.test(cd))return er.textContent="Code must be 4 digits.";if(T.stops.length>=8)return er.textContent="Maximum 8 stops.";
-    T.stops.push({lat:S.pos.lat,lng:S.pos.lng,clue:cl,code:cd,hint:ht});view();return}
+    T.stops.push({lat:S.pos.lat,lng:S.pos.lng,clue:cl,code:cd,hint:ht,rv:$("tr").checked});view();return}
   if(a==="popstop"){T.stops.pop();view();return}
   if(a==="starttrail"){if(!rdy())return;const er=$("er");if(T.stops.length<2)return er.textContent="Add at least 2 stops (the last one is the treasure).";tLaunch(+$("iv").value,+$("lm").value*60);view();return}
   if(a==="hint"){S.net.emit("hint",{n:S.name});return}
   if(a==="jam"){if(S.jam>0&&(S.st.phase==="live"||S.st.phase==="trail")){S.jam--;S.jamNext=true;S.msg="Jammer armed for the next ping."}return}
   if(a==="sonar"){if(S.son>0&&(S.st.phase==="live"||S.st.phase==="trail")){S.son--;S.net.emit("scan",{n:S.name});S.msg="Sonar sent…"}return}
   if(a==="lock"){if(!rdy())return;const cl=$("cl").value.trim(),pc=$("pc").value.trim(),er=$("er");if(S.mode==="room"&&!S.net.peers().length)return er.textContent="No hunters have joined yet. Share the room code.";
-    if(!S.pos)return er.textContent="No position yet. Wait for GPS or enable simulated GPS.";
+    if(!S.pos)return er.textContent="No position yet. Wait for GPS, or tap the map to place a pin.";
     if(!cl)return er.textContent="Write a clue.";if(!/^\d{4}$/.test(pc))return er.textContent="Code must be 4 digits.";
     C.drop={...S.pos};C.pass=pc;C.h2=$("h2").value.trim();launch(cl,+$("iv").value,+$("hu").value);view()}
   if(a==="claim"){const v=$("cc").value.trim();if(v.length!==4)return S.msg="Enter the 4-digit code.";S.msg="Code sent…";S.net.emit("claim",{n:S.name,code:v});setTimeout(()=>{if(S.msg==="Code sent…")S.msg=""},4000)}
-  if(a==="search"){const tg=tgt(S.name),cd=S.st.mode==="trail"?(T.stops[T.prog[S.name]?T.prog[S.name].i:0]||{}).code:C.pass;S.msg=tg&&dist(S.pos,tg)<=12?"You found the marker! Code: "+cd:"Nothing here. Keep looking."}});
-document.addEventListener("pointerdown",e=>{if(e.target.id!=="mp")return;const r=e.target.getBoundingClientRect();
-  S.pos={lat:(e.clientY-r.top)/r.height*300*K,lng:(e.clientX-r.left)/r.width*300*K};S.acc=0;pres()});
+  });
 document.addEventListener("pointerdown",e=>{if(e.target.id!=="hm")return;const r=e.target.getBoundingClientRect(),u=(e.clientX-r.left)/r.width,v=(e.clientY-r.top)/r.height;S.pos={lat:v*M.w*M.a*K,lng:u*M.w*K};S.acc=0;pres()});
-setInterval(()=>{const t0=Date.now();if(S.st.paused&&(S.st.phase==="live"||S.st.phase==="trail")){const d=t0-(S.lt||t0);S.st.endsAt+=d;S.st.nextPing+=d}S.lt=t0;{const ph=S.st.phase;if(ph==="won"||ph==="caught"||ph==="trailend"){if(!S.rec&&S.mode==="room"){S.rec=1;rec(ph)}if(!S.cel){S.cel=1;burst(ph==="won"?"🎒💜✨":"🏆🎉✨")}}else{S.rec=0;S.cel=0}}tickC();if(S.role==="H"&&!S.bot&&!S.pair&&Date.now()-(S.pt||0)>5000){S.pt=Date.now();pres()}const k=keyOf();if(S.role&&k!==S.key)view();dyn()},500);
+setInterval(()=>{if(S.pub&&!S.dir&&S.geo&&!S.dirTry){S.dirTry=1;openDir()}const t0=Date.now();if(S.st.paused&&(S.st.phase==="live"||S.st.phase==="trail")){const d=t0-(S.lt||t0);S.st.endsAt+=d;S.st.nextPing+=d}S.lt=t0;{const ph=S.st.phase;if(ph==="won"||ph==="caught"||ph==="trailend"){if(!S.rec&&S.mode==="room"){S.rec=1;rec(ph)}if(!S.cel){S.cel=1;burst(ph==="won"?"🎒💜✨":"🏆🎉✨")}}else{S.rec=0;S.cel=0}}tickC();if(S.role==="H"&&!S.pair&&Date.now()-(S.pt||0)>5000){S.pt=Date.now();pres()}const k=keyOf();if(S.role&&k!==S.key)view();dyn()},500);
 view();
+try{if(!localStorage.getItem("pp_t"))openTut(0)}catch(e){}
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 </script></body></html>
