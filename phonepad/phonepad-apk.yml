@@ -1,0 +1,51 @@
+name: PhonePad APK
+
+# Runs ONLY when the Android app code changes (not for stories, games, site files)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'phonepad/app/**'
+      - 'phonepad/build.gradle.kts'
+      - 'phonepad/settings.gradle.kts'
+      - 'phonepad/gradle.properties'
+      - 'phonepad/gradle/**'
+      - '.github/workflows/phonepad-apk.yml'
+  workflow_dispatch:   # lets you press "Run workflow" manually
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phonepad-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        working-directory: phonepad
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Publish APK as the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK=$(find phonepad/app/build/outputs/apk/debug -name '*.apk' | head -n 1)
+          cp "$APK" PhonePad.apk
+          gh release delete phonepad-latest --yes --cleanup-tag || true
+          gh release create phonepad-latest PhonePad.apk \
+            --title "PhonePad (latest)" \
+            --notes "Built from commit ${GITHUB_SHA::7} on $(date -u +%Y-%m-%d)"

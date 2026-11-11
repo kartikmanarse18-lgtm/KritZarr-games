@@ -1,0 +1,14 @@
+wrangler.jsonc
+.assetsignore
+README.md
+CNAME
+.git
+.github
+node_modules
+phonepad/app
+phonepad/gradle
+phonepad/gradlew
+phonepad/gradlew.bat
+phonepad/build.gradle.kts
+phonepad/settings.gradle.kts
+phonepad/gradle.properties

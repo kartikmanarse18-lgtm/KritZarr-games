@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhonePad — use your phone as mouse, keyboard, webcam & mic</title>
+<meta name="description" content="PhonePad turns an Android phone into the mouse, keyboard, media remote, webcam and microphone of an old PC. Free APK download.">
+<style>
+:root{--bg:#0f1115;--card:#181b22;--text:#eef0f4;--muted:#9aa3b2;--accent:#6c8cff;--line:#272c38}
+@media (prefers-color-scheme: light){:root{--bg:#f5f6fa;--card:#fff;--text:#14171f;--muted:#5b6475;--accent:#3d5bd9;--line:#e1e4ec}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+main{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+a{color:var(--accent)}
+.back{font-size:14px;text-decoration:none}
+h1{font-size:2rem;margin:.6em 0 .2em}
+.sub{color:var(--muted);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:12px}
+.btn.alt{background:transparent;color:var(--accent);border:1px solid var(--accent);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.meta{color:var(--muted);font-size:14px;margin-top:10px}
+h2{font-size:1.15rem;margin:0 0 8px}
+ul,ol{margin:.4em 0;padding-left:1.2em}
+code{background:var(--line);padding:1px 6px;border-radius:6px;font-size:.9em}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="https://kritzaar.online/">&larr; KritZaar</a>
+<h1>PhonePad</h1>
+<p class="sub">Use an Android phone as the <b>mouse, keyboard, media remote, webcam and microphone</b> of an old PC that has none of them.</p>
+
+<div class="card">
+  <h2>Download for Android</h2>
+  <div class="row">
+    <a class="btn" id="apk" href="https://github.com/kartikmanarse18-lgtm/KritZarr-games/releases/download/phonepad-latest/PhonePad.apk">Download APK</a>
+  </div>
+  <div class="meta" id="apkmeta">Android 5.0+ (Bluetooth mouse/keyboard needs Android 9+). Allow “install unknown apps” when asked.</div>
+  <div class="meta">Updating? Uninstall the old version first, then install the new APK.</div>
+</div>
+
+<div class="card">
+  <h2>PC receiver (backup “Net” mode)</h2>
+  <p>Works on any phone. Needs only Python 3 on the Windows PC.</p>
+  <div class="row">
+    <a class="btn alt" href="pc/run_receiver.bat" download>run_receiver.bat</a>
+    <a class="btn alt" href="pc/phonepad_receiver.py" download>phonepad_receiver.py</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>1. Mouse &amp; keyboard (Bluetooth)</h2>
+  <ol>
+    <li>In the app tap <b>Visible</b>, then pair the phone from the PC’s Bluetooth settings.</li>
+    <li>Tap <b>Connect</b>.</li>
+  </ol>
+  <p>Tap = click · two-finger tap = right click · double-tap-and-drag = drag · two-finger swipe = scroll. Full US keyboard, Ctrl/Shift/Alt/Win, F1–F12, arrows and media keys.</p>
+</div>
+
+<div class="card">
+  <h2>2. Camera &amp; microphone for the PC</h2>
+  <p>Tap <b>Stream</b>, choose camera/mic, then <b>Start streaming</b>. The phone serves:</p>
+  <table>
+    <tr><th>URL</th><th>Content</th></tr>
+    <tr><td><code>http://PHONE_IP:8080/</code></td><td>Live video + audio page</td></tr>
+    <tr><td><code>/video</code></td><td>MJPEG video</td></tr>
+    <tr><td><code>/snapshot.jpg</code></td><td>Single frame</td></tr>
+    <tr><td><code>/audio</code></td><td>WAV stream (16 kHz mono)</td></tr>
+  </table>
+  <p class="meta">The PC must reach the phone: USB tethering, phone hotspot, or the same router.</p>
+</div>
+</main>
+<script>
+// Optional: show the latest build date and size on the download card
+fetch('https://api.github.com/repos/kartikmanarse18-lgtm/KritZarr-games/releases/tags/phonepad-latest')
+ .then(function(r){return r.ok?r.json():null})
+ .then(function(j){
+   if(!j||!j.assets||!j.assets[0])return;
+   var a=j.assets[0],mb=(a.size/1048576).toFixed(1);
+   document.getElementById('apkmeta').textContent='Latest build: '+j.published_at.slice(0,10)+' · '+mb+' MB · Android 5.0+ (Bluetooth mode needs Android 9+).';
+ }).catch(function(){});
+</script>
+</body>
+</html>
