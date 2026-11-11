@@ -161,7 +161,7 @@ function extractBitsFromPixels(imageData,nBytes){
 }
 
 async function save(name,bytes){
-  // Standard browser download (works on any host; no Claude-only API)
+  // Standard browser download
   var blob=new Blob([bytes],{type:"application/octet-stream"});
   var url=URL.createObjectURL(blob);
   var a=document.createElement("a");
