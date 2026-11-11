@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kritzaar Vault</title>
+<style>
+:root{
+  --bg:#fafafa;--surf:#ffffff;--bd:#e8e8ea;--tx:#141416;--mu:#8a8a92;--ac:#141416;--acc:#ffffff;
+  --er:#d4483f;--ok:#1a8f5c;--wa:#b5790f;--ring:rgba(20,20,22,.08);
+  color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c0c0e;--surf:#17171a;--bd:#232326;--tx:#f2f2f4;--mu:#8d8d96;--ac:#f2f2f4;--acc:#0c0c0e;
+  --er:#ff6b60;--ok:#4fd999;--wa:#eab65f;--ring:rgba(255,255,255,.08);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c0c0e;--surf:#17171a;--bd:#232326;--tx:#f2f2f4;--mu:#8d8d96;--ac:#f2f2f4;--acc:#0c0c0e;
+  --er:#ff6b60;--ok:#4fd999;--wa:#eab65f;--ring:rgba(255,255,255,.08);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--tx);font:15px/1.6 -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:560px;margin:0 auto;padding:40px 20px 56px}
+h1{font-size:1.5rem;font-weight:600;letter-spacing:-.02em;margin:0}
+p.s{color:var(--mu);margin:.45em 0 2em;font-size:.92rem}
+.tabs{display:flex;gap:28px;margin:0 0 28px;border-bottom:1px solid var(--bd)}
+.tabs button{padding:0 0 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--mu);font:inherit;font-weight:500;font-size:.88rem;letter-spacing:.01em;transition:color .2s,border-color .2s}
+.tabs button.on{color:var(--tx);border-color:var(--ac)}
+.card{background:var(--surf);border:1px solid var(--bd);border-radius:16px;padding:24px;margin-bottom:16px}
+label{display:block;font-weight:500;margin:20px 0 7px;font-size:.78rem;letter-spacing:.03em;color:var(--mu);text-transform:uppercase}
+label:first-of-type{margin-top:0}
+input[type=file],input[type=password],textarea{width:100%;padding:11px 13px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:.92rem;transition:border-color .15s,box-shadow .15s}
+input[type=file]:focus,input[type=password]:focus,textarea:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ring)}
+textarea{min-height:76px;resize:vertical}
+button.go{width:100%;margin-top:22px;padding:13px;border:0;border-radius:10px;background:var(--ac);color:var(--acc);font:inherit;font-weight:600;font-size:.92rem;letter-spacing:.01em;transition:opacity .15s,transform .1s}
+button.go:active{transform:scale(.99);opacity:.9}
+button.go:disabled{opacity:.35}
+img.pv{max-width:100%;max-height:180px;border-radius:10px;margin-top:10px;display:block;border:1px solid var(--bd)}
+.msg{margin-top:12px;font-size:.84rem;color:var(--mu)}.ok{color:var(--ok)}.er{color:var(--er)}.wa{color:var(--wa)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--bd);font-size:.85rem;word-break:break-all}
+.row button{padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--tx);font:inherit;font-weight:500;white-space:nowrap}
+.hide{display:none}
+.cap{font-size:.8rem;color:var(--mu);margin-top:7px;line-height:1.55}
+.modes{display:flex;gap:8px;margin:8px 0 0}
+.modes label{display:flex;align-items:center;gap:7px;font-weight:450;font-size:.86rem;text-transform:none;letter-spacing:0;color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;flex:1;cursor:pointer;background:var(--bg);transition:border-color .15s}
+.modes label:has(input:checked){border-color:var(--ac);box-shadow:0 0 0 1px var(--ac) inset}
+.modes input{width:auto;accent-color:var(--ac)}
+h2{font-size:1.05rem;font-weight:600;letter-spacing:-.01em}
+</style></head><body><main>
+<h1>🗝️ Kritzaar Vault</h1>
+<p class="s">Hide files and notes inside an everyday picture. Only the passphrase opens them.</p>
+<div class="tabs"><button id="t1" class="on">Hide</button><button id="t2">Reveal</button><button id="t3">About</button></div>
+
+<section id="p1" class="card">
+<label>Cover image</label>
+<input type="file" id="cover" accept="image/*">
+<img id="pv" class="pv hide" alt="Cover preview">
+<div class="cap" id="capInfo"></div>
+<label>Secret files (any type, video too)</label>
+<input type="file" id="secrets" multiple>
+<label>Secret note (optional)</label>
+<textarea id="note" placeholder="Type a hidden message…"></textarea>
+<label>Passphrase (set by you — remember it, it can't be recovered)</label>
+<input type="password" id="pw1" autocomplete="new-password">
+<label>How to hide it</label>
+<div class="modes">
+  <label><input type="radio" name="mode" value="pixel" id="modePixel" checked> Pixel mode</label>
+  <label><input type="radio" name="mode" value="append" id="modeAppend"> Attachment mode</label>
+</div>
+<div class="cap" id="modeInfo">Pixel mode: data is woven into the picture's own pixels. File size and look stay exactly what a normal picture of this size would be — nothing to detect. Best for text, photos, documents. Output is always a PNG.</div>
+<button class="go" id="hideBtn">Seal &amp; save picture</button>
+<div class="msg" id="m1"></div>
+</section>
+
+<section id="p2" class="card hide">
+<label>Picture that hides something</label>
+<input type="file" id="stego" accept="image/*">
+<label>Passphrase</label>
+<input type="password" id="pw2" autocomplete="off">
+<button class="go" id="revBtn">Reveal contents</button>
+<div class="msg" id="m2"></div>
+<div id="out"></div>
+</section>
+
+<p class="msg" id="tip">Pixel mode produces an ordinary PNG: no trailing data, no size mismatch, nothing a viewer, phone gallery, or basic file inspector would flag. Attachment mode can carry much larger files (like video) and keeps an animated GIF animated, but the saved file is bigger than a normal picture of that size, which a careful technical inspection could notice. Re-uploading the picture to most chat apps or social sites will re-compress it and destroy the hidden data either way — share the original file.</p>
+
+<section id="p3" class="card hide">
+<h2 style="margin:0 0 4px;font-size:1.15rem">About Kritzaar Vault</h2>
+<p class="cap" style="margin-top:0">A private way to carry files, notes, photos, or video inside a picture that looks completely ordinary — opened only by the passphrase you set.</p>
+
+<label>How hiding works</label>
+<p class="cap"><b>Pixel mode</b> encrypts your files with AES‑256‑GCM, then writes the encrypted bytes into the least‑significant bits of the cover picture's own pixels. The output is a normal PNG with the resolution's usual file size — there's no trailing data and no size mismatch for an app or viewer to notice.</p>
+<p class="cap"><b>Attachment mode</b> encrypts the same way, then seals the result on after the picture's existing data. It supports larger payloads (like video) and keeps animated GIFs animated, but the file is measurably bigger than a plain version of that picture.</p>
+
+<label>Encryption</label>
+<p class="cap">Your passphrase is run through PBKDF2 (310,000 rounds, SHA‑256) to derive a key, which encrypts everything with AES‑256‑GCM before it ever touches the picture. The passphrase is never stored or sent anywhere — it only exists in your browser while you type it. If you lose it, the data cannot be recovered.</p>
+
+<label>Keeping the hidden data intact</label>
+<p class="cap">Any app that recompresses images — WhatsApp, iMessage, Instagram, most social platforms — will destroy the hidden data the moment it's sent as a photo. Always send and save the file as a <b>document/file attachment</b>, never as a "photo", and have the recipient download it rather than just viewing the in‑chat preview.</p>
+
+<label>Realistic limits</label>
+<p class="cap">Pixel mode defeats casual and app‑level inspection — the normal bar for "looks totally normal." No method can promise zero detectability against a determined forensic analyst holding the original cover image for comparison. Pixel‑mode capacity depends on the cover photo's resolution; the Hide tab shows how many KB a chosen picture can carry.</p>
+
+<label>Privacy</label>
+<p class="cap">Everything — encryption, pixel embedding, and reveal — runs locally in your browser. Nothing is uploaded anywhere.</p>
+</section>
+
+<script>
+(function(){
+var MAGIC=new Uint8Array([0x8b,0x1f,0x4e,0x6a,0x02]);
+var enc=new TextEncoder(),dec=new TextDecoder();
+var $=function(i){return document.getElementById(i)};
+var coverImg=null, coverFile=null;
+
+function tab(n){$("p1").classList.toggle("hide",n!==1);$("p2").classList.toggle("hide",n!==2);$("p3").classList.toggle("hide",n!==3);$("t1").classList.toggle("on",n===1);$("t2").classList.toggle("on",n===2);$("t3").classList.toggle("on",n===3)}
+$("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};$("t3").onclick=function(){tab(3)};
+function say(id,t,c){var e=$(id);e.textContent=t;e.className="msg "+(c||"")}
+function buf(f){return f.arrayBuffer().then(function(b){return new Uint8Array(b)})}
+async function key(pw,salt){
+  var k=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:salt,iterations:310000,hash:"SHA-256"},k,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+function cat(parts){var n=0,i,o,p=0;for(i=0;i<parts.length;i++)n+=parts[i].length;o=new Uint8Array(n);for(i=0;i<parts.length;i++){o.set(parts[i],p);p+=parts[i].length}return o}
+
+function loadImageEl(file){
+  return new Promise(function(res,rej){
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){res(img)};img.onerror=function(){rej(new Error("Could not read that image."))};img.src=url;
+  });
+}
+function pixelCapacityBytes(w,h){return Math.floor((w*h*3)/8)-40} // 3 LSB/pixel, minus header/crypto overhead
+
+$("cover").onchange=async function(){
+  var f=this.files[0],pv=$("pv");coverFile=f;coverImg=null;
+  if(!f){pv.classList.add("hide");$("capInfo").textContent="";return}
+  var r=new FileReader();r.onload=function(){pv.src=r.result;pv.classList.remove("hide")};r.readAsDataURL(f);
+  try{coverImg=await loadImageEl(f);
+    var cap=pixelCapacityBytes(coverImg.naturalWidth,coverImg.naturalHeight);
+    $("capInfo").textContent="This picture can carry up to ~"+(cap/1024).toFixed(0)+" KB hidden in pixel mode. For bigger files, use attachment mode or a higher-resolution cover.";
+  }catch(e){$("capInfo").textContent=""}
+};
+
+function embedBitsIntoPixels(imageData,bytes){
+  var data=imageData.data,bitLen=bytes.length*8,bi=0;
+  for(var p=0;p<data.length && bi<bitLen;p+=4){
+    for(var c=0;c<3 && bi<bitLen;c++){
+      var byte=bytes[bi>>3],bit=(byte>>(7-(bi%8)))&1;
+      data[p+c]=(data[p+c]&0xFE)|bit; bi++;
+    }
+  }
+  return bi>=bitLen;
+}
+function extractBitsFromPixels(imageData,nBytes){
+  var data=imageData.data,out=new Uint8Array(nBytes),bi=0,need=nBytes*8;
+  for(var p=0;p<data.length && bi<need;p+=4){
+    for(var c=0;c<3 && bi<need;c++){
+      var bit=data[p+c]&1;
+      out[bi>>3]|=bit<<(7-(bi%8));
+      bi++;
+    }
+  }
+  return out;
+}
+
+async function save(name,bytes){
+  var d=await claude.use("downloads");
+  if(!d){return false}
+  try{await d.save({filename:name,data:new Blob([bytes])});return true}
+  catch(e){
+    if(e&&e.code==="rejected_extension"){await d.save({filename:name+".txt",data:new Blob([bytes])});return "renamed"}
+    if(e&&e.code==="declined")return "declined";
+    throw e}
+}
+
+$("hideBtn").onclick=async function(){
+  var cf=coverFile,sf=Array.from($("secrets").files),note=$("note").value,pw=$("pw1").value;
+  var mode=$("modePixel").checked?"pixel":"append";
+  if(!cf)return say("m1","Choose a cover image first.","er");
+  if(!sf.length&&!note.trim())return say("m1","Add a file or a note to hide.","er");
+  if(pw.length<6)return say("m1","Use a passphrase of at least 6 characters.","er");
+  var b=$("hideBtn");b.disabled=true;say("m1","Sealing… this takes a moment.");
+  try{
+    var items=[],hdr=[];
+    for(var i=0;i<sf.length;i++){var u=await buf(sf[i]);items.push(u);hdr.push({n:sf[i].name,s:u.length})}
+    if(note.trim()){var nb=enc.encode(note);items.push(nb);hdr.push({n:"note.txt",s:nb.length})}
+    var h=enc.encode(JSON.stringify(hdr)),hl=new Uint8Array(4);
+    new DataView(hl.buffer).setUint32(0,h.length);
+    var plain=cat([hl,h].concat(items));
+    var salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},await key(pw,salt),plain));
+    var blob=cat([salt,iv,ct]);
+
+    if(mode==="pixel"){
+      if(!coverImg)coverImg=await loadImageEl(cf);
+      var w=coverImg.naturalWidth,hgt=coverImg.naturalHeight;
+      var cap=pixelCapacityBytes(w,hgt);
+      var lenPrefixed=cat([(function(){var l=new Uint8Array(4);new DataView(l.buffer).setUint32(0,blob.length);return l})(),blob]);
+      if(lenPrefixed.length>cap+40){
+        say("m1","Too much data for this picture's resolution (fits ~"+(cap/1024).toFixed(0)+" KB). Use a larger picture or attachment mode.","er");
+        b.disabled=false;return;
+      }
+      var canvas=document.createElement("canvas");canvas.width=w;canvas.height=hgt;
+      var ctx=canvas.getContext("2d");ctx.drawImage(coverImg,0,0,w,hgt);
+      var imageData=ctx.getImageData(0,0,w,hgt);
+      embedBitsIntoPixels(imageData,lenPrefixed);
+      ctx.putImageData(imageData,0,0);
+      var outBlob=await new Promise(function(res){canvas.toBlob(res,"image/png")});
+      var outBytes=new Uint8Array(await outBlob.arrayBuffer());
+      var r=await save("photo.png",outBytes);
+      if(r===false)say("m1","Saving is unavailable in this view.","er");
+      else if(r==="declined")say("m1","Save cancelled. Nothing was stored.");
+      else say("m1","Done ✓ Saved as an ordinary-looking PNG — no size or file-structure tell.","ok");
+    } else {
+      var ln=new Uint8Array(4);new DataView(ln.buffer).setUint32(0,blob.length);
+      var out=cat([await buf(cf),blob,ln,MAGIC]);
+      var ext=(cf.name.split(".").pop()||"png").toLowerCase();
+      var r2=await save("photo."+ext,out);
+      if(r2===false)say("m1","Saving is unavailable in this view.","er");
+      else if(r2==="declined")say("m1","Save cancelled. Nothing was stored.");
+      else say("m1","Done ✓ Picture looks and plays normally, but the file is now "+(blob.length/1024).toFixed(1)+" KB bigger than a plain version would be.","ok");
+    }
+  }catch(e){say("m1","Failed: "+(e.message||e.code||e),"er")}
+  b.disabled=false};
+
+async function tryPixelReveal(file,pw){
+  var img=await loadImageEl(file);
+  var canvas=document.createElement("canvas");canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+  var ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);
+  var imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+  var lenBytes=extractBitsFromPixels(imageData,4);
+  var blobLen=new DataView(lenBytes.buffer).getUint32(0);
+  var maxCap=pixelCapacityBytes(canvas.width,canvas.height)+40;
+  if(blobLen<=0||blobLen>maxCap+10000) return null;
+  var full=extractBitsFromPixels(imageData,4+blobLen);
+  var blob=full.slice(4);
+  var plain;
+  try{plain=new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:blob.slice(16,28)},await key(pw,blob.slice(0,16)),blob.slice(28)))}
+  catch(e){return "badpw"}
+  return plain;
+}
+async function tryAppendReveal(file,pw){
+  var u=await buf(file),n=u.length;
+  for(var i=0;i<5;i++)if(u[n-5+i]!==MAGIC[i])return null;
+  var len=new DataView(u.buffer,u.byteOffset+n-9,4).getUint32(0);
+  var blob=u.slice(n-9-len,n-9);
+  try{return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:blob.slice(16,28)},await key(pw,blob.slice(0,16)),blob.slice(28)))}
+  catch(e){return "badpw"}
+}
+
+$("revBtn").onclick=async function(){
+  var f=$("stego").files[0],pw=$("pw2").value,out=$("out");out.textContent="";
+  if(!f)return say("m2","Choose the picture.","er");
+  var b=$("revBtn");b.disabled=true;say("m2","Opening…");
+  try{
+    var plain=await tryAppendReveal(f,pw);
+    if(plain===null) plain=await tryPixelReveal(f,pw);
+    if(plain===null) throw new Error("No hidden vault found in this picture.");
+    if(plain==="badpw") throw new Error("Wrong passphrase, or the picture was altered.");
+    var hl=new DataView(plain.buffer,plain.byteOffset,4).getUint32(0);
+    var hdr=JSON.parse(dec.decode(plain.slice(4,4+hl))),p=4+hl;
+    say("m2","Unlocked ✓ "+hdr.length+" item(s) found.","ok");
+    hdr.forEach(function(it){
+      var data=plain.slice(p,p+it.s);p+=it.s;
+      var row=document.createElement("div");row.className="row";
+      var nm=document.createElement("span");nm.textContent=it.n+" · "+(it.s/1024).toFixed(1)+" KB";
+      var bt=document.createElement("button");bt.textContent="Save";
+      bt.onclick=async function(){try{var r=await save(it.n,data);if(r===false)say("m2","Saving unavailable here.","er")}catch(e){say("m2","Save failed: "+(e.code||e.message),"er")}};
+      row.appendChild(nm);row.appendChild(bt);out.appendChild(row);
+      if(it.n==="note.txt"){var t=document.createElement("textarea");t.readOnly=true;t.value=dec.decode(data);out.appendChild(t)}
+    });
+  }catch(e){say("m2",e.message||String(e),"er")}
+  b.disabled=false};
+
+document.querySelectorAll('input[name=mode]').forEach(function(r){r.onchange=function(){
+  $("modeInfo").textContent = $("modePixel").checked
+    ? "Pixel mode: data is woven into the picture's own pixels. File size and look stay exactly what a normal picture of this size would be — nothing to detect. Best for text, photos, documents. Output is always a PNG."
+    : "Attachment mode: data is sealed on after the picture's own data. Works with any format, including animated GIF, and handles much larger files like video — but the saved file is measurably bigger than a plain version, which a technical inspection could notice.";
+}});
+})();
+</script></main></body></html>
