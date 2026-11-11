@@ -108,6 +108,7 @@ var MAGIC=new Uint8Array([0x8b,0x1f,0x4e,0x6a,0x02]);
 var enc=new TextEncoder(),dec=new TextDecoder();
 var $=function(i){return document.getElementById(i)};
 var coverImg=null, coverFile=null;
+var MAXPX=16777216; // safe canvas size on phones (4096×4096)
 
 function tab(n){$("p1").classList.toggle("hide",n!==1);$("p2").classList.toggle("hide",n!==2);$("p3").classList.toggle("hide",n!==3);$("t1").classList.toggle("on",n===1);$("t2").classList.toggle("on",n===2);$("t3").classList.toggle("on",n===3)}
 $("t1").onclick=function(){tab(1)};$("t2").onclick=function(){tab(2)};$("t3").onclick=function(){tab(3)};
@@ -133,7 +134,7 @@ $("cover").onchange=async function(){
   var r=new FileReader();r.onload=function(){pv.src=r.result;pv.classList.remove("hide")};r.readAsDataURL(f);
   try{coverImg=await loadImageEl(f);
     var cap=pixelCapacityBytes(coverImg.naturalWidth,coverImg.naturalHeight);
-    $("capInfo").textContent="This picture can carry up to ~"+(cap/1024).toFixed(0)+" KB hidden in pixel mode. For bigger files, use attachment mode or a higher-resolution cover.";
+    $("capInfo").textContent="This picture can carry up to ~"+(cap/1024).toFixed(0)+" KB at its current resolution. If your data is bigger, the picture is enlarged automatically to fit (up to ~"+Math.floor(MAXPX*3/8/1048576)+" MB total).";
   }catch(e){$("capInfo").textContent=""}
 };
 
@@ -160,13 +161,19 @@ function extractBitsFromPixels(imageData,nBytes){
 }
 
 async function save(name,bytes){
-  var d=await claude.use("downloads");
-  if(!d){return false}
-  try{await d.save({filename:name,data:new Blob([bytes])});return true}
-  catch(e){
-    if(e&&e.code==="rejected_extension"){await d.save({filename:name+".txt",data:new Blob([bytes])});return "renamed"}
-    if(e&&e.code==="declined")return "declined";
-    throw e}
+  // Standard browser download (works on any host; no Claude-only API)
+  var blob=new Blob([bytes],{type:"application/octet-stream"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;a.download=name;a.style.display="none";
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url)},4000);
+  return true;
+}
+
+function ctx2d(canvas){
+  var c=canvas.getContext("2d",{willReadFrequently:true});
+  return c;
 }
 
 $("hideBtn").onclick=async function(){
@@ -189,32 +196,38 @@ $("hideBtn").onclick=async function(){
 
     if(mode==="pixel"){
       if(!coverImg)coverImg=await loadImageEl(cf);
-      var w=coverImg.naturalWidth,hgt=coverImg.naturalHeight;
-      var cap=pixelCapacityBytes(w,hgt);
+      var w=coverImg.naturalWidth,hgt=coverImg.naturalHeight,ow=w,oh=hgt;
       var lenPrefixed=cat([(function(){var l=new Uint8Array(4);new DataView(l.buffer).setUint32(0,blob.length);return l})(),blob]);
-      if(lenPrefixed.length>cap+40){
-        say("m1","Too much data for this picture's resolution (fits ~"+(cap/1024).toFixed(0)+" KB). Use a larger picture or attachment mode.","er");
-        b.disabled=false;return;
+      // Auto-enlarge the cover if the data doesn't fit at its original resolution
+      var needPx=Math.ceil(lenPrefixed.length*8/3);
+      if(w*hgt<needPx){
+        var sc=Math.sqrt(needPx/(w*hgt))*1.02;
+        w=Math.ceil(ow*sc);hgt=Math.ceil(oh*sc);
+        while(w*hgt<needPx){w++;hgt++}
+        if(w*hgt>MAXPX||w>16384||hgt>16384){
+          say("m1","Even after enlarging, this is too much for pixel mode in a browser (limit ~"+(Math.floor(MAXPX*3/8/1048576))+" MB). Use attachment mode for big files.","er");
+          b.disabled=false;return;
+        }
       }
       var canvas=document.createElement("canvas");canvas.width=w;canvas.height=hgt;
-      var ctx=canvas.getContext("2d");ctx.drawImage(coverImg,0,0,w,hgt);
+      var ctx=ctx2d(canvas);
+      ctx.fillStyle="#ffffff";ctx.fillRect(0,0,w,hgt);
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
+      ctx.drawImage(coverImg,0,0,w,hgt);
       var imageData=ctx.getImageData(0,0,w,hgt);
-      embedBitsIntoPixels(imageData,lenPrefixed);
+      if(!embedBitsIntoPixels(imageData,lenPrefixed))throw new Error("Data did not fit in this picture.");
       ctx.putImageData(imageData,0,0);
       var outBlob=await new Promise(function(res){canvas.toBlob(res,"image/png")});
+      if(!outBlob)throw new Error("This picture is too large for your browser to process. Try a smaller cover image.");
       var outBytes=new Uint8Array(await outBlob.arrayBuffer());
       var r=await save("photo.png",outBytes);
-      if(r===false)say("m1","Saving is unavailable in this view.","er");
-      else if(r==="declined")say("m1","Save cancelled. Nothing was stored.");
-      else say("m1","Done ✓ Saved as an ordinary-looking PNG — no size or file-structure tell.","ok");
+      say("m1","Done ✓ Saved as an ordinary-looking PNG."+((w!==ow||hgt!==oh)?" Picture was enlarged from "+ow+"×"+oh+" to "+w+"×"+hgt+" to fit your data.":""),"ok");
     } else {
       var ln=new Uint8Array(4);new DataView(ln.buffer).setUint32(0,blob.length);
       var out=cat([await buf(cf),blob,ln,MAGIC]);
       var ext=(cf.name.split(".").pop()||"png").toLowerCase();
       var r2=await save("photo."+ext,out);
-      if(r2===false)say("m1","Saving is unavailable in this view.","er");
-      else if(r2==="declined")say("m1","Save cancelled. Nothing was stored.");
-      else say("m1","Done ✓ Picture looks and plays normally, but the file is now "+(blob.length/1024).toFixed(1)+" KB bigger than a plain version would be.","ok");
+      say("m1","Done ✓ Picture looks and plays normally, but the file is now "+(blob.length/1024).toFixed(1)+" KB bigger than a plain version would be.","ok");
     }
   }catch(e){say("m1","Failed: "+(e.message||e.code||e),"er")}
   b.disabled=false};
@@ -222,12 +235,12 @@ $("hideBtn").onclick=async function(){
 async function tryPixelReveal(file,pw){
   var img=await loadImageEl(file);
   var canvas=document.createElement("canvas");canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
-  var ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);
+  var ctx=ctx2d(canvas);ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);
   var imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
   var lenBytes=extractBitsFromPixels(imageData,4);
   var blobLen=new DataView(lenBytes.buffer).getUint32(0);
-  var maxCap=pixelCapacityBytes(canvas.width,canvas.height)+40;
-  if(blobLen<=0||blobLen>maxCap+10000) return null;
+  var maxBlob=Math.floor(canvas.width*canvas.height*3/8)-4;
+  if(blobLen<44||blobLen>maxBlob) return null;
   var full=extractBitsFromPixels(imageData,4+blobLen);
   var blob=full.slice(4);
   var plain;
@@ -237,8 +250,10 @@ async function tryPixelReveal(file,pw){
 }
 async function tryAppendReveal(file,pw){
   var u=await buf(file),n=u.length;
+  if(n<54)return null;
   for(var i=0;i<5;i++)if(u[n-5+i]!==MAGIC[i])return null;
   var len=new DataView(u.buffer,u.byteOffset+n-9,4).getUint32(0);
+  if(len<44||len>n-9)return null;
   var blob=u.slice(n-9-len,n-9);
   try{return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM",iv:blob.slice(16,28)},await key(pw,blob.slice(0,16)),blob.slice(28)))}
   catch(e){return "badpw"}
@@ -247,11 +262,12 @@ async function tryAppendReveal(file,pw){
 $("revBtn").onclick=async function(){
   var f=$("stego").files[0],pw=$("pw2").value,out=$("out");out.textContent="";
   if(!f)return say("m2","Choose the picture.","er");
+  if(!pw)return say("m2","Enter the passphrase.","er");
   var b=$("revBtn");b.disabled=true;say("m2","Opening…");
   try{
     var plain=await tryAppendReveal(f,pw);
     if(plain===null) plain=await tryPixelReveal(f,pw);
-    if(plain===null) throw new Error("No hidden vault found in this picture.");
+    if(plain===null) throw new Error("No hidden vault found. Either the passphrase is wrong, or the picture was re-compressed (sent as a photo) and the data is gone.");
     if(plain==="badpw") throw new Error("Wrong passphrase, or the picture was altered.");
     var hl=new DataView(plain.buffer,plain.byteOffset,4).getUint32(0);
     var hdr=JSON.parse(dec.decode(plain.slice(4,4+hl))),p=4+hl;
@@ -261,7 +277,7 @@ $("revBtn").onclick=async function(){
       var row=document.createElement("div");row.className="row";
       var nm=document.createElement("span");nm.textContent=it.n+" · "+(it.s/1024).toFixed(1)+" KB";
       var bt=document.createElement("button");bt.textContent="Save";
-      bt.onclick=async function(){try{var r=await save(it.n,data);if(r===false)say("m2","Saving unavailable here.","er")}catch(e){say("m2","Save failed: "+(e.code||e.message),"er")}};
+      bt.onclick=async function(){try{await save(it.n,data)}catch(e){say("m2","Save failed: "+(e.message||e),"er")}};
       row.appendChild(nm);row.appendChild(bt);out.appendChild(row);
       if(it.n==="note.txt"){var t=document.createElement("textarea");t.readOnly=true;t.value=dec.decode(data);out.appendChild(t)}
     });
