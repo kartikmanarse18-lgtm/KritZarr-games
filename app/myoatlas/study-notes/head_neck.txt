@@ -1,0 +1,90 @@
+# key | origin | insertion | nerve supply | action | pearl (optional)
+# part:<key> | origin | insertion | note   (per-head / per-part detail)
+
+## EYE
+superior rectus | Common tendinous ring (annulus of Zinn) | Superior sclera, behind the corneoscleral limbus | Oculomotor n. (CN III), superior division | Elevates the eye; also adducts and intorts | Mnemonic for eye-muscle nerves: LR6 SO4 AO3 — lateral rectus CN VI, superior oblique CN IV, all others CN III.
+inferior rectus | Common tendinous ring | Inferior sclera | Oculomotor n. (CN III), inferior division | Depresses the eye; also adducts and extorts
+medial rectus | Common tendinous ring | Medial sclera | Oculomotor n. (CN III), inferior division | Adducts the eye | Largest and strongest extra-ocular muscle.
+lateral rectus | Common tendinous ring | Lateral sclera | Abducens n. (CN VI) | Abducts the eye | CN VI palsy: cannot abduct, medial squint (esotropia).
+superior oblique | Body of sphenoid above the optic canal; tendon loops through the trochlea | Posterolateral sclera (superior aspect) | Trochlear n. (CN IV) | Intorts, depresses (esp. when adducted) and abducts the eye | CN IV palsy: vertical diplopia worse on looking down (e.g. stairs).
+inferior oblique | Orbital surface of maxilla (anteromedial floor of orbit) | Posterolateral sclera (inferior aspect) | Oculomotor n. (CN III), inferior division | Extorts, elevates (esp. when adducted) and abducts the eye
+levator palpebrae superioris | Lesser wing of sphenoid, above the optic canal | Skin of upper eyelid and superior tarsal plate | Oculomotor n. (CN III); smooth-muscle part: sympathetic fibres | Elevates the upper eyelid | Ptosis in CN III palsy (complete) or Horner syndrome (partial).
+
+## MASTICATION
+masseter | Zygomatic arch (maxillary process of zygomatic bone) | Lateral surface of ramus and angle of mandible | Masseteric n. (CN V3, mandibular division) | Elevates mandible (closes jaw) | Strongest muscle by force for its size; palpable when clenching teeth.
+part:superficial part of masseter | Maxillary process of zygomatic bone and anterior 2/3 of zygomatic arch | Angle and lower lateral ramus of mandible
+part:deep part of masseter | Posterior 1/3 and medial surface of zygomatic arch | Upper ramus and coronoid process of mandible
+temporalis | Temporal fossa and deep surface of temporal fascia | Coronoid process and anterior border of ramus of mandible | Deep temporal nn. (CN V3) | Elevates mandible (anterior fibres); retracts mandible (posterior fibres)
+lateral pterygoid | Superior head: infratemporal surface of greater wing of sphenoid. Inferior head: lateral surface of lateral pterygoid plate | Pterygoid fovea of mandibular neck; articular disc and capsule of TMJ | Nerve to lateral pterygoid (CN V3) | Protrudes mandible and depresses chin (opens mouth); alternating contraction gives side-to-side grinding | The only masticatory muscle that opens the mouth.
+part:superior head of lateral pterygoid | Infratemporal surface and crest of greater wing of sphenoid | Articular disc and capsule of TMJ | Stabilises the disc during closing
+part:inferior head of lateral pterygoid | Lateral surface of lateral pterygoid plate | Pterygoid fovea on neck of mandible | Protrudes and depresses the mandible
+medial pterygoid | Deep head: medial surface of lateral pterygoid plate and palatine bone. Superficial head: maxillary tuberosity | Medial surface of mandibular angle (pterygoid tuberosity) | Nerve to medial pterygoid (CN V3) | Elevates and protrudes mandible; side-to-side grinding | Forms a sling with masseter around the angle of the mandible.
+
+## FACE & SCALP (all supplied by the facial nerve, CN VII)
+frontalis | Epicranial aponeurosis (galea aponeurotica) | Skin of eyebrows and forehead | Facial n. (CN VII), temporal branches | Raises eyebrows; wrinkles forehead | Spared in upper-motor-neuron facial palsy (bilateral cortical supply); lost in Bell palsy.
+occipitalis | Lateral 2/3 of superior nuchal line and mastoid process | Epicranial aponeurosis | Facial n. (CN VII), posterior auricular branch | Retracts the scalp
+temporoparietalis | Temporal fascia | Epicranial aponeurosis | Facial n. (CN VII), temporal branches | Tenses the scalp; vestigial ear elevator
+orbicularis oculi | Medial orbital margin, medial palpebral ligament, lacrimal bone | Skin around the orbit, tarsal plates, lateral palpebral raphe | Facial n. (CN VII), temporal and zygomatic branches | Closes the eyelids (palpebral part: gentle blink; orbital part: forceful closure) | Bell palsy: cannot close the eye; risk of exposure keratitis.
+part:orbital part of orbicularis oculi | Medial orbital margin and medial palpebral ligament | Circular fibres around orbit, blending with adjacent muscles | Forceful eye closure, "screwing up" the eyes
+part:palpebral part of orbicularis oculi | Medial palpebral ligament | Lateral palpebral raphe | Gentle, involuntary closure (blink); spreads tears
+corrugator supercilii | Medial end of the superciliary arch | Skin of the eyebrow (medial half) | Facial n. (CN VII), temporal branches | Draws eyebrows medially and down (frowning)
+procerus | Nasal bone and upper lateral nasal cartilage | Skin of lower forehead between the eyebrows | Facial n. (CN VII), temporal and zygomatic branches | Pulls medial eyebrow down; wrinkles the bridge of the nose
+nasalis | Maxilla above the lateral incisor and canine | Nasal aponeurosis (transverse part); alar cartilage (alar part) | Facial n. (CN VII), buccal branches | Compresses the nostrils; flares them (alar part)
+depressor septi nasi | Maxilla above the medial incisor | Nasal septum and ala | Facial n. (CN VII), buccal branches | Pulls the septum down; widens the nostrils
+levator labii superioris | Infra-orbital margin (maxilla and zygomatic bone) | Skin and muscle of upper lip | Facial n. (CN VII), zygomatic and buccal branches | Elevates the upper lip; deepens the nasolabial fold
+levator nasolabialis | Frontal process of maxilla | Ala of nose and upper lip | Facial n. (CN VII), buccal branches | Elevates upper lip and dilates the nostril | Equivalent to levator labii superioris alaeque nasi.
+zygomaticus major | Lateral surface of zygomatic bone | Angle of the mouth (blends with orbicularis oris) | Facial n. (CN VII), zygomatic and buccal branches | Draws the angle of the mouth up and back (smiling)
+zygomaticus minor | Lateral surface of zygomatic bone (anterior to major) | Upper lip, lateral to the levator labii superioris | Facial n. (CN VII), zygomatic and buccal branches | Elevates the upper lip
+levator anguli oris | Canine fossa of maxilla | Angle of the mouth | Facial n. (CN VII), buccal branches | Elevates the angle of the mouth (smiling)
+risorius | Fascia over masseter (parotid fascia) | Angle of the mouth | Facial n. (CN VII), buccal branches | Retracts the angle of the mouth (grimace)
+bucinator | Mandible and maxilla (alveolar processes by the molars), pterygomandibular raphe | Angle of the mouth; blends with orbicularis oris | Facial n. (CN VII), buccal branches | Compresses the cheek against the teeth (blowing, sucking, keeps food between teeth) | Parotid duct pierces it. Paralysis: food pockets in the cheek.
+orbicularis oris | Maxilla and mandible (midline), modiolus, deep surface of skin | Skin and mucous membrane of the lips | Facial n. (CN VII), buccal and marginal mandibular branches | Closes and protrudes the lips (kissing, whistling)
+depressor anguli oris | Oblique line of the mandible | Angle of the mouth | Facial n. (CN VII), marginal mandibular branch | Depresses the angle of the mouth (frowning)
+depressor labii inferioris | Oblique line of the mandible, between symphysis and mental foramen | Skin and muscle of lower lip | Facial n. (CN VII), marginal mandibular branch | Depresses and everts the lower lip
+mentalis | Incisive fossa of the mandible | Skin of the chin | Facial n. (CN VII), marginal mandibular branch | Elevates and protrudes the lower lip; wrinkles the chin
+platysma | Fascia over upper pectoralis major and deltoid | Inferior border of mandible, skin of lower face and angle of mouth | Facial n. (CN VII), cervical branch | Depresses mandible and lower lip; tenses neck skin
+
+## TONGUE & PALATE
+genioglossus | Superior mental spine of the mandible | Entire dorsum of the tongue and body of hyoid | Hypoglossal n. (CN XII) | Protrudes the tongue (and depresses it) | The "safety muscle": on protrusion the tongue deviates TOWARD the side of a CN XII lesion.
+hyoglossus | Body and greater horn of the hyoid | Side of the tongue | Hypoglossal n. (CN XII) | Depresses and retracts the tongue | Lingual artery passes deep to it.
+palatopharyngeus | Palatine aponeurosis of the soft palate | Posterior border of thyroid cartilage and side of pharynx | Pharyngeal plexus (CN X) | Elevates the pharynx and larynx; closes the oropharyngeal isthmus (forms the palatopharyngeal arch)
+
+## HYOID MUSCLES
+anterior belly of digastric | Digastric fossa of the mandible | Intermediate tendon (held to hyoid by a fibrous sling) | Nerve to mylohyoid (CN V3) | Depresses mandible (opens mouth); elevates hyoid
+posterior belly of digastric | Mastoid notch of the temporal bone | Intermediate tendon (held to hyoid by a fibrous sling) | Facial n. (CN VII), digastric branch | Elevates hyoid; helps depress the mandible | Two bellies, two nerves (embryological arch 1 and arch 2).
+mylohyoid | Mylohyoid line of the mandible | Median raphe and body of hyoid | Nerve to mylohyoid (CN V3, from inferior alveolar n.) | Elevates hyoid and floor of mouth; depresses mandible | Forms the muscular floor of the mouth.
+geniohyoid | Inferior mental spine of the mandible | Body of the hyoid | C1 fibres carried by the hypoglossal n. | Pulls hyoid forward and up; depresses mandible
+stylohyoid | Styloid process | Body of hyoid, near greater horn | Facial n. (CN VII), stylohyoid branch | Elevates and retracts the hyoid
+omohyoid | Superior border of scapula (near suprascapular notch) | Inferior border of hyoid body | Ansa cervicalis (C1–C3) | Depresses and retracts the hyoid | Intermediate tendon is held by fascia; landmark in the posterior triangle.
+sternohyoid | Posterior manubrium and medial end of clavicle | Body of hyoid | Ansa cervicalis (C1–C3) | Depresses the hyoid after swallowing
+sternothyroid | Posterior surface of manubrium | Oblique line of thyroid cartilage | Ansa cervicalis (C2–C3) | Depresses the larynx
+thyrohyoid | Oblique line of thyroid cartilage | Greater horn and body of hyoid | C1 fibres via the hypoglossal n. | Depresses hyoid; raises larynx when the hyoid is fixed
+
+## LARYNX
+cricothyroid | Anterolateral surface of the cricoid cartilage | Inferior horn and lower border of the thyroid lamina | External laryngeal n. (branch of superior laryngeal n., CN X) | Tenses the vocal folds (raises pitch) | The only intrinsic laryngeal muscle NOT supplied by the recurrent laryngeal nerve.
+part:oblique part of cricothyroid | Anterolateral cricoid | Inferior horn of thyroid cartilage | Tilts the thyroid cartilage forward
+part:straight part of cricothyroid | Anterior cricoid | Lower border of the thyroid lamina | Tilts the thyroid cartilage forward
+posterior crico-arytenoid | Posterior surface of the cricoid lamina | Muscular process of the arytenoid | Recurrent laryngeal n. (CN X) | Abducts the vocal folds (opens the rima glottidis) | The ONLY abductor of the vocal folds; bilateral paralysis causes stridor and airway obstruction.
+lateral crico-arytenoid | Arch of the cricoid cartilage | Muscular process of the arytenoid | Recurrent laryngeal n. (CN X) | Adducts the vocal folds (closes rima glottidis)
+transverse arytenoid | Posterior surface of one arytenoid cartilage | Posterior surface of the opposite arytenoid | Recurrent laryngeal n. (CN X) | Adducts the arytenoids; closes the posterior part of the rima glottidis | The only unpaired intrinsic laryngeal muscle.
+oblique arytenoid | Posterior surface of muscular process of one arytenoid | Apex of the opposite arytenoid; continues as aryepiglottic muscle | Recurrent laryngeal n. (CN X) | Narrows the laryngeal inlet (sphincter action)
+part:ary-epiglottic part of oblique arytenoid | Apex of arytenoid | Lateral border of epiglottis via aryepiglottic fold | Narrows the laryngeal inlet
+thyro-arytenoid | Lower half of the thyroid angle and cricothyroid ligament | Anterolateral surface of the arytenoid | Recurrent laryngeal n. (CN X) | Relaxes the vocal folds; narrows the inlet; its medial fibres (vocalis) fine-tune pitch
+part:external part of thyro-arytenoid | Thyroid angle | Muscular process and lateral arytenoid | Sphincter of the glottis
+part:thyro-epiglottic part of thyro-arytenoid | Thyroid angle | Lateral border of epiglottis | Widens the laryngeal inlet
+
+## PHARYNX
+superior pharyngeal constrictor | Pterygoid hamulus, pterygomandibular raphe, mylohyoid line | Pharyngeal raphe and pharyngeal tubercle of the occipital bone | Pharyngeal plexus (CN X) | Constricts the pharynx; propels the bolus down
+middle pharyngeal constrictor | Greater and lesser horns of the hyoid, stylohyoid ligament | Pharyngeal raphe | Pharyngeal plexus (CN X) | Constricts the pharynx
+inferior pharyngeal constrictor | Oblique line of thyroid cartilage (thyropharyngeus) and cricoid cartilage (cricopharyngeus) | Pharyngeal raphe | Pharyngeal plexus (CN X); external and recurrent laryngeal nn. | Constricts the pharynx; cricopharyngeus forms the upper oesophageal sphincter | Zenker diverticulum arises in Killian dehiscence between thyropharyngeus and cricopharyngeus.
+stylopharyngeus | Medial side of the styloid process | Posterior border of thyroid cartilage and pharyngeal wall | Glossopharyngeal n. (CN IX) | Elevates the pharynx and larynx during swallowing | The only muscle supplied by CN IX.
+
+## NECK
+sternocleidomastoid | Sternal head: manubrium. Clavicular head: medial third of clavicle | Mastoid process and lateral half of the superior nuchal line | Accessory n. (CN XI) motor; C2–C3 proprioception | One side: tilts head to the same side, rotates the face to the opposite side. Both: flex the neck | Divides the neck into anterior and posterior triangles. Congenital torticollis.
+scalenus anterior | Anterior tubercles of the transverse processes of C3–C6 | Scalene tubercle on the 1st rib | Ventral rami of C4–C6 | Elevates the 1st rib (inspiration); flexes the neck | Subclavian vein runs in front of it, subclavian artery and brachial plexus behind it (thoracic outlet).
+scalenus medius | Posterior tubercles of transverse processes of C2–C7 | Superior surface of the 1st rib, behind the subclavian groove | Ventral rami of C3–C8 | Elevates the 1st rib; lateral flexion of the neck
+scalenus posterior | Posterior tubercles of the transverse processes of C4–C6 | Outer surface of the 2nd rib | Ventral rami of C6–C8 | Elevates the 2nd rib; lateral flexion of the neck
+longus colli | Anterior tubercle of C1, bodies of C5–T3, transverse processes of C3–C6 | Bodies of C2–C4, anterior tubercle of atlas, transverse processes C5–C6 | Ventral rami of C2–C6 | Flexes the neck; slight rotation | Lies on the front of the vertebral bodies (prevertebral).
+longus capitis | Anterior tubercles of transverse processes of C3–C6 | Basilar part of the occipital bone | Ventral rami of C1–C3 | Flexes the head
+rectus anterior capitis | Lateral mass of the atlas | Basilar part of the occipital bone | Ventral rami of C1–C2 | Flexes the head at the atlanto-occipital joint (nodding)
+rectus lateralis capitis | Transverse process of the atlas | Jugular process of the occipital bone | Ventral ramus of C1 | Lateral flexion of the head

@@ -1,0 +1,69 @@
+## SHOULDER
+deltoid | Lateral third of clavicle, acromion, spine of scapula | Deltoid tuberosity of the humerus | Axillary n. (C5–C6) | Abducts the arm (15°–90°, after supraspinatus starts it); anterior fibres flex and medially rotate, posterior fibres extend and laterally rotate | Axillary nerve injury (surgical neck fracture, shoulder dislocation): flat shoulder and loss of abduction.
+part:clavicular part of deltoid | Lateral third of clavicle | Deltoid tuberosity | Flexes and medially rotates the arm
+part:acromial part of deltoid | Acromion | Deltoid tuberosity | Abducts the arm (multipennate, strongest part)
+part:scapular spinal part of deltoid | Spine of scapula | Deltoid tuberosity | Extends and laterally rotates the arm
+supraspinatus | Supraspinous fossa of the scapula | Superior facet of the greater tubercle of the humerus | Suprascapular n. (C5–C6) | Initiates abduction (first 15°); stabilises the humeral head in the glenoid | Most commonly torn rotator cuff muscle (SITS = Supraspinatus, Infraspinatus, Teres minor, Subscapularis).
+infraspinatus | Infraspinous fossa of the scapula | Middle facet of the greater tubercle | Suprascapular n. (C5–C6) | Laterally rotates the arm; stabilises the shoulder
+teres minor | Upper two thirds of the lateral border of the scapula | Inferior facet of the greater tubercle | Axillary n. (C5–C6) | Laterally rotates the arm; stabilises the shoulder
+subscapularis | Subscapular fossa | Lesser tubercle of the humerus | Upper and lower subscapular nn. (C5–C7) | Medially rotates the arm; stabilises the shoulder anteriorly | Only rotator cuff muscle on the anterior scapula; tested with the lift-off test.
+teres major | Inferior angle and lower lateral border of the scapula | Medial lip of the intertubercular groove | Lower subscapular n. (C5–C6) | Adducts, medially rotates and extends the arm | "Lat's little helper"; part of the posterior axillary fold.
+
+## ARM
+biceps brachii | Long head: supraglenoid tubercle. Short head: tip of the coracoid process | Radial tuberosity; bicipital aponeurosis into the forearm fascia | Musculocutaneous n. (C5–C6) | Flexes the elbow and supinates the forearm; weakly flexes the shoulder | Strongest supinator when the elbow is flexed. Long head tendon runs in the intertubercular groove.
+part:long head of biceps brachii | Supraglenoid tubercle of the scapula (and glenoid labrum) | Radial tuberosity | Passes through the shoulder joint capsule
+part:short head of biceps brachii | Tip of the coracoid process | Radial tuberosity | Shares origin with coracobrachialis
+brachialis | Distal half of the anterior surface of the humerus | Coronoid process and ulnar tuberosity | Musculocutaneous n. (C5–C6); lateral part also radial n. | Main flexor of the elbow in all positions | "Workhorse" of elbow flexion; lies deep to biceps.
+coracobrachialis | Tip of the coracoid process | Middle third of the medial humerus | Musculocutaneous n. (C5–C7) | Flexes and adducts the arm | The musculocutaneous nerve pierces it (landmark).
+triceps brachii | Long head: infraglenoid tubercle. Lateral head: posterior humerus above the radial groove. Medial head: posterior humerus below the radial groove | Posterior surface of the olecranon | Radial n. (C6–C8) | Extends the elbow; long head also extends and adducts the shoulder | Radial nerve runs in the radial groove between the lateral and medial heads.
+part:long head of triceps brachii | Infraglenoid tubercle of the scapula | Olecranon | Crosses the shoulder; extends the arm
+part:lateral head of triceps brachii | Posterior humerus, above the radial groove | Olecranon | Strong, used for powerful extension
+part:medial head of triceps brachii | Posterior humerus, below the radial groove | Olecranon | Deep; works in all elbow extension
+anconeus | Lateral epicondyle of the humerus (posterior) | Lateral olecranon and upper posterior ulna | Radial n. (C7–T1) | Assists triceps in extending the elbow; stabilises the joint
+
+## FOREARM — ANTERIOR (flexor-pronator group; median n. except FCU and medial half of FDP)
+pronator teres | Humeral head: medial epicondyle. Ulnar head: coronoid process | Middle of the lateral surface of the radius | Median n. (C6–C7) | Pronates and flexes the forearm | Median nerve passes between the two heads (pronator syndrome).
+part:superficial head of pronator teres | Medial epicondyle (common flexor origin) | Middle of lateral radius | Humeral head
+part:deep head of pronator teres | Coronoid process of the ulna | Middle of lateral radius | Ulnar head; median nerve passes between the heads
+flexor carpi radialis | Medial epicondyle (common flexor tendon) | Bases of the 2nd and 3rd metacarpals | Median n. (C6–C7) | Flexes and abducts the hand at the wrist | Tendon is the landmark for the radial pulse and median nerve at the wrist.
+palmaris longus | Medial epicondyle | Flexor retinaculum and palmar aponeurosis | Median n. (C7–C8) | Flexes the wrist; tenses the palmar aponeurosis | Absent in about 14% of people; used as a tendon graft.
+flexor carpi ulnaris | Humeral head: medial epicondyle. Ulnar head: olecranon and posterior border of ulna | Pisiform, hook of hamate and base of the 5th metacarpal | Ulnar n. (C7–C8) | Flexes and adducts the hand at the wrist | Only flexor-pronator muscle supplied by the ulnar nerve.
+part:humeral head of flexor carpi ulnaris | Medial epicondyle | Pisiform, hook of hamate, base of 5th metacarpal | Ulnar nerve passes between the heads (cubital tunnel)
+part:ulnar head of flexor carpi ulnaris | Olecranon and upper posterior ulna | Pisiform, hook of hamate, base of 5th metacarpal | Ulnar head
+flexor digitorum superficialis | Humero-ulnar head: medial epicondyle, ulnar collateral ligament and coronoid process. Radial head: anterior oblique line of the radius | Sides of the middle phalanges of digits 2–5 | Median n. (C7–T1) | Flexes the proximal interphalangeal joints (and MCP and wrist) | Tendons split to allow the FDP tendons through (Camper chiasm).
+part:humero-ulnar head of flexor digitorum superficialis | Medial epicondyle, ulnar collateral ligament, coronoid process | Middle phalanges of digits 2–5 | Humeral and ulnar origin
+part:radial head of flexor digitorum superficialis | Anterior oblique line of the radius | Middle phalanges of digits 2–5 | Radial origin
+flexor digitorum profundus | Proximal three quarters of the anterior and medial ulna and interosseous membrane | Bases of the distal phalanges of digits 2–5 | Medial half (digits 4–5): ulnar n.; lateral half (digits 2–3): anterior interosseous n. (C8–T1) | Flexes the distal interphalangeal joints (and the other finger joints and wrist) | Only muscle that flexes the DIP joints. Dual nerve supply.
+flexor pollicis longus | Anterior radius and adjacent interosseous membrane | Base of the distal phalanx of the thumb | Anterior interosseous n. (median; C8–T1) | Flexes the interphalangeal joint of the thumb | Anterior interosseous syndrome: cannot make the "OK" sign (pinch of thumb and index).
+pronator quadratus | Distal quarter of the anterior ulna | Distal quarter of the anterior radius | Anterior interosseous n. (C8–T1) | Pronates the forearm (initiates and maintains); holds radius and ulna together
+
+## FOREARM — POSTERIOR (extensor-supinator group, all supplied by the radial nerve)
+brachioradialis | Lateral supracondylar ridge of the humerus | Styloid process of the radius | Radial n. (C5–C7) | Flexes the forearm, strongest in mid-pronation | A flexor supplied by the radial nerve. Tendon reflex tests C5–C6.
+extensor carpi radialis longus | Lateral supracondylar ridge | Base of the 2nd metacarpal | Radial n. (C6–C7) | Extends and abducts the wrist
+extensor carpi radialis brevis | Lateral epicondyle (common extensor tendon) | Base of the 3rd metacarpal | Deep branch of radial n. (C7–C8) | Extends and abducts the wrist | Tennis elbow (lateral epicondylitis) mainly involves its origin.
+extensor digitorum | Lateral epicondyle (common extensor tendon) | Extensor expansions of digits 2–5 | Posterior interosseous n. (C7–C8) | Extends the fingers (MCP joints) and the wrist
+extensor digiti minimi | Common extensor tendon | Extensor expansion of the 5th digit | Posterior interosseous n. (C7–C8) | Extends the little finger
+extensor carpi ulnaris | Humeral head: lateral epicondyle. Ulnar head: posterior border of the ulna | Base of the 5th metacarpal | Posterior interosseous n. (C7–C8) | Extends and adducts the wrist
+part:humeral head of extensor carpi ulnaris | Lateral epicondyle | Base of the 5th metacarpal | Common extensor tendon
+part:ulnar head of extensor carpi ulnaris | Posterior border of the ulna | Base of the 5th metacarpal | Ulnar attachment
+supinator | Lateral epicondyle, radial collateral and annular ligaments, supinator crest of ulna | Lateral surface of the upper third of the radius | Deep branch of radial n. (C5–C6) | Supinates the forearm | Posterior interosseous nerve passes through it (arcade of Frohse).
+abductor pollicis longus | Posterior surface of ulna, radius and interosseous membrane | Base of the 1st metacarpal | Posterior interosseous n. (C7–C8) | Abducts and extends the thumb | Forms the anatomical snuffbox border with EPB; de Quervain tenosynovitis.
+extensor pollicis brevis | Posterior radius and interosseous membrane | Base of the proximal phalanx of the thumb | Posterior interosseous n. (C7–C8) | Extends the thumb at the MCP joint
+extensor pollicis longus | Posterior ulna and interosseous membrane | Base of the distal phalanx of the thumb | Posterior interosseous n. (C7–C8) | Extends the thumb at the IP joint | Winds around Lister tubercle.
+extensor indicis | Posterior ulna and interosseous membrane | Extensor expansion of the index finger | Posterior interosseous n. (C7–C8) | Extends the index finger (pointing)
+
+## HAND
+abductor pollicis brevis | Flexor retinaculum, scaphoid and trapezium | Lateral side of the base of the proximal phalanx of the thumb | Recurrent branch of the median n. (C8–T1) | Abducts the thumb | Thenar muscle; wasting in carpal tunnel syndrome.
+flexor pollicis brevis | Superficial head: flexor retinaculum and trapezium. Deep head: trapezoid and capitate | Lateral base of the proximal phalanx of the thumb | Superficial head: recurrent median n.; deep head: deep ulnar n. (C8–T1) | Flexes the thumb at the MCP joint
+part:superficial head of flexor pollicis brevis | Flexor retinaculum and trapezium | Base of proximal phalanx of thumb | Supplied by the median nerve
+part:deep head of flexor pollicis brevis | Trapezoid and capitate | Base of proximal phalanx of thumb | Often supplied by the ulnar nerve
+opponens pollicis | Flexor retinaculum and trapezium | Lateral border of the 1st metacarpal | Recurrent branch of the median n. (C8–T1) | Opposes the thumb (rotates and flexes the 1st metacarpal)
+adductor pollicis | Oblique head: capitate and bases of the 2nd–3rd metacarpals. Transverse head: shaft of the 3rd metacarpal | Medial base of the proximal phalanx of the thumb | Deep branch of the ulnar n. (C8–T1) | Adducts the thumb | Ulnar nerve palsy: Froment sign (thumb flexes in place of adduction).
+part:oblique head of adductor pollicis | Capitate and bases of 2nd–3rd metacarpals | Base of proximal phalanx of thumb | Oblique head
+part:transverse head of adductor pollicis | Shaft of the 3rd metacarpal | Base of proximal phalanx of thumb | Transverse head
+abductor digiti minimi of hand | Pisiform and tendon of flexor carpi ulnaris | Medial base of the proximal phalanx of the 5th digit | Deep branch of the ulnar n. (C8–T1) | Abducts the little finger
+flexor digiti minimi of hand | Hook of the hamate and flexor retinaculum | Medial base of the proximal phalanx of the 5th digit | Deep branch of the ulnar n. (C8–T1) | Flexes the little finger at the MCP joint
+opponens digiti minimi of hand | Hook of the hamate and flexor retinaculum | Medial border of the 5th metacarpal | Deep branch of the ulnar n. (C8–T1) | Opposes the little finger toward the thumb
+lumbrical of hand | Tendons of flexor digitorum profundus | Lateral side of the extensor expansions of digits 2–5 | 1st–2nd: median n.; 3rd–4th: deep ulnar n. (C8–T1) | Flex the MCP joints and extend the IP joints | Origin on a tendon, insertion on a tendon (unique).
+dorsal interossei of hand | Adjacent sides of two metacarpals | Extensor expansions and proximal phalanges of digits 2–4 | Deep branch of the ulnar n. (T1) | Abduct the fingers (DAB: Dorsal ABduct) and flex MCP joints | Four muscles; abduction is away from the middle finger.
+palmar interossei | Palmar surfaces of the 2nd, 4th and 5th metacarpals | Extensor expansions of the same digits | Deep branch of the ulnar n. (T1) | Adduct the fingers (PAD: Palmar ADduct) | Three muscles; adduction is toward the middle finger.
