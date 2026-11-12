@@ -314,3 +314,13 @@ kbd{display:inline-block;min-width:24px;padding:2px 7px;margin-right:6px;text-al
   .card{z-index:13}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* learning levels */
+.levelbar{padding:12px 14px 4px;display:flex;flex-direction:column;gap:8px}
+.levelbar .muted{margin:0;font-size:.76rem;line-height:1.4}
+.badge.tier{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.badge.tier[data-t=core]{color:var(--accent);border-color:var(--accent)}
+
+.seg button{white-space:nowrap}
+.banner-q b.long{font-size:.92rem;font-weight:600}
+#quizType{flex-wrap:wrap}#quizType button{min-width:calc(50% - 2px)}

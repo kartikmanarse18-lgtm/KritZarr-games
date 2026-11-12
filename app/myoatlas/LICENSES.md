@@ -8,7 +8,7 @@ MyoAtlas combines several works under different licences. **Please keep this fil
 | --- | --- | --- |
 | Application code | `index.html`, `style.css`, `app.js`, `tools/*` | **MIT** (see `LICENSE`) |
 | 3D mesh data (muscles and skeleton) | `geometry-muscles.js`, `geometry-skeleton.js` | **CC BY-SA 4.0** (derived from Z-Anatomy / BodyParts3D) |
-| Muscle catalogue: structure names, hierarchy, regions, study notes | `data.js`, `study-notes/*.txt` | **CC BY-SA 4.0** |
+| Muscle catalogue: structure names, hierarchy, regions, study notes | `data.js`, `tiers.js`, `reference.js`, `study-notes/*.txt` | **CC BY-SA 4.0** |
 | three.js r147 (renderer and OrbitControls) | `vendor/three.min.js`, `vendor/OrbitControls.js` | **MIT**, © three.js authors (see `licenses/three.js-MIT.txt`) |
 
 The MIT licence applies to the code only. It does **not** relax the ShareAlike requirement that applies to the mesh data and catalogue.
@@ -33,7 +33,8 @@ Starting from the “economy” (reduced-detail) GLB meshes of Svitylo release 1
 3. split the merged region meshes back into one mesh per structure, **welded duplicate vertices**, **quantised** vertex positions to 16 bits within a fixed bounding box, and repacked the result as binary data embedded in JavaScript (normals are recomputed in the browser);
 4. regrouped muscles into 19 teaching regions, merged heads/parts (for example the two heads of biceps brachii) under a single muscle, and re-spelled some display names to common textbook forms;
 5. generated Latin-style headings (“M. …”) from the English names. These are **not** copied from the upstream dictionary and are unreviewed;
-6. added study notes (origin, insertion, nerve supply, action, clinical pearls) written for this project.
+6. wrote text-only reference entries (`reference.js`) for muscles and muscle tissues that have no mesh in the source;
+7. added study notes (origin, insertion, nerve supply, action, clinical pearls) written for this project.
 
 The scripts that perform steps 1–5 are in `tools/`. The study notes are plain text in `study-notes/`.
 

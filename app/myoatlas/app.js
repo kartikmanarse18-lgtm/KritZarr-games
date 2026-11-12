@@ -15,10 +15,15 @@
   const REG = {}; A.regions.forEach(r => { REG[r.id] = r; });
   const MUS = A.muscles;
   const byId = {}; MUS.forEach(m => { byId[m.id] = m; });
+  const CORE = new Set((window.TIERS && window.TIERS.core) || MUS.map(m => m.id));
+  MUS.forEach(m => { m.tier = CORE.has(m.id) ? 'core' : 'adv'; });
+  const RX = window.REFERENCE || { regions: [], items: [] }, REF = RX.items, REFREG = RX.regions, REGS = A.regions.concat(REFREG), ALL = MUS.concat(REF);
+  REFREG.forEach(r => { REG[r.id] = r; }); REF.forEach(m => { m.tier = 'ref'; byId[m.id] = m; });
+  const inLevel = M => state.level === 'all' || M.tier === state.level;
 
   /* ------------------------------------------------------------------ state */
   const state = {
-    mode: 'explore', selected: null, selPart: null, hovered: null, query: '',
+    level: (function () { try { return localStorage.getItem('myo2.level') || 'core'; } catch (e) { return 'core'; } })(), mode: 'explore', selected: null, selPart: null, hovered: null, query: '',
     learned: new Set(store.get('myo2.learned', []).filter(id => byId[id])),
     hiddenM: new Set(), hiddenR: new Set(), solo: null,
     opts: Object.assign({ groupColor: true, isolate: true, rotate: false, skeleton: 'ghost' }, store.get('myo2.opts', {})),
@@ -242,13 +247,15 @@
     card.style.animation = 'none'; void card.offsetWidth; card.style.animation = '';
     updateTreeStates();
     const el = $('.item.active'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    if (fly) focusMuscle(M, side || 'L');
+    if (fly && M.meshes) focusMuscle(M, side || 'L');
     viewOffsetTarget = isMobile() ? stage.clientHeight * 0.2 : 0;
   }
   function deselect() { state.selected = null; state.selPart = null; card.hidden = true; updateTreeStates(); viewOffsetTarget = 0; }
   function fillCard(M) {
     card.style.setProperty('--c', REG[M.r].color);
-    $('#cBadge').textContent = REG[M.r].name + (M.sub ? ' · ' + M.sub : '');
+    $('#cBadge').textContent = REG[M.r].name + (M.sub ? ' · ' + M.sub : ''); $('#cTier').textContent = M.tier === 'core' ? 'Core' : M.tier === 'adv' ? 'Advanced' : 'Reference'; $('#cTier').dataset.t = M.tier;
+    const dts = $$('.facts dt', card), lab = M.labels || ['Origin', 'Insertion', 'Nerve supply', 'Action']; dts.forEach((d, i) => { d.textContent = lab[i]; });
+    $('#hideBtn').hidden = !!M.ref; $('#cNo').hidden = !M.ref; $('#cNo').textContent = M.tissue ? 'Tissue / concept entry: no 3D model.' : 'No 3D model for this muscle in the open source atlas. Described in text only.';
     $('#cName').textContent = M.n; $('#cLatin').textContent = M.la;
     $('#cOri').textContent = M.o; $('#cIns').textContent = M.i; $('#cNerve').textContent = M.nv; $('#cAct').textContent = M.a;
     $('#cTip').textContent = M.p; $('#cTipBox').hidden = !M.p;
@@ -288,13 +295,13 @@
   const EYE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
   function matches(M, q) { return !q || (M.n + ' ' + M.la + ' ' + M.sub + ' ' + M.nv + ' ' + M.a + ' ' + M.o + ' ' + M.i + ' ' + REG[M.r].name).toLowerCase().includes(q); }
-  function listed() { const q = state.query.trim().toLowerCase(); return MUS.filter(M => matches(M, q)); }
+  function listed() { const q = state.query.trim().toLowerCase(); return ALL.filter(M => (q || inLevel(M)) && matches(M, q)); }
   function renderTree() {
     const q = state.query.trim().toLowerCase(), items = listed();
     $('#count').textContent = items.length + ' muscle' + (items.length === 1 ? '' : 's');
     treeEl.innerHTML = '';
     if (!items.length) { treeEl.innerHTML = '<div class="empty">No muscles match your search.</div>'; return; }
-    A.regions.forEach(R => {
+    REGS.forEach(R => {
       const ms = items.filter(M => M.r === R.id); if (!ms.length) return;
       const reg = document.createElement('div'); reg.className = 'reg'; reg.dataset.r = R.id; reg.style.setProperty('--c', R.color);
       if (q || state.open.has(R.id)) reg.classList.add('open');
@@ -306,6 +313,7 @@
       };
       $('.solo', reg).onclick = () => { if (state.solo === R.id) showAll(); else { state.solo = R.id; state.hiddenR = new Set(A.regions.map(x => x.id).filter(x => x !== R.id)); state.hiddenM.clear(); refreshVisibility(); } };
       $('.eyeb', reg).onclick = () => { state.solo = null; state.hiddenR.has(R.id) ? state.hiddenR.delete(R.id) : state.hiddenR.add(R.id); refreshVisibility(); };
+      if (R.id.charAt(0) === 'x') $$('.mini', reg).forEach(x => x.remove());
       const body = $('.reg-body', reg); let lastSub = null;
       ms.forEach(M => {
         if (M.sub && M.sub !== lastSub) { const s = document.createElement('div'); s.className = 'sub'; s.textContent = M.sub; body.appendChild(s); lastSub = M.sub; }
@@ -316,7 +324,7 @@
         b.onclick = () => { if (state.mode === 'explore') { ensureVisible(M); select(M, true); closeMenu(); } };
         const ey = document.createElement('button'); ey.className = 'eye'; ey.title = 'Show / hide'; ey.innerHTML = EYE;
         ey.onclick = () => { state.hiddenM.has(M.id) ? state.hiddenM.delete(M.id) : state.hiddenM.add(M.id); refreshVisibility(); };
-        w.append(b, ey); body.appendChild(w);
+        if (M.ref) w.append(b); else w.append(b, ey); body.appendChild(w);
       });
       treeEl.appendChild(reg);
     });
@@ -328,7 +336,7 @@
       b.classList.toggle('learned', state.learned.has(M.id)); b.classList.toggle('active', state.selected === M);
       b.classList.toggle('hid', !isVisible(M));
     });
-    $$('.reg', treeEl).forEach(r => { r.classList.toggle('hidden-reg', state.hiddenR.has(r.dataset.r)); $('.solo', r).classList.toggle('on', state.solo === r.dataset.r); });
+    $$('.reg', treeEl).forEach(r => { r.classList.toggle('hidden-reg', state.hiddenR.has(r.dataset.r)); const so = $('.solo', r); if (so) so.classList.toggle('on', state.solo === r.dataset.r); });
   }
   function ensureVisible(M) { let ch = false; if (state.hiddenM.delete(M.id)) ch = true; if (state.hiddenR.has(M.r)) { state.hiddenR.delete(M.r); state.solo = null; ch = true; } if (ch) refreshVisibility(); }
   function showAll() { state.hiddenM.clear(); state.hiddenR.clear(); state.solo = null; refreshVisibility(); }
@@ -336,8 +344,21 @@
   $('#showAllBtn').onclick = showAll; $('#showAllBtn2').onclick = showAll;
   $('#collapseBtn').onclick = () => { state.open.clear(); $$('.reg', treeEl).forEach(r => r.classList.remove('open')); };
 
+  function setLevel(lv) {
+    state.level = lv; try { localStorage.setItem('myo2.level', lv); } catch (e) {}
+    $$('#levelSeg button').forEach(b => b.classList.toggle('active', b.dataset.lv === lv));
+    state.quiz.seen = []; state.quiz.target = null; renderTree(); updateProgress();
+    if (state.mode === 'quiz') nextQuestion();
+    toast(lv === 'adv' ? 'Advanced level: deeper and specialist muscles' : lv === 'ref' ? 'Reference level: text-only entries, no 3D model' : lv === 'core' ? 'Core level: the essentials' : 'Showing all muscles');
+  }
   function updateProgress() {
-    const n = state.learned.size, t = MUS.length;
+    const set = ALL.filter(inLevel), n = set.filter(M => state.learned.has(M.id)).length, t = set.length;
+    const cs = MUS.filter(M => M.tier === 'core'), cd = cs.filter(M => state.learned.has(M.id)).length, as = MUS.length - cs.length, ad = MUS.filter(M => M.tier === 'adv' && state.learned.has(M.id)).length;
+    $('#levelNote').textContent = state.level === 'core' ? 'Core: ' + cs.length + ' muscles every MBBS/physiology student is expected to know. Learned ' + cd + ' / ' + cs.length + '.'
+      : state.level === 'adv' ? 'Advanced: ' + as + ' deeper, smaller and specialist muscles. Learned ' + ad + ' / ' + as + '.'
+      : state.level === 'ref' ? 'Reference: ' + REF.length + ' text-only entries (muscles the open atlas has no 3D model for, plus cardiac, smooth and skeletal muscle tissue). Learned ' + REF.filter(M => state.learned.has(M.id)).length + ' / ' + REF.length + '.'
+      : 'All ' + ALL.length + ' entries. Core ' + cd + ' / ' + cs.length + ' · Advanced ' + ad + ' / ' + as + ' · Reference ' + REF.filter(M => state.learned.has(M.id)).length + ' / ' + REF.length + '.';
+    const done = cd === cs.length; $('#advGo').hidden = !(done && state.level === 'core');
     $('#progText').textContent = n + ' / ' + t; $('#progPct').textContent = Math.round(n / t * 100) + '%';
     $('#progRing').style.strokeDashoffset = 97.4 * (1 - n / t);
   }
@@ -367,8 +388,8 @@
   function updateMaterials(dt, now) {
     const k = 1 - Math.exp(-dt * 10), quiz = state.mode === 'quiz';
     if (state.flash && now > state.flash.until) state.flash = null;
-    const focusM = quiz ? state.quiz.focus : (state.opts.isolate ? state.selected : null);
-    const emph = quiz ? state.quiz.focus : state.selected;
+    const focusM = quiz ? state.quiz.focus : (state.opts.isolate && state.selected && state.selected.meshes ? state.selected : null);
+    const emph = quiz ? state.quiz.focus : (state.selected && state.selected.meshes ? state.selected : null);
     for (let n = 0; n < MUS.length; n++) {
       const M = MUS[n]; if (!isVisible(M)) continue;
       const flashing = state.flash && state.flash.m === M, isE = emph === M, hov = state.hovered === M;
@@ -396,16 +417,16 @@
 
   /* --------------------------------------------------------------------- quiz */
   const GOOD = new THREE.Color('#3ddc97'), BAD = new THREE.Color('#ff5d6c'), HINT = new THREE.Color('#ffb347');
-  const QHELP = { locate: 'A muscle name appears on the stage. Rotate the body, peel layers if needed, and tap the right muscle.', name: 'A muscle is highlighted. Choose its correct name from four options.', nerve: 'A muscle is highlighted. Choose the nerve that supplies it.' };
-  const QLABEL = { locate: 'Find this muscle', name: 'What is this muscle?', nerve: 'Which nerve supplies…' };
+  const QHELP = { recall: 'A description appears (attachments, nerve, action). Choose the muscle or tissue it describes. Works for every level, including Reference.', locate: 'A muscle name appears on the stage. Rotate the body, peel layers if needed, and tap the right muscle.', name: 'A muscle is highlighted. Choose its correct name from four options.', nerve: 'A muscle is highlighted. Choose the nerve that supplies it.' };
+  const QLABEL = { recall: 'Which one is described?', locate: 'Find this muscle', name: 'What is this muscle?', nerve: 'Which nerve supplies…' };
   function flash(M, c, ms) { state.flash = { m: M, c, until: performance.now() + ms }; }
   function quizStats() { const q = state.quiz; $('#qStreak').textContent = q.streak; $('#qBest').textContent = q.best; $('#qAcc').textContent = q.asked ? Math.round(q.firstTry / q.asked * 100) + '%' : '–'; }
-  function scopePool() { const q = state.quiz; return MUS.filter(M => q.scope === 'all' || M.r === q.scope); }
+  function scopePool() { const q = state.quiz; return (q.type === 'recall' ? ALL : MUS).filter(M => inLevel(M) && (q.scope === 'all' || M.r === q.scope)); }
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const nerveKey = M => M.nv.split(';')[0].trim();
   function nextQuestion() {
     const q = state.quiz; let pool = scopePool();
-    if (pool.length < 2) { toast('Not enough muscles in this region for a quiz'); return; }
+    if (pool.length < 2) { toast(state.level === 'ref' && state.quiz.type !== 'recall' ? 'Reference entries have no 3D model: use the From description quiz' : 'Not enough muscles in this selection for a quiz'); return; }
     let fresh = pool.filter(M => !q.seen.includes(M.id) && M !== q.target);
     if (!fresh.length) { q.seen = []; fresh = pool.filter(M => M !== q.target); }
     const unl = fresh.filter(M => !state.learned.has(M.id));
@@ -414,8 +435,16 @@
     q.target = M; q.seen.push(M.id); q.tries = 0; q.hinted = false; q.locked = false; state.flash = null;
     $('#qLabel').textContent = QLABEL[q.type];
     const ch = $('#choices'); ch.innerHTML = ''; ch.hidden = q.type === 'locate';
+    $('#qTarget').classList.toggle('long', q.type === 'recall');
     if (q.type === 'locate') { q.focus = null; viewOffsetTarget = 0; $('#qTarget').textContent = M.n; }
-    else {
+    else if (q.type === 'recall') {
+      q.focus = null; viewOffsetTarget = 0;
+      const lb = M.labels || ['Origin', 'Insertion', 'Nerve supply', 'Action'], cut = s => s.length > 130 ? s.slice(0, 127) + '…' : s;
+      $('#qTarget').textContent = [lb[0] + ': ' + cut(M.o), lb[3] + ': ' + cut(M.a), lb[2] + ': ' + cut(M.nv)].join('  ·  ');
+      const d = shuffle(ALL.filter(x => x !== M && x.tissue === M.tissue && (x.r === M.r || Math.random() < 0.25)).slice()).slice(0, 3);
+      const opts = shuffle([M, ...d]).map(x => ({ label: x.n, ok: x === M }));
+      opts.forEach(o => { const b = document.createElement('button'); b.className = 'choice'; b.textContent = o.label; b.onclick = () => answerChoice(b, o, opts, ch); ch.appendChild(b); });
+    } else {
       ensureVisible(M); q.focus = M; focusMuscle(M, 'L', 900); viewOffsetTarget = isMobile() ? -stage.clientHeight * 0.24 : 0;
       let opts;
       if (q.type === 'name') {
@@ -457,8 +486,8 @@
     const q = state.quiz; if (q.locked) return; q.locked = true;
     $$('.choice', ch).forEach((b, i) => { b.disabled = true; if (opts[i].ok) b.classList.add('good'); });
     if (o.ok) { credit(q.target, !q.hinted); toast('Correct!' + (q.type === 'name' ? ' ✓' : ''), 'good'); }
-    else { btn.classList.add('bad'); credit(q.target, false); toast(q.type === 'name' ? 'It was ' + q.target.name : 'Correct: ' + nerveKey(q.target), 'bad'); }
-    if (q.type === 'name') $('#qTarget').textContent = q.target.n;
+    else { btn.classList.add('bad'); credit(q.target, false); toast(q.type !== 'nerve' ? 'It was ' + q.target.n : 'Correct: ' + nerveKey(q.target), 'bad'); }
+    if (q.type === 'name' || q.type === 'recall') $('#qTarget').textContent = q.target.n;
     setTimeout(() => { if (state.mode === 'quiz') nextQuestion(); }, o.ok ? 1700 : 3000);
   }
   $('#hintBtn').onclick = () => {
@@ -469,14 +498,14 @@
   $('#skipBtn').onclick = () => {
     const q = state.quiz; if (!q.target || q.locked) return; q.locked = true; q.asked++; q.streak = 0; quizStats();
     if (q.type === 'locate') { ensureVisible(q.target); focusMuscle(q.target, 'L', 800); flash(q.target, HINT, 2000); toast('That was the ' + q.target.n, 'bad'); }
-    else { const ch = $('#choices'); const t = q.type === 'name' ? q.target.n : nerveKey(q.target); $$('.choice', ch).forEach(b => { b.disabled = true; if (b.textContent === t) b.classList.add('good'); }); toast('Answer: ' + t, 'bad'); }
+    else { const ch = $('#choices'); const t = q.type !== 'nerve' ? q.target.n : nerveKey(q.target); $$('.choice', ch).forEach(b => { b.disabled = true; if (b.textContent === t) b.classList.add('good'); }); toast('Answer: ' + t, 'bad'); }
     setTimeout(() => { if (state.mode === 'quiz') nextQuestion(); }, 2300);
   };
   $('#qRestart').onclick = () => { Object.assign(state.quiz, { streak: 0, firstTry: 0, asked: 0, seen: [], target: null }); nextQuestion(); };
   $('#qExit').onclick = () => setMode('explore');
   $$('#quizType button').forEach(b => b.onclick = () => { state.quiz.type = b.dataset.qt; $$('#quizType button').forEach(x => x.classList.toggle('active', x === b)); $('#quizHelp').textContent = QHELP[state.quiz.type]; Object.assign(state.quiz, { seen: [], target: null }); if (state.mode === 'quiz') nextQuestion(); });
   const scopeSel = $('#quizScope');
-  scopeSel.innerHTML = '<option value="all">All regions</option>' + A.regions.map(r => '<option value="' + r.id + '">' + r.name + '</option>').join('');
+  scopeSel.innerHTML = '<option value="all">All regions</option>' + REGS.map(r => '<option value="' + r.id + '">' + r.name + '</option>').join('');
   scopeSel.onchange = () => { state.quiz.scope = scopeSel.value; state.quiz.seen = []; state.quiz.target = null; if (state.mode === 'quiz') nextQuestion(); };
 
   /* --------------------------------------------------------------------- mode */
@@ -530,10 +559,12 @@
 
   /* --------------------------------------------------------------------- init */
   (async function init() {
-    $('#brandSub').textContent = MUS.length + ' muscles · 3D';
+    $('#brandSub').textContent = MUS.length + ' in 3D · ' + REF.length + ' reference';
     await tick();
     await build();
     controls.autoRotate = !!state.opts.rotate; applySkeleton();
+    $$('#levelSeg button').forEach(b => { b.classList.toggle('active', b.dataset.lv === state.level); b.onclick = () => setLevel(b.dataset.lv); });
+    $('#advGo').onclick = () => setLevel('adv');
     refreshVisibility(); renderTree(); updateProgress(); markViews(); placeThumb(); quizStats();
     window.addEventListener('resize', placeThumb);
     camera.position.copy(BODY_CENTER).add(new THREE.Vector3(-0.8, 0.12, -1).normalize().multiplyScalar(fitDist() * 1.15)); controls.update();

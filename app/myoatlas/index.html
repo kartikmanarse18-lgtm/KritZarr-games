@@ -50,6 +50,14 @@
       <button id="closeMenu" class="icon-btn" aria-label="Close list">✕</button>
     </div>
 
+    <div class="levelbar">
+      <div class="seg" id="levelSeg" role="tablist" aria-label="Learning level">
+        <button data-lv="core">Core</button><button data-lv="adv">Advanced</button><button data-lv="ref">Reference</button><button data-lv="all">All</button>
+      </div>
+      <p id="levelNote" class="muted"></p>
+      <button id="advGo" class="btn full" hidden>Core complete — start Advanced →</button>
+    </div>
+
     <section id="explorePane" class="pane">
       <div class="search">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -75,6 +83,7 @@
         <button data-qt="locate" class="active">Locate</button>
         <button data-qt="name">Name it</button>
         <button data-qt="nerve">Nerve</button>
+        <button data-qt="recall">From description</button>
       </div>
       <p id="quizHelp" class="muted"></p>
       <label class="field"><span>Region</span>
@@ -124,7 +133,7 @@
 
     <section id="card" class="card" hidden aria-live="polite">
       <button id="cardClose" class="icon-btn card-close" aria-label="Close">✕</button>
-      <span id="cBadge" class="badge">Region</span>
+      <span id="cBadge" class="badge">Region</span> <span id="cTier" class="badge tier"></span>
       <h2 id="cName">Muscle</h2>
       <p id="cLatin" class="latin"></p>
       <div id="cParts" class="parts"></div>
@@ -136,6 +145,7 @@
       </dl>
       <div id="cPartBox" class="partbox" hidden><span id="cPartTitle"></span><p id="cPartText"></p></div>
       <div id="cTipBox" class="tip"><span>Clinical pearl</span><p id="cTip"></p></div>
+      <p id="cNo" class="verify" hidden></p>
       <p class="verify">Study notes are a revision aid. Verify against your textbook or atlas.</p>
       <div class="card-actions">
         <button id="prevBtn" class="btn ghost icon" aria-label="Previous muscle">‹</button>
@@ -206,6 +216,8 @@
 <script src="vendor/three.min.js"></script>
 <script src="vendor/OrbitControls.js"></script>
 <script src="data.js"></script>
+<script src="tiers.js"></script>
+<script src="reference.js"></script>
 <script src="geometry-muscles.js"></script>
 <script src="geometry-skeleton.js"></script>
 <script src="app.js"></script>
