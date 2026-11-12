@@ -1,0 +1,70 @@
+## BACK — SUPERFICIAL (extrinsic)
+trapezius | Superior nuchal line, external occipital protuberance, ligamentum nuchae, spinous processes C7–T12 | Lateral third of clavicle, acromion and spine of scapula | Accessory n. (CN XI) motor; C3–C4 proprioception | Elevates, retracts, depresses and rotates the scapula; extends the neck | CN XI injury (e.g. during lymph-node biopsy in the posterior triangle): drooping shoulder, weak shrug.
+part:descending part of trapezius | Superior nuchal line, external occipital protuberance, ligamentum nuchae | Lateral third of clavicle | Elevates the scapula (shrugging)
+part:transverse part of trapezius | Spinous processes of C7–T3 | Acromion and upper border of scapular spine | Retracts the scapula
+part:ascending part of trapezius | Spinous processes of T4–T12 | Tubercle at the root of the scapular spine | Depresses the scapula
+latissimus dorsi | Spinous processes T7–L5 via thoracolumbar fascia, posterior iliac crest, lower 3–4 ribs, inferior angle of scapula | Floor of the intertubercular groove of the humerus | Thoracodorsal n. (C6–C8) | Extends, adducts and medially rotates the arm (climbing, rowing, crutch-walking) | Forms the posterior axillary fold with teres major.
+levator scapulae | Transverse processes of C1–C4 | Superior angle and upper medial border of the scapula | Dorsal scapular n. (C5) and cervical nn. C3–C4 | Elevates the scapula; rotates the glenoid cavity inferiorly
+rhomboid major | Spinous processes of T2–T5 | Medial border of scapula, below the spine | Dorsal scapular n. (C4–C5) | Retracts the scapula; rotates the glenoid inferiorly; holds the scapula to the thorax
+rhomboid minor | Ligamentum nuchae and spinous processes of C7–T1 | Medial border of scapula at the root of the spine | Dorsal scapular n. (C4–C5) | Retracts the scapula
+serratus posterior superior | Ligamentum nuchae, spinous processes C7–T3 | Upper borders of ribs 2–5 | Intercostal nn. (T1–T4) | Elevates the ribs (proprioceptive in inspiration)
+serratus posterior inferior | Spinous processes of T11–L2 | Inferior borders of ribs 9–12 | Intercostal nn. (T9–T12) | Depresses the lower ribs (proprioceptive in expiration)
+
+## BACK — DEEP (intrinsic, all supplied by dorsal rami of spinal nerves)
+splenius capitis | Lower half of ligamentum nuchae, spinous processes C7–T3 | Mastoid process and lateral superior nuchal line | Dorsal rami of middle cervical nn. | Extends the head and neck; rotates the head to the same side
+splenius colli | Spinous processes of T3–T6 | Posterior tubercles of transverse processes of C1–C3 | Dorsal rami of lower cervical nn. | Extends the neck; rotates it to the same side
+iliocostalis lumborum | Sacrum, iliac crest, thoracolumbar fascia | Angles of the lower six ribs | Dorsal rami of spinal nn. | Extends and laterally flexes the vertebral column | Iliocostalis = lateral column of the erector spinae (I Love Spine: Iliocostalis, Longissimus, Spinalis, from lateral to medial).
+iliocostalis thoracis | Angles of the lower six ribs | Angles of the upper six ribs and C7 transverse process | Dorsal rami of spinal nn. | Extends and laterally flexes the thoracic spine
+iliocostalis colli | Angles of ribs 3–6 | Transverse processes of C4–C6 | Dorsal rami of spinal nn. | Extends and laterally flexes the neck
+longissimus thoracis | Common erector spinae origin: sacrum, iliac crest, lumbar spinous processes | Ribs 4–12 and transverse processes of thoracic and lumbar vertebrae | Dorsal rami of spinal nn. | Extends and laterally flexes the vertebral column | The intermediate (largest) column of the erector spinae.
+longissimus colli | Transverse processes of upper 4–5 thoracic vertebrae | Transverse processes of C2–C6 | Dorsal rami of spinal nn. | Extends and laterally flexes the neck
+longissimus capitis | Transverse processes of upper thoracic and articular processes of lower cervical vertebrae | Posterior mastoid process | Dorsal rami of spinal nn. | Extends the head; rotates it to the same side
+spinalis thoracis | Spinous processes of T11–L2 | Spinous processes of T1–T4 | Dorsal rami of spinal nn. | Extends the vertebral column
+spinalis colli | Ligamentum nuchae, spinous process of C7 | Spinous process of C2 | Dorsal rami of spinal nn. | Extends the neck
+spinalis capitis | Spinous processes of upper thoracic and lower cervical vertebrae | Occipital bone (with semispinalis capitis) | Dorsal rami of spinal nn. | Extends the head
+semispinalis thoracis | Transverse processes of T6–T10 | Spinous processes of C6–T4 | Dorsal rami of spinal nn. | Extends the vertebral column; rotates it to the opposite side
+semispinalis colli | Transverse processes of T1–T6 | Spinous processes of C2–C5 | Dorsal rami of spinal nn. | Extends the neck; rotates it to the opposite side
+multifidus lumborum | Sacrum, posterior superior iliac spine, mamillary processes of lumbar vertebrae | Spinous processes 2–4 segments above | Dorsal rami of spinal nn. | Stabilises the vertebral column; extends and rotates to the opposite side | Key stabiliser of the lumbar spine; atrophies in chronic low back pain.
+multifidus thoracis | Transverse processes of thoracic vertebrae | Spinous processes 2–4 segments above | Dorsal rami of spinal nn. | Stabilises the thoracic spine; extends and rotates to the opposite side
+multifidus colli | Articular processes of C4–C7 | Spinous processes of C2–C5 | Dorsal rami of spinal nn. | Stabilises the cervical spine; extends and rotates to the opposite side
+rotatores | Transverse process of each vertebra | Lamina or spinous process of the vertebra above (brevis) or two above (longus) | Dorsal rami of spinal nn. | Stabilise, extend and rotate the vertebral column; rich in proprioceptors
+interspinales lumborum | Superior surface of each lumbar spinous process | Inferior surface of the spinous process above | Dorsal rami of spinal nn. | Extend the lumbar spine; proprioception
+interspinales thoracis | Between adjacent thoracic spinous processes | Spinous process above | Dorsal rami of spinal nn. | Extend the thoracic spine
+interspinales colli | Between adjacent cervical spinous processes | Spinous process above | Dorsal rami of spinal nn. | Extend the neck
+ventral parts of lateral intertransversarii lumborum | Transverse processes of lumbar vertebrae (ventral part) | Transverse process of the vertebra above | Ventral rami of lumbar nn. | Lateral flexion of the lumbar spine
+dorsal parts of lateral intertransversarii lumborum | Accessory processes of lumbar vertebrae (dorsal part) | Accessory process of the vertebra above | Dorsal rami of lumbar nn. | Lateral flexion of the lumbar spine
+rectus posterior major capitis | Spinous process of the axis (C2) | Lateral part of the inferior nuchal line | Suboccipital n. (dorsal ramus of C1) | Extends the head; rotates it to the same side | Suboccipital muscles bound the suboccipital triangle, which contains the vertebral artery and suboccipital n.
+rectus posterior minor capitis | Posterior tubercle of the atlas | Medial part of the inferior nuchal line | Suboccipital n. (C1) | Extends the head
+obliquus inferior capitis | Spinous process of the axis | Transverse process of the atlas | Suboccipital n. (C1) | Rotates the atlas, turning the face to the same side
+obliquus superior capitis | Transverse process of the atlas | Occipital bone between the nuchal lines | Suboccipital n. (C1) | Extends the head; lateral flexion
+
+## THORAX
+pectoralis major | Clavicular head: medial half of the clavicle. Sternocostal head: sternum and upper 6 costal cartilages. Abdominal part: external oblique aponeurosis | Lateral lip of the intertubercular groove of the humerus | Lateral and medial pectoral nn. (C5–T1) | Adducts and medially rotates the arm; clavicular head flexes the arm; sternocostal head extends it from a flexed position | Forms the anterior axillary fold. Poland syndrome: congenital absence.
+part:clavicular head of pectoralis major | Medial half of the clavicle | Lateral lip of intertubercular groove | Lateral pectoral n. (C5–C6). Flexes the arm
+part:sternocostal head of pectoralis major | Anterior sternum, costal cartilages 1–6 | Lateral lip of intertubercular groove | Medial and lateral pectoral nn. (C6–T1). Extends the flexed arm
+part:abdominal part of pectoralis major | Aponeurosis of external abdominal oblique | Lateral lip of intertubercular groove | Medial pectoral n. Part of the lowest fibres
+pectoralis minor | Ribs 3–5 near the costal cartilages | Coracoid process of scapula | Medial pectoral n. (C8–T1) | Protracts and depresses the scapula; elevates ribs when the scapula is fixed | Landmark dividing the axillary artery into three parts.
+subclavius | First rib and its costal cartilage | Subclavian groove on the inferior clavicle | Nerve to subclavius (C5–C6) | Depresses the clavicle; stabilises the sternoclavicular joint
+serratus anterior | External surfaces of ribs 1–8 (9) | Costal surface of the medial border of the scapula | Long thoracic n. (C5–C7) | Protracts and upward-rotates the scapula; holds it against the ribcage (punching) | Long thoracic nerve injury (e.g. mastectomy) causes a winged scapula.
+external intercostal | Inferior border of the rib above | Superior border of the rib below | Intercostal nn. (T1–T11) | Elevate the ribs in inspiration | Fibres run "hands in pockets" (down and forward). Neurovascular bundle runs in the costal groove (VAN: vein, artery, nerve, top to bottom).
+internal intercostal | Costal groove of the rib above | Superior border of the rib below | Intercostal nn. (T1–T11) | Depress the ribs in forced expiration; interosseous part | Fibres run perpendicular to the external layer.
+innermost intercostal | Costal groove of the rib above | Superior border of the rib below | Intercostal nn. (T1–T11) | Assists internal intercostals | Neurovascular bundle lies between internal and innermost layers.
+transversus thoracis | Posterior surface of lower sternum and xiphoid process | Inner surfaces of costal cartilages 2–6 | Intercostal nn. (T2–T6) | Weakly depresses the ribs (expiration)
+levatores breves costarum | Transverse processes of C7–T11 | Rib immediately below, near the tubercle | Dorsal rami of C8–T11 | Elevate the ribs; assist extension and rotation of the spine
+levatores longi costarum | Transverse processes of C7–T11 | Rib two below, near the tubercle | Dorsal rami of C8–T11 | Elevate the ribs; assist extension and rotation
+diaphragm | Sternal: xiphoid process. Costal: lower 6 ribs. Lumbar: crura (L1–L3) and arcuate ligaments | Central tendon | Phrenic n. (C3–C5); peripheral sensory: intercostal nn. | Main muscle of inspiration: contracts, flattens and increases thoracic volume | "C3, 4, 5 keeps the diaphragm alive." Aortic hiatus T12, oesophageal hiatus T10, caval opening T8.
+
+## ABDOMEN
+rectus abdominis | Pubic symphysis and pubic crest | Xiphoid process and costal cartilages 5–7 | Ventral rami of T7–T12 (intercostal and subcostal nn.) | Flexes the trunk; compresses the abdomen; stabilises the pelvis | Enclosed in the rectus sheath; the three tendinous intersections give the "six-pack".
+external abdominal oblique | External surfaces of ribs 5–12 | Linea alba, pubic tubercle and anterior half of the iliac crest | Ventral rami of T7–T12 (intercostal, subcostal, iliohypogastric, ilioinguinal) | Compresses the abdomen; flexes and rotates the trunk to the opposite side | Its aponeurosis forms the inguinal ligament; fibres run "hands in pockets".
+internal abdominal oblique | Thoracolumbar fascia, anterior 2/3 of iliac crest, lateral 2/3 of inguinal ligament | Inferior borders of ribs 10–12, linea alba and pubic crest (via conjoint tendon) | Ventral rami of T7–L1 | Compresses the abdomen; rotates the trunk to the same side | Gives rise to the cremaster muscle.
+transversus abdominis | Costal cartilages 7–12, thoracolumbar fascia, iliac crest, lateral 1/3 of inguinal ligament | Linea alba and pubic crest (via conjoint tendon) | Ventral rami of T7–L1 | Compresses the abdominal contents; supports the abdominal wall | The deepest flat muscle; a key "core" stabiliser.
+pyramidalis | Pubic crest and symphysis | Linea alba | Subcostal n. (T12) | Tenses the linea alba | Absent in about 20% of people.
+quadratus lumborum | Iliac crest and iliolumbar ligament | 12th rib and transverse processes of L1–L4 | Ventral rami of T12–L4 | Laterally flexes the trunk; fixes the 12th rib during inspiration | Posterior abdominal wall; kidneys lie in front of it.
+
+## PELVIC FLOOR
+coccygeus | Ischial spine and sacrospinous ligament | Lateral margin of coccyx and lowest sacrum | Ventral rami of S3–S4 | Supports the pelvic viscera; flexes the coccyx
+iliococcygeus | Tendinous arch of levator ani and ischial spine | Anococcygeal raphe and coccyx | Nerve to levator ani (S3–S4); perineal branch of S4 | Supports the pelvic viscera
+pubococcygeus | Posterior surface of the body of pubis | Anococcygeal raphe and coccyx | Nerve to levator ani (S3–S4) | Supports pelvic viscera; resists intra-abdominal pressure | Injured in vaginal delivery, leading to prolapse and incontinence.
+pubo-analis | Body of the pubis | Forms a sling around the anorectal junction | Nerve to levator ani (S3–S4) | Maintains the anorectal angle (faecal continence) | Corresponds to puborectalis.
+external anal sphincter | Perineal body and anococcygeal body | Encircles the anal canal | Inferior rectal n. (S2–S4; branch of pudendal n.) | Voluntary closure of the anal canal
