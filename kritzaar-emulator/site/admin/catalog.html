@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Catalog Admin | KritZaar</title>
+<link rel="stylesheet" href="/css/emulator-shared.css">
+<style>
+  body{margin:0;background:var(--kz-bg,#12101c);color:var(--kz-text,#eee);font-family:var(--kz-font,system-ui,sans-serif)}
+  header{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff22}
+  h1{font-size:1.2rem;margin:0}
+  main{display:grid;grid-template-columns:240px 1fr;gap:16px;padding:16px;max-width:1200px;margin:0 auto}
+  @media(max-width:800px){main{grid-template-columns:1fr}}
+  .panel{background:var(--kz-surface,#1d1a2b);border-radius:var(--kz-radius,12px);padding:12px}
+  button,.btn{background:var(--kz-accent,#7c5cff);color:#fff;border:0;border-radius:var(--kz-radius,12px);padding:8px 14px;font:inherit;cursor:pointer;min-height:40px}
+  button.secondary{background:transparent;border:1px solid #ffffff44}
+  button.danger{background:#b3261e}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  label{display:block;margin:10px 0 4px;font-size:.9rem}
+  input,select,textarea{width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid #ffffff44;background:#0d0b16;color:inherit;font:inherit}
+  textarea{min-height:90px}
+  #list{list-style:none;padding:0;margin:8px 0}
+  #list button{width:100%;text-align:left;margin-bottom:6px;background:#0d0b16;border:1px solid #ffffff22}
+  #list button[aria-current="true"]{border-color:var(--kz-accent,#7c5cff)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:500px){.row{grid-template-columns:1fr}}
+  .muted{color:var(--kz-muted,#aaa);font-size:.85rem}
+  .err{color:#ff8a80}.warn{color:#ffd54f}.ok{color:#81c784}
+  #errors{margin:8px 0;padding-left:20px}
+  #preview{margin-top:16px;background:#fff;color:#111;border-radius:12px;padding:16px}
+  #preview .badge{display:inline-block;background:#e6defe;padding:2px 8px;border-radius:99px;font-size:.8rem}
+  #preview table{border-collapse:collapse}#preview td,#preview th{border:1px solid #ccc;padding:4px 8px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Catalog Admin</h1>
+  <div class="bar" style="margin:0">
+    <label class="btn secondary" style="margin:0" for="importFile">Import games.json</label>
+    <input id="importFile" type="file" accept=".json,application/json" hidden>
+    <button id="loadLive" class="secondary" type="button">Load live catalog</button>
+    <button id="exportBtn" type="button">Export games.json</button>
+  </div>
+</header>
+<main>
+  <aside class="panel" aria-label="Games">
+    <button id="addBtn" type="button">+ New game</button>
+    <ul id="list"></ul>
+    <p id="summary" class="muted" role="status"></p>
+  </aside>
+  <section class="panel" aria-label="Edit game">
+    <p id="empty" class="muted">Pick a game or add a new one. Nothing is saved until you export and upload <code>/data/games.json</code>.</p>
+    <div id="formWrap" hidden>
+      <div class="row">
+        <div><label for="f-id">ID (lowercase, digits, hyphens)</label><input id="f-id"></div>
+        <div><label for="f-title">Title</label><input id="f-title"></div>
+        <div><label for="f-platform">Platform</label><select id="f-platform"><option value="dos">dos</option></select></div>
+        <div><label for="f-year">Year</label><input id="f-year" type="number" min="1970" max="2100"></div>
+        <div><label for="f-developer">Developer</label><input id="f-developer"></div>
+        <div><label for="f-genres">Genres (comma separated)</label><input id="f-genres"></div>
+      </div>
+      <label for="f-description">Description (1 to 3 sentences)</label><textarea id="f-description" style="min-height:60px"></textarea>
+      <label for="f-editorial">Editorial (original text; blank line between paragraphs) <span id="wc" class="muted" role="status"></span></label>
+      <textarea id="f-editorial" style="min-height:220px"></textarea>
+      <div class="row">
+        <div><label for="f-cover">Cover path</label><input id="f-cover" placeholder="/games/covers/id.jpg"></div>
+        <div><label for="f-coverCredit">Cover credit</label><input id="f-coverCredit"></div>
+        <div><label for="f-license">License</label>
+          <select id="f-license"><option>freeware</option><option>shareware</option><option>open-source</option><option>homebrew</option><option>commercial-official</option></select></div>
+        <div><label for="f-sourceName">Source name</label><input id="f-sourceName"></div>
+      </div>
+      <label for="f-officialUrl">Official URL (https, allowlisted domain) <span id="srcCheck" role="status"></span></label>
+      <input id="f-officialUrl" type="url">
+      <div class="row">
+        <div><label for="f-ext">Expected extensions (comma separated)</label><input id="f-ext" placeholder=".zip, .jsdos"></div>
+        <div><label for="f-size">Approx size (MB)</label><input id="f-size" type="number" min="0" step="0.1"></div>
+        <div><label for="f-sha">SHA-256 hashes (optional, comma separated)</label><input id="f-sha"></div>
+        <div><label for="f-exe">Executable hint</label><input id="f-exe" placeholder="GAME.EXE"></div>
+      </div>
+      <label for="f-instructions">Instructions (one step per line)</label><textarea id="f-instructions"></textarea>
+      <label for="f-controls">Controls (one per line: keys | action)</label><textarea id="f-controls"></textarea>
+      <div class="row">
+        <div><label for="f-touch">Touch layout</label>
+          <select id="f-touch"><option>dpad-2btn</option><option>dpad-4btn</option><option>mouse-pad</option></select></div>
+        <div><label for="f-status">Status</label>
+          <select id="f-status"><option>draft</option><option>approved</option><option>removed</option></select></div>
+        <div><label for="f-addedAt">Added at</label><input id="f-addedAt" type="date"></div>
+      </div>
+      <ul id="errors" role="alert"></ul>
+      <div class="bar">
+        <button id="saveBtn" type="button">Save entry</button>
+        <button id="removeBtn" class="secondary" type="button">Mark removed</button>
+        <button id="deleteBtn" class="danger" type="button">Delete entry</button>
+      </div>
+      <h2>Live preview</h2>
+      <div id="preview"></div>
+    </div>
+  </section>
+</main>
+<script type="module" src="/admin/catalog.js"></script>
+</body>
+</html>

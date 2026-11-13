@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Generated pages are made from this file by scripts/build-game-pages.mjs. Do not edit them by hand. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} (DOS, {{year}}): how to play in your browser | KritZaar</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{url}}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{title}} on KritZaar">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{url}}">
+<meta property="og:image" content="{{coverUrl}}">
+<link rel="stylesheet" href="/css/emulator-shared.css">
+<link rel="stylesheet" href="/css/catalog.css">
+<script type="application/ld+json">{{jsonld}}</script>
+</head>
+<body style="background:var(--kz-bg,#12121a)">
+<main class="kz-game">
+<p><a href="/games/">All games</a></p>
+<h1>{{title}}</h1>
+<p><span class="kz-badge">{{license}}</span> {{year}} · {{developer}}</p>
+<img class="kz-cover" src="{{cover}}" alt="Cover placeholder for {{title}}" width="320" height="200">
+<p class="kz-credit">Cover: {{coverCredit}}</p>
+<p>{{description}}</p>
+<div class="kz-actions">
+<a class="kz-btn" href="{{officialUrl}}" target="_blank" rel="noopener noreferrer">Get it from {{sourceName}}</a>
+<a class="kz-btn kz-secondary" href="/emulator/index.html?game={{id}}">Play on KritZaar</a>
+</div>
+<section><h2>About the game</h2>
+{{editorialHtml}}
+</section>
+<section><h2>How to get and play it</h2>
+<ol>
+{{instructionsHtml}}
+</ol>
+</section>
+<section><h2>Controls</h2>
+<table><thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+{{controlsHtml}}
+</tbody></table>
+</section>
+<aside class="kz-box"><h2>How this works</h2>
+<p>KritZaar does not host game files. You get the game from its official source, drop it into the box on the player page, and it is saved in your own browser and played locally. Your files never leave your device. <a href="/legal/how-it-works.html">Read more</a>.</p>
+</aside>
+</main>
+</body>
+</html>

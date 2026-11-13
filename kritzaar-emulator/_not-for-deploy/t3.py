@@ -1,0 +1,75 @@
+import json, re
+from playwright.sync_api import sync_playwright
+BASE='http://localhost:8123'; T='/home/claude/test/'
+res=[]
+def ok(name,cond,extra=''): res.append((name,bool(cond),extra)); print(('PASS' if cond else 'FAIL'),name,extra,flush=True)
+with sync_playwright() as p:
+    b=p.chromium.launch(args=['--no-sandbox','--use-gl=swiftshader','--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required'])
+    ctx=b.new_context(viewport={'width':900,'height':700},accept_downloads=True)
+    page=ctx.new_page(); logs=[]
+    page.on('console',lambda m: logs.append((m.type,m.text[:200])) if m.type=='error' else None)
+    page.on('pageerror',lambda e: logs.append(('pageerror',str(e)[:200])))
+    page.on('requestfailed',lambda r: logs.append(('reqfail',r.url[-80:])))
+    # --- player: add custom game
+    page.goto(BASE+'/emulator/index.html'); page.wait_for_selector('#kzp-drop input[type=file]',state='attached',timeout=15000)
+    ok('player add-game screen shows dropzone', page.locator('#kzp-drop').is_visible())
+    page.evaluate("window.__started=false; window.__err=null; window.KZPlayer.on('started',()=>window.__started=true); window.KZPlayer.on('error',e=>window.__err=e); 0")
+    page.set_input_files('#kzp-drop input[type=file]',T+'test.zip')
+    try: page.wait_for_function("window.__started||window.__err||document.querySelector('#kzp-picker:not([hidden])')",timeout=70000)
+    except Exception as e: print('wait err',e)
+    if page.locator('#kzp-picker').is_visible():
+        print('picker shown'); page.locator('#kzp-picker-list button').first.click()
+        page.wait_for_function("window.__started||window.__err",timeout=70000)
+    gid=re.search(r'game=([^&]+)',page.url); gid=gid.group(1) if gid else None
+    ok('url updated to custom-<sha12>', gid and gid.startswith('custom-'), str(gid))
+    st=page.evaluate("[window.__started,window.__err]")
+    ok('game starts right after drop', st[0], json.dumps(st))
+    page.wait_for_timeout(2500)
+    ok('stage visible, no error screen', page.locator('#kzp-stage').is_visible() and not page.locator('#kzp-error').is_visible())
+    page.screenshot(path=T+'player.png')
+    # --- states
+    r=page.evaluate("(async()=>{try{await window.KZPlayer.saveState(1);return 'saved'}catch(e){return 'ERR '+(e.code||'')+e.message}})()")
+    ok('saveState(1)', r=='saved', r)
+    page.evaluate("window.KZPlayer.pause()"); page.wait_for_timeout(300)
+    ok('pause overlay', page.locator('#kzp-paused').is_visible())
+    page.evaluate("window.KZPlayer.resume()"); page.wait_for_timeout(300)
+    ok('resume hides overlay', not page.locator('#kzp-paused').is_visible())
+    # --- library
+    page2=ctx.new_page(); page2.on('pageerror',lambda e: logs.append(('pageerror-lib',str(e)[:200])))
+    page2.goto(BASE+'/library/'); page2.wait_for_selector('#kz-lib-grid li',timeout=10000)
+    ok('library lists the game', page2.locator('#kz-lib-grid li').count()==1, page2.inner_text('#kz-lib-grid')[:80].replace('\n',' | '))
+    ok('play link targets player', gid in (page2.locator('#kz-lib-grid a.kz-btn').first.get_attribute('href') or ''))
+    with page2.expect_download(timeout=20000) as dl: page2.locator('#kz-lib-export').click()
+    path=dl.value.path(); import os; ok('backup downloaded', os.path.getsize(path)>200, str(os.path.getsize(path)))
+    page2.locator('#kz-lib-grid button:has-text("Delete")').first.click(); page2.locator('#kz-lib-grid button:has-text("Yes, delete")').click()
+    page2.wait_for_selector('#kz-lib-empty:not([hidden])',timeout=8000); ok('delete works, empty state', True)
+    page2.set_input_files('#kz-lib-import',path); page2.wait_for_selector('#kz-lib-grid li',timeout=10000)
+    ok('restore from backup brings game back', page2.locator('#kz-lib-grid li').count()==1)
+    # --- corrupt file
+    page3=ctx.new_page(); page3.goto(BASE+'/emulator/index.html?game=jill-of-the-jungle'); page3.wait_for_selector('#kzp-drop input[type=file]',state='attached',timeout=15000)
+    ok('catalog game shows official link', page3.locator('#kzp-official').is_visible() or page3.locator('#kzp-official-wrap').is_visible())
+    page3.set_input_files('#kzp-drop input[type=file]',T+'notazip.zip'); page3.wait_for_timeout(2500)
+    msg=(page3.inner_text('#kzp-drop-status')+' '+page3.inner_text('#kzp-error-text')).strip()
+    ok('corrupt zip gives friendly error', len(msg)>5 and 'Error:' not in msg and 'undefined' not in msg, msg[:120])
+    n=page2.evaluate("import('/js/storage.js').then(m=>m.listGames()).then(g=>g.length)"); ok('nothing stored from corrupt file', n==1, str(n))
+    # --- service worker + offline
+    page2.goto(BASE+'/library/'); 
+    sw=page2.evaluate("navigator.serviceWorker.ready.then(r=>!!r.active)"); ok('service worker active', sw)
+    page2.wait_for_timeout(4000)
+    cached=page2.evaluate("caches.keys().then(async ks=>{let n=[];for(const k of ks){n.push(k+':'+(await (await caches.open(k)).keys()).length)};return n})")
+    print('caches',cached)
+    ctx.set_offline(True)
+    page2.reload(); page2.wait_for_timeout(1500)
+    ok('library loads offline', 'My Games' in page2.inner_text('body'))
+    page4=ctx.new_page(); page4.on('pageerror',lambda e: logs.append(('pageerror-off',str(e)[:200])))
+    page4.goto(BASE+'/emulator/index.html?game='+gid); page4.wait_for_selector('#kzp-play',timeout=20000)
+    page4.evaluate("window.__started=false; window.KZPlayer.on('started',()=>window.__started=true); window.KZPlayer.on('error',e=>window.__err=e); 0")
+    page4.locator('#kzp-play').click()
+    try: page4.wait_for_function("window.__started||window.__err",timeout=70000)
+    except Exception as e: print('wait err',e)
+    ok('game starts OFFLINE from browser storage', page4.evaluate("window.__started"), str(page4.evaluate("window.__err")))
+    page4.screenshot(path=T+'offline.png')
+    ctx.set_offline(False)
+    for t,m in logs: print('LOG',t,m)
+    b.close()
+print(sum(1 for r in res if r[1]),'/',len(res))

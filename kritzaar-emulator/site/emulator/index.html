@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0f0f14">
+  <title>Player | KritZaar</title>
+  <!-- No ads and no third-party scripts on this page (Global Rules 7 and 13). -->
+  <link rel="stylesheet" href="/css/emulator-shared.css">
+  <link rel="stylesheet" href="/emulator/player.css">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+</head>
+<body class="kzp">
+  <header class="kzp-bar" id="kzp-bar">
+    <a class="kzp-btn" id="kzp-exit" href="/library/" aria-label="Exit to My Games">&larr; <span>Exit</span></a>
+    <h1 class="kzp-title" id="kzp-title">Loading&hellip;</h1>
+    <div class="kzp-tools" id="kzp-tools" hidden>
+      <button type="button" class="kzp-btn" id="kzp-pause" aria-pressed="false">Pause</button>
+      <button type="button" class="kzp-btn" id="kzp-states">Saves</button>
+      <button type="button" class="kzp-btn" id="kzp-help">Controls</button>
+      <button type="button" class="kzp-btn" id="kzp-full">Fullscreen</button>
+    </div>
+  </header>
+
+  <main class="kzp-main" id="kzp-main">
+    <!-- Loading -->
+    <section class="kzp-screen" id="kzp-loading" aria-live="polite" hidden>
+      <p id="kzp-loading-text">Loading&hellip;</p>
+      <progress id="kzp-progress" max="100" value="0" aria-label="Loading progress"></progress>
+    </section>
+
+    <!-- Game not in this browser yet -->
+    <section class="kzp-screen kzp-missing" id="kzp-missing" hidden>
+      <h2 id="kzp-missing-title">Add your game</h2>
+      <p><span class="kzp-badge" id="kzp-license" hidden></span></p>
+      <p id="kzp-missing-intro">KritZaar does not host game files. Get your copy from the official source, then drop it below. It stays on this device.</p>
+      <p id="kzp-official-wrap" hidden><a id="kzp-official" class="kzp-btn kzp-btn-primary" target="_blank" rel="noopener noreferrer">Open the official page</a></p>
+      <ol id="kzp-steps" class="kzp-steps" hidden></ol>
+      <div id="kzp-drop"></div>
+      <p class="kzp-status" id="kzp-drop-status" role="status"></p>
+    </section>
+
+    <!-- Ready to play: one tap unlocks audio -->
+    <section class="kzp-screen" id="kzp-ready" hidden>
+      <h2 id="kzp-ready-title"></h2>
+      <button type="button" class="kzp-btn kzp-btn-primary kzp-big" id="kzp-play">Play</button>
+      <label class="kzp-check"><input type="checkbox" id="kzp-autosave"> Auto-save when I exit (uses slot 3)</label>
+    </section>
+
+    <!-- Program picker, shown once for plain zips with several programs -->
+    <section class="kzp-screen" id="kzp-picker" hidden>
+      <h2>Which program starts this game?</h2>
+      <p>We could not tell for sure. Pick one. KritZaar remembers your choice.</p>
+      <ul class="kzp-list" id="kzp-picker-list"></ul>
+    </section>
+
+    <!-- Errors and program-ended -->
+    <section class="kzp-screen kzp-error" id="kzp-error" role="alert" hidden>
+      <h2 id="kzp-error-title">Something went wrong</h2>
+      <p id="kzp-error-text"></p>
+      <p class="kzp-row">
+        <button type="button" class="kzp-btn kzp-btn-primary" id="kzp-error-retry">Try again</button>
+        <a class="kzp-btn" href="/library/">My Games</a>
+      </p>
+    </section>
+
+    <!-- Emulator stage -->
+    <section class="kzp-stage" id="kzp-stage" hidden>
+      <div id="kzp-dos" class="kzp-dos"></div>
+      <div id="kzp-touch" class="kzp-touch"></div>
+      <div class="kzp-paused" id="kzp-paused" hidden>
+        <p>Paused</p>
+        <button type="button" class="kzp-btn kzp-btn-primary" id="kzp-resume">Resume</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="kzp-dialog" id="kzp-help-dialog" aria-labelledby="kzp-help-h">
+    <h2 id="kzp-help-h">Controls</h2>
+    <table class="kzp-table"><thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead><tbody id="kzp-help-body"></tbody></table>
+    <p class="kzp-note" id="kzp-help-note" hidden>No controls listed for this game. Try the arrow keys, Enter, Space and Ctrl.</p>
+    <form method="dialog"><button class="kzp-btn">Close</button></form>
+  </dialog>
+
+  <dialog class="kzp-dialog" id="kzp-states-dialog" aria-labelledby="kzp-states-h">
+    <h2 id="kzp-states-h">Saved progress</h2>
+    <p class="kzp-note">Saves keep the game's own save files on this device, so they work offline. Loading restarts the game from the save.</p>
+    <ul class="kzp-list" id="kzp-states-list"></ul>
+    <p class="kzp-status" id="kzp-states-status" role="status"></p>
+    <form method="dialog"><button class="kzp-btn">Close</button></form>
+  </dialog>
+
+  <script type="module" src="/emulator/player.js"></script>
+  <script type="module">import { initPwa } from '/js/pwa-install.js'; initPwa({ banners: false });</script>
+</body>
+</html>

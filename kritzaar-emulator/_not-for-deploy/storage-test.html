@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>KritZaar storage test</title>
+<style>
+  body{font:16px/1.4 system-ui,sans-serif;margin:1rem;max-width:44rem;background:#12101c;color:#f1f0fa}
+  li{list-style:none;padding:.2rem 0;border-bottom:1px solid #2c2942}
+  .pass{color:#6fdc8c}.fail{color:#ff7b7b}.skip{color:#e6c35c}
+  button{font:inherit;padding:.5rem 1rem;min-height:44px}
+  a{color:#b9a8ff}
+</style>
+</head>
+<body>
+<h1>Storage test</h1>
+<p>Tests <code>/js/storage.js</code> in this browser. Add <code>?mock=1</code> to test <code>storage-mock.js</code> instead.
+Only ids starting with <code>kztest-</code> are touched. Do not deploy this page to the live site.</p>
+<p><button id="run" type="button">Run tests</button></p>
+<p id="summary" role="status"></p>
+<ul id="out"></ul>
+<script type="module">
+const mock = new URLSearchParams(location.search).has('mock');
+const s = await import(mock ? '/js/storage-mock.js' : '/js/storage.js');
+const out = document.getElementById('out');
+let pass = 0, fail = 0, skip = 0;
+
+function log(kind, name, extra) {
+  const li = document.createElement('li');
+  li.className = kind;
+  li.textContent = `${kind.toUpperCase()}  ${name}${extra ? ' (' + extra + ')' : ''}`;
+  out.appendChild(li);
+  if (kind === 'pass') pass++; else if (kind === 'fail') fail++; else skip++;
+}
+async function test(name, fn) {
+  try { const r = await fn(); if (r === 'skip') log('skip', name); else log(r === false ? 'fail' : 'pass', name); }
+  catch (e) { log('fail', name, `${e.code || e.name}: ${e.message}`); }
+}
+async function rejects(fn, check) {
+  try { await fn(); } catch (e) { return check(e); }
+  return false;
+}
+const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+const events = [];
+s.onStorageChange((e) => events.push(e.type));
+
+async function cleanup() {
+  for (const g of await s.listGames()) if (g.id.startsWith('kztest-')) await s.deleteGame(g.id);
+}
+
+async function runAll() {
+  out.replaceChildren(); pass = fail = skip = 0;
+  await cleanup();
+  const data = crypto.getRandomValues(new Uint8Array(65536));
+  data.set(new Uint8Array(4096).fill(7), 1000); // not all random; still deterministic to compare
+
+  await test('hashFile matches the SHA-256 of "abc"', async () =>
+    (await s.hashFile(new Blob(['abc']))) === 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  await test('hashFile chunked path matches native digest', async () => {
+    const blob = new Blob([data, data, data]);
+    const native = hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+    return (await s.hashFile(blob, { forceChunked: true })) === native;
+  });
+
+  await test('saveGame stores a record and hashes the file', async () => {
+    const rec = await s.saveGame('kztest-a', new File([data], 'PRIVATE-NAME.zip'), { title: 'Test A', platform: 'dos' });
+    return rec.size === data.length && rec.source === 'custom' && rec.sha256 === hex(await crypto.subtle.digest('SHA-256', data));
+  });
+  await test('getGame returns identical bytes and no file name', async () => {
+    const g = await s.getGame('kztest-a');
+    return g && same(new Uint8Array(await g.blob.arrayBuffer()), data) && !g.blob.name;
+  });
+  await test('getGame on an unknown id returns null', async () => (await s.getGame('kztest-missing')) === null);
+  await test('listGames puts the most recently played game first', async () => {
+    await s.saveGame('kztest-b', new Blob(['x']), { title: 'Test B' });
+    await s.touchGame('kztest-a');
+    return (await s.listGames())[0].id === 'kztest-a';
+  });
+  await test('updateGameConfig merges and persists', async () => {
+    await s.updateGameConfig('kztest-a', { exe: 'GAME.EXE' });
+    await s.updateGameConfig('kztest-a', { fullscreen: true });
+    const g = await s.getGame('kztest-a');
+    return g.config.exe === 'GAME.EXE' && g.config.fullscreen === true;
+  });
+  await test('touchGame on a missing game throws NOT_FOUND', () => rejects(() => s.touchGame('kztest-missing'), (e) => e.code === 'NOT_FOUND'));
+
+  await test('saveState / loadState / listStates round trip', async () => {
+    await s.saveState('kztest-a', 1, new Uint8Array([1, 2, 3]));
+    await s.saveState('kztest-a', 3, new Uint8Array([9]));
+    const list = await s.listStates('kztest-a');
+    return same(await s.loadState('kztest-a', 1), new Uint8Array([1, 2, 3])) && list.map((x) => x.slot).join() === '1,3' && list[0].size === 3;
+  });
+  await test('empty slot loads as null', async () => (await s.loadState('kztest-a', 2)) === null);
+  await test('slot 4 is rejected', () => rejects(() => s.saveState('kztest-a', 4, new Uint8Array(1)), (e) => e instanceof TypeError));
+  await test('saveState for a missing game throws NOT_FOUND', () => rejects(() => s.saveState('kztest-missing', 1, new Uint8Array(1)), (e) => e.code === 'NOT_FOUND'));
+  await test('deleteState removes one slot', async () => {
+    await s.deleteState('kztest-a', 3);
+    return (await s.listStates('kztest-a')).length === 1;
+  });
+
+  await test('getStorageInfo has the expected shape', async () => {
+    const i = await s.getStorageInfo();
+    return ['usedBytes', 'quotaBytes'].every((k) => typeof i[k] === 'number') && typeof i.persisted === 'boolean';
+  });
+  await test('requestPersistence returns a boolean', async () => typeof (await s.requestPersistence()) === 'boolean');
+
+  await test('export, delete, import restores games, config and states', async () => {
+    if ((await s.listGames()).some((g) => !g.id.startsWith('kztest-'))) return 'skip'; // do not export real games
+    const bk = await s.exportBackup();
+    await s.deleteGame('kztest-a'); await s.deleteGame('kztest-b');
+    const r = await s.importBackup(bk);
+    const g = await s.getGame('kztest-a');
+    return r.games === 2 && r.states === 1 && same(new Uint8Array(await g.blob.arrayBuffer()), data)
+      && g.config.exe === 'GAME.EXE' && same(await s.loadState('kztest-a', 1), new Uint8Array([1, 2, 3]));
+  });
+  await test('importBackup rejects a non-backup file with BAD_ARCHIVE', () => rejects(() => s.importBackup(new Blob(['nope'])), (e) => e.code === 'BAD_ARCHIVE'));
+
+  await test('onStorageChange fired for save, state and delete', async () => {
+    await s.deleteGame('kztest-b');
+    return ['game-saved', 'state-saved', 'game-deleted'].every((t) => events.includes(t));
+  });
+  await test('deleteGame removes the game and its states', async () => {
+    await s.deleteGame('kztest-a');
+    return (await s.getGame('kztest-a')) === null && (await s.listStates('kztest-a')).length === 0 && (await s.loadState('kztest-a', 1)) === null;
+  });
+
+  await cleanup();
+  const sum = document.getElementById('summary');
+  sum.textContent = `${pass} passed, ${fail} failed, ${skip} skipped${mock ? ' (mock)' : ''}`;
+  sum.className = fail ? 'fail' : 'pass';
+}
+document.getElementById('run').addEventListener('click', runAll);
+</script>
+</body>
+</html>
